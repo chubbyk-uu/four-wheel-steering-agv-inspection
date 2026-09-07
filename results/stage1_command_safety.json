@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "rejected": [
+    "stale",
+    "future",
+    "wrong_frame",
+    "nonfinite",
+    "unsupported_axis"
+  ],
+  "feedback_loss_stop": true,
+  "no_old_command_after_recovery": true,
+  "timeout_stop": true
+}

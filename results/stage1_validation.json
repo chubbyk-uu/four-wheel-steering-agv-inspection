@@ -1,0 +1,24 @@
+{
+  "date": "2026-09-05",
+  "stage": 1,
+  "status": "passed_initial_functional_validation",
+  "source_tree_sha256": "4f0696fb6e44bd9b21de3b98d355f70364225d4a14884e027628c7304928a755",
+  "source_file_count": 22,
+  "source_fingerprint_scope": "Baseline before the later D3D12 GUI defaults and demonstration tool; not a fingerprint of the final repository tree.",
+  "core_gtest_cases": 22,
+  "colcon_reported_tests": 23,
+  "mass_variants_kg": [
+    50,
+    65,
+    80
+  ],
+  "simulation": "ROS 2 Jazzy / Gazebo Harmonic 8.11.0",
+  "actuation": "ideal position/velocity servos; not motor torque validation",
+  "evidence": [
+    "stage1_motion.json",
+    "stage1_command_safety.json",
+    "stage1_steering_sequences.json",
+    "../docs/agv_stage1.png"
+  ],
+  "control_scope": "conservative state machine; no strict chassis-space joint setpoint generator"
+}

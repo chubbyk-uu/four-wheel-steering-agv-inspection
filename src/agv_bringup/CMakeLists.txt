@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 3.16)
+project(agv_bringup)
+find_package(ament_cmake REQUIRED)
+install(DIRECTORY launch worlds config DESTINATION share/${PROJECT_NAME})
+install(PROGRAMS scripts/follow_camera.py scripts/visualization_tf.py DESTINATION lib/${PROJECT_NAME})
+ament_package()

@@ -1,0 +1,65 @@
+Panels:
+  - Class: rviz_common/Displays
+    Name: Displays
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Class: rviz_default_plugins/Grid
+      Name: Grid
+      Enabled: true
+      Cell Size: 1
+      Plane Cell Count: 200
+      Reference Frame: <Fixed Frame>
+      Color: 160; 160; 164
+      Alpha: 0.5
+    - Class: rviz_default_plugins/RobotModel
+      Name: AGV
+      Enabled: true
+      Description Source: Topic
+      Description Topic:
+        Value: /robot_description
+        Depth: 1
+        Durability Policy: Transient Local
+        Reliability Policy: Reliable
+        History Policy: Keep Last
+      Visual Enabled: true
+      Collision Enabled: false
+      Alpha: 1
+    - Class: rviz_default_plugins/Image
+      Name: Capture Preview
+      Enabled: true
+      Topic:
+        Value: /linescan/image_preview
+        Depth: 2
+        Durability Policy: Volatile
+        Reliability Policy: Reliable
+        History Policy: Keep Last
+      Transport Hint: raw
+      Normalize Range: false
+      Min Value: 0
+      Max Value: 255
+  Enabled: true
+  Global Options:
+    Background Color: 38; 38; 42
+    Fixed Frame: world
+    Frame Rate: 30
+  Name: root
+  Tools:
+    - Class: rviz_default_plugins/Interact
+    - Class: rviz_default_plugins/MoveCamera
+  Views:
+    Current:
+      Class: rviz_default_plugins/Orbit
+      Distance: 2.6
+      Focal Point:
+        X: 0.2
+        Y: 0
+        Z: 0
+      Pitch: 0.65
+      Yaw: 0.8
+      Target Frame: base_link
+Window Geometry:
+  Width: 850
+  Height: 800
+  X: 1005
+  Y: 0

@@ -1,0 +1,163 @@
+{
+  "batch_rows": 256,
+  "cases": [
+    {
+      "batch_max_s": 0.005822704,
+      "batch_p99_s": 0.000955767,
+      "imaging_subtest_11khz": true,
+      "imaging_subtest_22khz": true,
+      "light_samples": 1,
+      "lines": 14576128,
+      "lines_per_wall_second": 485869.6316561988,
+      "noise": true,
+      "nominal_shadow_ray_rate": 5970366033.791371,
+      "primary_ray_rate": 5970366033.791371,
+      "wall_seconds": 30.000080372
+    },
+    {
+      "batch_max_s": 0.002877617,
+      "batch_p99_s": 0.001732099,
+      "imaging_subtest_11khz": true,
+      "imaging_subtest_22khz": true,
+      "light_samples": 4,
+      "lines": 7006976,
+      "lines_per_wall_second": 233561.77303725603,
+      "noise": true,
+      "nominal_shadow_ray_rate": 11480028268.32721,
+      "primary_ray_rate": 2870007067.0818024,
+      "wall_seconds": 30.000525809
+    },
+    {
+      "batch_max_s": 0.003915017,
+      "batch_p99_s": 0.002592571,
+      "imaging_subtest_11khz": true,
+      "imaging_subtest_22khz": true,
+      "light_samples": 8,
+      "lines": 4159488,
+      "lines_per_wall_second": 138648.78079367868,
+      "noise": true,
+      "nominal_shadow_ray_rate": 13629729747.141788,
+      "primary_ray_rate": 1703716218.3927236,
+      "wall_seconds": 30.000177255
+    }
+  ],
+  "cpu_checks": [
+    {
+      "column": 317,
+      "cpu": 131,
+      "gpu": 131,
+      "row": 12
+    },
+    {
+      "column": 1733,
+      "cpu": 184,
+      "gpu": 184,
+      "row": 12
+    },
+    {
+      "column": 2461,
+      "cpu": 180,
+      "gpu": 180,
+      "row": 12
+    },
+    {
+      "column": 3791,
+      "cpu": 130,
+      "gpu": 130,
+      "row": 12
+    },
+    {
+      "column": 317,
+      "cpu": 117,
+      "gpu": 117,
+      "row": 2017
+    },
+    {
+      "column": 1733,
+      "cpu": 30,
+      "gpu": 30,
+      "row": 2017
+    },
+    {
+      "column": 2461,
+      "cpu": 31,
+      "gpu": 31,
+      "row": 2017
+    },
+    {
+      "column": 3791,
+      "cpu": 117,
+      "gpu": 117,
+      "row": 2017
+    },
+    {
+      "column": 317,
+      "cpu": 129,
+      "gpu": 129,
+      "row": 3001
+    },
+    {
+      "column": 1733,
+      "cpu": 138,
+      "gpu": 138,
+      "row": 3001
+    },
+    {
+      "column": 2461,
+      "cpu": 136,
+      "gpu": 136,
+      "row": 3001
+    },
+    {
+      "column": 3791,
+      "cpu": 128,
+      "gpu": 128,
+      "row": 3001
+    },
+    {
+      "column": 317,
+      "cpu": 116,
+      "gpu": 116,
+      "row": 4001
+    },
+    {
+      "column": 1733,
+      "cpu": 167,
+      "gpu": 167,
+      "row": 4001
+    },
+    {
+      "column": 2461,
+      "cpu": 23,
+      "gpu": 23,
+      "row": 4001
+    },
+    {
+      "column": 3791,
+      "cpu": 115,
+      "gpu": 115,
+      "row": 4001
+    }
+  ],
+  "cpu_oracle_max_dn_error": 0,
+  "exposure_s": 2e-05,
+  "exposure_samples": 3,
+  "full_acceptance_passed": false,
+  "gas_bytes": 12376448,
+  "noise_partition_identical": true,
+  "partition_identical": true,
+  "scene_upload_build_seconds": 0.010906343,
+  "scope": "OptiX static 100x10m triangle mesh, procedural grid, finite strip point quadrature, sensor response, host readback; no GZ/ROS/archive/streaming/dynamic updates",
+  "shadow_changed_pixels": 4147575,
+  "shadow_max_drop_dn": 164,
+  "triangles": 200040,
+  "width": 4096,
+  "date": "2026-09-07",
+  "gpu": "RTX 5080",
+  "windows_driver": "616.64",
+  "optix_sdk": "9.1.0",
+  "isolated_runtime": "610.57.04",
+  "cuda": "12.8",
+  "log": "/tmp/agv_optix_scan_30s_v2.log",
+  "system_driver_hashes_unchanged": true
+}

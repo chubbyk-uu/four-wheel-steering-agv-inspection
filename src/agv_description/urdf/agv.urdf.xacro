@@ -1,0 +1,119 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="agv">
+  <xacro:arg name="platform" default="$(find agv_description)/config/platform.yaml"/>
+  <xacro:arg name="controllers" default="$(find agv_bringup)/config/controllers.yaml"/>
+  <xacro:property name="p" value="${xacro.load_yaml('$(arg platform)')}"/>
+  <xacro:arg name="camera_config" default="$(find agv_description)/config/linescan.yaml"/>
+  <xacro:property name="cam" value="${xacro.load_yaml('$(arg camera_config)')}"/>
+  <xacro:property name="camera_height" value="${cam.nominal_width_m*cam.focal_length_m/(cam.width*cam.pixel_pitch_m)}"/>
+  <material name="orange"><color rgba="1 0.23 0.025 1"/></material>
+  <material name="white"><color rgba="0.85 0.87 0.89 1"/></material>
+  <material name="metal"><color rgba="0.35 0.38 0.40 1"/></material>
+  <material name="tire"><color rgba="0.045 0.045 0.045 1"/></material>
+  <xacro:macro name="box_inertia" params="m x y z">
+    <inertial><mass value="${m}"/><inertia ixx="${m*(y*y+z*z)/12}" iyy="${m*(x*x+z*z)/12}" izz="${m*(x*x+y*y)/12}" ixy="0" ixz="0" iyz="0"/></inertial>
+  </xacro:macro>
+  <xacro:macro name="box_visual" params="x y z xyz rpy color">
+    <visual><origin xyz="${xyz}" rpy="${rpy}"/><geometry><box size="${x} ${y} ${z}"/></geometry><material name="${color}"/></visual>
+  </xacro:macro>
+  <!-- base_link is at chassis centre, nominally 0.36 m above ground. -->
+  <link name="base_link">
+    <xacro:box_inertia m="${p.mass-24.0}" x="${p.body_length}" y="${p.body_width}" z="0.22"/>
+    <xacro:box_visual x="${p.body_length}" y="${p.body_width}" z="0.18" xyz="0 0 0" rpy="0 0 0" color="orange"/>
+    <collision><geometry><box size="${p.body_length} ${p.body_width} 0.18"/></geometry></collision>
+    <xacro:box_visual x="0.53" y="0.60" z="0.055" xyz="-0.10 0 0.12" rpy="0 0 0" color="white"/>
+    <xacro:box_visual x="0.27" y="0.60" z="0.035" xyz="0.28 0 0.12" rpy="0 0.20 0" color="white"/>
+    <xacro:box_visual x="0.85" y="0.018" z="0.06" xyz="0 0.331 0" rpy="0 0 0" color="white"/>
+    <xacro:box_visual x="0.85" y="0.018" z="0.06" xyz="0 -0.331 0" rpy="0 0 0" color="white"/>
+    <!-- Short L brackets physically meet the chassis and the back/top of the LED.
+         Bracket mass is included in the chassis budget; both worlds see geometry. -->
+    <xacro:macro name="led_bracket" params="y">
+      <xacro:property name="lamp_x" value="${cam.camera_x_m+cam.led_forward_offset_m}"/>
+      <xacro:property name="arm_length" value="${lamp_x-p.body_length/2+0.04}"/>
+      <xacro:property name="arm_x" value="${lamp_x-arm_length/2+0.015}"/>
+      <xacro:property name="arm_z" value="${cam.led_height_m-cam.base_nominal_height_m+0.04}"/>
+      <xacro:box_visual x="${arm_length}" y="0.025" z="0.025" xyz="${arm_x} ${y} ${arm_z}" rpy="0 0 0" color="metal"/>
+      <collision><origin xyz="${arm_x} ${y} ${arm_z}"/><geometry><box size="${arm_length} 0.025 0.025"/></geometry></collision>
+      <xacro:box_visual x="0.025" y="0.025" z="0.06" xyz="${lamp_x} ${y} ${arm_z-0.025}" rpy="0 0 0" color="metal"/>
+      <collision><origin xyz="${lamp_x} ${y} ${arm_z-0.025}"/><geometry><box size="0.025 0.025 0.06"/></geometry></collision>
+    </xacro:macro>
+    <xacro:led_bracket y="0.24"/>
+    <xacro:led_bracket y="-0.24"/>
+    <xacro:box_visual x="0.10" y="0.06" z="0.025" xyz="0.49 0 0.06" rpy="0 0 0" color="metal"/>
+    <!-- Visual bracket proxy; mass remains included in the chassis budget. -->
+    <xacro:box_visual x="0.025" y="0.04" z="${camera_height-cam.base_nominal_height_m-0.02}" xyz="0.49 0 ${(camera_height-cam.base_nominal_height_m)/2+0.05}" rpy="0 0 0" color="metal"/>
+    <xacro:box_visual x="${cam.camera_x_m-0.49}" y="0.04" z="0.025" xyz="${(cam.camera_x_m+0.49)/2} 0 ${camera_height-cam.base_nominal_height_m+0.04}" rpy="0 0 0" color="metal"/>
+    <visual><origin xyz="-0.24 0 0.18"/><geometry><cylinder radius="0.023" length="0.04"/></geometry><material name="orange"/></visual>
+  </link>
+  <xacro:macro name="wheel" params="name x y">
+    <link name="${name}_steer_link">
+      <xacro:box_inertia m="2.5" x="0.10" y="0.11" z="0.12"/>
+      <xacro:box_visual x="0.08" y="0.11" z="0.08" xyz="0 0 0" rpy="0 0 0" color="metal"/>
+      <xacro:box_visual x="0.035" y="0.018" z="0.10" xyz="0 0.055 -0.07" rpy="0 0 0" color="metal"/>
+      <xacro:box_visual x="0.035" y="0.018" z="0.10" xyz="0 -0.055 -0.07" rpy="0 0 0" color="metal"/>
+      <collision><geometry><box size="0.08 0.11 0.08"/></geometry></collision>
+    </link>
+    <joint name="${name}_steer_joint" type="revolute"><parent link="base_link"/><child link="${name}_steer_link"/>
+      <origin xyz="${x} ${y} -0.14"/><axis xyz="0 0 1"/>
+      <limit lower="${-p.steer_hard_limit}" upper="${p.steer_hard_limit}" effort="50" velocity="${p.steer_rate}"/>
+      <dynamics damping="0.5" friction="0.1"/>
+    </joint>
+    <link name="${name}_wheel_link">
+      <inertial><mass value="3.0"/><inertia ixx="${3*(3*p.wheel_radius**2+p.wheel_width**2)/12}" iyy="${3*p.wheel_radius**2/2}" izz="${3*(3*p.wheel_radius**2+p.wheel_width**2)/12}" ixy="0" ixz="0" iyz="0"/></inertial>
+      <visual><origin rpy="${pi/2} 0 0"/><geometry><cylinder radius="${p.wheel_radius}" length="${p.wheel_width}"/></geometry><material name="tire"/></visual>
+      <collision><origin rpy="${pi/2} 0 0"/><geometry><cylinder radius="${p.wheel_radius}" length="${p.wheel_width}"/></geometry></collision>
+      <visual><origin xyz="0 ${p.wheel_width/2+0.002} 0" rpy="${pi/2} 0 0"/><geometry><cylinder radius="0.048" length="0.006"/></geometry><material name="metal"/></visual>
+      <visual><origin xyz="0 ${-p.wheel_width/2-0.002} 0" rpy="${pi/2} 0 0"/><geometry><cylinder radius="0.048" length="0.006"/></geometry><material name="metal"/></visual>
+    </link>
+    <joint name="${name}_drive_joint" type="continuous"><parent link="${name}_steer_link"/><child link="${name}_wheel_link"/>
+      <origin xyz="0 0 ${-0.22+p.wheel_radius}"/><axis xyz="0 1 0"/><limit effort="35" velocity="${p.max_speed/p.wheel_radius}"/><dynamics damping="0.02"/></joint>
+    <gazebo reference="${name}_wheel_link"><mu1>0.8</mu1><mu2>0.8</mu2><kp>1000000</kp><kd>100</kd></gazebo>
+  </xacro:macro>
+  <xacro:wheel name="fl" x="${p.wheelbase/2}" y="${p.track/2}"/>
+  <xacro:wheel name="fr" x="${p.wheelbase/2}" y="${-p.track/2}"/>
+  <xacro:wheel name="rl" x="${-p.wheelbase/2}" y="${p.track/2}"/>
+  <xacro:wheel name="rr" x="${-p.wheelbase/2}" y="${-p.track/2}"/>
+  <!-- Nominal optics geometry; the visible LED uses overlapping, shadow-casting spot lights. -->
+  <link name="camera_link"><xacro:box_inertia m="1.0" x="0.10" y="0.12" z="0.08"/><xacro:box_visual x="0.10" y="0.12" z="0.08" xyz="0 0 0" rpy="0 0 0" color="metal"/><collision><geometry><box size="0.10 0.12 0.08"/></geometry></collision></link>
+  <joint name="camera_mount" type="fixed"><parent link="base_link"/><child link="camera_link"/><origin xyz="${cam.camera_x_m} 0 ${camera_height-cam.base_nominal_height_m+0.04}"/></joint>
+  <link name="camera_optical_frame"/>
+  <joint name="camera_optical_joint" type="fixed"><parent link="camera_link"/><child link="camera_optical_frame"/><origin xyz="0 0 -0.04" rpy="${pi} 0 ${pi/2}"/></joint>
+  <link name="led_link"><xacro:box_inertia m="1.0" x="0.035" y="0.60" z="0.035"/><xacro:box_visual x="0.035" y="0.60" z="0.035" xyz="0 0 0" rpy="0 0 0" color="white"/><collision><geometry><box size="0.035 0.60 0.035"/></geometry></collision></link>
+  <joint name="led_mount" type="fixed"><parent link="base_link"/><child link="led_link"/><origin xyz="${cam.camera_x_m+cam.led_forward_offset_m} 0 ${cam.led_height_m-cam.base_nominal_height_m}" rpy="0 ${atan(cam.led_forward_offset_m/cam.led_height_m)} 0"/></joint>
+  <!-- One physical strip, approximated by a row of lenses. Attach to base_link
+       so URDF fixed-joint reduction cannot detach the lights from the vehicle. -->
+  <xacro:macro name="led_spots" params="i count">
+    <xacro:if value="${i &lt; count}">
+      <xacro:property name="fraction" value="${2.0*i/(count-1)-1}"/>
+      <xacro:property name="tilt" value="${atan(cam.led_forward_offset_m/cam.led_height_m)}"/>
+      <xacro:property name="lx" value="${cam.camera_x_m+cam.led_forward_offset_m-0.022*sin(tilt)}"/>
+      <xacro:property name="lz" value="${cam.led_height_m-0.022*cos(tilt)}"/>
+      <xacro:property name="ly" value="${0.28*fraction}"/>
+      <xacro:property name="target_y" value="${0.8*cam.radiometry.led_half_width_m*fraction}"/>
+      <xacro:property name="distance" value="${sqrt((cam.camera_x_m-lx)**2+(target_y-ly)**2+lz**2)}"/>
+      <gazebo reference="base_link">
+        <light name="led_strip_${i}" type="spot">
+          <pose>${lx} ${ly} ${lz-cam.base_nominal_height_m} 0 0 0</pose>
+          <diffuse>1 1 1 1</diffuse><specular>1 1 1 1</specular>
+          <intensity>${cam.gz_led.intensity_at_reference*cam.radiometry.led_peak_relative/40.0}</intensity>
+          <direction>${(cam.camera_x_m-lx)/distance} ${(target_y-ly)/distance} ${-lz/distance}</direction>
+          <attenuation><range>2</range><constant>1</constant><linear>0</linear><quadratic>0</quadratic></attenuation>
+          <spot><inner_angle>${1.2*atan(cam.radiometry.led_half_depth_m/sqrt(cam.led_height_m**2+cam.led_forward_offset_m**2))}</inner_angle><outer_angle>${2.0*atan(cam.radiometry.led_half_depth_m/sqrt(cam.led_height_m**2+cam.led_forward_offset_m**2))}</outer_angle><falloff>1</falloff></spot>
+          <cast_shadows>true</cast_shadows>
+        </light>
+      </gazebo>
+      <xacro:led_spots i="${i+1}" count="${count}"/>
+    </xacro:if>
+  </xacro:macro>
+  <xacro:if value="${cam.gz_led.enabled}"><xacro:led_spots i="${0}" count="${21}"/></xacro:if>
+  <ros2_control name="GazeboSystem" type="system"><hardware><plugin>gz_ros2_control/GazeboSimSystem</plugin></hardware>
+    <xacro:macro name="interfaces" params="name">
+      <joint name="${name}_steer_joint"><command_interface name="position"><param name="min">${-p.steer_hard_limit}</param><param name="max">${p.steer_hard_limit}</param></command_interface><state_interface name="position"/><state_interface name="velocity"/></joint>
+      <joint name="${name}_drive_joint"><command_interface name="velocity"><param name="min">${-p.max_speed/p.wheel_radius}</param><param name="max">${p.max_speed/p.wheel_radius}</param></command_interface><state_interface name="position"/><state_interface name="velocity"/></joint>
+    </xacro:macro>
+    <xacro:interfaces name="fl"/><xacro:interfaces name="fr"/><xacro:interfaces name="rl"/><xacro:interfaces name="rr"/>
+  </ros2_control>
+  <gazebo><plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin"><parameters>$(arg controllers)</parameters></plugin>
+    <plugin filename="gz-sim-odometry-publisher-system" name="gz::sim::systems::OdometryPublisher"><dimensions>3</dimensions><odom_frame>world</odom_frame><robot_base_frame>base_link</robot_base_frame><odom_topic>/ground_truth/odom</odom_topic><tf_topic>/ground_truth/tf</tf_topic><odom_publish_frequency>50</odom_publish_frequency></plugin>
+  </gazebo>
+</robot>

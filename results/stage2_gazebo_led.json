@@ -1,0 +1,47 @@
+{
+  "sdf_spot_lights": 21,
+  "gz_display_intensity": 0.7,
+  "cuda_relative_led_peak_unchanged": 40,
+  "render_backend": "Ogre2, Mesa D3D12 / NVIDIA",
+  "model_check": "50/65/80 kg, positive inertia, 8 actuated joints, 380 degree steering travel: PASS",
+  "render_regression": {
+    "passed": true,
+    "backend": "gz_ogre2_cpp",
+    "archive": "/tmp/agv_cpp_scan_20048/session_cpp_1788667751038585246",
+    "rows": [
+      256,
+      17
+    ],
+    "speed_m_s": 0.02,
+    "simulation_seconds": 4.0,
+    "wall_seconds": 19.825198046999503,
+    "real_time_factor": 0.2017634320987472,
+    "sampling_line_rate": 17.111931584353837,
+    "metrics": {
+      "lines": 273,
+      "mapping_seconds": 0.010055683000000006,
+      "physics_step_wall_interval_max_seconds": 0.708101331,
+      "physics_step_wall_interval_p99_upper_seconds": 0.059300000000000005,
+      "readback_seconds": 3.5806914940000025,
+      "render_seconds": 12.363033297999994,
+      "renders": 819,
+      "sampling_batch_max_seconds": 0.0,
+      "scene_update_seconds": 0.08118976200000004
+    },
+    "write_seconds": 0.000490236,
+    "publish_call_seconds": 0.000675228,
+    "received_blocks": 2,
+    "receive_interval_max_seconds": 1.2073052340001595,
+    "final_motion_state": "HOLD",
+    "grid_geometry": [
+      {
+        "max_grid_center_error_px": 0.4120903940831795
+      }
+    ],
+    "occlusion_probe": false,
+    "tile_statistics": null,
+    "sampling_queue_high_water_jobs": 0,
+    "notes": "Scene held at physics-step time; camera interpolated per exposure. Sampling rate excludes physics/ROS/archive, not end-to-end throughput."
+  },
+  "scope": "Visible light and stationary render geometry; no new high-rate throughput claim"
+}

@@ -1,0 +1,11 @@
+swerve_controller:
+  ros__parameters:
+    # Provisional control policy; all angular values are radians.
+    command_timeout: 0.4
+    reorient_angle: 0.30
+    aligned_angle: 0.035
+    stopped_speed: 0.025
+    max_lateral_mismatch: 0.12
+    max_lateral_speed: 1.0
+    steering_limit_reserve: 0.17453292519943295
+    wheel_speed_deadband: 0.005

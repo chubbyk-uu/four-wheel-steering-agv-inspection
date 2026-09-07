@@ -1,0 +1,14 @@
+{
+  "url": "https://ambientcg.com/get?file=Concrete047A_8K-PNG.zip",
+  "license": "CC0",
+  "archive_bytes": 1033558405,
+  "archive_sha256": "2cd4005d3662e6feff891cffafe6fbdf4fdecb6ba697cc00498cea07b3029a2e",
+  "color_file": "Concrete047A_8K-PNG_Color.png",
+  "color_sha256": "8dd48afdbd43c1249c3999e65093e4c41fc12892c06e2d6b66f261877f66c102",
+  "color_resolution": [
+    8192,
+    8192
+  ],
+  "integrity": "ZIP member CRC and local SHA256; no provider digest asserted",
+  "scale": "API dimensionX/Y/Z are unspecified (0); project comparison maps color to 2.1 m"
+}

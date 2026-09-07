@@ -1,0 +1,296 @@
+{
+  "date": "2026-09-06",
+  "model": "relative_projected_strip_v1",
+  "scope": "CUDA tiled diffuse plane, relative LED, analytic ambient shadow and sensor response; not full geometry/absolute radiometry acceptance",
+  "nominal_minimum_led_to_reference_sun": 33.80194560701271,
+  "radiometry_cases": {
+    "model": "relative_projected_strip_v1",
+    "source": "/tmp/agv_radiometry_cases_v2",
+    "minimum_column_led_to_sun_signal_ratio": 33.932193756103516,
+    "signal_ratio_columns_above_quantization_floor": 4010,
+    "shadow_relative_change_mean": 0.022351771593093872,
+    "shadow_relative_change_p99": 0.029126213863492012,
+    "shadow_difference_dn_max": 4.0,
+    "exposure_scaling_error_dn_p999": {
+      "exposure_10us": 0.5,
+      "exposure_5us": 0.5
+    },
+    "default_saturated_fraction": 0.0,
+    "overexposed_saturated_fraction": 1.0,
+    "noise_difference_std_dn": 1.786564588546753,
+    "full_scene_acceptance_passed": false
+  },
+  "sustained_benchmark": {
+    "active_pipeline_lines_per_second": 65353.061927093535,
+    "backend": "cuda_tiled_grid_testbench",
+    "batch_p99_seconds": 0.007692425,
+    "batch_rows": 512,
+    "batch_seconds_max": 0.017707942,
+    "block_receive_interval_seconds_max": 0.20177714100000088,
+    "blocks": 240,
+    "boundary_batch_seconds_max": 0.017707942,
+    "boundary_batches": 232,
+    "cold_gpu_warmup_seconds": 0.072898219,
+    "continuous_delay_budget": {
+      "batch_seconds": 0.022260869565217393,
+      "block_interval_seconds": 0.2671304347826087,
+      "excludes_explicit_lane_start_warmup": true
+    },
+    "device": "see tile statistics",
+    "effective_lines_per_wall_second": 22999.950225664157,
+    "exposure_samples": 3,
+    "file_fsync": true,
+    "full_acceptance_passed": false,
+    "generation_readback_assembly_seconds": 3.760971430000005,
+    "grid_extent_m": null,
+    "invalid_pixels": 0,
+    "lines": 983040,
+    "note": "Disk-backed Mono8 bilinear tiles, local anchors, 3 exposure samples, ROS receive and image fsync. New scan lanes prewarm explicitly; configured relative LED/sensor model; no geometry occlusion or GZ physics. File cache state is not guaranteed cold.",
+    "ros_acknowledged_blocks": 240,
+    "ros_delivery_included": true,
+    "ros_publish_receive_ack_seconds": 7.732382977000003,
+    "rows_per_block": 4096,
+    "scan_lanes": 3,
+    "target_lines_per_second": 23000.0,
+    "terrain_manifest": "/tmp/agv_runway_tiles_100x10/manifest.json",
+    "tiles": {
+      "cache_slots": 24,
+      "device": "NVIDIA GeForce RTX 5080",
+      "gpu_tile_bytes": 403046496,
+      "host_staging_bytes": 16793604,
+      "load_seconds_max": 0.017128791,
+      "load_seconds_p99_first_4096": 0.01441198,
+      "load_seconds_sum": 4.577596148999999,
+      "radiometry_enabled": true,
+      "radiometry_model": "relative_projected_strip_v1",
+      "required_tile_misses": 0,
+      "sampling_interpolation": "bilinear, one-texel gutters; three exposure samples",
+      "tile_loads": 496,
+      "uploaded_bytes": 8329627584
+    },
+    "wall_seconds": 42.740962061,
+    "width": 4096,
+    "write_seconds": 3.541703439000001,
+    "grid_subtest_minimum_rate": 22000,
+    "grid_throughput_subtest_passed": true
+  },
+  "gz_20kmh_50m": {
+    "passed": true,
+    "backend": "cuda_tiled_plane",
+    "archive": "/tmp/agv_cpp_scan_18305/session_cpp_1788665423296630735",
+    "rows": [
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      2749
+    ],
+    "speed_m_s": 5.555555555555555,
+    "simulation_seconds": 9.000000000000002,
+    "wall_seconds": 8.999098881999998,
+    "real_time_factor": 1.0001001342480864,
+    "sampling_line_rate": 277760.8264232831,
+    "metrics": {
+      "lines": 170685,
+      "mapping_seconds": 0.0,
+      "physics_step_wall_interval_max_seconds": 0.001649493,
+      "physics_step_wall_interval_p99_upper_seconds": 0.0011,
+      "readback_seconds": 0.0,
+      "render_seconds": 0.6145035000000002,
+      "renders": 512055,
+      "sampling_batch_max_seconds": 0.015504579,
+      "scene_update_seconds": 0.0
+    },
+    "write_seconds": 0.186147905,
+    "publish_call_seconds": 0.120376312,
+    "received_blocks": 42,
+    "receive_interval_max_seconds": 0.2356890620003469,
+    "final_motion_state": "HOLD",
+    "grid_geometry": [
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5554531999309802
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5554531999314349
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.555453199929616
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5554531999300707
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5554531999323444
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.555453199927797
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5554531999309802
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5554531999287065
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      }
+    ],
+    "occlusion_probe": false,
+    "tile_statistics": {
+      "cache_slots": 24,
+      "device": "NVIDIA GeForce RTX 5080",
+      "gpu_tile_bytes": 403046496,
+      "host_staging_bytes": 16793604,
+      "load_seconds_max": 0.010906383,
+      "load_seconds_p99_first_4096": 0.008736994,
+      "load_seconds_sum": 0.48524016899999994,
+      "radiometry_enabled": true,
+      "radiometry_model": "relative_projected_strip_v1",
+      "required_tile_misses": 0,
+      "sampling_interpolation": "bilinear, one-texel gutters; three exposure samples",
+      "tile_loads": 92,
+      "uploaded_bytes": 1545011568
+    },
+    "sampling_queue_high_water_jobs": 15,
+    "notes": "CUDA timings include pose packing and batch upload/sampling/readback. Static unobstructed grid only. Sampling rate excludes physics/ROS/archive, not end-to-end throughput."
+  },
+  "tests": {
+    "summary": "50 tests, 0 errors, 0 failures, 0 skipped",
+    "log": "/tmp/agv_radiometry_test_summary.log"
+  },
+  "full_scene_acceptance_passed": false,
+  "queue_margin_note": "GZ peak 15/16 jobs; transient backlog nearly fills queue. No overflow observed in this run; further complexity requires retesting."
+}

@@ -1,0 +1,23 @@
+{
+  "tiles": 400,
+  "shared_edges": 760,
+  "max_overlap_delta_dn": 0,
+  "all_labels_present": true,
+  "hashes_verified": true,
+  "slab_size_m": [
+    5,
+    5
+  ],
+  "texel_mm": 0.25,
+  "calibrated_width_range_mm": [
+    0.8,
+    2.0
+  ],
+  "width_validation": "nominal centerline diameters only; does not certify every final raster cross-section",
+  "crack_extents_m": [
+    2.2,
+    2.4,
+    2.6
+  ],
+  "passed": true
+}

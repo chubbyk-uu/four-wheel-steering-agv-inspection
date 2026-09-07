@@ -1,0 +1,296 @@
+{
+  "date": "2026-09-07",
+  "tests": {
+    "total": 39,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "full_scene_acceptance_passed": false,
+  "gz_speed": {
+    "passed": true,
+    "backend": "cuda_tiled_plane",
+    "archive": "/tmp/agv_cpp_scan_7878/session_cpp_1788747110597805270",
+    "rows": [
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      2806
+    ],
+    "speed_m_s": 5.5555555556,
+    "simulation_seconds": 8.999999999999998,
+    "wall_seconds": 8.999133033999897,
+    "real_time_factor": 1.0000963388358441,
+    "sampling_line_rate": 623017.7256063292,
+    "metrics": {
+      "lines": 170742,
+      "mapping_seconds": 0.0,
+      "physics_step_wall_interval_max_seconds": 0.001376428,
+      "physics_step_wall_interval_p99_upper_seconds": 0.0011,
+      "readback_seconds": 0.0,
+      "render_seconds": 0.2740564079999997,
+      "renders": 512226,
+      "sampling_batch_max_seconds": 0.001409314,
+      "scene_update_seconds": 0.0
+    },
+    "write_seconds": 0.209397942,
+    "publish_call_seconds": 0.120712609,
+    "received_blocks": 42,
+    "receive_interval_max_seconds": 0.23361993900016387,
+    "final_motion_state": "HOLD",
+    "grid_geometry": [
+      {
+        "max_grid_center_error_px": 0.5554531999305254
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5554531999309802
+      },
+      {
+        "max_grid_center_error_px": 0.555453199929616
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5554531999287065
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.555453199929616
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5554531999309802
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5554531999309802
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5554531999300707
+      },
+      {
+        "max_grid_center_error_px": 0.5554531999309802
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5554531999282517
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      },
+      {
+        "max_grid_center_error_px": 0.5
+      }
+    ],
+    "occlusion_probe": false,
+    "tile_statistics": {
+      "cache_slots": 24,
+      "device": "NVIDIA GeForce RTX 5080",
+      "gpu_tile_bytes": 403046496,
+      "host_staging_bytes": 16793604,
+      "load_seconds_max": 0.048195802,
+      "load_seconds_p99_first_4096": 0.014196462,
+      "load_seconds_sum": 0.6193417780000001,
+      "radiometry_enabled": true,
+      "radiometry_model": "relative_projected_strip_v1",
+      "required_tile_misses": 0,
+      "sampling_interpolation": "bilinear, one-texel gutters; three exposure samples",
+      "tile_loads": 92,
+      "uploaded_bytes": 1545011568
+    },
+    "sampling_queue_high_water_lines": 19,
+    "sampling_queue_observed_wait_max_s": 0.0008061270000325749,
+    "sampling_queue_high_water_jobs": 1,
+    "notes": "CUDA timings include pose packing and batch upload/sampling/readback. Static unobstructed plane; configured CUDA radiometry is recorded in the archive. Sampling rate excludes physics/ROS/archive, not end-to-end throughput."
+  },
+  "gz_recovery": {
+    "passed": true,
+    "test": "missing_terrain_file",
+    "capture_disabled": true,
+    "simulation_clock_continues": true,
+    "recovered_without_restart": true,
+    "received_blocks": 1,
+    "final_motion_state": "HOLD"
+  },
+  "corrected_pipeline": {
+    "active_pipeline_lines_per_second": 25334.599787668743,
+    "backend": "cuda_tiled_grid_testbench",
+    "batch_p99_seconds": 0.000634462,
+    "batch_rows": 256,
+    "batch_seconds_max": 0.001295567,
+    "block_receive_interval_seconds_max": 0.19550889599999977,
+    "blocks": 240,
+    "boundary_batch_seconds_max": 0.00083481,
+    "boundary_batches": 232,
+    "cold_gpu_warmup_seconds": 0.087150086,
+    "continuous_delay_budget": {
+      "batch_seconds": 0.011130434782608696,
+      "block_interval_seconds": 0.2671304347826087,
+      "excludes_explicit_lane_start_warmup": true
+    },
+    "device": "see tile statistics",
+    "effective_lines_per_wall_second": 22999.955991667455,
+    "exposure_samples": 3,
+    "file_fsync": true,
+    "full_acceptance_passed": false,
+    "generation_readback_assembly_seconds": 1.3743636450000003,
+    "grid_extent_m": null,
+    "invalid_pixels": 0,
+    "lines": 983040,
+    "note": "Disk-backed Mono8 bilinear tiles, local anchors, 3 exposure samples, ROS receive and image fsync. New scan lanes prewarm explicitly; configured relative LED/sensor model; no geometry occlusion or GZ physics. File cache state is not guaranteed cold.",
+    "ros_acknowledged_blocks": 240,
+    "ros_delivery_included": true,
+    "ros_publish_receive_ack_seconds": 33.85776568700001,
+    "rows_per_block": 4096,
+    "scan_lanes": 3,
+    "target_lines_per_second": 23000.0,
+    "terrain_manifest": "/tmp/agv_runway_tiles_100x10/manifest.json",
+    "tiles": {
+      "cache_slots": 24,
+      "device": "NVIDIA GeForce RTX 5080",
+      "gpu_tile_bytes": 403046496,
+      "host_staging_bytes": 16793604,
+      "load_seconds_max": 0.013014867,
+      "load_seconds_p99_first_4096": 0.008291299,
+      "load_seconds_sum": 2.8000463590000013,
+      "radiometry_enabled": true,
+      "radiometry_model": "relative_projected_strip_v1",
+      "required_tile_misses": 0,
+      "sampling_interpolation": "bilinear, one-texel gutters; three exposure samples",
+      "tile_loads": 496,
+      "uploaded_bytes": 8329627584
+    },
+    "wall_seconds": 42.740951346,
+    "width": 4096,
+    "write_seconds": 3.5650606359999992,
+    "correction": {
+      "blocks": 240,
+      "calibration_id": "measured-beb2baaf52f6a9fe",
+      "correction_and_archive_seconds_max": 0.11938157300028251,
+      "correction_and_archive_seconds_mean": 0.11165322359169257,
+      "corrected_image_fsync": true,
+      "corrected_ros_published": false
+    },
+    "grid_subtest_minimum_rate": 22000.0,
+    "grid_throughput_subtest_passed": true
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "passed": true,
+  "scope": "static shared geometry; Ogre2 CPU RayQuery vs OptiX; no photometric/dynamic/physics-contact acceptance",
+  "manifest": "/tmp/agv_shared_scene_v2/manifest.json",
+  "manifest_sha256": "b5b719901652d682d735f0870c8bf2f58feba25bf4fd49a8033be719538ff51d",
+  "queries": 246,
+  "triangles": 200264,
+  "max_hit_distance_error_m": 1.7881393432617188e-07,
+  "physics_import_steps": 20,
+  "physics_contact_dynamics_tested": false,
+  "hit_objects": [
+    "canopy_0",
+    "screen_0",
+    "terrain"
+  ],
+  "blocked_led_paths": 22,
+  "clear_led_paths": 174,
+  "geometry_tolerance_m": 5e-05,
+  "full_acceptance_passed": false,
+  "date": "2026-09-07",
+  "tests": {
+    "total": 44,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0
+  },
+  "agv_launch": {
+    "passed": true,
+    "final_state": "HOLD",
+    "position": [
+      2.000086473663512,
+      -5.87466320702144e-06,
+      0.3680465570495134
+    ],
+    "test": "AGV settles on shared collision mesh for 3 simulated seconds"
+  },
+  "shared_mesh_scan_regression": {
+    "triangles": 200264,
+    "cpu_oracle_max_dn_error": 0,
+    "partition_identical": true,
+    "noise_partition_identical": true,
+    "shadow_changed_pixels": 5133237
+  },
+  "legacy_planar_backend_rejected": true
+}

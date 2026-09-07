@@ -1,0 +1,214 @@
+{
+  "date": "2026-09-06",
+  "hardware": {
+    "gpu": "NVIDIA GeForce RTX 5080",
+    "driver": "616.64",
+    "cuda_toolkit": "12.8",
+    "environment": "WSL; GUI defaults D3D12"
+  },
+  "unit_tests": {
+    "tests": 44,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0
+  },
+  "model_validation": "50/65/80 kg; positive inertia; eight joints; finite steering passed",
+  "baseline": {
+    "width": 4096,
+    "nominal_width_m": 1.2,
+    "line_spacing_m": 0.00029296875,
+    "block_rows": 4096,
+    "nominal_optical_height_m": 1.0463169642857142
+  },
+  "sustained_grid_benchmark": {
+    "active_pipeline_lines_per_second": 77265.25982860984,
+    "backend": "cuda_unobstructed_grid_testbench",
+    "batch_p99_seconds": 0.002999289,
+    "batch_rows": 512,
+    "blocks": 180,
+    "device": "NVIDIA GeForce RTX 5080",
+    "effective_lines_per_wall_second": 22999.939404886474,
+    "exposure_samples": 3,
+    "file_fsync": true,
+    "full_acceptance_passed": false,
+    "generation_readback_assembly_seconds": 1.5170411419999976,
+    "grid_extent_m": 452.0,
+    "invalid_pixels": 0,
+    "lines": 737280,
+    "note": "Static unobstructed grid only; no GZ physics, material or LED radiometry. Optional separate-process ROS receive/ack included. Pacing excluded from active rate; filesystem and device caching still apply.",
+    "ros_acknowledged_blocks": 180,
+    "ros_delivery_included": true,
+    "ros_publish_receive_ack_seconds": 5.573410408999997,
+    "rows_per_block": 4096,
+    "target_lines_per_second": 23000.0,
+    "wall_seconds": 32.055736627,
+    "width": 4096,
+    "write_seconds": 2.443500512,
+    "grid_subtest_minimum_rate": 22000,
+    "grid_throughput_subtest_passed": true
+  },
+  "pixel_validation": {
+    "passed": true,
+    "compared_pixels": 524288,
+    "paint_boundary_guard_m": 2e-06,
+    "guarded_pixels": 0,
+    "mismatched_pixels": 0,
+    "max_unguarded_gray_error": 0
+  },
+  "full_imaging_acceptance_passed": false,
+  "limitations": [
+    "Unobstructed z=0 static grid only; no GZ material/occlusion/LED irradiance in CUDA",
+    "Sustained throughput includes standalone ROS receive and file fsync; excludes GZ physics",
+    "Vehicle high-speed run is short, not sustained whole-vehicle throughput acceptance",
+    "Float geometry assumes local coordinates; no large-world precision claim"
+  ],
+  "vehicle_tests": [
+    {
+      "passed": true,
+      "backend": "cuda_unobstructed_grid_plane",
+      "archive": "/tmp/agv_cpp_scan_10970/session_cpp_1788661988214817178",
+      "rows": [
+        4096,
+        353
+      ],
+      "speed_m_s": 0.5,
+      "simulation_seconds": 2.6,
+      "wall_seconds": 2.733431130000099,
+      "real_time_factor": 0.9511854794746213,
+      "sampling_line_rate": 31898.679069175178,
+      "metrics": {
+        "lines": 4449,
+        "mapping_seconds": 0.0,
+        "readback_seconds": 0.0,
+        "render_seconds": 0.13947286,
+        "renders": 13347,
+        "scene_update_seconds": 0.0
+      },
+      "write_seconds": 0.00557705,
+      "publish_call_seconds": 0.007615162,
+      "received_blocks": 2,
+      "final_motion_state": "HOLD",
+      "grid_geometry": [
+        {
+          "max_grid_center_error_px": 0.2298772760191241
+        }
+      ],
+      "occlusion_probe": false,
+      "notes": "Scene state is held at physics-step time; camera interpolated per exposure. ROS publish timing is call time, not end-to-end latency."
+    },
+    {
+      "passed": true,
+      "backend": "cuda_unobstructed_grid_plane",
+      "archive": "/tmp/agv_cpp_scan_11362/session_cpp_1788662045831986311",
+      "rows": [
+        4096,
+        354
+      ],
+      "speed_m_s": -0.5,
+      "simulation_seconds": 2.6,
+      "wall_seconds": 2.60327260799977,
+      "real_time_factor": 0.9987428869378822,
+      "sampling_line_rate": 464032.47768525174,
+      "metrics": {
+        "lines": 4450,
+        "mapping_seconds": 0.0,
+        "readback_seconds": 0.0,
+        "render_seconds": 0.009589845999999999,
+        "renders": 13350,
+        "scene_update_seconds": 0.0
+      },
+      "write_seconds": 0.005575253,
+      "publish_call_seconds": 0.0067341829999999995,
+      "received_blocks": 2,
+      "final_motion_state": "HOLD",
+      "grid_geometry": [
+        {
+          "max_grid_center_error_px": 0.22987727601775987
+        }
+      ],
+      "occlusion_probe": false,
+      "notes": "CUDA timings include pose packing and batch upload/sampling/readback. Static unobstructed grid only. Sampling rate excludes physics/ROS/archive, not end-to-end throughput."
+    },
+    {
+      "passed": true,
+      "backend": "cuda_unobstructed_grid_plane",
+      "archive": "/tmp/agv_cpp_scan_12105/session_cpp_1788662201936354856",
+      "rows": [
+        4096,
+        142
+      ],
+      "speed_m_s": 3.45,
+      "simulation_seconds": 0.3540000000000001,
+      "wall_seconds": 0.3557397630002015,
+      "real_time_factor": 0.9951094502747493,
+      "sampling_line_rate": 528118.4440818147,
+      "metrics": {
+        "lines": 4238,
+        "mapping_seconds": 0.0,
+        "readback_seconds": 0.0,
+        "render_seconds": 0.008024715,
+        "renders": 12714,
+        "scene_update_seconds": 0.0
+      },
+      "write_seconds": 0.005244052,
+      "publish_call_seconds": 0.0064814289999999995,
+      "received_blocks": 2,
+      "final_motion_state": "HOLD",
+      "grid_geometry": [
+        {
+          "max_grid_center_error_px": 0.22987797795508413
+        }
+      ],
+      "occlusion_probe": false,
+      "notes": "CUDA timings include pose packing and batch upload/sampling/readback. Static unobstructed grid only. Sampling rate excludes physics/ROS/archive, not end-to-end throughput."
+    }
+  ],
+  "analytic_4k_regression": {
+    "passed": true,
+    "backend": "analytic_grid_testbench",
+    "lines": 8396,
+    "rows": [
+      4096,
+      4096,
+      204
+    ],
+    "wall_seconds": 13.32973949899997,
+    "effective_lines_per_wall_second": 629.8697735713356,
+    "scan_speed_m_s": 0.1,
+    "simulated_seconds": 24.597656249999996,
+    "note": "Includes PNG output and rectification; not a GZ/GPU benchmark."
+  },
+  "ogre2_4k_regression": {
+    "passed": true,
+    "backend": "gz_ogre2_cpp",
+    "archive": "/tmp/agv_cpp_scan_12398/session_cpp_1788662259753138453",
+    "rows": [
+      256,
+      17
+    ],
+    "speed_m_s": 0.02,
+    "simulation_seconds": 4.0,
+    "wall_seconds": 9.495169005000207,
+    "real_time_factor": 0.42126685663979,
+    "sampling_line_rate": 48.33794260404755,
+    "metrics": {
+      "lines": 273,
+      "mapping_seconds": 0.009992642999999997,
+      "readback_seconds": 0.4453668520000002,
+      "render_seconds": 5.192377774999995,
+      "renders": 819,
+      "scene_update_seconds": 0.0706890580000001
+    },
+    "write_seconds": 0.0005621319999999999,
+    "publish_call_seconds": 0.000508135,
+    "received_blocks": 2,
+    "final_motion_state": "HOLD",
+    "grid_geometry": [
+      {
+        "max_grid_center_error_px": 0.5529044377262835
+      }
+    ],
+    "occlusion_probe": false,
+    "notes": "Scene held at physics-step time; camera interpolated per exposure. Sampling rate excludes physics/ROS/archive, not end-to-end throughput."
+  }
+}

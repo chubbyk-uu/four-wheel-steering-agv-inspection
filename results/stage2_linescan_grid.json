@@ -1,0 +1,44 @@
+{
+  "date": "2026-09-06",
+  "scope": "Stage 2 analytic grid-plane line-scan prototype, not GZ rendering/lighting acceptance",
+  "passed": true,
+  "unit_tests": 10,
+  "colcon_total_including_control_and_wrappers": 34,
+  "unit_failures": 0,
+  "testbench": {
+    "passed": true,
+    "backend": "analytic_grid_testbench",
+    "lines": 8396,
+    "rows": [
+      4096,
+      4096,
+      204
+    ],
+    "wall_seconds": 22.15845157900003,
+    "effective_lines_per_wall_second": 378.9073424226557,
+    "scan_speed_m_s": 0.1,
+    "simulated_seconds": 20.5,
+    "note": "Includes PNG output and rectification; not a GZ/GPU benchmark."
+  },
+  "gazebo": {
+    "passed": true,
+    "backend": "GZ_feedback_analytic_grid_plane",
+    "rows": [
+      4096,
+      1228
+    ],
+    "archive": "/tmp/agv_linescan_gz_4238/session_1788659498979739721",
+    "final_motion_state": "HOLD",
+    "first_last_x": [
+      0.6934236970159579,
+      1.9929842438912058
+    ]
+  },
+  "limitations": [
+    "No GZ scene rendering buffer access or occlusion",
+    "No radiometric LED/sunlight model",
+    "Nominal calibration used; target fitting not implemented",
+    "Ideal continuous wheel encoder positions; hardware count quantization deferred",
+    "Highest speed trigger count tested, highest speed imaging NOT achieved"
+  ]
+}

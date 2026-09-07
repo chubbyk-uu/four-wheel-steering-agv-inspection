@@ -1,0 +1,411 @@
+{
+  "scope": "isolated static optical fixture; actual base/LED mount; 3 exposure samples at 10 km/h; no physics or wheel meshes",
+  "reference_samples": 256,
+  "reference_check_samples": 128,
+  "noise": false,
+  "prnu": false,
+  "metrics": [
+    {
+      "height_m": 0.03,
+      "samples": 4,
+      "shadow_pixels": 189696,
+      "max_dn": 26,
+      "p95_dn": 19.0,
+      "rms_dn": 8.633175192253134,
+      "fraction_over_2dn": 0.5087719298245614
+    },
+    {
+      "height_m": 0.03,
+      "samples": 8,
+      "shadow_pixels": 189696,
+      "max_dn": 13,
+      "p95_dn": 10.0,
+      "rms_dn": 4.3176816891349175,
+      "fraction_over_2dn": 0.4116059379217274
+    },
+    {
+      "height_m": 0.03,
+      "samples": 16,
+      "shadow_pixels": 189696,
+      "max_dn": 6,
+      "p95_dn": 5.0,
+      "rms_dn": 2.141108469714302,
+      "fraction_over_2dn": 0.23481781376518218
+    },
+    {
+      "height_m": 0.03,
+      "samples": 32,
+      "shadow_pixels": 189696,
+      "max_dn": 4,
+      "p95_dn": 3.0,
+      "rms_dn": 1.158783856890729,
+      "fraction_over_2dn": 0.05398110661268556
+    },
+    {
+      "height_m": 0.03,
+      "samples": 64,
+      "shadow_pixels": 189696,
+      "max_dn": 2,
+      "p95_dn": 1.0,
+      "rms_dn": 0.6384021890045303,
+      "fraction_over_2dn": 0.0
+    },
+    {
+      "height_m": 0.03,
+      "samples": 128,
+      "shadow_pixels": 189696,
+      "max_dn": 1,
+      "p95_dn": 1.0,
+      "rms_dn": 0.41235965591939217,
+      "fraction_over_2dn": 0.0
+    },
+    {
+      "height_m": 0.1,
+      "samples": 4,
+      "shadow_pixels": 423936,
+      "max_dn": 29,
+      "p95_dn": 24.0,
+      "rms_dn": 11.15836269221495,
+      "fraction_over_2dn": 0.8454106280193237
+    },
+    {
+      "height_m": 0.1,
+      "samples": 8,
+      "shadow_pixels": 423936,
+      "max_dn": 13,
+      "p95_dn": 11.0,
+      "rms_dn": 5.808175563947986,
+      "fraction_over_2dn": 0.6938405797101449
+    },
+    {
+      "height_m": 0.1,
+      "samples": 16,
+      "shadow_pixels": 423936,
+      "max_dn": 7,
+      "p95_dn": 6.0,
+      "rms_dn": 2.871755678383609,
+      "fraction_over_2dn": 0.37620772946859904
+    },
+    {
+      "height_m": 0.1,
+      "samples": 32,
+      "shadow_pixels": 423936,
+      "max_dn": 4,
+      "p95_dn": 3.0,
+      "rms_dn": 1.5176099948993342,
+      "fraction_over_2dn": 0.09178743961352658
+    },
+    {
+      "height_m": 0.1,
+      "samples": 64,
+      "shadow_pixels": 423936,
+      "max_dn": 2,
+      "p95_dn": 1.0,
+      "rms_dn": 0.751005766845867,
+      "fraction_over_2dn": 0.0
+    },
+    {
+      "height_m": 0.1,
+      "samples": 128,
+      "shadow_pixels": 423936,
+      "max_dn": 1,
+      "p95_dn": 1.0,
+      "rms_dn": 0.5006035005214202,
+      "fraction_over_2dn": 0.0
+    },
+    {
+      "height_m": 0.2,
+      "samples": 4,
+      "shadow_pixels": 1048576,
+      "max_dn": 30,
+      "p95_dn": 26.0,
+      "rms_dn": 13.529499742460917,
+      "fraction_over_2dn": 0.862548828125
+    },
+    {
+      "height_m": 0.2,
+      "samples": 8,
+      "shadow_pixels": 1048576,
+      "max_dn": 19,
+      "p95_dn": 13.0,
+      "rms_dn": 5.452722048149438,
+      "fraction_over_2dn": 0.5341796875
+    },
+    {
+      "height_m": 0.2,
+      "samples": 16,
+      "shadow_pixels": 1048576,
+      "max_dn": 8,
+      "p95_dn": 7.0,
+      "rms_dn": 3.2530409451196585,
+      "fraction_over_2dn": 0.458251953125
+    },
+    {
+      "height_m": 0.2,
+      "samples": 32,
+      "shadow_pixels": 1048576,
+      "max_dn": 5,
+      "p95_dn": 4.0,
+      "rms_dn": 1.536661356643031,
+      "fraction_over_2dn": 0.092529296875
+    },
+    {
+      "height_m": 0.2,
+      "samples": 64,
+      "shadow_pixels": 1048576,
+      "max_dn": 2,
+      "p95_dn": 2.0,
+      "rms_dn": 0.9028762633246041,
+      "fraction_over_2dn": 0.0
+    },
+    {
+      "height_m": 0.2,
+      "samples": 128,
+      "shadow_pixels": 1048576,
+      "max_dn": 2,
+      "p95_dn": 1.0,
+      "rms_dn": 0.385275875185561,
+      "fraction_over_2dn": 0.0
+    }
+  ],
+  "timing": {
+    "0.0": {
+      "measurements": [
+        {
+          "image": "samples_4.pgm",
+          "max_batch_ms": 2.023957,
+          "median_active_lines_per_second": 157305.16587706847,
+          "median_batch_ms": 1.62741,
+          "samples": 4
+        },
+        {
+          "image": "samples_8.pgm",
+          "max_batch_ms": 2.982785,
+          "median_active_lines_per_second": 100200.87143445376,
+          "median_batch_ms": 2.554868,
+          "samples": 8
+        },
+        {
+          "image": "samples_16.pgm",
+          "max_batch_ms": 4.970172,
+          "median_active_lines_per_second": 58205.735447656676,
+          "median_batch_ms": 4.398192,
+          "samples": 16
+        },
+        {
+          "image": "samples_32.pgm",
+          "max_batch_ms": 8.725103,
+          "median_active_lines_per_second": 30316.52704287503,
+          "median_batch_ms": 8.444239,
+          "samples": 32
+        },
+        {
+          "image": "samples_64.pgm",
+          "max_batch_ms": 17.98644,
+          "median_active_lines_per_second": 15475.712833398089,
+          "median_batch_ms": 16.542049,
+          "samples": 64
+        },
+        {
+          "image": "samples_128.pgm",
+          "max_batch_ms": 31.561158,
+          "median_active_lines_per_second": 8135.541166664569,
+          "median_batch_ms": 31.466868,
+          "samples": 128
+        },
+        {
+          "image": "samples_256.pgm",
+          "max_batch_ms": 65.826585,
+          "median_active_lines_per_second": 4104.815106861245,
+          "median_batch_ms": 62.365781,
+          "samples": 256
+        }
+      ],
+      "noise": false,
+      "prnu": false,
+      "rows": 256,
+      "scope": "production kernel / synthetic occluder, actual configured lamp mount; no ROS/GZ/archive",
+      "timing_repeats": 8,
+      "width": 4096
+    },
+    "0.03": {
+      "measurements": [
+        {
+          "image": "samples_4.pgm",
+          "max_batch_ms": 2.524327,
+          "median_active_lines_per_second": 121784.77490510538,
+          "median_batch_ms": 2.102069,
+          "samples": 4
+        },
+        {
+          "image": "samples_8.pgm",
+          "max_batch_ms": 3.928644,
+          "median_active_lines_per_second": 72328.00978462357,
+          "median_batch_ms": 3.539431,
+          "samples": 8
+        },
+        {
+          "image": "samples_16.pgm",
+          "max_batch_ms": 7.336247,
+          "median_active_lines_per_second": 38640.185460815155,
+          "median_batch_ms": 6.625227,
+          "samples": 16
+        },
+        {
+          "image": "samples_32.pgm",
+          "max_batch_ms": 13.459018,
+          "median_active_lines_per_second": 19718.361715321855,
+          "median_batch_ms": 12.982823,
+          "samples": 32
+        },
+        {
+          "image": "samples_64.pgm",
+          "max_batch_ms": 26.106897,
+          "median_active_lines_per_second": 10028.935044624843,
+          "median_batch_ms": 25.52614,
+          "samples": 64
+        },
+        {
+          "image": "samples_128.pgm",
+          "max_batch_ms": 50.283821,
+          "median_active_lines_per_second": 5107.670797768099,
+          "median_batch_ms": 50.120693,
+          "samples": 128
+        },
+        {
+          "image": "samples_256.pgm",
+          "max_batch_ms": 103.166218,
+          "median_active_lines_per_second": 2561.228237001054,
+          "median_batch_ms": 99.952045,
+          "samples": 256
+        }
+      ],
+      "noise": false,
+      "prnu": false,
+      "rows": 256,
+      "scope": "production kernel / synthetic occluder, actual configured lamp mount; no ROS/GZ/archive",
+      "timing_repeats": 8,
+      "width": 4096
+    },
+    "0.1": {
+      "measurements": [
+        {
+          "image": "samples_4.pgm",
+          "max_batch_ms": 2.4949,
+          "median_active_lines_per_second": 122747.57010156882,
+          "median_batch_ms": 2.085581,
+          "samples": 4
+        },
+        {
+          "image": "samples_8.pgm",
+          "max_batch_ms": 3.879372,
+          "median_active_lines_per_second": 73149.96313927638,
+          "median_batch_ms": 3.49966,
+          "samples": 8
+        },
+        {
+          "image": "samples_16.pgm",
+          "max_batch_ms": 6.944375,
+          "median_active_lines_per_second": 40071.6405799243,
+          "median_batch_ms": 6.388558,
+          "samples": 16
+        },
+        {
+          "image": "samples_32.pgm",
+          "max_batch_ms": 13.418379,
+          "median_active_lines_per_second": 20543.18261244283,
+          "median_batch_ms": 12.461555,
+          "samples": 32
+        },
+        {
+          "image": "samples_64.pgm",
+          "max_batch_ms": 25.198421,
+          "median_active_lines_per_second": 10308.510774950753,
+          "median_batch_ms": 24.833849,
+          "samples": 64
+        },
+        {
+          "image": "samples_128.pgm",
+          "max_batch_ms": 51.145326,
+          "median_active_lines_per_second": 5134.232915117973,
+          "median_batch_ms": 49.861392,
+          "samples": 128
+        },
+        {
+          "image": "samples_256.pgm",
+          "max_batch_ms": 102.75969,
+          "median_active_lines_per_second": 2576.6176637266153,
+          "median_batch_ms": 99.355059,
+          "samples": 256
+        }
+      ],
+      "noise": false,
+      "prnu": false,
+      "rows": 256,
+      "scope": "production kernel / synthetic occluder, actual configured lamp mount; no ROS/GZ/archive",
+      "timing_repeats": 8,
+      "width": 4096
+    },
+    "0.2": {
+      "measurements": [
+        {
+          "image": "samples_4.pgm",
+          "max_batch_ms": 2.32047,
+          "median_active_lines_per_second": 133970.53066983173,
+          "median_batch_ms": 1.910868,
+          "samples": 4
+        },
+        {
+          "image": "samples_8.pgm",
+          "max_batch_ms": 3.741623,
+          "median_active_lines_per_second": 80692.36571419206,
+          "median_batch_ms": 3.172543,
+          "samples": 8
+        },
+        {
+          "image": "samples_16.pgm",
+          "max_batch_ms": 6.32303,
+          "median_active_lines_per_second": 43549.22806441543,
+          "median_batch_ms": 5.878405,
+          "samples": 16
+        },
+        {
+          "image": "samples_32.pgm",
+          "max_batch_ms": 11.505009,
+          "median_active_lines_per_second": 22598.97379472434,
+          "median_batch_ms": 11.327948,
+          "samples": 32
+        },
+        {
+          "image": "samples_64.pgm",
+          "max_batch_ms": 23.550861,
+          "median_active_lines_per_second": 11255.204597856597,
+          "median_batch_ms": 22.745033,
+          "samples": 64
+        },
+        {
+          "image": "samples_128.pgm",
+          "max_batch_ms": 46.16058,
+          "median_active_lines_per_second": 5912.831467904296,
+          "median_batch_ms": 43.29567,
+          "samples": 128
+        },
+        {
+          "image": "samples_256.pgm",
+          "max_batch_ms": 90.315565,
+          "median_active_lines_per_second": 2935.9959421783583,
+          "median_batch_ms": 87.193581,
+          "samples": 256
+        }
+      ],
+      "noise": false,
+      "prnu": false,
+      "rows": 256,
+      "scope": "production kernel / synthetic occluder, actual configured lamp mount; no ROS/GZ/archive",
+      "timing_repeats": 8,
+      "width": 4096
+    }
+  },
+  "source_urdf_sha256": "27e7e63cbf8f77274d2ffa3852f1bf3ef739bc0a8b18d5913769594a515291ac",
+  "camera_sha256": "742e0cc6b9ee14a08adb43991ea92eb394a7436bdac3d0b6bc59e2a6a0cf333f"
+}

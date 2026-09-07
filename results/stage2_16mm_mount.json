@@ -1,0 +1,277 @@
+{
+  "passed": true,
+  "gazebo_gui": true,
+  "rviz": true,
+  "rviz_world_start": [
+    13.49679728269222,
+    -6.737466356382368e-05,
+    0.3599999985430692
+  ],
+  "rviz_world_end": [
+    43.49679727996171,
+    -0.00046927938800747073,
+    0.35999999854607007
+  ],
+  "display_sync": {
+    "frames": 1149,
+    "dropped_pending": 0,
+    "pending": 0,
+    "max_sim_age_s": 0.015000000000000001,
+    "mode": "same_stamp_interpolated_display_only"
+  },
+  "backend": "optix_shared_mesh_dynamic_robot",
+  "archive": "/tmp/agv_cpp_scan_24731/session_cpp_1788760493327023213",
+  "rows": [
+    4096,
+    4096,
+    4096,
+    4096,
+    4096,
+    4096,
+    4096,
+    4096,
+    4096,
+    4096,
+    4096,
+    4096,
+    4096,
+    4096,
+    4096,
+    4096,
+    4096,
+    4096,
+    4096,
+    4096,
+    4096,
+    4096,
+    4096,
+    4096,
+    4096,
+    28
+  ],
+  "speed_m_s": 2.777777777777778,
+  "steady_wall_start_s": 16447.909057304,
+  "steady_wall_end_s": 16458.708596856,
+  "display_frames": 1189,
+  "display_bad_stamps": 0,
+  "simulation_seconds": 10.799999999999999,
+  "wall_seconds": 10.79953955199744,
+  "real_time_factor": 1.0000426358920527,
+  "sampling_line_rate": 63853.37029927381,
+  "wheel_motion_diagnostics": {
+    "fl_wheel_link": {
+      "local_position_range_m": [
+        9.947598300641403e-14,
+        7.216449660063518e-16,
+        4.440892098500626e-16
+      ],
+      "max_z_step_m": 1.819766559663094e-12,
+      "z_max_m": 0.09999999851759783,
+      "z_min_m": 0.09999999850034152
+    },
+    "fr_wheel_link": {
+      "local_position_range_m": [
+        9.947598300641403e-14,
+        7.216449660063518e-16,
+        4.440892098500626e-16
+      ],
+      "max_z_step_m": 1.8644530364042566e-12,
+      "z_max_m": 0.09999999851905178,
+      "z_min_m": 0.09999999850117564
+    },
+    "rl_wheel_link": {
+      "local_position_range_m": [
+        9.237055564881302e-14,
+        7.771561172376096e-16,
+        4.440892098500626e-16
+      ],
+      "max_z_step_m": 1.6200374375330284e-12,
+      "z_max_m": 0.09999999858651942,
+      "z_min_m": 0.09999999856994285
+    },
+    "rr_wheel_link": {
+      "local_position_range_m": [
+        8.526512829121202e-14,
+        7.216449660063518e-16,
+        4.440892098500626e-16
+      ],
+      "max_z_step_m": 1.741162769519633e-12,
+      "z_max_m": 0.09999999858477299,
+      "z_min_m": 0.09999999856706604
+    }
+  },
+  "metrics": {
+    "lines": 102428,
+    "mapping_seconds": 0.0,
+    "physics_step_wall_interval_max_seconds": 0.002083988,
+    "physics_step_wall_interval_p99_upper_seconds": 0.0014,
+    "readback_seconds": 0.0,
+    "render_seconds": 1.6041126650000006,
+    "renders": 307284,
+    "sampling_batch_max_seconds": 0.006500269,
+    "scene_update_seconds": 0.0
+  },
+  "write_seconds": 0.121242209,
+  "publish_call_seconds": 0.082069774,
+  "received_blocks": 26,
+  "ros_all_blocks_byte_identical": true,
+  "nominal_encoder_line_rate_hz": 9481.481481481484,
+  "receive_interval_max_seconds": 0.4414145800001279,
+  "final_motion_state": "HOLD",
+  "grid_geometry": [],
+  "occlusion_probe": false,
+  "tile_statistics": null,
+  "sampling_queue_high_water_lines": 57,
+  "sampling_queue_observed_wait_max_s": 0.005641078001644928,
+  "sampling_queue_high_water_jobs": 6,
+  "notes": "OptiX shared static mesh plus nine robot links with per-exposure transforms, four LED shadow rays; ROS images and PGM archive. Sampling rate excludes physics/ROS/archive. No correction subscriber or fsync; not full throughput acceptance.",
+  "full_block_delivery_lines_per_wall_second": 9494.092956380813,
+  "full_acceptance_passed": false,
+  "grid_continuity": {
+    "passed": true,
+    "full_blocks": 25,
+    "checks": [
+      {
+        "block": "block_000000.pgm",
+        "stripes": 13,
+        "maximum_missing_rows_per_stripe": 0
+      },
+      {
+        "block": "block_000001.pgm",
+        "stripes": 13,
+        "maximum_missing_rows_per_stripe": 0
+      },
+      {
+        "block": "block_000002.pgm",
+        "stripes": 13,
+        "maximum_missing_rows_per_stripe": 0
+      },
+      {
+        "block": "block_000003.pgm",
+        "stripes": 13,
+        "maximum_missing_rows_per_stripe": 0
+      },
+      {
+        "block": "block_000004.pgm",
+        "stripes": 13,
+        "maximum_missing_rows_per_stripe": 0
+      },
+      {
+        "block": "block_000005.pgm",
+        "stripes": 13,
+        "maximum_missing_rows_per_stripe": 0
+      },
+      {
+        "block": "block_000006.pgm",
+        "stripes": 13,
+        "maximum_missing_rows_per_stripe": 0
+      },
+      {
+        "block": "block_000007.pgm",
+        "stripes": 13,
+        "maximum_missing_rows_per_stripe": 0
+      },
+      {
+        "block": "block_000008.pgm",
+        "stripes": 13,
+        "maximum_missing_rows_per_stripe": 0
+      },
+      {
+        "block": "block_000009.pgm",
+        "stripes": 13,
+        "maximum_missing_rows_per_stripe": 0
+      },
+      {
+        "block": "block_000010.pgm",
+        "stripes": 13,
+        "maximum_missing_rows_per_stripe": 0
+      },
+      {
+        "block": "block_000011.pgm",
+        "stripes": 13,
+        "maximum_missing_rows_per_stripe": 0
+      },
+      {
+        "block": "block_000012.pgm",
+        "stripes": 13,
+        "maximum_missing_rows_per_stripe": 0
+      },
+      {
+        "block": "block_000013.pgm",
+        "stripes": 13,
+        "maximum_missing_rows_per_stripe": 0
+      },
+      {
+        "block": "block_000014.pgm",
+        "stripes": 13,
+        "maximum_missing_rows_per_stripe": 0
+      },
+      {
+        "block": "block_000015.pgm",
+        "stripes": 13,
+        "maximum_missing_rows_per_stripe": 0
+      },
+      {
+        "block": "block_000016.pgm",
+        "stripes": 13,
+        "maximum_missing_rows_per_stripe": 0
+      },
+      {
+        "block": "block_000017.pgm",
+        "stripes": 13,
+        "maximum_missing_rows_per_stripe": 0
+      },
+      {
+        "block": "block_000018.pgm",
+        "stripes": 13,
+        "maximum_missing_rows_per_stripe": 0
+      },
+      {
+        "block": "block_000019.pgm",
+        "stripes": 13,
+        "maximum_missing_rows_per_stripe": 0
+      },
+      {
+        "block": "block_000020.pgm",
+        "stripes": 13,
+        "maximum_missing_rows_per_stripe": 0
+      },
+      {
+        "block": "block_000021.pgm",
+        "stripes": 13,
+        "maximum_missing_rows_per_stripe": 0
+      },
+      {
+        "block": "block_000022.pgm",
+        "stripes": 13,
+        "maximum_missing_rows_per_stripe": 0
+      },
+      {
+        "block": "block_000023.pgm",
+        "stripes": 13,
+        "maximum_missing_rows_per_stripe": 0
+      },
+      {
+        "block": "block_000024.pgm",
+        "stripes": 13,
+        "maximum_missing_rows_per_stripe": 0
+      }
+    ],
+    "scope": "persistent longitudinal grid stripes; final partial block excluded"
+  },
+  "installation": {
+    "focal_length_m": 0.016,
+    "optical_height_m": 0.6696428571428571,
+    "camera_top_m": 0.749642857142857,
+    "led_center_x_m": 0.52,
+    "led_center_height_m": 0.3,
+    "led_offset_from_scan_m": -0.18,
+    "brackets": "two short L supports with visual and collision",
+    "gui_default_follow": false
+  },
+  "unit_tests": {
+    "tests": 60,
+    "errors": 0,
+    "failures": 0
+  }
+}

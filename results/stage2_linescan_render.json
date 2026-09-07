@@ -1,0 +1,84 @@
+{
+  "date": "2026-09-06",
+  "scope": "C++ Ogre2 static-scene line-scan rendering acceptance",
+  "passed": true,
+  "unit_tests_including_wrappers": 40,
+  "renderer": "D3D12 (NVIDIA GeForce RTX 5080)",
+  "runs": [
+    {
+      "passed": true,
+      "backend": "gz_ogre2_cpp",
+      "archive": "/tmp/agv_cpp_scan_7374/session_cpp_1788660526543458967",
+      "rows": [
+        4096,
+        1024
+      ],
+      "speed_m_s": 0.05,
+      "simulation_seconds": 25.000000000000004,
+      "wall_seconds": 124.10779199599983,
+      "real_time_factor": 0.20143779530624306,
+      "sampling_line_rate": 50.39867199137069,
+      "metrics": {
+        "lines": 5120,
+        "mapping_seconds": 0.37227179499999835,
+        "readback_seconds": 8.151669462000008,
+        "render_seconds": 93.06603716299986,
+        "renders": 15360,
+        "scene_update_seconds": 0.7492975189999979
+      },
+      "write_seconds": 0.01296857,
+      "publish_call_seconds": 0.019241153,
+      "received_blocks": 2,
+      "final_motion_state": "HOLD",
+      "grid_geometry": [
+        {
+          "max_grid_center_error_px": 0.5314945194459142
+        }
+      ],
+      "occlusion_probe": true,
+      "notes": "Scene state is held at physics-step time; camera interpolated per exposure. ROS publish timing is call time, not end-to-end latency."
+    },
+    {
+      "passed": true,
+      "backend": "gz_ogre2_cpp",
+      "archive": "/tmp/agv_cpp_scan_7949/session_cpp_1788660738756683746",
+      "rows": [
+        256,
+        256
+      ],
+      "speed_m_s": 0.005,
+      "simulation_seconds": 25.000000000000004,
+      "wall_seconds": 35.41425234999997,
+      "real_time_factor": 0.7059304754742345,
+      "sampling_line_rate": 47.98550660004349,
+      "metrics": {
+        "lines": 512,
+        "mapping_seconds": 0.03722528,
+        "readback_seconds": 1.0178732989999997,
+        "render_seconds": 9.614789816000002,
+        "renders": 1536,
+        "scene_update_seconds": 0.061613671
+      },
+      "write_seconds": 0.001513122,
+      "publish_call_seconds": 0.001362114,
+      "received_blocks": 2,
+      "final_motion_state": "HOLD",
+      "grid_geometry": [
+        {
+          "max_grid_center_error_px": 0.5314945194486427
+        },
+        {
+          "max_grid_center_error_px": 0.5314945194477332
+        }
+      ],
+      "occlusion_probe": false,
+      "notes": "Scene state is held at physics-step time; camera interpolated per exposure. ROS publish timing is call time, not end-to-end latency."
+    }
+  ],
+  "limitations": [
+    "Not real-time at 0.05 m/s; not validated at 22.76 kHz",
+    "Scene state held at physics step, per-exposure camera poses interpolated",
+    "Three-view exposure batch; readback still per view, no GPU block accumulation",
+    "No calibrated radiometry/LED or real-camera target calibration"
+  ]
+}

@@ -1,0 +1,272 @@
+{
+  "date": "2026-09-07",
+  "scope": "OptiX GZ system integration: shared static meshes, nine per-exposure robot link transforms, four URDF-derived LED shadow samples, encoder triggering, sparse tags, ROS Mono8 and PGM/JSON archive. Headless; resident meshes; no real texture, correction consumer or fsync.",
+  "functional_integration_passed": true,
+  "full_acceptance_passed": false,
+  "unit_tests": {
+    "tests": 55,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0,
+    "log": "/tmp/agv_optix_verified_tests.log"
+  },
+  "static_triangles": 200264,
+  "robot_triangles": 3616,
+  "cylinder_facets": 64,
+  "cylinder_max_radial_chord_error_m": 0.0001204543794827595,
+  "forward": {
+    "passed": true,
+    "backend": "optix_shared_mesh_dynamic_robot",
+    "archive": "/tmp/agv_cpp_scan_15406/session_cpp_1788751968637862587",
+    "rows": [
+      4096,
+      343
+    ],
+    "speed_m_s": 0.15,
+    "simulation_seconds": 8.667,
+    "wall_seconds": 8.665603525999359,
+    "real_time_factor": 1.0001611513839113,
+    "sampling_line_rate": 61935.76918895424,
+    "metrics": {
+      "lines": 4439,
+      "mapping_seconds": 0.0,
+      "physics_step_wall_interval_max_seconds": 0.001196352,
+      "physics_step_wall_interval_p99_upper_seconds": 0.0011,
+      "readback_seconds": 0.0,
+      "render_seconds": 0.071671024,
+      "renders": 13317,
+      "sampling_batch_max_seconds": 0.005011463,
+      "scene_update_seconds": 0.0
+    },
+    "write_seconds": 0.005566605,
+    "publish_call_seconds": 0.0033936459999999997,
+    "received_blocks": 2,
+    "receive_interval_max_seconds": 0.6095009780001419,
+    "final_motion_state": "HOLD",
+    "grid_geometry": [],
+    "occlusion_probe": false,
+    "tile_statistics": null,
+    "sampling_queue_high_water_lines": 3,
+    "sampling_queue_observed_wait_max_s": 0.004300646999581659,
+    "sampling_queue_high_water_jobs": 3,
+    "notes": "OptiX shared static mesh plus nine robot links with per-exposure transforms, four LED shadow rays; ROS images and PGM archive. Sampling rate excludes physics/ROS/archive. No correction subscriber or fsync; not full throughput acceptance."
+  },
+  "reverse": {
+    "passed": true,
+    "backend": "optix_shared_mesh_dynamic_robot",
+    "archive": "/tmp/agv_cpp_scan_16417/session_cpp_1788752223298368389",
+    "rows": [
+      4096,
+      342
+    ],
+    "speed_m_s": -0.15,
+    "simulation_seconds": 8.667000000000002,
+    "wall_seconds": 8.66561400199862,
+    "real_time_factor": 1.000159942273111,
+    "sampling_line_rate": 64078.23608989348,
+    "metrics": {
+      "lines": 4438,
+      "mapping_seconds": 0.0,
+      "physics_step_wall_interval_max_seconds": 0.001846475,
+      "physics_step_wall_interval_p99_upper_seconds": 0.0011,
+      "readback_seconds": 0.0,
+      "render_seconds": 0.069259085,
+      "renders": 13314,
+      "sampling_batch_max_seconds": 0.004138001,
+      "scene_update_seconds": 0.0
+    },
+    "write_seconds": 0.005924268,
+    "publish_call_seconds": 0.0033338639999999998,
+    "received_blocks": 2,
+    "receive_interval_max_seconds": 0.6233292639990395,
+    "final_motion_state": "HOLD",
+    "grid_geometry": [],
+    "occlusion_probe": false,
+    "tile_statistics": null,
+    "sampling_queue_high_water_lines": 2,
+    "sampling_queue_observed_wait_max_s": 0.0035564480003813514,
+    "sampling_queue_high_water_jobs": 2,
+    "notes": "OptiX shared static mesh plus nine robot links with per-exposure transforms, four LED shadow rays; ROS images and PGM archive. Sampling rate excludes physics/ROS/archive. No correction subscriber or fsync; not full throughput acceptance."
+  },
+  "high_speed": {
+    "speed_m_s": 5.5555555556,
+    "simulation_seconds": 5.4,
+    "wall_seconds": 5.610051955000017,
+    "real_time_factor": 0.9625579305352412,
+    "final_motion_state": "HOLD",
+    "archived_blocks": 127,
+    "archived_lines": 97788,
+    "expected_command_distance_lines": 102400.0,
+    "received_blocks": 125,
+    "event_reasons": {
+      "capture_toggle": 2,
+      "unsupported_scan_motion": 122,
+      "motion_BRAKE": 1
+    },
+    "motion_rejection_examples": [
+      {
+        "encoder_yaw_estimate_rad_s": 0.0005274843421254616,
+        "max_abs_steer_rad": 2.4983574515462978e-11,
+        "speed_limit_m_s": 6.1111111111600005,
+        "steer_limit_rad": 0.02,
+        "wheel_speed_spread_m_s": 0.010435019049825911,
+        "wheel_speeds_m_s": [
+          5.555555555541153,
+          5.545700769267665,
+          5.545120536491327,
+          5.555555555541153
+        ],
+        "wheel_spread_limit_m_s": 0.01,
+        "yaw_limit_rad_s": 0.02
+      },
+      {
+        "encoder_yaw_estimate_rad_s": -0.00042620512462560544,
+        "max_abs_steer_rad": 2.7562177108198713e-11,
+        "speed_limit_m_s": 6.1111111111600005,
+        "steer_limit_rad": 0.02,
+        "wheel_speed_spread_m_s": 0.01696286705372696,
+        "wheel_speeds_m_s": [
+          5.5555555555391605,
+          5.5385926884854335,
+          5.539061514122523,
+          5.5555555555391605
+        ],
+        "wheel_spread_limit_m_s": 0.01,
+        "yaw_limit_rad_s": 0.02
+      },
+      {
+        "encoder_yaw_estimate_rad_s": 0.000432258440075308,
+        "max_abs_steer_rad": 2.3478627735122175e-11,
+        "speed_limit_m_s": 6.1111111111600005,
+        "steer_limit_rad": 0.02,
+        "wheel_speed_spread_m_s": 0.014287945023268023,
+        "wheel_speeds_m_s": [
+          5.555555555542007,
+          5.541743094802822,
+          5.541267610518739,
+          5.555555555542007
+        ],
+        "wheel_spread_limit_m_s": 0.01,
+        "yaw_limit_rad_s": 0.02
+      },
+      {
+        "encoder_yaw_estimate_rad_s": 3.009477388748006e-05,
+        "max_abs_steer_rad": 2.5020948922553202e-11,
+        "speed_limit_m_s": 6.1111111111600005,
+        "steer_limit_rad": 0.02,
+        "wheel_speed_spread_m_s": 0.01209484349675094,
+        "wheel_speeds_m_s": [
+          5.555555555540732,
+          5.543493816295257,
+          5.543460712043981,
+          5.555555555540732
+        ],
+        "wheel_spread_limit_m_s": 0.01,
+        "yaw_limit_rad_s": 0.02
+      },
+      {
+        "encoder_yaw_estimate_rad_s": -0.023039315288537147,
+        "max_abs_steer_rad": 7.337928594787354e-12,
+        "speed_limit_m_s": 6.1111111111600005,
+        "steer_limit_rad": 0.02,
+        "wheel_speed_spread_m_s": 0.025343246817390863,
+        "wheel_speeds_m_s": [
+          5.58089880237444,
+          5.555555555557049,
+          5.555555555557049,
+          5.555555555557049
+        ],
+        "wheel_spread_limit_m_s": 0.01,
+        "yaw_limit_rad_s": 0.02
+      },
+      {
+        "encoder_yaw_estimate_rad_s": -0.05563023424254157,
+        "max_abs_steer_rad": 7.0980793423490475e-12,
+        "speed_limit_m_s": 6.1111111111600005,
+        "steer_limit_rad": 0.02,
+        "wheel_speed_spread_m_s": 0.06119325766679573,
+        "wheel_speeds_m_s": [
+          5.616748813227668,
+          5.555555555560872,
+          5.555555555560872,
+          5.555555555560872
+        ],
+        "wheel_spread_limit_m_s": 0.01,
+        "yaw_limit_rad_s": 0.02
+      },
+      {
+        "encoder_yaw_estimate_rad_s": 0.04036537187907963,
+        "max_abs_steer_rad": 5.714685729306514e-12,
+        "speed_limit_m_s": 6.1111111111600005,
+        "steer_limit_rad": 0.02,
+        "wheel_speed_spread_m_s": 0.04440190906698849,
+        "wheel_speeds_m_s": [
+          5.5555555555601455,
+          5.599957464627134,
+          5.5555555555601455,
+          5.5555555555601455
+        ],
+        "wheel_spread_limit_m_s": 0.01,
+        "yaw_limit_rad_s": 0.02
+      },
+      {
+        "encoder_yaw_estimate_rad_s": 0.024161049630948155,
+        "max_abs_steer_rad": 4.130900308840991e-12,
+        "speed_limit_m_s": 6.1111111111600005,
+        "steer_limit_rad": 0.02,
+        "wheel_speed_spread_m_s": 0.026577154594042973,
+        "wheel_speeds_m_s": [
+          5.5555555555392635,
+          5.5555555555392635,
+          5.5289784009452205,
+          5.5555555555392635
+        ],
+        "wheel_spread_limit_m_s": 0.01,
+        "yaw_limit_rad_s": 0.02
+      }
+    ],
+    "final_metrics": {
+      "lines": 97788,
+      "mapping_seconds": 0.0,
+      "physics_step_wall_interval_max_seconds": 0.005424234,
+      "physics_step_wall_interval_p99_upper_seconds": 0.0011,
+      "readback_seconds": 0.0,
+      "render_seconds": 1.5540621110000006,
+      "renders": 293364,
+      "sampling_batch_max_seconds": 0.006128949,
+      "scene_update_seconds": 0.0
+    },
+    "queue_peak_lines": 114,
+    "queue_max_wait_s": 0.005197266000322998,
+    "full_acceptance_passed": false,
+    "ros_missing_block_ids": [
+      67,
+      114
+    ],
+    "motion_rejection_maxima": {
+      "wheel_speed_spread_m_s": 0.08112328093848298,
+      "max_abs_steer_rad": 5.923082261512882e-05,
+      "abs_encoder_yaw_rad_s": 0.0737484372168027
+    },
+    "passed": false,
+    "archive": "/tmp/agv_cpp_scan_16700/session_cpp_1788752318748922060",
+    "active_sampling_lines_per_second": 62924.12594569714
+  },
+  "system_libraries_unchanged": true,
+  "system_check_log": "/tmp/agv_optix_system_final_check.log",
+  "limitations": [
+    "High-speed undulating-terrain scan rejected by existing wheel-spread/yaw gates; no relaxation applied.",
+    "High-speed ROS subscriber missed archived block IDs listed in diagnostics; no end-to-end delivery acceptance.",
+    "Lighting uses empirical relative band and four visibility samples; convergence and absolute photometry unverified.",
+    "Only AGV links are synchronized dynamically; unrelated runtime-spawned models unsupported.",
+    "New backend has distinct source calibration ID; previous CUDA planar flat-field must not be reused.",
+    "1 ms physics plus interpolation does not resolve high-frequency mechanical vibration."
+  ],
+  "cpu_only": {
+    "build_passed": true,
+    "tests_summary": "Summary: 37 tests, 0 errors, 0 failures, 0 skipped",
+    "build_log": "/tmp/agv_optix_cpu_final_build.log",
+    "test_log": "/tmp/agv_optix_cpu_final_tests.log",
+    "scope": "AGV_ENABLE_CUDA=OFF, separate build/install trees; GZ/Python/reference tests only, no real-time imaging fallback claim"
+  }
+}

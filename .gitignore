@@ -1,0 +1,23 @@
+build/
+install/
+log/
+__pycache__/
+.pytest_cache/
+# Reproducible large road texture downloads and baked tile archives.
+assets/road/source/*.png
+assets/road/source/*.jpg
+assets/road/source/*.part
+assets/road/baked_*/
+assets/road/source/*.zip
+
+# Machine-local instructions, credentials and diagnostic process dumps.
+/AGENTS.md
+/results/optix_wsl_probe/*.log
+/results/optix_wsl_probe/*.sha256
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.venv/
+/publication-*/

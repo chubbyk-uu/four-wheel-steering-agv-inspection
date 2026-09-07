@@ -1,0 +1,31 @@
+{
+  "passed": true,
+  "diagonal_reversal": [
+    {
+      "heading_deg": 45,
+      "max_steering_change_rad": 1.3322676295501878e-15
+    },
+    {
+      "heading_deg": -60,
+      "max_steering_change_rad": 1.7541523789077473e-13
+    }
+  ],
+  "continuous_sweeps": [
+    {
+      "direction": 1,
+      "brake_events": 1,
+      "limit_reconfiguration_seen": true,
+      "max_abs_steering_rad": 3.0512643760908373,
+      "max_sample_steering_step_rad": 0.011999999982875709,
+      "end_state": "DRIVE"
+    },
+    {
+      "direction": -1,
+      "brake_events": 1,
+      "limit_reconfiguration_seen": true,
+      "max_abs_steering_rad": 3.05126437609072,
+      "max_sample_steering_step_rad": 0.011999999995078281,
+      "end_state": "DRIVE"
+    }
+  ]
+}

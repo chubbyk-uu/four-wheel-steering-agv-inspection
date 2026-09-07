@@ -1,0 +1,169 @@
+"""Versioned shared static geometry for GZ visual/collision and OptiX readers."""
+import hashlib
+import json
+from pathlib import Path
+import xml.etree.ElementTree as ET
+import numpy as np
+from PIL import Image
+
+
+def digest(path):
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+def calibration_scene(directory, base_world, phase=None):
+    """Coplanar segmented diffuse board, same mesh/material values for GZ and RT.
+
+    Stripes are geometry partitions, not raised bars or shader-only targets.
+    No optical model is used to construct the known 50 mm target coordinates.
+    """
+    directory=Path(directory).resolve();directory.mkdir(parents=True,exist_ok=False)
+    cuts=[-1.,1.]
+    if phase is not None:
+        for center in np.arange(-20,21)*.05+phase:
+            cuts.extend(x for x in (center-.001,center+.001) if -1.<x<1.)
+    cuts=sorted(set(cuts));faces={'white':[], 'black':[]}
+    for lo,hi in zip(cuts,cuts[1:]):
+        dark=phase is not None and abs(((lo+hi)/2-phase+.025)%.05-.025)<.001000001
+        faces['black' if dark else 'white'].append((lo,hi))
+    tree=ET.parse(base_world);world=tree.getroot().find('world')
+    for m in list(world.findall('model')):world.remove(m)
+    assets=[]
+    for name,intervals in faces.items():
+        if not intervals:continue
+        path=directory/(name+'.obj');lines=['vn 0 0 1']
+        for i,(lo,hi) in enumerate(intervals):
+            lines.extend([f'v 0 {lo:.12f} 0',f'v 10 {lo:.12f} 0',f'v 10 {hi:.12f} 0',f'v 0 {hi:.12f} 0',
+                          f'f {4*i+1}//1 {4*i+2}//1 {4*i+3}//1',f'f {4*i+1}//1 {4*i+3}//1 {4*i+4}//1'])
+        path.write_text('\n'.join(lines)+'\n');value=(25 if name=='black' else 200)/255
+        assets.append(dict(name=name,mesh=path.name,sha256=digest(path),triangles=2*len(intervals),linear_reflectance=value))
+        model=ET.SubElement(world,'model',name=name);ET.SubElement(model,'static').text='true';link=ET.SubElement(model,'link',name='link')
+        for kind in ('visual','collision'):
+            item=ET.SubElement(link,kind,name=kind);mesh=ET.SubElement(ET.SubElement(item,'geometry'),'mesh')
+            ET.SubElement(mesh,'uri').text=str(path);ET.SubElement(mesh,'scale').text='1 1 1'
+            if kind=='visual':
+                mat=ET.SubElement(item,'material')
+                for tag in ('ambient','diffuse'):ET.SubElement(mat,tag).text=f'{value} {value} {value} 1'
+    tree.write(directory/'world.sdf',encoding='unicode')
+    m=dict(schema='agv.shared.static_scene.v1',frame='world',units='m',transform='identity_world_baked',
+           profile='calibration_board',length_m=10,width_m=2,assets=assets,world='world.sdf',
+           world_sha256=digest(directory/'world.sdf'),display_materials={},stripe_phase_m=phase)
+    (directory/'manifest.json').write_text(json.dumps(m,indent=2)+'\n')
+    validate(directory/'manifest.json')
+    return directory/'manifest.json'
+
+
+def generate(directory, base_world, length=100., width=10., profile="flat", margin=2.):
+    if profile not in ("flat", "optical_stress"):
+        raise ValueError("unknown scene profile")
+    if not np.isfinite(margin) or not 0 <= margin <= 10:
+        raise ValueError('invalid ground margin')
+    directory = Path(directory).resolve()
+    if not (10 <= length <= 200 and 2 <= width <= 30):
+        raise ValueError('scene extent out of prototype bounds')
+    directory.mkdir(parents=True, exist_ok=False)
+    # Display-only regular grid; OptiX retains its procedural linear-reflectance grid.
+    # Material equality is NOT implied by the shared geometry schema.
+    grid=np.full((256,256),210,np.uint8);grid[:3,:]=25;grid[-3:,:]=25;grid[:,:3]=25;grid[:,-3:]=25
+    Image.fromarray(grid).save(directory/'grid.png')
+    (directory/'grid.mtl').write_text('newmtl grid\nKa 1 1 1\nKd 1 1 1\nKs 0 0 0\nmap_Kd grid.png\n')
+    assets=[]
+    def mesh(name, vertices, faces):
+        vertices=np.asarray(vertices,dtype=np.float32);faces=np.asarray(faces,dtype=np.int64)
+        normals=np.cross(vertices[faces[:,1]]-vertices[faces[:,0]],vertices[faces[:,2]]-vertices[faces[:,0]])
+        normals/=np.linalg.norm(normals,axis=1)[:,None]
+        path=directory/(name+'.obj')
+        with path.open('w') as f:
+            f.write('mtllib grid.mtl\nusemtl grid\n')
+            for v in vertices: f.write('v '+' '.join(format(float(x),'.9g') for x in v)+'\n')
+            for v in vertices: f.write(f'vt {float(v[0])*10:.9g} {float(v[1])*10:.9g}\n')
+            for n in normals: f.write('vn '+' '.join(format(float(x),'.9g') for x in n)+'\n')
+            for j,face in enumerate(faces): f.write('f '+' '.join(f'{i+1}/{i+1}/{j+1}' for i in face)+'\n')
+        assets.append(dict(name=name,mesh=path.name,sha256=digest(path),triangles=len(faces)))
+    nx,ny=round(length/.1),round(width/.1)
+    x,y=np.meshgrid(np.linspace(0,length,nx+1),np.linspace(-width/2,width/2,ny+1),indexing='ij')
+    z=np.zeros_like(x)
+    if profile == "optical_stress":
+        # Explicit optical regression fixture, not the driving acceptance surface.
+        z=.025*np.sin(x*.7)*np.cos(y*1.7)-.10*np.exp(-((x-5)**2+y*y)/.08)
+        z+=np.clip(x-7,0,2)*.03
+    a=(np.arange(nx)[:,None]*(ny+1)+np.arange(ny)[None,:]).ravel()
+    faces=np.stack([np.stack([a,a+ny+1,a+ny+2],1),np.stack([a,a+ny+2,a+1],1)],1).reshape(-1,3)
+    vertices=np.stack([x,y,z],-1).reshape(-1,3)
+    if margin and profile == "flat":
+        inner=np.array([[0,-width/2,0],[length,-width/2,0],[length,width/2,0],[0,width/2,0]])
+        outer=inner+np.array([[-margin,-margin,0],[margin,-margin,0],[margin,margin,0],[-margin,margin,0]])
+        start=len(vertices)
+        ring=[]
+        for i in range(4):
+            j=(i+1)%4
+            ring.extend([[start+i,start+4+i,start+4+j],[start+i,start+4+j,start+j]])
+        vertices=np.concatenate([vertices,inner,outer])
+        faces=np.concatenate([faces,np.array(ring)])
+    mesh('terrain',vertices,faces)
+    def box(name,lo,hi):
+        x0,y0,z0=lo;x1,y1,z1=hi
+        v=[(x0,y0,z0),(x1,y0,z0),(x1,y1,z0),(x0,y1,z0),
+           (x0,y0,z1),(x1,y0,z1),(x1,y1,z1),(x0,y1,z1)]
+        f=[(0,2,1),(0,3,2),(4,5,6),(4,6,7),(0,1,5),(0,5,4),
+           (1,2,6),(1,6,5),(2,3,7),(2,7,6),(3,0,4),(3,4,7)]
+        mesh(name,v,f)
+    for i,sx in enumerate(np.arange(5.12,length-1,9) if profile == "optical_stress" else []):
+        box(f'screen_{i}',(sx-.01,-.25,-.15),(sx+.01,.25,.25))
+        box(f'canopy_{i}',(sx+.4,-.3,.15),(sx+.65,.3,.17))
+    tree=ET.parse(base_world);world=tree.getroot().find('world')
+    for m in list(world.findall('model')):world.remove(m)
+    for a in assets:
+        m=ET.SubElement(world,'model',name=a['name']);ET.SubElement(m,'static').text='true'
+        link=ET.SubElement(m,'link',name='link')
+        for kind in ('visual','collision'):
+            item=ET.SubElement(link,kind,name=kind)
+            geo=ET.SubElement(ET.SubElement(item,'geometry'),'mesh')
+            ET.SubElement(geo,'uri').text=str(directory/a['mesh'])
+            ET.SubElement(geo,'scale').text='1 1 1'
+    tree.write(directory/'world.sdf',encoding='unicode')
+    manifest=dict(schema='agv.shared.static_scene.v1',frame='world',units='m',
+        transform='identity_world_baked',profile=profile,length_m=length,width_m=width,assets=assets,
+        world='world.sdf',world_sha256=digest(directory/'world.sdf'),
+        display_materials={n:digest(directory/n) for n in ('grid.png','grid.mtl')},
+        material_scope='geometry shared exactly; GZ display texture and OptiX procedural reflectance are not photometrically matched')
+    if profile == "flat":
+        manifest['inspection_bounds_xy_m']=[0.,length,-width/2,width/2]
+        manifest['ground_bounds_xy_m']=[-margin,length+margin,-width/2-margin,width/2+margin]
+        manifest['ground_margin_m']=margin
+    (directory/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
+    validate(directory/'manifest.json')
+    return manifest
+
+
+def validate(manifest):
+    path=Path(manifest).resolve();m=json.loads(path.read_text());root=path.parent
+    if m['schema']!='agv.shared.static_scene.v1' or m['frame']!='world' or m['units']!='m' or m['transform']!='identity_world_baked':
+        raise ValueError('unsupported scene contract')
+    assets={a['name']:a for a in m['assets']}
+    if len(assets)!=len(m['assets']):raise ValueError('duplicate asset')
+    for a in assets.values():
+        p=root/a['mesh']
+        if p.parent.resolve()!=root or digest(p)!=a['sha256']:raise ValueError('mesh checksum mismatch')
+        if 'linear_reflectance' in a and not 0<=a['linear_reflectance']<=1:raise ValueError('invalid diffuse reflectance')
+    if digest(root/m['world'])!=m['world_sha256']:raise ValueError('world checksum mismatch')
+    for name,h in m['display_materials'].items():
+        if digest(root/name)!=h:raise ValueError('display material checksum mismatch')
+    world=ET.parse(root/m['world']).getroot().find('world');models=world.findall('model')
+    if {v.get('name') for v in models}!=set(assets) or len(models)!=len(assets):raise ValueError('scene model mismatch')
+    for model in models:
+        if model.findtext('static')!='true' or len(model.findall('link'))!=1:raise ValueError('static scene required')
+        for pose in model.iter('pose'):
+            if any(float(x)!=0 for x in pose.text.split()):raise ValueError('unexpected scene transform')
+        link=model.find('link');asset=assets[model.get('name')]
+        for kind in ('visual','collision'):
+            items=link.findall(kind)
+            if len(items)!=1:raise ValueError('geometry count mismatch')
+            geo=items[0].find('geometry/mesh')
+            if geo is None or Path(geo.findtext('uri')).resolve()!=(root/asset['mesh']).resolve() or geo.findtext('scale')!='1 1 1':
+                raise ValueError('visual/collision geometry mismatch')
+            if kind=='visual' and 'linear_reflectance' in asset:
+                expected=[asset['linear_reflectance']]*3+[1.]
+                if [float(x) for x in items[0].findtext('material/diffuse','').split()]!=expected:
+                    raise ValueError('diffuse material mismatch')
+    return m

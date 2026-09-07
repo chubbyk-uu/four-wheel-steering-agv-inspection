@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<package format="3"><name>agv_description</name><version>0.1.0</version>
+<description>Four wheel independent drive and steering AGV: agv_description.</description>
+<maintainer email="maintainers@example.com">AGV maintainers</maintainer><license>Apache-2.0</license>
+<buildtool_depend>ament_cmake</buildtool_depend>
+<depend>xacro</depend>
+<export><build_type>ament_cmake</build_type></export></package>

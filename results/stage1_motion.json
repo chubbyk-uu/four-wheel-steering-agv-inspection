@@ -1,0 +1,136 @@
+{
+  "passed": true,
+  "cases": [
+    {
+      "case": "forward",
+      "duration_s": 2.0,
+      "displacement_body": [
+        0.999999999998257,
+        -4.6208241303746886e-17,
+        -1.564677471058986e-17
+      ],
+      "expected": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "position_error_m": 1.7430501492739859e-12,
+      "yaw_error_rad": 1.564677471058986e-17,
+      "states": [
+        "ALIGN",
+        "DRIVE"
+      ]
+    },
+    {
+      "case": "lateral",
+      "duration_s": 2.0,
+      "displacement_body": [
+        -2.8356747505675628e-11,
+        0.9999999999990558,
+        6.301625887772389e-13
+      ],
+      "expected": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "position_error_m": 2.8372464241249192e-11,
+      "yaw_error_rad": 6.301625887772389e-13,
+      "states": [
+        "ALIGN",
+        "BRAKE",
+        "DRIVE"
+      ]
+    },
+    {
+      "case": "diagonal",
+      "duration_s": 2.0,
+      "displacement_body": [
+        0.5999999999992112,
+        0.5999999999990644,
+        -4.166944567174369e-13
+      ],
+      "expected": [
+        0.6,
+        0.6,
+        0.0
+      ],
+      "position_error_m": 1.2237425621364063e-12,
+      "yaw_error_rad": 4.166944567174369e-13,
+      "states": [
+        "ALIGN",
+        "BRAKE",
+        "DRIVE"
+      ]
+    },
+    {
+      "case": "rotation",
+      "duration_s": 2.0,
+      "displacement_body": [
+        4.684750730986993e-09,
+        -4.733574851856983e-08,
+        0.6579519622556039
+      ],
+      "expected": [
+        0.0,
+        0.0,
+        0.6
+      ],
+      "position_error_m": 4.756700513196904e-08,
+      "yaw_error_rad": 0.05795196225560395,
+      "states": [
+        "ALIGN",
+        "BRAKE",
+        "DRIVE"
+      ]
+    },
+    {
+      "case": "combined",
+      "duration_s": 2.0,
+      "displacement_body": [
+        0.5508980851390971,
+        0.3066775734389443,
+        0.3816137316015906
+      ],
+      "expected": [
+        0.5446580104644183,
+        0.3131176801499976,
+        0.4
+      ],
+      "position_error_m": 0.008967357826880842,
+      "yaw_error_rad": 0.0183862683984094,
+      "states": [
+        "ALIGN",
+        "BRAKE",
+        "DRIVE"
+      ]
+    },
+    {
+      "case": "reverse",
+      "duration_s": 2.0,
+      "displacement_body": [
+        -0.9788399367335071,
+        1.6559844584485006e-07,
+        -1.249360130906041e-07
+      ],
+      "expected": [
+        -1.0,
+        0.0,
+        0.0
+      ],
+      "position_error_m": 0.021160063267140875,
+      "yaw_error_rad": 1.249360130906041e-07,
+      "states": [
+        "ALIGN",
+        "BRAKE",
+        "DRIVE"
+      ]
+    }
+  ],
+  "continuous_transition": true,
+  "stop_align_transition": true,
+  "command_timeout_stop": true,
+  "direct_reverse_max_steering_rad": 1.5777160034258175e-13,
+  "max_speed_measured_m_s": 5.555555555547681,
+  "max_mechanical_angle_rad": 2.999695599032
+}

@@ -1,0 +1,45 @@
+# Gravel Concrete 03：同源底纹与一致预览
+
+清理说明：本页为历史记录；旧高分辨率源图与烘焙目录已删除，仅保留元数据、报告和小预览。当前采用Concrete047A，见 STAGE2_CONCRETE047A_COMPARE.md。
+用户否决旧Brushed Concrete 03烘焙外观，改选 https://polyhaven.com/a/gravel_concrete_03 。保留5×5 m板块、标线、小破损，以及原imagegen产生的细长裂缝。旧样片保留但不继续扩展。
+
+## 资产和尺度
+
+通过用户指定代理下载官方8K无损PNG，8192×8192，349085661字节；MD5 b030520734bc1359008e5f22ecf57f6b，与官方API一致。CC0，作者Charlotte Baglioni。源图物理宽度2.1 m，约0.256 mm/纹素，烘焙0.25 mm/纹素只是轻微重采样，不创造更细的源图细节。
+
+AI缺陷原图不变。程序只做尺寸标定和合成，未生成新的裂缝走势。主干名义宽0.8—2.0 mm、长度2.2/2.4/2.6 m；尖端、分叉并集和最后成像的实际宽度仍需独立验证。
+
+## 底纹拼接
+
+tools/concrete_quilt.py 借鉴爬壁项目Apache-2.0烘焙器的重叠匹配及最小误差切线。代码独立放在本项目，不运行时依赖爬壁目录。裂缝不参与底纹拼接。
+
+低分辨率512²导图只用于布局选择，320纹素补片、96纹素重叠、32个候选、10%代价容差。接缝采用最小误差路径，在真实重叠区域窄羽化，接缝与补片边缘保留距离；保存alpha蒙版和完整布局。实际颜色来自8K源图的原尺寸采样，不将低分辨率导图当作相机纹理。
+
+不旋转或拉伸源图，仅平移选取补片。无固定2.1 m周期取模，但仍会复用原图局部内容；不能据此保证每个地点可唯一匹配。布局按全场统一坐标确定，不按存储瓦片各自生成，因而不同瓦片边框读取同一段结果。完整高分辨率全场画布不驻留内存或GPU。
+
+## 背景一致性
+
+旧版概览和局部虽用同一渲染函数，但分别采样、缺少位置说明，容易误解。当前预览直接从实际瓦片生成时的数据提取：
+
+- 彩色概览对每16×16个原生纹素在线性空间求均值，得到4 mm/像素概览，避免跳点采样漏掉细节。
+- 256×256 mm局部图以全局纹素中心对齐，从实际瓦片缓冲区复制。
+- 同坐标无缺陷图在叠加前复制底纹缓冲区；最终图不改变缺陷支持范围外的背景像素。
+- 独立检查Mono8局部图与PGM落盘瓦片逐像素相同，Mono8概览也与归档面积平均逐像素相同。
+- comparison.png标出整片中的局部框、世界坐标及局部毫米尺度。不是相机照片。
+
+## 复现
+
+1. python3 tools/fetch_concrete_source.py
+2. python3 tools/bake_concrete_road.py --material gravel_concrete_03 --output assets/road/baked_gravel_new --length 10 --width 10
+3. python3 tools/check_baked_road.py assets/road/baked_gravel_new
+4. python3 tools/preview_baked_road.py assets/road/baked_gravel_new
+
+下载默认gravel_concrete_03，--asset brushed_concrete_03仅用于恢复历史原始素材。完整下载和烘焙产物被gitignore；代码、元数据、小预览和AI原图留在仓库中。4项quilting单测检查任意分块采样一致性、物理尺度、种子复现及越界拒绝。
+
+仍为10×10 m离线纹理样片。未接入OptiX纹理UV和缓存，未重跑GZ/GUI，没有更改平地碰撞几何，没有完成100×10 m全场最终验收。
+
+## 本次实测
+
+10×10 m烘焙223.54秒，400个图块、760处相邻边界，颜色与标签共享边框最大差0 DN。落盘局部与预览逐像素一致，归档概览最大差0 DN；缺陷支持区域外的前后RGB最大差0 DN。4项底纹拼接单测通过。
+
+[全景与同位置前后对比](gravel_concrete_comparison.png)。报告：results/stage2_gravel_bake.json。该结果验证归档与拼接一致性，不代表裂缝最终成像宽度或相机链路已验收。

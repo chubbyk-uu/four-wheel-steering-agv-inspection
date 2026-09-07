@@ -1,0 +1,30 @@
+{
+  "tiles": 400,
+  "shared_edges": 760,
+  "max_overlap_delta_dn": 0,
+  "all_labels_present": true,
+  "hashes_verified": true,
+  "slab_size_m": [
+    5,
+    5
+  ],
+  "texel_mm": 0.25,
+  "calibrated_width_range_mm": [
+    0.8,
+    2.0
+  ],
+  "width_validation": "nominal centerline diameters only; does not certify every final raster cross-section",
+  "crack_extents_m": [
+    2.2,
+    2.4,
+    2.6
+  ],
+  "passed": true,
+  "preview_crop_matches_archived_pixels": true,
+  "overview_matches_archive": true,
+  "overview_max_delta_dn": 0,
+  "background_outside_defects_max_delta_dn": 0,
+  "defect_support_fraction": 0.009016036987304688,
+  "source_url": "https://polyhaven.com/a/gravel_concrete_03",
+  "source_width_period_exact_repetition": false
+}
