@@ -17,7 +17,7 @@ struct Config {
   double alignment_motion_confirm_s{0.06};
   double lateral_mismatch{0.12};
   double max_lateral_speed{1.0};
-  double limit_reserve{10*pi/180}, wheel_deadband{0.005};
+  double limit_reserve{3*pi/180}, wheel_deadband{0.005};
   void validate() const {
     for (double v : {wheelbase,track,radius,soft,rate,steer_accel,max_speed,max_yaw,accel,decel,reorient,aligned,stopped,hysteresis,lateral_mismatch,max_lateral_speed,limit_reserve,wheel_deadband,alignment_motion_confirm_s})
       if (!std::isfinite(v) || v <= 0) throw std::invalid_argument("invalid controller parameter");

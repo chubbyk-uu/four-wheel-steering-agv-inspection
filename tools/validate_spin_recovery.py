@@ -66,11 +66,15 @@ def main():
                 if abs(new-old)>math.pi/2:
                     assert abs(nearest)>soft-reserve, 'unexplained nonminimal steering'
             if not lateral: assert all(w['travel_deg']<90 for w in wheels)
+            elif soft-reserve>=math.pi:
+                assert all(w['travel_deg']<90 for w in wheels)
             else: assert sum(w['travel_deg']>90 for w in wheels)==2
             report['cases'].append(dict(case=label, before_spin_deg=list(map(math.degrees,start)),
                                         wheels=wheels, recovery_reasons=observed))
         report.update(passed=True, final_motion_state=node.state,
                       soft_limit_deg=math.degrees(soft), stationary_reserve_deg=math.degrees(reserve),
+                      hard_limit_deg=math.degrees(platform['steer_hard_limit']),
+                      total_hard_reserve_deg=math.degrees(platform['steer_hard_limit']-soft+reserve),
                       wheel_order=['fl','fr','rl','rr'])
     finally:
         try: settle((0,0,0))

@@ -148,13 +148,13 @@ TEST(Kinematics, ZeroSpeedModuleHoldsThroughNoise){
 }
 TEST(Transitions, ContinuousHeadingSweepReconfiguresBeforeLimit){
  for(double direction:{-1.,1.}) {
-  Controller c;Four a{},v{};Target r;
+  Config cfg;Controller c(cfg);Four a{},v{};Target r;
   int limit_stops=0;double maximum_angle=0;Mode old_mode=Mode::Hold;
   for(int n=0;n<7000;++n){
    const double heading=direction*.2*n*.01;
    r=c.update({.25*std::cos(heading),.25*std::sin(heading),0},a,v,.01);
    if(old_mode==Mode::Drive && c.mode()==Mode::Brake && c.reason()=="LIMIT_RECONFIGURE") {
-    ++limit_stops;EXPECT_LT(Controller::max_abs(a),180*pi/180);
+    ++limit_stops;EXPECT_LT(Controller::max_abs(a),cfg.soft-cfg.limit_reserve);
    }
    for(size_t i=0;i<4;++i){
     EXPECT_LE(std::abs(r.angle[i]-a[i]),1.2*.01+1e-9);
@@ -163,7 +163,7 @@ TEST(Transitions, ContinuousHeadingSweepReconfiguresBeforeLimit){
    if(c.mode()==Mode::Align)EXPECT_LT(Controller::max_abs(r.speed),.025);
    old_mode=c.mode();a=r.angle;v=r.speed;
   }
-  EXPECT_GE(limit_stops,3);EXPECT_LT(maximum_angle,180*pi/180);
+  EXPECT_GE(limit_stops,3);EXPECT_LT(maximum_angle,cfg.soft-cfg.limit_reserve);
  }
 }
 TEST(Transitions, PureSpinDoesNotAccumulateSteeringTravel){
@@ -192,12 +192,12 @@ TEST(Kinematics, OrdinaryStoppedChoiceIsShortestNotForcedHome){
  for(double angle:r.angle)EXPECT_NEAR(angle,heading,1e-9);
 }
 TEST(Kinematics, StationaryShortestChoiceMustLeaveLimitReserve){
- Controller c;Four a;a.fill(160*pi/180);
+ Config cfg;cfg.limit_reserve=10*pi/180;Controller c(cfg);Four a;a.fill(160*pi/180);
  const auto r=c.allocate({.3,0,0},a,a,false,true);
  for(size_t i=0;i<4;++i){EXPECT_NEAR(r.angle[i],0,1e-9);EXPECT_GT(r.speed[i],0);}
 }
 TEST(Kinematics, SpinRecoveryLongTravelIsRequiredOnlyByStationaryLimitReserve){
- Config cfg;cfg.wheelbase=1.3;cfg.track=.94;Controller c(cfg);Four zero{};
+ Config cfg;cfg.wheelbase=1.3;cfg.track=.94;cfg.limit_reserve=10*pi/180;Controller c(cfg);Four zero{};
  for(double direction:{-1.,1.}) {
   const auto direct=c.allocate({0,0,direction*.3},zero,zero,false,true);
   const auto straight=c.allocate({.4,0,0},direct.angle,direct.angle,false,true);
@@ -221,6 +221,33 @@ TEST(Kinematics, SpinRecoveryLongTravelIsRequiredOnlyByStationaryLimitReserve){
    }
   }
   EXPECT_EQ(long_turns,2);
+ }
+}
+TEST(Kinematics, EightDegreeHardReserveAllowsShortestSpinRecoveryAt180){
+ Config cfg;cfg.wheelbase=1.3;cfg.track=.94;cfg.limit_reserve=3*pi/180;
+ Controller c(cfg);
+ for(double sign:{-1.,1.}) {
+  Four lateral;lateral.fill(sign*pi/2);
+  const auto spin=c.allocate({0,0,sign*.3},lateral,lateral,false,true);
+  const auto straight=c.allocate({.4,0,0},spin.angle,spin.angle,false,true);
+  int reversed=0;
+  for(size_t i=0;i<4;++i) {
+   EXPECT_LT(std::abs(straight.angle[i]-spin.angle[i]),pi/2);
+   EXPECT_LE(std::abs(straight.angle[i]),182*pi/180);
+   EXPECT_NEAR(straight.speed[i]*std::cos(straight.angle[i]),.4,1e-9);
+   if(straight.speed[i]<0) {++reversed;EXPECT_NEAR(std::abs(straight.angle[i]),pi,1e-9);}
+  }
+  EXPECT_EQ(reversed,2);
+  // Dynamic braking margin still triggers well before the hard endpoint.
+  Four a{},v{};Mode old=Mode::Hold;bool stopped=false;
+  for(int k=0;k<3000;++k){
+   double h=sign*.2*k*.01;
+   auto out=c.update({.25*std::cos(h),.25*std::sin(h),0},a,v,.01);
+   if(old==Mode::Drive && c.mode()==Mode::Brake && c.reason()=="LIMIT_RECONFIGURE")stopped=true;
+   for(double angle:out.angle)EXPECT_LT(std::abs(angle),185*pi/180);
+   old=c.mode();a=out.angle;v=out.speed;
+  }
+  EXPECT_TRUE(stopped);
  }
 }
 TEST(Transitions, OneWheelCrossesZeroWithoutStoppingWholeVehicle){

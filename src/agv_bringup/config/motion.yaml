@@ -8,5 +8,7 @@ swerve_controller:
     alignment_motion_confirm_s: 0.06
     max_lateral_mismatch: 0.12
     max_lateral_speed: 1.0
-    steering_limit_reserve: 0.17453292519943295
+    # Reserve is measured from the 185 deg software command limit:
+    # (190 deg hard - 185 deg soft) + 3 deg = 8 deg total mechanical reserve.
+    steering_limit_reserve: 0.05235987755982989
     wheel_speed_deadband: 0.005
