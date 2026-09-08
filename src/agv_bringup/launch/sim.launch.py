@@ -1,4 +1,4 @@
-"""Stage 1 simulation; ground truth is bridged only for independent evaluation."""
+"""AGV simulation; ground truth is reserved for sensor simulation and evaluation."""
 from pathlib import Path
 import tempfile
 import os
@@ -88,6 +88,8 @@ def setup(context):
     if not any(p.get('name') == 'gz::sim::systems::Sensors' for p in sensor_world.findall('plugin')):
         sensors = ET.SubElement(sensor_world, 'plugin', filename='gz-sim-sensors-system', name='gz::sim::systems::Sensors')
         ET.SubElement(sensors, 'render_engine').text = 'ogre2'
+    if not any(p.get('name') == 'gz::sim::systems::Imu' for p in sensor_world.findall('plugin')):
+        ET.SubElement(sensor_world, 'plugin', filename='gz-sim-imu-system', name='gz::sim::systems::Imu')
     with tempfile.NamedTemporaryFile(prefix='agv_sensors_', suffix='.sdf', delete=False) as f:
         world_path = f.name
     sensor_tree.write(world_path, encoding='unicode')
@@ -108,6 +110,14 @@ def setup(context):
             return [EmitEvent(event=Shutdown(reason='Controller activation failed'))]
         return []
     actions = []
+    if LaunchConfiguration('localization').perform(context).lower() == 'true':
+        actions.append(IncludeLaunchDescription(PythonLaunchDescriptionSource(str(
+            Path(get_package_share_directory('agv_localization'))/'launch/localization.launch.py')),
+            launch_arguments={'profile': LaunchConfiguration('localization_profile'),
+                              'config': LaunchConfiguration('localization_config'),
+                              'output_dir': LaunchConfiguration('localization_output_dir'),
+                              'platform': platform, 'camera_config': camera_config,
+                              'use_sim_time': 'true'}.items()))
     correction_profile=LaunchConfiguration('correction_profile').perform(context)
     if correction_profile:
         if not linescan:raise ValueError('correction_profile requires linescan:=true')
@@ -142,9 +152,10 @@ def setup(context):
         Node(package='robot_state_publisher', executable='robot_state_publisher',
              parameters=[{'robot_description': robot, 'use_sim_time': True, 'publish_frequency': 100.0}]),
         Node(package='ros_gz_sim', executable='create', arguments=[
-            '-name', 'agv', '-topic', 'robot_description', '-z', str(config['base_height']+.005), '-x', LaunchConfiguration('spawn_x'), '-y', LaunchConfiguration('spawn_y')]),
+            '-name', 'agv', '-topic', 'robot_description', '-z', str(config['base_height']+.005), '-x', LaunchConfiguration('spawn_x'), '-y', LaunchConfiguration('spawn_y'), '-Y', LaunchConfiguration('spawn_yaw')]),
         Node(package='ros_gz_bridge', executable='parameter_bridge', arguments=[
             '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
+            '/sensors/imu/raw@sensor_msgs/msg/Imu[gz.msgs.IMU',
             '/ground_truth/odom@nav_msgs/msg/Odometry[gz.msgs.Odometry',
             '/lidar/left/points@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked',
             '/lidar/right/points@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked']),
@@ -165,12 +176,17 @@ def generate_launch_description():
         DeclareLaunchArgument('scene_manifest', default_value=''),
         DeclareLaunchArgument('spawn_x', default_value='0'),
         DeclareLaunchArgument('spawn_y', default_value='0'),
+        DeclareLaunchArgument('spawn_yaw', default_value='0'),
         DeclareLaunchArgument('scan_speed_limit', default_value='0.25'),
         DeclareLaunchArgument('scan_probe', default_value='false'),
         DeclareLaunchArgument('scan_block_rows', default_value='', description='C++ sensor lines per image (1..16384); empty uses camera YAML block_rows, default 4096'),
         DeclareLaunchArgument('capture_dir', default_value='/tmp/agv_linescan'),
         DeclareLaunchArgument('gpu_backend', default_value='d3d12', choices=['d3d12', 'native']),
         DeclareLaunchArgument('gpu_adapter', default_value='NVIDIA'),
+        DeclareLaunchArgument('localization', default_value='false'),
+        DeclareLaunchArgument('localization_profile', default_value='normal', choices=['normal','zero']),
+        DeclareLaunchArgument('localization_config', default_value=''),
+        DeclareLaunchArgument('localization_output_dir', default_value=''),
         DeclareLaunchArgument('platform', default_value=str(Path(
             get_package_share_directory('agv_description')) / 'config/platform.yaml')),
         OpaqueFunction(function=setup)])

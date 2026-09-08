@@ -1,0 +1,186 @@
+{
+  "schema": "agv.localization.validation.v1",
+  "passed": true,
+  "date": "2026-09-08",
+  "pytest_tests": 18,
+  "colcon_tests_including_wrapper": 19,
+  "pre_constraint_failure": {
+    "scenario": "normal noise, GUI/RViz, 2 s GNSS outage",
+    "position_max_m": 0.47064194039540636,
+    "resolved_by": "explicit body-normal ground contact constraint with uncertainty"
+  },
+  "cases": {
+    "zero_contact": {
+      "passed": true,
+      "profile": "zero",
+      "gui_rviz": false,
+      "configuration": "measurements.yaml",
+      "spawn_yaw_rad": 0.0,
+      "navigation_records": 2099,
+      "outage_recovery_tested": false,
+      "fusion": {
+        "samples": 1850,
+        "horizontal_rmse_m": 0.0008958662918830378,
+        "position_max_m": 0.006446409649330526,
+        "vertical_rmse_m": 0.0007405740042452152,
+        "yaw_rmse_deg": 0.003937611676062126,
+        "yaw_mean_deg": 1.955032440789496e-05,
+        "rate_hz": 49.99999999999999
+      },
+      "gnss_observation": {
+        "samples": 370,
+        "horizontal_rmse_m": 0.0005051777554350348,
+        "position_max_m": 0.002687605278763331,
+        "vertical_rmse_m": 0.0007091847290450696,
+        "yaw_rmse_deg": 2.6621756567668184e-06,
+        "yaw_mean_deg": -1.0196204898056896e-07,
+        "rate_hz": 9.999999999999998
+      },
+      "tf_edges": {
+        "base_link": [
+          "odom"
+        ],
+        "odom": [
+          "map"
+        ]
+      },
+      "imu_rate_hz": 100.00475986481983,
+      "wheel_rate_hz": 100.0,
+      "imu_delivery_age_mean_s": 0.0021280038068059674,
+      "wheel_delivery_age_mean_s": 0.0020538095238108187,
+      "not_ready_samples": 0,
+      "ready_fraction": 1.0,
+      "final_motion_state": "HOLD",
+      "scope": "measurement/EKF motion regression; not mission tracking or image tagging"
+    },
+    "normal_contact": {
+      "passed": true,
+      "profile": "normal",
+      "gui_rviz": false,
+      "configuration": "measurements.yaml",
+      "spawn_yaw_rad": 0.0,
+      "navigation_records": 2099,
+      "outage_recovery_tested": false,
+      "fusion": {
+        "samples": 1850,
+        "horizontal_rmse_m": 0.02414407828272668,
+        "position_max_m": 0.07311923772302596,
+        "vertical_rmse_m": 0.022283523298674765,
+        "yaw_rmse_deg": 0.687508739026869,
+        "yaw_mean_deg": 0.02031438211231359,
+        "rate_hz": 49.99999999999999
+      },
+      "gnss_observation": {
+        "samples": 370,
+        "horizontal_rmse_m": 0.03786599401719685,
+        "position_max_m": 0.13275163203812707,
+        "vertical_rmse_m": 0.029232924267931587,
+        "yaw_rmse_deg": 1.8533576149029238,
+        "yaw_mean_deg": 0.02535764188426046,
+        "rate_hz": 9.999999999999998
+      },
+      "tf_edges": {
+        "base_link": [
+          "odom"
+        ],
+        "odom": [
+          "map"
+        ]
+      },
+      "imu_rate_hz": 100.00476099790517,
+      "wheel_rate_hz": 100.0,
+      "imu_delivery_age_mean_s": 0.006046406473109341,
+      "wheel_delivery_age_mean_s": 0.011049785612197612,
+      "not_ready_samples": 0,
+      "ready_fraction": 1.0,
+      "final_motion_state": "HOLD",
+      "scope": "measurement/EKF motion regression; not mission tracking or image tagging"
+    },
+    "extrinsic_contact": {
+      "passed": true,
+      "profile": "zero",
+      "gui_rviz": false,
+      "configuration": "extrinsic_probe.yaml",
+      "spawn_yaw_rad": 0.7,
+      "navigation_records": 2099,
+      "outage_recovery_tested": false,
+      "fusion": {
+        "samples": 1850,
+        "horizontal_rmse_m": 0.0022686123582161674,
+        "position_max_m": 0.0081391597969411,
+        "vertical_rmse_m": 0.0007616185112880992,
+        "yaw_rmse_deg": 0.10014933529060903,
+        "yaw_mean_deg": -0.10005881096200146,
+        "rate_hz": 49.99999999999999
+      },
+      "gnss_observation": {
+        "samples": 370,
+        "horizontal_rmse_m": 0.002068344369365007,
+        "position_max_m": 0.003643233419603255,
+        "vertical_rmse_m": 0.0007294435268165482,
+        "yaw_rmse_deg": 0.10001319354756415,
+        "yaw_mean_deg": -0.10001318838239018,
+        "rate_hz": 9.999999999999998
+      },
+      "tf_edges": {
+        "base_link": [
+          "odom"
+        ],
+        "odom": [
+          "map"
+        ]
+      },
+      "imu_rate_hz": 100.00475986481983,
+      "wheel_rate_hz": 100.0,
+      "imu_delivery_age_mean_s": 0.0021315726861778506,
+      "wheel_delivery_age_mean_s": 0.002049523809525116,
+      "not_ready_samples": 0,
+      "ready_fraction": 1.0,
+      "final_motion_state": "HOLD",
+      "scope": "measurement/EKF motion regression; not mission tracking or image tagging"
+    },
+    "outage_gui_contact": {
+      "passed": true,
+      "profile": "normal",
+      "gui_rviz": true,
+      "configuration": "outage_probe.yaml",
+      "spawn_yaw_rad": 0.7,
+      "navigation_records": 2099,
+      "outage_recovery_tested": true,
+      "fusion": {
+        "samples": 1850,
+        "horizontal_rmse_m": 0.025832836874054674,
+        "position_max_m": 0.07347321096403517,
+        "vertical_rmse_m": 0.024165762694708357,
+        "yaw_rmse_deg": 0.7301178546373849,
+        "yaw_mean_deg": -0.13817297601622863,
+        "rate_hz": 49.99999999999999
+      },
+      "gnss_observation": {
+        "samples": 350,
+        "horizontal_rmse_m": 0.03794638976322397,
+        "position_max_m": 0.10614154843237529,
+        "vertical_rmse_m": 0.029456369487863444,
+        "yaw_rmse_deg": 1.7990107445627586,
+        "yaw_mean_deg": -0.1094524761305312,
+        "rate_hz": 9.457994579945797
+      },
+      "tf_edges": {
+        "base_link": [
+          "odom"
+        ],
+        "odom": [
+          "map"
+        ]
+      },
+      "imu_rate_hz": 100.00476099790517,
+      "wheel_rate_hz": 100.0,
+      "imu_delivery_age_mean_s": 0.006093050928130751,
+      "wheel_delivery_age_mean_s": 0.011171033825632552,
+      "not_ready_samples": 33,
+      "ready_fraction": 0.9554054054054054,
+      "final_motion_state": "HOLD",
+      "scope": "measurement/EKF motion regression; not mission tracking or image tagging"
+    }
+  }
+}

@@ -185,6 +185,14 @@
     </xacro:if>
   </xacro:macro>
   <xacro:if value="${cam.gz_led.enabled}"><xacro:led_spots i="${0}" count="${21}"/></xacro:if>
+  <!-- Six-axis measurement at base origin. Ideal GZ attitude is never fused. -->
+  <gazebo reference="base_link">
+    <sensor name="body_imu" type="imu">
+      <topic>/sensors/imu/raw</topic><gz_frame_id>base_link</gz_frame_id>
+      <always_on>true</always_on><update_rate>100</update_rate>
+      <imu/>
+    </sensor>
+  </gazebo>
   <ros2_control name="GazeboSystem" type="system"><hardware><plugin>gz_ros2_control/GazeboSimSystem</plugin></hardware>
     <xacro:macro name="interfaces" params="name">
       <joint name="${name}_steer_joint"><command_interface name="position"><param name="min">${-p.steer_hard_limit}</param><param name="max">${p.steer_hard_limit}</param></command_interface><state_interface name="position"/><state_interface name="velocity"/></joint>

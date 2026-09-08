@@ -1,0 +1,43 @@
+# Simulator specification, not manufacturer performance. All sigmas are per sample.
+seed: 20260908
+noise_enabled: true
+delay_enabled: true
+encoder_counts_per_revolution: 16384
+steer_sigma_rad: 0.0005235987755982988
+wheel_radius_relative_sigma: 0.001
+wheel_velocity_sigma: [0.02, 0.02, 0.01]
+gyro_sigma_rad_s: 0.0002
+gyro_bias_sigma_rad_s: 0.0001
+accel_sigma_m_s2: 0.017
+accel_bias_sigma_m_s2: 0.01
+gnss_sigma_m: [0.025, 0.025, 0.04]
+# Unknown relative carrier-phase precision: conservative independent antenna fixes.
+gnss_correlation: 0.0
+gnss_frequency_hz: 10.0
+imu_delay_s: [0.005, 0.001]
+wheel_delay_s: [0.010, 0.002]
+gnss_delay_s: [0.050, 0.005]
+gnss_outage_start_s: -1.0
+gnss_outage_duration_s: 0.0
+# T_true is the current physical URDF. T_hat=T_true*Delta; Delta has local
+# translation and SO(3) rotation-vector components (NOT additive Euler angles).
+# Deterministic miscalibration, no physical geometry change or vibration.
+calibration:
+  gnss_platform_translation_m: [0.0, 0.0, 0.0]
+  gnss_platform_rotvec_rad: [0.0, 0.0, 0.0]
+  gnss_left_phase_center_m: [0.0, 0.0, 0.0]
+  gnss_right_phase_center_m: [0.0, 0.0, 0.0]
+  imu_translation_m: [0.0, 0.0, 0.0]
+  imu_rotvec_rad: [0.0, 0.0, 0.0]
+  camera_translation_m: [0.0, 0.0, 0.0]
+  camera_rotvec_rad: [0.0, 0.0, 0.0]
+  lidar_left_translation_m: [0.0, 0.0, 0.0]
+  lidar_left_rotvec_rad: [0.0, 0.0, 0.0]
+  lidar_right_translation_m: [0.0, 0.0, 0.0]
+  lidar_right_rotvec_rad: [0.0, 0.0, 0.0]
+  wheel_xy_error_m: [[0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0]]
+  steer_zero_error_rad: [0.0, 0.0, 0.0, 0.0]
+
+# Model constraint for the current continuously grounded vehicle, not an encoder measurement.
+assume_continuous_ground_contact: true
+contact_normal_speed_sigma_m_s: 0.02
