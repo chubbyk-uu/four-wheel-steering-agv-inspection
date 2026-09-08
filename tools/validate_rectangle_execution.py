@@ -18,6 +18,8 @@ from validate_tracking import stop
 def main():
     parser=argparse.ArgumentParser();parser.add_argument('--output',type=Path,required=True)
     parser.add_argument('--gui',action='store_true');parser.add_argument('--profile',default='zero',choices=['zero','normal'])
+    parser.add_argument('--follow-camera',action=argparse.BooleanOptionalAction,default=True,
+                        help='follow AGV position in GUI while allowing free rotation and wheel zoom')
     parser.add_argument('--scene',type=Path)
     parser.add_argument('--length',type=float,default=3.);parser.add_argument('--width',type=float,default=2.)
     a=parser.parse_args();a.output.mkdir(parents=True,exist_ok=False)
@@ -34,7 +36,8 @@ def main():
     log=(a.output/'simulation.log').open('w')
     sim=subprocess.Popen(['ros2','launch','agv_bringup','sim.launch.py','localization:=true',
         'localization_profile:='+a.profile,'localization_output_dir:='+str(a.output/'navigation'),
-        'headless:='+str(not a.gui).lower(),'rviz:='+str(a.gui).lower(),'follow_camera:=false','spawn_x:=3']+extra,
+        'headless:='+str(not a.gui).lower(),'rviz:='+str(a.gui).lower(),
+        'follow_camera:='+str(a.follow_camera).lower(),'spawn_x:=3']+extra,
         stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
     rclpy.init();node=Node('rectangle_evaluator',parameter_overrides=[Parameter('use_sim_time',value=True)])
     latest={};records=[];truth=[];run=None;runlog=None;images={}
@@ -71,6 +74,7 @@ def main():
                 'reference_error_max_m':max((r.get('reference_position_error_m',0) for r in rows),default=None)})
         result={'passed':end['state'] in ('COMPLETED','ACQUIRED') and end['motion_state']=='HOLD',
             'scope':'rectangle motion only; capture integration pending','profile':a.profile,'gui_rviz':a.gui,
+            'follow_camera':a.gui and a.follow_camera,
             'region_m':[a.length,a.width],'track_spacing_m':plan['actual_track_spacing_m'],'tracks':passes,'final':end}
         if a.scene and result['passed']:
             # Drain reliable metadata/image delivery after storage close acknowledgement.
