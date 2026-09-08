@@ -82,7 +82,7 @@ def main():
     path=out/'terrain.obj'
     with path.open('w') as stream:
         np.savetxt(stream,v,fmt='v %.9f %.9f %.9f')
-        np.savetxt(stream,np.column_stack((v[:,0]/10,(v[:,1]+5)/10)),fmt='vt %.9f %.9f')
+        np.savetxt(stream,np.column_stack((v[:,0]/10,1-(v[:,1]+5)/10)),fmt='vt %.9f %.9f')
         # Explicit per-face normals preserve the physical groove surface for both readers.
         n=np.cross(v[f[:,1]]-v[f[:,0]],v[f[:,2]]-v[f[:,0]]);n/=np.linalg.norm(n,axis=1)[:,None]
         np.savetxt(stream,n,fmt='vn %.9f %.9f %.9f')
@@ -107,8 +107,8 @@ def main():
         assets=[dict(name='terrain',mesh=path.name,sha256=sha(path),triangles=len(f),material='ground')],
         ground_material=mat,display_materials={n:sha(out/n) for n in ('display_color.png','display_normal.png')},
         lane_markings=metadata(10),slab_size_m=[5,5],joint_width_m=.008,joint_depth_m=.003,crack=stats,
-        optical_valid_bounds_xy_m=[0,8,-.8,.8],display_texel_m=.004,display_uv='u=x/10; v=(y+5)/10; image rows increase with world y',
-        display_uv_projection=dict(origin_xy_m=[0,-5],span_xy_m=[10,10]),
+        optical_valid_bounds_xy_m=[0,8,-.8,.8],display_texel_m=.004,display_uv='u=x/10; v=1-(y+5)/10; image rows increase with world y',
+        display_uv_projection=dict(origin_xy_m=[0,-5],span_xy_m=[10,10],v_direction='decreasing_world_y'),
         source_scale_m=2.1,source_scale_basis='project setting; supplier dimensions unspecified',
         paint_normal_xy_strength=.25,material_scope='same geometry, quilt and marking coordinates; GUI overview and monochrome calibrated sensor use different renderers; not photometric parity',
         sources={n:sha(source/n) for n in ('Concrete047A_8K-PNG_Color.png','Concrete047A_8K-PNG_NormalGL.png')})

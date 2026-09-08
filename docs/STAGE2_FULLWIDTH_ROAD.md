@@ -64,3 +64,5 @@ ros2 launch agv_bringup sim.launch.py linescan:=true linescan_backend:=optix sce
 ```
 
 测试器自动发零速度、确认停车并关闭它启动的GUI/仿真。手动启动场景则由用户控制。全宽场景使用显式参数选择，不改变默认世界。
+
+GUI贴图坐标后续修订：原分块OBJ的V方向与PNG行方向不一致，导致标线在每个半幅内镜像。已修正生成器并迁移现有20 m资产；旧资产升级及实际Ogre2渲染验收见[对齐说明](ROAD_DISPLAY_ALIGNMENT.md)。

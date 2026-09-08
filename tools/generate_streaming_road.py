@@ -105,7 +105,8 @@ def main():
   if vv[:,0].min()<x0-1e-6 or vv[:,0].max()>x1+1e-6:raise ValueError('mesh spans a display-material partition')
   mesh=out/f'terrain_{i}.obj'
   with mesh.open('w') as f:
-   np.savetxt(f,vv,fmt='v %.9f %.9f %.9f');np.savetxt(f,np.column_stack(((vv[:,0]-x0)/(x1-x0),(vv[:,1]-y0)/(y1-y0))),fmt='vt %.9f %.9f')
+   # PNG row zero samples y0; OBJ V=1 must address that top image row.
+   np.savetxt(f,vv,fmt='v %.9f %.9f %.9f');np.savetxt(f,np.column_stack(((vv[:,0]-x0)/(x1-x0),1-(vv[:,1]-y0)/(y1-y0))),fmt='vt %.9f %.9f')
    n=np.cross(vv[ff[:,1]]-vv[ff[:,0]],vv[ff[:,2]]-vv[ff[:,0]]);n/=np.linalg.norm(n,axis=1)[:,None];np.savetxt(f,n,fmt='vn %.9f %.9f %.9f')
    for j,tri in enumerate(ff):f.write('f '+' '.join(f'{k+1}/{k+1}/{j+1}' for k in tri)+'\n')
   dw=round((x1-x0)/.004);dh=round((y1-y0)/.004);display=np.empty((dh,dw,3),np.uint8);dn=display.copy();xs=x0+(np.arange(dw)+.5)*(x1-x0)/dw
@@ -120,7 +121,7 @@ def main():
    if kind=='visual':
     mat=ET.SubElement(item,'material');ET.SubElement(mat,'diffuse').text='1 1 1 1';metal=ET.SubElement(ET.SubElement(mat,'pbr'),'metal')
     for tag,value in [('albedo_map',str(out/f'display_color_{i}.png')),('normal_map',str(out/f'display_normal_{i}.png')),('roughness','.60'),('metalness','0')]:ET.SubElement(metal,tag).text=value
-  assets.append(dict(name=f'terrain_{i}',mesh=mesh.name,sha256=sha(mesh),triangles=len(ff),material='ground',display_uv_projection=dict(origin_xy_m=[x0,y0],span_xy_m=[x1-x0,y1-y0]),**({'collision_proxy':proxy} if proxy else {})))
+  assets.append(dict(name=f'terrain_{i}',mesh=mesh.name,sha256=sha(mesh),triangles=len(ff),material='ground',display_uv_projection=dict(origin_xy_m=[x0,y0],span_xy_m=[x1-x0,y1-y0],v_direction='decreasing_world_y'),**({'collision_proxy':proxy} if proxy else {})))
  rgb,_=sample((np.arange(a.length*20)+.5)*.05,-5+(np.arange(200)+.5)*.05)
  Image.fromarray(srgb(rgb)[::-1]).save(out/'overview.png');tree.write(out/'world.sdf',encoding='unicode')
  material=dict(schema='agv.ground_material.tiles.v1',tiles_x=nx,tiles_y=ny,core_pixels=core,gutter_pixels=gutter,texel_m=texel,origin_xy_m=[ox,oy],height_bounds_m=[-.003001,.000001],roughness=.60,cache_slots=32,prefetch_ahead_m=1.5,prefetch_behind_m=.5,required_wait_timeout_s=.05,tiles=tiles)

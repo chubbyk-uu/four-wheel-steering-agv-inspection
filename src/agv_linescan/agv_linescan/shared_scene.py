@@ -214,6 +214,10 @@ def validate(manifest):
                 if parts and parts[0]=='f':
                     if any(len(t.split('/'))<2 or t.split('/')[0]!=t.split('/')[1] for t in parts[1:]):
                         raise ValueError('display mesh face UV indices mismatch')
-            if len(uv)!=len(vertices) or not np.allclose(uv,(np.asarray(vertices)-origin)/span,rtol=0,atol=1e-8):
+            expected_uv=(np.asarray(vertices)-origin)/span
+            direction=projection.get('v_direction','increasing_world_y')
+            if direction=='decreasing_world_y':expected_uv[:,1]=1-expected_uv[:,1]
+            elif direction!='increasing_world_y':raise ValueError('unknown display V direction')
+            if len(uv)!=len(vertices) or not np.allclose(uv,expected_uv,rtol=0,atol=1e-8):
                 raise ValueError('display mesh UV/world-coordinate mismatch')
     return m

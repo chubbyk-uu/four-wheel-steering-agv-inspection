@@ -144,6 +144,21 @@ def test_rehashed_uv_coordinate_change_rejected(textured_bundle):
     with pytest.raises(ValueError,match='UV/world-coordinate'):validate(mp)
 
 
+def test_display_v_direction_is_explicit_and_checked(textured_bundle):
+    p=textured_bundle;mp=p/'manifest.json';m=json.loads(mp.read_text());obj=p/'terrain.obj'
+    m['display_uv_projection']['v_direction']='decreasing_world_y'
+    mp.write_text(json.dumps(m))
+    with pytest.raises(ValueError,match='UV/world-coordinate'):validate(mp)
+    lines=obj.read_text().splitlines()
+    for i,line in enumerate(lines):
+        if line.startswith('vt '):
+            values=line.split();lines[i]=f'vt {values[1]} {1-float(values[2]):.9f}'
+    obj.write_text('\n'.join(lines)+'\n');m['assets'][0]['sha256']=digest(obj);mp.write_text(json.dumps(m))
+    validate(mp)
+    m['display_uv_projection']['v_direction']='unknown';mp.write_text(json.dumps(m))
+    with pytest.raises(ValueError,match='V direction'):validate(mp)
+
+
 @pytest.fixture
 def proxy_bundle(tmp_path):
     path=tmp_path/'proxy';generate(path,BASE,length=10,width=2,margin=0)

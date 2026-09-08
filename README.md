@@ -178,3 +178,5 @@ OptiX/GPU 测试需要对应硬件和运行库；纯 CPU 构建不注册这些�
 | `docs` / `results` | 技术记录、样片和历史验证摘要 |
 
 源码按 Apache-2.0 分发；外部素材与生成资产说明见 [THIRD_PARTY.md](THIRD_PARTY.md)。公开仓库不含旧本地 Git 历史、机器工作约定、原始进程日志、个人代理配置、SDK/驱动、构建目录和完整采集数据。详见[发布范围](docs/REPOSITORY.md)。
+
+已有旧版全宽道路若在GUI中看不到中央双黄线，请按[路面显示对齐说明](docs/ROAD_DISPLAY_ALIGNMENT.md)迁移显示UV；无需重新下载或烘焙高清纹素。新生成的道路已使用修订后的映射。
