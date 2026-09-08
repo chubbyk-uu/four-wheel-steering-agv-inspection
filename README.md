@@ -72,7 +72,7 @@ WSL2 + WSLg + NVIDIA：
 ros2 launch agv_bringup sim.launch.py rviz:=true
 ```
 
-WSL 默认 Mesa D3D12/NVIDIA；其他显卡可指定 `gpu_adapter:=AMD` 或 `Intel`。无 GUI 用 `headless:=true`。默认从 AGV 后方朝道路延伸方向（+X）观察，使用 `FOLLOW_FREE_LOOK` 跟随位置，鼠标中键拖动（或 Shift＋左键拖动）可自由调整朝向，滚轮缩放并保持跟车距离；`follow_camera:=false` 关闭跟车，`gui_config:=/path/to/gui.config` 自定义。操作与验证见[视角说明](docs/GUI_CAMERA.md)。
+WSL 默认 Mesa D3D12/NVIDIA；其他显卡可指定 `gpu_adapter:=AMD` 或 `Intel`。无 GUI 用 `headless:=true`。默认从 AGV 后方朝道路延伸方向（+X）观察，使用 `FOLLOW_LOOK_AT` 跟随并始终看向车辆，跟车时锁定拖动朝向和平移，滚轮缩放并保持跟车距离；`follow_camera:=false` 关闭跟车，`gui_config:=/path/to/gui.config` 自定义。操作与验证见[视角说明](docs/GUI_CAMERA.md)。
 
 另开终端，进入同一仓库并加载环境：
 

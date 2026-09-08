@@ -1,13 +1,19 @@
-# Gazebo 默认自由转头跟车
+# Gazebo 默认锁定跟车与滚轮缩放
 
-默认 `follow_camera:=true`。启动时相机在AGV后方偏侧，朝道路+X延伸方向；跟随车辆位置但不强制看向车辆。
+默认 `follow_camera:=true`。启动时相机在AGV后方偏侧，朝道路+X延伸方向；跟随车辆位置并始终看向车辆，掉头后车辆仍保持在视野中心。
 
-- 鼠标中键拖动，或Shift＋左键拖动：调整朝向；松手后保持，不自动转回AGV。
+- 跟车时锁定拖动朝向和平移，防止手动偏转后车辆离开视野。
 - 滚轮向前/向后：拉近/拉远跟车距离；松手后及行驶中保持缩放结果。
 - `follow_camera:=false`：关闭自动跟车，恢复普通自由相机。
 - `gui_config:=/path/to/gui.config`：自定义初始相机位姿和跟随偏移。
 
-使用CameraTracking的`FOLLOW_FREE_LOOK`模式，通过`/gui/track`设置一次，并读取`/gui/currently_tracked`确认生效后退出辅助脚本。没有循环重写相机朝向。默认`camera_pose`为`-4 -3 3 0 0.35 0.25`，`follow_offset`为`-4 -3 2.6`。跟随偏移是目标局部坐标；这不是始终将车辆居中的环绕相机。滚轮由项目`FollowCameraZoom`GUI插件处理，按滚轮事件更新持久跟随偏移并同步CameraTracking状态；距离限制0.8～80 m。关闭跟车时不拦截滚轮，继续使用原生缩放。普通左键平移仍受跟随位置约束。
+使用CameraTracking的`FOLLOW_LOOK_AT`模式，follow_target和track_target均为agv。辅助脚本要求连续3秒确认，成功后退出；跟车位置增益0.2、看向目标增益1.0。默认`camera_pose`为`-4 -3 3 0 0.35 0.25`，`follow_offset`为`-4 -3 2.6`，偏移随车辆局部坐标旋转。
+
+项目`FollowCameraZoom` GUI插件在同时跟随和看向同一目标时拦截拖动；滚轮按原逻辑更新持久跟随偏移，距离限制0.8～80 m。关闭跟车后恢复原生拖动和缩放。当前验证使用`tools/validate_gui_camera.py`，检查拖动不能改变朝向、滚轮距离能保持以及原地转向后车辆仍在画面中心。
+
+当前锁定模式GUI＋RViz回归通过：中键拖动朝向变化0，滚轮距离5.6356→3.5934→4.1750 m，直行后保持4.1750 m；原地转向后相机光轴与车体方向夹角约1.3×10⁻⁷ rad，结束HOLD。这里测的是相机是否看向车辆，不再要求车辆掉头时相机世界朝向不变。记录见[锁定跟车结果](../results/gui_locked_follow.json)。本项不开线阵采集，不构成采图吞吐测试。
+
+## 历史自由转头验证（已被锁定模式替代）
 
 2026-09-08在本机Gazebo GUI/D3D12中验证：模拟鼠标中键拖动改变朝向0.4503 rad（约25.8°）；松手后及AGV以0.5 m/s继续行驶后，读取的朝向均保持不变。车辆实际位移2.409995 m，相机位移2.410018 m，跟随正常。结束确认HOLD。记录见[gui_free_look.json](../results/gui_free_look.json)。
 
@@ -24,7 +30,7 @@ ros2 launch agv_bringup sim.launch.py \
   scene_manifest:=assets/road/baked_fullwidth_20m_v1/manifest.json spawn_x:=2
 ```
 
-此命令默认启用自由转头跟车和滚轮缩放，暂不启用线阵采集。交互回归可在GUI加载完成后执行（会模拟鼠标输入并以0.5 m/s短距离行驶，结束停车）：
+此命令默认启用锁定跟车和滚轮缩放，暂不启用线阵采集。交互回归可在GUI加载完成后执行（会模拟鼠标输入并以0.5 m/s短距离行驶，结束停车）：
 
 ```bash
 python3 tools/validate_gui_camera.py --output /tmp/agv-camera-check.json

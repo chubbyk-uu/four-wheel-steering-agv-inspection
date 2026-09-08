@@ -22,6 +22,9 @@ class FollowCameraZoom : public gz::gui::Plugin {
    gz::gui::App()->findChild<gz::gui::MainWindow *>()->installEventFilter(this);
  }
  protected: bool eventFilter(QObject *object,QEvent *event) override {
+   // Locked follow must not let orbit/pan gestures change the viewing direction.
+   // Free camera and explicit free-look modes retain native mouse controls.
+   if(event->type()==gz::gui::events::DragOnScene::kType && locked_.load()) return true;
    if(event->type()==gz::gui::events::ScrollOnScene::kType && following_.load()) {
      auto *scroll=static_cast<gz::gui::events::ScrollOnScene *>(event);
      std::lock_guard<std::mutex> lock(mutex_);
@@ -38,6 +41,7 @@ class FollowCameraZoom : public gz::gui::Plugin {
      }
      if(camera_) {
        bool follows=bool(camera_->FollowTarget());following_.store(follows);
+       locked_.store(follows && camera_->TrackTarget()==camera_->FollowTarget());
        double wheel;
        {std::lock_guard<std::mutex> lock(mutex_);wheel=wheel_;wheel_=0;}
        if(follows && wheel!=0) {
@@ -62,6 +66,7 @@ class FollowCameraZoom : public gz::gui::Plugin {
  private: std::mutex mutex_;
  private: double wheel_=0;
  private: std::atomic<bool> following_{false};
+ private: std::atomic<bool> locked_{false};
 };
 }
 GZ_ADD_PLUGIN(agv::FollowCameraZoom,gz::gui::Plugin)

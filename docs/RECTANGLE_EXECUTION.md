@@ -21,6 +21,6 @@ ros2 run agv_mission execute_rectangle --ros-args \
 
 当前换道采用前向驶出，已删除ENTRY后退段；0.5 m/s时中间轨迹的扫描后行程2.55625 m，掉头后直接对接下一道加速起点。调参、耗时与原图几何对照见[扫描稳定性优化](SCAN_STABILITY.md)。
 
-`tools/validate_rectangle_execution.py --gui` 默认启用位置跟随（FOLLOW_FREE_LOOK），可手动旋转视角和滚轮缩放；需要固定场景视角时显式添加 `--no-follow-camera`。此前测试脚本强制关闭跟车，现已与正常启动的默认行为统一。
+`tools/validate_rectangle_execution.py --gui` 默认启用锁定跟随（FOLLOW_LOOK_AT），始终看向车辆、保留滚轮缩放；需要固定场景视角时显式添加 `--no-follow-camera`。此前测试脚本强制关闭跟车，现已与正常启动的默认行为统一。
 
-跟车启动需连续3秒确认目标为agv，避免仅凭场景加载期间一次短暂确认就退出；成功后不持续重发设置，不覆盖用户后续操作。GUI重启复查中，两次间隔8秒的读数均为FOLLOW_FREE_LOOK/agv，视角位置随车移动约4.08 m、朝向保持不变。
+跟车启动需连续3秒确认目标为agv，避免仅凭场景加载期间一次短暂确认就退出；成功后不持续重发设置，不覆盖用户后续操作。旧版自由转头复查已保留在历史记录；当前锁定跟车验证见[视角说明](GUI_CAMERA.md)。

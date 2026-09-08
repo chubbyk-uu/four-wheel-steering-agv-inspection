@@ -19,7 +19,7 @@ def main():
     parser=argparse.ArgumentParser();parser.add_argument('--output',type=Path,required=True)
     parser.add_argument('--gui',action='store_true');parser.add_argument('--profile',default='zero',choices=['zero','normal'])
     parser.add_argument('--follow-camera',action=argparse.BooleanOptionalAction,default=True,
-                        help='follow AGV position in GUI while allowing free rotation and wheel zoom')
+                        help='keep AGV in view in GUI while allowing wheel zoom')
     parser.add_argument('--scene',type=Path)
     parser.add_argument('--length',type=float,default=3.);parser.add_argument('--width',type=float,default=2.)
     a=parser.parse_args();a.output.mkdir(parents=True,exist_ok=False)
