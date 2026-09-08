@@ -1,7 +1,7 @@
 # First low-speed tracking baseline; body commands still pass through swerve limits.
 position_gain: 0.7
-heading_gain: 0.8
-feedback_filter_s: 0.25
+heading_gain: 0.5
+feedback_filter_s: 0.6
 position_deadband_m: 0.01
 heading_deadband_rad: 0.004
 max_position_feedback_m_s: 0.12

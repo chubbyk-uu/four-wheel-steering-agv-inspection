@@ -167,14 +167,16 @@ def plan(request, vehicle):
         entry = (begin - direction * (vehicle.camera_x + lead), cy)
         scan0 = (begin - direction * vehicle.camera_x, cy)
         scan1 = (finish - direction * vehicle.camera_x, cy)
-        exit_ = (scan1[0] + direction * runout, cy)
+        turn_runout = max(runout, 2 * vehicle.camera_x + lead) if i < n-1 else runout
+        exit_ = (scan1[0] + direction * turn_runout, cy)
         if previous:
             old_exit, old_heading = previous
             shifted = (old_exit[0], cy)
             segment('SHIFT', old_exit, shifted, old_heading, old_heading, i)
             # Rotation sign is a PREVIEW candidate. Runtime must use actual wheel states.
             segment('ROTATE_180', shifted, shifted, old_heading, heading, i)
-            segment('ENTRY', shifted, entry, heading, heading, i)
+            if math.dist(shifted, entry) > 1e-8:
+                raise PlanningError('forward-only turn geometry must meet the next entry')
         segment('ACCELERATE', entry, scan0, heading, heading, i, stop=False)
         segment('SCAN', scan0, scan1, heading, heading, i, capture=True, stop=False)
         segment('RUNOUT_BRAKE', scan1, exit_, heading, heading, i)
@@ -195,6 +197,7 @@ def plan(request, vehicle):
             'track_count': n, 'actual_track_spacing_m': actual,
             'guaranteed_overlap_m': effective-actual if n > 1 else None,
             'lead_distance_m': lead, 'runout_distance_m': runout,
+            'turn_runout_distance_m': max(runout, 2*vehicle.camera_x+lead),
             'sweep_radius_m': radius, 'total_base_translation_m': total_s,
             'region_xyz_m': [world(px,py) for px,py in [(x,y),(x+length,y),(x+length,y+width),(x,y+width)]],
             'tracks': tracks, 'segments': segments}

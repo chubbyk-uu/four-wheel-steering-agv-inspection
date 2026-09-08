@@ -235,3 +235,16 @@ TEST(DriveLimits, SeparateAccelerationAndDecelerationBothSigns){
 TEST(DriveLimits, RejectInvalidDeceleration){
  Config c;for(double value:std::array<double,4>{0.,-1.,INFINITY,NAN}){c.decel=value;EXPECT_THROW(Controller{c},std::invalid_argument);}
 }
+
+
+TEST(Alignment, BriefPassiveRollingKeepsDrivesZeroButSustainedMotionBrakes) {
+ Config cfg;Controller c(cfg);Four a{1,1,1,1},v{};
+ c.update({.1,0,0},a,v,.01);ASSERT_EQ(c.mode(),Mode::Align);
+ v.fill(.03);auto out=c.update({.1,0,0},a,v,.01);
+ EXPECT_EQ(c.mode(),Mode::Align);for(auto speed:out.speed)EXPECT_DOUBLE_EQ(speed,0);
+ v.fill(0);c.update({.1,0,0},a,v,.01);EXPECT_EQ(c.mode(),Mode::Align);
+ v.fill(.03);for(int i=0;i<7;++i)c.update({.1,0,0},a,v,.01);
+ EXPECT_EQ(c.mode(),Mode::Brake);
+ Controller significant(cfg);v.fill(0);significant.update({.1,0,0},a,v,.01);
+ v.fill(.051);significant.update({.1,0,0},a,v,.01);EXPECT_EQ(significant.mode(),Mode::Brake);
+}

@@ -48,7 +48,7 @@ class SegmentTracker:
         for key,value in config.items():
             if not isinstance(value,(int,float)) or not math.isfinite(value) or value<=0:
                 raise ValueError('invalid tracking parameter '+key)
-        self.kind=kind;self.cfg=config;self.platform=platform
+        self.kind=kind;self.cfg=config;self.platform=platform;self.forward_only=False
         self.length=float(np.linalg.norm(displacement)) if kind=='translate' else abs(float(angle))
         if self.length<1e-4 or (kind=='rotate' and abs(angle)>math.pi+1e-8):
             raise ValueError('segment must be nonzero; rotations limited to +/- pi')
@@ -84,7 +84,10 @@ class SegmentTracker:
         position_ratio=np.linalg.norm(position_error)/self.cfg['position_tolerance_m']
         heading_ratio=abs(heading_error)/self.cfg['heading_tolerance_rad']
         if position_ratio>max(.8,heading_ratio):
-            delta=r.inv().apply(self.final_goal-p)[:2];self.length=float(np.linalg.norm(delta))
+            delta=r.inv().apply(self.final_goal-p)[:2]
+            if self.forward_only and delta[0]<-self.cfg['position_deadband_m']:
+                self.fault('FORWARD_ONLY_TERMINAL_OVERSHOOT');return
+            self.length=float(np.linalg.norm(delta))
             self.kind='translate';self.axis=delta/self.length;self.goal=p+r.apply([*delta,0.]);self.goal_rotation=r
             self.speed=self.cfg['terminal_translation_speed_m_s'];self.accel=self.platform['drive_accel'];self.decel=self.platform['drive_decel']
         else:
@@ -176,6 +179,7 @@ class SegmentTracker:
         angular=float(np.clip(feedback[2]*self.cfg['heading_gain'],-self.cfg['max_heading_feedback_rad_s'],self.cfg['max_heading_feedback_rad_s']))
         if self.kind=='translate':
             forward=feedforward+float(np.dot(linear,self.axis))
+            if self.forward_only:forward=max(0.,forward)
             cross=linear-self.axis*np.dot(linear,self.axis)
             bound=self.cfg['cross_command_ratio']*abs(forward)
             if np.linalg.norm(cross)>bound:cross*=bound/np.linalg.norm(cross)

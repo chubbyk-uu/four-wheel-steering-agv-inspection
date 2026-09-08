@@ -48,3 +48,20 @@ TEST(ScanMotion, ContactTransientToleranceKeepsLowSpeedAndSlipRejection) {
   EXPECT_DOUBLE_EQ(WheelSpeedSpreadLimit(2.77778,.01,0),.01); // Legacy config.
   EXPECT_THROW(WheelSpeedSpreadLimit(0,.01,.2),std::invalid_argument);
 }
+
+
+#include "agv_linescan/scan_motion.hpp"
+TEST(ScanMotion, CurvedMotionAndEquivalentReverseWheelBranches) {
+  std::array<double,4> speed{},angle{};
+  std::array<double,4> x={.65,.65,-.65,-.65},y={.47,-.47,.47,-.47};
+  for(size_t i=0;i<4;++i){double vx=.5-.06*y[i],vy=.02+.06*x[i];speed[i]=std::hypot(vx,vy);angle[i]=std::atan2(vy,vx);}
+  speed[2]*=-1;angle[2]+=M_PI;
+  auto v=FitScanVelocity(speed,angle,1.3,.94);
+  EXPECT_NEAR(v.vx,.5,1e-12);EXPECT_NEAR(v.vy,.02,1e-12);EXPECT_NEAR(v.wz,.06,1e-12);EXPECT_LT(v.residual,1e-12);
+}
+TEST(ScanMotion, ProjectedDistanceAndPureLateralMotion) {
+  ProjectedEncoder encoder;std::array<double,4> p{},angle{};angle.fill(.1);encoder.Update(p,angle);
+  p.fill(1);EXPECT_NEAR(encoder.Update(p,angle),std::cos(.1),1e-12);
+  encoder.Reset();p.fill(0);angle.fill(M_PI/2);encoder.Update(p,angle);p.fill(1);
+  EXPECT_NEAR(encoder.Update(p,angle),0,1e-12);
+}

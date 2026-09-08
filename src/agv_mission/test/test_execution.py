@@ -17,10 +17,10 @@ def test_pass_merges_acceleration_scan_runout_without_intermediate_stops():
     p=fixture();steps=compile_steps(p,[3,0,.65],[0,0,0,1])
     passes=[s for s in steps if s['kind']=='PASS']
     assert len(passes)==4
-    assert [s['kind'] for s in steps]==['APPROACH','PASS','SHIFT','ROTATE_180','ENTRY','PASS','SHIFT','ROTATE_180','ENTRY','PASS','SHIFT','ROTATE_180','ENTRY','PASS']
+    assert [s['kind'] for s in steps]==['APPROACH','PASS','SHIFT','ROTATE_180','PASS','SHIFT','ROTATE_180','PASS','SHIFT','ROTATE_180','PASS']
     for s in passes:
         distance=np.linalg.norm(np.array(s['end']['position'])-s['start']['position'])
-        assert distance==pytest.approx(8+p['lead_distance_m']+p['runout_distance_m'])
+        assert distance==pytest.approx(8+p['lead_distance_m']+(p['turn_runout_distance_m'] if s['track_id']<3 else p['runout_distance_m']))
 
 
 def test_no_implicit_world_to_map_or_unsafe_approach():

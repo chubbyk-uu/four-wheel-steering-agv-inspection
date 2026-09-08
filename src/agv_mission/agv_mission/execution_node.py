@@ -15,6 +15,7 @@ from std_srvs.srv import Trigger
 from .planner import plan,Vehicle
 from .execution import compile_steps,segment_arguments,check_position
 from .tracking import SegmentTracker
+from .capture import CaptureGate
 
 
 class Executor(Node):
@@ -34,13 +35,15 @@ class Executor(Node):
         (self.output/'plan.json').write_text(json.dumps(self.plan,indent=2)+'\n')
         self.log=(self.output/'execution.jsonl').open('x')
         self.auto=self.declare_parameter('autostart',False).value
-        self.odom=None;self.mode='';self.health={};self.arrivals={}
+        self.capture=CaptureGate(self,self.output,self.declare_parameter('capture',False).value)
+        self.odom=None;self.mode='';self.health={};self.arrivals={};self.last_command=[0.,0.,0.];self.motion_reason=''
         self.state='READY';self.reason='';self.ready_since=None;self.steps=[];self.index=0;self.core=None
         self.last_sim=None;self.last_clock=time.monotonic();self.step_attempts=0;self.stopped_since=None
         self.cmd=self.create_publisher(TwistStamped,'/cmd_vel',10)
         self.status=self.create_publisher(String,'/mission/status',20)
         self.create_subscription(Odometry,'/odometry/global',self.on_odom,20)
         self.create_subscription(String,'/motion_state',self.on_mode,20)
+        self.create_subscription(String,'/motion_transition_reason',lambda m:setattr(self,'motion_reason',m.data),20)
         self.create_subscription(String,'/localization/status',self.on_health,20)
         self.create_service(Trigger,'/mission/start',self.start)
         self.create_service(Trigger,'/mission/cancel',self.cancel)
@@ -58,21 +61,24 @@ class Executor(Node):
         stamp=self.odom.header.stamp.sec+self.odom.header.stamp.nanosec*1e-9
         return -.02<=now-stamp<self.cfg['feedback_age_limit_s'] and all(time.monotonic()-self.arrivals.get(k,0)<self.cfg['wall_timeout_s'] for k in ('odom','mode','health'))
     def command(self,v):
+        self.last_command=list(map(float,v))
         m=TwistStamped();m.header.frame_id='base_link';m.header.stamp=self.get_clock().now().to_msg()
         m.twist.linear.x,m.twist.linear.y,m.twist.angular.z=map(float,v);self.cmd.publish(m)
     def start(self,request,response):
         if self.state!='READY' or self.ready_since is None or time.monotonic()-self.ready_since<self.cfg['initial_ready_hold_s']:
             response.success=False;response.message='continuous READY localization and HOLD dwell required';return response
+        if not self.capture.request(False):
+            response.success=False;response.message='waiting for camera disabled acknowledgement';return response
         try:self.steps=compile_steps(self.plan,*self.pose())
         except ValueError as exc:
             response.success=False;response.message=str(exc);return response
         (self.output/'steps.json').write_text(json.dumps(self.steps,indent=2)+'\n')
         self.state='RUNNING';response.success=True;response.message='started';return response
     def cancel(self,request,response):
-        if self.state not in ('COMPLETED','FAULT'):self.state='CANCELING';self.reason='CANCELED'
+        if self.state not in ('COMPLETED','ACQUIRED','FAULT'):self.state='CANCELING';self.reason='CANCELED'
         self.command([0,0,0]);response.success=True;response.message='braking requested';return response
     def fault(self,reason):
-        if self.state not in ('COMPLETED','FAULT'):
+        if self.state not in ('COMPLETED','ACQUIRED','FAULT'):
             self.state='FAULT';self.reason=reason
         self.command([0,0,0])
     def tick(self):
@@ -80,6 +86,8 @@ class Executor(Node):
         dt=0 if self.last_sim is None else now-self.last_sim;self.last_sim=now
         if dt>0:self.last_clock=wall
         valid=self.valid(now)
+        self.capture.poll()
+        if self.capture.error:self.fault(self.capture.error)
         if self.state=='READY':
             if valid and self.mode=='HOLD':
                 if self.ready_since is None:self.ready_since=wall
@@ -92,9 +100,10 @@ class Executor(Node):
             elif dt>0:self.run_step(dt)
         else:
             self.command([0,0,0])
-            if self.state=='CANCELING' and self.mode=='HOLD':self.state='CANCELED'
+            self.capture.request(False)
+            if self.state=='CANCELING' and self.mode=='HOLD' and self.capture.active is False and self.capture.future is None:self.state='CANCELED'
         record={'time_s':now,'state':self.state,'reason':self.reason,'motion_state':self.mode,
-                'step_index':self.index,'step_count':len(self.steps),'capture_integrated':False}
+                'step_index':self.index,'step_count':len(self.steps),'capture_integrated':self.capture.enabled,'capture_active':self.capture.active,'command_body':self.last_command,'motion_reason':self.motion_reason}
         if self.steps and self.index<len(self.steps):record.update(kind=self.steps[self.index]['kind'],track_id=self.steps[self.index]['track_id'])
         if self.odom is not None:record['position_m']=self.pose()[0].tolist()
         if self.core:record.update(tracker_state=self.core.state,profile_time_s=self.core.clock,
@@ -106,21 +115,37 @@ class Executor(Node):
         p,q=self.pose()
         try:check_position(self.plan,p)
         except ValueError as exc:self.fault(str(exc));return
-        if self.index>=len(self.steps):self.state='COMPLETED';self.command([0,0,0]);return
+        if self.index>=len(self.steps):
+            self.command([0,0,0])
+            if self.capture.request(False) and self.capture.future is None:
+                self.state='ACQUIRED' if self.capture.enabled else 'COMPLETED'
+            return
         step=self.steps[self.index]
+        if self.capture.future is not None and (self.capture.target or self.core is None):
+            self.command([0,0,0]);return
         if self.core is None:
             self.command([0,0,0])
             if self.mode!='HOLD':return
             args=segment_arguments(step,p,q)
             if args is None:
                 self.index+=1;self.step_attempts=0;return
+            if step['kind']=='PASS' and args['kind']=='translate' and not self.capture.request(True,step['track_id']):return
             self.step_attempts+=1
             if self.step_attempts>5:self.fault('STEP_NOT_CONVERGED');return
             self.active_kind=args['kind']
             self.core=SegmentTracker(p,q,platform=self.platform,config=self.cfg,**args)
+            self.core.forward_only=step['kind']=='PASS' and args['kind']=='translate'
         v=self.odom.twist.twist
         cmd=self.core.update(p,q,[v.linear.x,v.linear.y,v.angular.z],self.mode,dt)
         self.command(cmd)
+        if step['kind']=='PASS':
+            from scipy.spatial.transform import Rotation
+            track=self.plan['tracks'][step['track_id']]
+            start=np.array(track['scan_start_xyz_m']);finish=np.array(track['scan_end_xyz_m'])
+            axis=(finish-start)/np.linalg.norm(finish-start)
+            scan_center=p+Rotation.from_quat(q).apply([self.camera['camera_x_m'],0.,0.])
+            if (scan_center-start)@axis>=np.linalg.norm(finish-start)+.10 or self.core.state=='STOPPING':
+                self.capture.request(False)
         if self.core.state=='FAULT':self.fault(self.core.reason)
         elif self.core.state=='COMPLETED':
             # A time-profile translation has reached its endpoint within the tracker
@@ -129,7 +154,7 @@ class Executor(Node):
                 self.index+=1;self.step_attempts=0
             self.core=None
     def destroy_node(self):
-        self.command([0,0,0]);self.log.close();return super().destroy_node()
+        self.command([0,0,0]);self.capture.close();self.log.close();return super().destroy_node()
 
 
 def main():

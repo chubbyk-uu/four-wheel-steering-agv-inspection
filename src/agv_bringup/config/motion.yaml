@@ -5,6 +5,7 @@ swerve_controller:
     reorient_angle: 0.30
     aligned_angle: 0.035
     stopped_speed: 0.025
+    alignment_motion_confirm_s: 0.06
     max_lateral_mismatch: 0.12
     max_lateral_speed: 1.0
     steering_limit_reserve: 0.17453292519943295

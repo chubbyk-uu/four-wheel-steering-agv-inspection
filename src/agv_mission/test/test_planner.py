@@ -42,7 +42,7 @@ def test_full_coverage_and_camera_offset(request_data, vehicle):
     for a,b in zip(p['segments'],p['segments'][1:]):
         assert a['points'][-1]['pose'] == b['points'][0]['pose']
         assert a['points'][-1]['s_m'] == b['points'][0]['s_m']
-    assert [s['kind'] for s in p['segments']].count('ENTRY') == 3
+    assert [s['kind'] for s in p['segments']].count('ENTRY') == 0
     assert all(not s['capture'] for s in p['segments'] if s['kind'] != 'SCAN')
 
 
@@ -123,3 +123,12 @@ def test_analytic_envelope_independent_of_sampling(request_data,vehicle):
     request_data['drivable_bounds_xy_m']=[0,14,-5,5]
     with pytest.raises(PlanningError,match='swept vehicle'):
         plan(request_data,vehicle)
+
+
+def test_forward_runout_meets_next_entry_without_reverse(request_data,vehicle):
+    p=plan(request_data,vehicle)
+    assert p['turn_runout_distance_m']==pytest.approx(2*vehicle.camera_x+p['lead_distance_m'])
+    turns=[s for s in p['segments'] if s['kind']=='ROTATE_180']
+    for turn in turns:
+        assert turn['points'][-1]['pose']==p['tracks'][turn['track_id']]['base_entry_pose']
+    assert not any(s['kind']=='ENTRY' for s in p['segments'])

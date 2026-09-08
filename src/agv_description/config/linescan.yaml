@@ -7,6 +7,7 @@ block_rows: 4096
 # Display-only sRGB transfer for linear OptiX / radiometric CUDA previews.
 # Raw Mono8, archived PGM and offline correction stay linear.
 preview_srgb: true
+preview_bin: 8
 pixel_pitch_m: 0.000007
 focal_length_m: 0.020
 nominal_width_m: 1.5
@@ -20,8 +21,8 @@ calibration_id: nominal-linescan-4k-20mm-large-v7
 camera_x_m: 1.15
 base_nominal_height_m: 0.65
 # Signed offset from camera: behind the scan plane, close to the chassis front.
-led_forward_offset_m: -0.18
-led_height_m: 0.45
+led_forward_offset_m: -0.0803847577293368
+led_height_m: 0.30
 led_length_m: 1.20
 grid_spacing_m: 0.10
 grid_line_width_m: 0.002

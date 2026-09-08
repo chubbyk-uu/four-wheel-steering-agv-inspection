@@ -52,10 +52,10 @@
       <collision><origin xyz="1.005 ${y} 0.29"/><geometry><box size="0.04 0.04 0.30"/></geometry></collision>
       <xacro:box_visual x="0.17" y="0.035" z="0.035" xyz="1.065 ${y} 0.44" rpy="0 0 0" color="white"/>
       <collision><origin xyz="1.065 ${y} 0.44"/><geometry><box size="0.17 0.035 0.035"/></geometry></collision>
-      <xacro:box_visual x="0.04" y="0.04" z="0.34" xyz="0.94 ${y} -0.01" rpy="0 0 0" color="metal"/>
-      <collision><origin xyz="0.94 ${y} -0.01"/><geometry><box size="0.04 0.04 0.34"/></geometry></collision>
-      <xacro:box_visual x="0.12" y="0.04" z="0.04" xyz="0.97 ${y} -0.16" rpy="0 0 0" color="metal"/>
-      <collision><origin xyz="0.97 ${y} -0.16"/><geometry><box size="0.12 0.04 0.04"/></geometry></collision>
+      <xacro:box_visual x="0.04" y="0.04" z="${0.81-(cam.led_height_m+0.035)}" xyz="0.94 ${y} ${(0.81+cam.led_height_m+0.035)/2-cam.base_nominal_height_m}" rpy="0 0 0" color="metal"/>
+      <collision><origin xyz="0.94 ${y} ${(0.81+cam.led_height_m+0.035)/2-cam.base_nominal_height_m}"/><geometry><box size="0.04 0.04 ${0.81-(cam.led_height_m+0.035)}"/></geometry></collision>
+      <xacro:box_visual x="${cam.camera_x_m+cam.led_forward_offset_m-0.92+0.02}" y="0.04" z="0.04" xyz="${(0.92+cam.camera_x_m+cam.led_forward_offset_m+0.02)/2} ${y} ${cam.led_height_m+0.035-cam.base_nominal_height_m}" rpy="0 0 0" color="metal"/>
+      <collision><origin xyz="${(0.92+cam.camera_x_m+cam.led_forward_offset_m+0.02)/2} ${y} ${cam.led_height_m+0.035-cam.base_nominal_height_m}"/><geometry><box size="${cam.camera_x_m+cam.led_forward_offset_m-0.92+0.02} 0.04 0.04"/></geometry></collision>
     </xacro:macro>
     <xacro:front_arm y="0.24"/><xacro:front_arm y="-0.24"/>
     <xacro:box_visual x="0.05" y="0.54" z="0.03" xyz="1.10 0 0.44" rpy="0 0 0" color="white"/>

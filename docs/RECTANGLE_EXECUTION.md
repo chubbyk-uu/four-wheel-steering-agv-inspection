@@ -1,6 +1,6 @@
 # 矩形任务执行
 
-已接入绝对map目标、当前位置直线接入、停车航向对齐、连续PASS、横移、180°转身和入轨补偿。PASS将规划的ACCELERATE/SCAN/RUNOUT_BRAKE合为一条静止到静止时间曲线，扫描边界处不停。行距固定1 m，加速度0.8/减速度1.0 m/s²，当前试验0.5 m/s。
+已接入绝对map目标、当前位置直线接入、停车航向对齐、连续PASS、横移、180°转身与前向驶出补偿。PASS将规划的ACCELERATE/SCAN/RUNOUT_BRAKE合为一条静止到静止时间曲线，扫描边界处不停。行距固定1 m，加速度0.8/减速度1.0 m/s²，当前试验0.5 m/s。
 
 执行前须连续READY＋HOLD 5秒；输入道路frame必须显式map。车辆当前位置和规划路径都检查1.5 m扫掠半径；可行驶矩形的内缩区域是凸集，因此合法端点间的直线接入也不越界。该检查依赖用户声明的无障碍矩形，不是避障。每段终点是绝对规划坐标，不能把上一段误差累计到新目标。
 
@@ -16,3 +16,7 @@ ros2 run agv_mission execute_rectangle --ros-args \
 需先启动localization:=true的仿真；输出目录必须不存在。默认autostart=false，调用`/mission/start`（Trigger）开始，`/mission/cancel`取消并等待HOLD。取消不自动恢复；不同时运行其他cmd_vel发布者。每实例一项任务，归档plan.json、steps.json和execution.jsonl。
 
 当前尚无暂停/恢复、动态障碍、RViz任务面板和最高速区域闭环验收。采集联动独立验证，不能把此运动报告称为完成了矩形图像覆盖。
+
+后续已接可选capture模式，握手和归档语义见[矩形采集](RECTANGLE_CAPTURE.md)；本文件中的运动报告保留为独立基线。
+
+当前换道采用前向驶出，已删除ENTRY后退段；0.5 m/s时中间轨迹的扫描后行程2.55625 m，掉头后直接对接下一道加速起点。调参、耗时与原图几何对照见[扫描稳定性优化](SCAN_STABILITY.md)。

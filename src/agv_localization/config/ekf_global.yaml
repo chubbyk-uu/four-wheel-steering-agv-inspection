@@ -298,8 +298,9 @@ ekf_global:
     - 0.0
     - 0.0
     - 0.1
+    # Translation/yaw propagate from wheel/IMU; avoid treating GNSS jumps as rapid motion.
     process_noise_covariance:
-    - 0.02
+    - 0.00005
     - 0.0
     - 0.0
     - 0.0
@@ -315,7 +316,7 @@ ekf_global:
     - 0.0
     - 0.0
     - 0.0
-    - 0.02
+    - 0.00005
     - 0.0
     - 0.0
     - 0.0
@@ -379,7 +380,7 @@ ekf_global:
     - 0.0
     - 0.0
     - 0.0
-    - 0.001
+    - 0.00001
     - 0.0
     - 0.0
     - 0.0

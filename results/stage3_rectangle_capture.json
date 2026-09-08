@@ -1,0 +1,188 @@
+{
+  "current_gui_capture": {
+    "passed": true,
+    "scope": "rectangle motion + OptiX raw capture + sparse fused labels; no correction/stitching",
+    "profile": "normal",
+    "gui_rviz": true,
+    "region_m": [
+      8.0,
+      4.0
+    ],
+    "track_spacing_m": 1.0,
+    "tracks": [
+      {
+        "track_id": 0,
+        "running_samples": 1109,
+        "reference_error_max_m": 0.02037020402840909
+      },
+      {
+        "track_id": 1,
+        "running_samples": 1109,
+        "reference_error_max_m": 0.02927225480477892
+      },
+      {
+        "track_id": 2,
+        "running_samples": 1111,
+        "reference_error_max_m": 0.028949745595656745
+      },
+      {
+        "track_id": 3,
+        "running_samples": 877,
+        "reference_error_max_m": 0.027065330834688834
+      }
+    ],
+    "final": {
+      "time_s": 194.69500000000002,
+      "state": "ACQUIRED",
+      "reason": "",
+      "motion_state": "HOLD",
+      "step_index": 11,
+      "step_count": 11,
+      "capture_integrated": true,
+      "capture_active": false,
+      "command_body": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "motion_reason": "STOP_REQUEST",
+      "position_m": [
+        6.914840411586561,
+        1.499483385088889,
+        0.6598708942809234
+      ]
+    },
+    "capture": [
+      {
+        "track_id": 0,
+        "blocks": 6,
+        "rows": 22799,
+        "truth_along_extent_m": [
+          -0.24149302310158127,
+          8.105670548018608
+        ],
+        "continuous_roi": true
+      },
+      {
+        "track_id": 1,
+        "blocks": 7,
+        "rows": 22800,
+        "truth_along_extent_m": [
+          -0.24334890021533617,
+          8.112323377692984
+        ],
+        "continuous_roi": true
+      },
+      {
+        "track_id": 2,
+        "blocks": 6,
+        "rows": 22701,
+        "truth_along_extent_m": [
+          -0.20834339472717645,
+          8.104430414423987
+        ],
+        "continuous_roi": true
+      },
+      {
+        "track_id": 3,
+        "blocks": 7,
+        "rows": 22831,
+        "truth_along_extent_m": [
+          -0.25591768754283883,
+          8.104408329202524
+        ],
+        "continuous_roi": true
+      }
+    ]
+  },
+  "sampled_footprint_audit": {
+    "passed": true,
+    "scope": "sampled nominal ground footprint corridors from independent rendering truth; no pixel-level coverage claim",
+    "corridors": [
+      {
+        "track_id": 0,
+        "samples": 26,
+        "intersection_y_m": [
+          -2.2495369694813276,
+          -0.7641320973459473
+        ]
+      },
+      {
+        "track_id": 1,
+        "samples": 26,
+        "intersection_y_m": [
+          -1.148780972975904,
+          0.2837305820225384
+        ]
+      },
+      {
+        "track_id": 2,
+        "samples": 26,
+        "intersection_y_m": [
+          -0.2243788833955298,
+          1.2593180973579536
+        ]
+      },
+      {
+        "track_id": 3,
+        "samples": 27,
+        "intersection_y_m": [
+          0.7993932856043431,
+          2.237568898645225
+        ]
+      }
+    ],
+    "minimum_sampled_overlap_m": 0.38464887562995664
+  },
+  "localization_outage": {
+    "passed": true,
+    "profile": "normal",
+    "gui_rviz": false,
+    "configuration": "outage_probe.yaml",
+    "spawn_yaw_rad": 0.0,
+    "navigation_records": 2099,
+    "outage_recovery_tested": true,
+    "fusion": {
+      "samples": 1850,
+      "horizontal_rmse_m": 0.008948633639328083,
+      "position_max_m": 0.07130923740910387,
+      "vertical_rmse_m": 0.025268162816877524,
+      "yaw_rmse_deg": 0.24455760010061423,
+      "yaw_mean_deg": -0.08119766900400024,
+      "rate_hz": 49.99999999999999
+    },
+    "gnss_observation": {
+      "samples": 350,
+      "horizontal_rmse_m": 0.03798794591019176,
+      "position_max_m": 0.11786557493519473,
+      "vertical_rmse_m": 0.02945770839376741,
+      "yaw_rmse_deg": 1.8066032622957204,
+      "yaw_mean_deg": -0.08509957170648637,
+      "rate_hz": 9.457994579945797
+    },
+    "tf_edges": {
+      "base_link": [
+        "odom"
+      ],
+      "odom": [
+        "map"
+      ]
+    },
+    "imu_rate_hz": 100.00476099790517,
+    "wheel_rate_hz": 100.0,
+    "imu_delivery_age_mean_s": 0.006045930509282585,
+    "wheel_delivery_age_mean_s": 0.01103811338732861,
+    "not_ready_samples": 33,
+    "ready_fraction": 0.9554054054054054,
+    "final_motion_state": "HOLD",
+    "scope": "measurement/EKF motion regression; not mission tracking or image tagging"
+  },
+  "sensor_mounts": {
+    "camera_height_m": 1.0463169642857142,
+    "raw_swath_m": 1.56,
+    "checked_rays": 257,
+    "occluded_camera_rays": 0,
+    "gz_spot_covered_samples": 257,
+    "scope": "nominal flat geometry; not radiometric uniformity or suspension envelope validation"
+  }
+}

@@ -24,6 +24,7 @@ class SwerveNode : public rclcpp::Node {
     c.lateral_mismatch=declare_parameter("max_lateral_mismatch",c.lateral_mismatch);
     c.max_lateral_speed=declare_parameter("max_lateral_speed",c.max_lateral_speed);
     c.stopped=declare_parameter("stopped_speed",c.stopped);
+    c.alignment_motion_confirm_s=declare_parameter("alignment_motion_confirm_s",c.alignment_motion_confirm_s);
     c.limit_reserve=declare_parameter("steering_limit_reserve",c.limit_reserve);
     c.wheel_deadband=declare_parameter("wheel_speed_deadband",c.wheel_deadband);
     timeout_=declare_parameter("command_timeout",0.4);

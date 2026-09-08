@@ -92,3 +92,10 @@ def test_alignment_probe_stable_despite_estimated_heading_noise():
     c=tracker();first=c.update([0,0,.65],[0,0,0,1],[0,0,0],'ALIGN',.02)
     noisy=Rotation.from_euler('z',.02).as_quat()
     np.testing.assert_equal(c.update([0,0,.65],noisy,[0,0,0],'ALIGN',.02),first)
+
+
+def test_forward_only_pass_faults_instead_of_reversing_after_overshoot():
+    c=tracker();c.forward_only=True;c.state='RUNNING';c.was_running=True;c.clock=c.profile.duration
+    for _ in range(25):command=c.update([4.08,0,.65],[0,0,0,1],[0,0,0],'HOLD',.02)
+    assert c.state=='FAULT' and c.reason=='FORWARD_ONLY_TERMINAL_OVERSHOOT'
+    np.testing.assert_equal(command,np.zeros(3))

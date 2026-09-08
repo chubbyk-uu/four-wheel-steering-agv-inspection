@@ -14,13 +14,14 @@ struct Config {
   double wheelbase{0.65}, track{0.55}, radius{0.1}, soft{185*pi/180};
   double rate{1.2}, steer_accel{3.0}, max_speed{10/3.6}, max_yaw{0.8}, accel{0.8}, decel{1.0};
   double reorient{0.30}, aligned{0.035}, stopped{0.025}, hysteresis{0.08};
+  double alignment_motion_confirm_s{0.06};
   double lateral_mismatch{0.12};
   double max_lateral_speed{1.0};
   double limit_reserve{10*pi/180}, wheel_deadband{0.005};
   void validate() const {
-    for (double v : {wheelbase,track,radius,soft,rate,steer_accel,max_speed,max_yaw,accel,decel,reorient,aligned,stopped,hysteresis,lateral_mismatch,max_lateral_speed,limit_reserve,wheel_deadband})
+    for (double v : {wheelbase,track,radius,soft,rate,steer_accel,max_speed,max_yaw,accel,decel,reorient,aligned,stopped,hysteresis,lateral_mismatch,max_lateral_speed,limit_reserve,wheel_deadband,alignment_motion_confirm_s})
       if (!std::isfinite(v) || v <= 0) throw std::invalid_argument("invalid controller parameter");
-    if (soft < pi/2 || aligned >= reorient || limit_reserve >= soft-pi/2 || wheel_deadband>=stopped)
+    if (alignment_motion_confirm_s > .1 || soft < pi/2 || aligned >= reorient || limit_reserve >= soft-pi/2 || wheel_deadband>=stopped)
       throw std::invalid_argument("invalid steering thresholds");
   }
 };
@@ -34,7 +35,7 @@ inline double approach(double a, double b, double delta) {return a+std::clamp(b-
 class Controller {
  public:
   explicit Controller(Config c={}) : c_(c) { c_.validate(); }
-  void reset() {out_={};previous_={};steer_velocity_={};initialized_=false;mode_=Mode::Hold;settled_=0;reason_="NONE";unwinding_=false;}
+  void reset() {out_={};previous_={};steer_velocity_={};initialized_=false;mode_=Mode::Hold;settled_=0;alignment_motion_time_=0;reason_="NONE";unwinding_=false;}
   Target allocate(Twist t, const Four &actual, const Four &previous, bool reconfigure=false,
                   bool stationary=false) const {
     if (!std::isfinite(t.x)||!std::isfinite(t.y)||!std::isfinite(t.yaw))
@@ -117,7 +118,13 @@ class Controller {
         excessive_mismatch?"LATERAL_MISMATCH":"LARGE_STEER_CHANGE";
     }
     if(mode_==Mode::Hold && moving>=c_.stopped) mode_=Mode::Brake;
-    if(mode_==Mode::Align && moving>=c_.stopped) mode_=Mode::Brake;
+    // Steering under contact can produce a brief passive wheel-velocity pulse.
+    // Keep drive output zero and reset the drive-ready dwell during such pulses.
+    // Significant or sustained rolling still stops steering immediately/after confirmation.
+    alignment_motion_time_=(mode_==Mode::Align && moving>=c_.stopped)?alignment_motion_time_+dt:0;
+    if(mode_==Mode::Align && (moving>=2*c_.stopped || alignment_motion_time_>=c_.alignment_motion_confirm_s)) {
+      mode_=Mode::Brake;reason_="ALIGN_WHEEL_MOTION";
+    }
     if(mode_==Mode::Hold && !zero) mode_=Mode::Align;
     if(mode_==Mode::Brake && moving<c_.stopped && max_abs(out_.speed)<c_.stopped
        && max_abs(steer_velocity_)<0.01 && max_abs(actual_steer_rates)<0.08)
@@ -128,7 +135,7 @@ class Controller {
       std::abs(actual_steer_rates[i]-steer_velocity_[i]));
     // A continuously changing request may already be tracked accurately while
     // the steering joints are turning. It need not wait for zero steering rate.
-    if(mode_==Mode::Align && !zero && err<c_.aligned && steering_tracking_error<0.08
+    if(mode_==Mode::Align && !zero && moving<c_.stopped && err<c_.aligned && steering_tracking_error<0.08
        && max_abs(actual_steer_rates)<=c_.rate+0.05) {
       settled_+=dt;
       if(settled_>=0.10) {mode_=Mode::Drive;settled_=0;unwinding_=false;}
@@ -178,7 +185,7 @@ class Controller {
   static double max_abs(const Four &a){double m=0;for(double x:a)m=std::max(m,std::abs(x));return m;}
  private:
   Config c_; Target out_; Four previous_{},steer_velocity_{},last_angles_{};
-  bool initialized_{false}; Mode mode_{Mode::Hold}; double settled_{};
+  bool initialized_{false}; Mode mode_{Mode::Hold}; double settled_{},alignment_motion_time_{};
   std::string reason_{"NONE"};
   bool unwinding_{false};
 };

@@ -3,6 +3,7 @@
 // GL work stays on one thread. Ogre2 uses synchronized scene sampling; the
 // tiled CUDA plane uses a bounded asynchronous queue to keep physics advancing.
 #include "agv_linescan/sampling.hpp"
+#include "agv_linescan/scan_motion.hpp"
 #include "agv_linescan/queue_budget.hpp"
 #include "agv_linescan/preview.hpp"
 #ifdef AGV_HAS_CUDA
@@ -102,6 +103,7 @@ class GzLineScan final: public gz::sim::System,
     auto platform=YAML::LoadFile(sdf->Get<std::string>("platform"));
     radius_=platform["wheel_radius"].as<double>();
     track_=platform["track"].as<double>();
+    wheelbase_=platform["wheelbase"].as<double>();
     rows_=sdf->Get<size_t>("block_rows",config_["block_rows"].as<size_t>()).first;
     config_["block_rows"]=rows_;
     exposure_=config_["exposure_s"].as<double>();
@@ -212,7 +214,7 @@ class GzLineScan final: public gz::sim::System,
     Job job; job.sceneTime=now_;
     if (model_) {
       if (!history_.empty() && now_<=history_.back().time) {
-        job.endReason="time_reset"; Reset(job.endReason); history_.clear();
+        job.endReason="time_reset"; Reset(job.endReason); history_.clear(); projectedEncoder_.Reset();
       }
       Sample snapshot{now_,gz::sim::worldPose(model_,ecm),{}};
       for(auto entity:linkEntities_)snapshot.links.push_back(gz::sim::worldPose(entity,ecm));
@@ -231,7 +233,7 @@ class GzLineScan final: public gz::sim::System,
       while (history_.size()>8) history_.pop_front();
       bool valid=true;
       double distance=0,maxSteer=0;
-      std::array<double,4> speeds{};
+      std::array<double,4> speeds{},angles{},wheelDistance{};
       for (size_t i=0;i<4;++i) {
         auto p=ecm.Component<gz::sim::components::JointPosition>(drive_[i]);
         auto v=ecm.Component<gz::sim::components::JointVelocity>(drive_[i]);
@@ -239,21 +241,36 @@ class GzLineScan final: public gz::sim::System,
         if (!p || !v || !s || p->Data().empty() || v->Data().empty() || s->Data().empty()) { valid=false; break; }
         maxSteer=std::max(maxSteer,std::abs(s->Data()[0]));
         distance+=p->Data()[0]*radius_/4;
+        angles[i]=s->Data()[0];wheelDistance[i]=p->Data()[0]*radius_;
         speeds[i]=v->Data()[0]*radius_;
         valid=valid && std::isfinite(distance) && std::isfinite(speeds[i]) &&
-            std::isfinite(s->Data()[0]) && std::abs(s->Data()[0])<=config_["max_steer_rad"].as<double>() &&
+            std::isfinite(s->Data()[0]) && (config_["projected_encoder"].as<bool>(false) || std::abs(s->Data()[0])<=config_["max_steer_rad"].as<double>()) &&
             std::abs(speeds[i])<=maxSpeed_;
       }
       lastDriveSpeed_=(speeds[0]+speeds[1]+speeds[2]+speeds[3])/4;
       const auto range=std::minmax_element(speeds.begin(),speeds.end());
       const double spreadLimit=WheelSpeedSpreadLimit(std::isfinite(lastDriveSpeed_)?lastDriveSpeed_:0,wheelSpreadAbsolute_,wheelSpreadRelative_);
+      const bool wheelDataValid=valid;
       valid=valid && *range.second-*range.first<=spreadLimit &&
           std::abs((speeds[1]+speeds[3]-speeds[0]-speeds[2])/(2*track_))<=config_["max_yaw_rate_rad_s"].as<double>();
-      if(enabled_ && !valid) scanMotion_={{"wheel_speeds_m_s",speeds},{"wheel_speed_spread_m_s",*range.second-*range.first},
+      if(config_["projected_encoder"].as<bool>(false)) {
+        try {
+          if(!wheelDataValid) {projectedEncoder_.Reset();throw std::runtime_error("invalid wheel data");}
+          auto velocity=FitScanVelocity(speeds,angles,wheelbase_,track_);
+          distance=projectedEncoder_.Update(wheelDistance,angles);
+          lastDriveSpeed_=velocity.vx;
+          valid=wheelDataValid && std::abs(velocity.vx)<=maxSpeed_ &&
+              std::abs(velocity.vy)<=config_["max_scan_lateral_m_s"].as<double>() &&
+              std::abs(velocity.wz)<=config_["max_yaw_rate_rad_s"].as<double>() &&
+              velocity.residual<=config_["max_scan_residual_m_s"].as<double>();
+          scanMotion_={{"vx",velocity.vx},{"vy",velocity.vy},{"wz",velocity.wz},{"residual",velocity.residual}};
+        } catch(const std::exception&) {valid=false;}
+      }
+      if(enabled_ && !valid && !config_["projected_encoder"].as<bool>(false)) scanMotion_={{"wheel_speeds_m_s",speeds},{"wheel_speed_spread_m_s",*range.second-*range.first},
         {"max_abs_steer_rad",maxSteer},{"encoder_yaw_estimate_rad_s",(speeds[1]+speeds[3]-speeds[0]-speeds[2])/(2*track_)},
         {"speed_limit_m_s",maxSpeed_},{"wheel_spread_limit_m_s",spreadLimit},
         {"steer_limit_rad",config_["max_steer_rad"].as<double>()},{"yaw_limit_rad_s",config_["max_yaw_rate_rad_s"].as<double>()}};
-      if (enabled_ && motion_=="DRIVE" && valid) {
+      if (enabled_ && (motion_=="DRIVE" || (config_["projected_encoder"].as<bool>(false) && motion_=="BRAKE")) && valid) {
         try {
           auto events=trigger_->Update(now_,distance);
           pending_.insert(pending_.end(),events.begin(),events.end());
@@ -579,7 +596,7 @@ class GzLineScan final: public gz::sim::System,
     if (buffer_.empty()) return;
     last_=Tag(lastLine_,lastSceneTime_);
     if (tags_.back()["global_line"]!=last_["global_line"]) tags_.push_back(last_);
-    Json meta={{"schema","agv.linescan.render.v1"},{"block_id",block_++},
+    Json meta={{"encoder_distance_model",config_["projected_encoder"].as<bool>(false)?"four_wheel_body_x_projection":"mean_signed_wheel_distance"},{"schema","agv.linescan.render.v1"},{"block_id",block_++},
       {"segment_id",segment_},{"width",optics_->width},{"rows",buffer_.size()/optics_->width},
       {"encoding","mono8"},{"first",first_},{"last",last_},{"pose_tags",tags_},
       {"reference","last_line_exposure_midpoint"},{"line_spacing_m",spacing_},
@@ -589,6 +606,11 @@ class GzLineScan final: public gz::sim::System,
       {"radiometry","rendered RGB luminance; three temporal samples; not calibrated irradiance"},
       {"cumulative_sampling_metrics",{{"lines",globalLine_},{"renders",renders_},{"render_seconds",renderSeconds_},
         {"readback_seconds",readSeconds_},{"mapping_seconds",mappingSeconds_},{"scene_update_seconds",sceneSeconds_}}}};
+    if(config_["projected_encoder"].as<bool>(false))
+      meta["scan_motion_limits"]={{"max_lateral_m_s",config_["max_scan_lateral_m_s"].as<double>()},
+        {"max_yaw_rate_rad_s",config_["max_yaw_rate_rad_s"].as<double>()},
+        {"max_wheel_vector_residual_m_s",config_["max_scan_residual_m_s"].as<double>()},
+        {"brake_sampling",true}};
     meta["cumulative_sampling_metrics"]["sampling_batch_max_seconds"]=batchMax_;
     { std::lock_guard<std::mutex> metricsLock(metricsMutex_);
     for(size_t i=0;i<wheelMotion_.size();++i){const auto& w=wheelMotion_[i];if(w.valid)
@@ -662,15 +684,17 @@ class GzLineScan final: public gz::sim::System,
       meta["preview_subscribers"]=previewPub_->get_subscription_count();
       if(previewPub_->get_subscription_count()){
         start=Clock::now();sensor_msgs::msg::Image preview;preview.header=message.header;
-        preview.width=(message.width+31)/32;preview.height=(message.height+31)/32;preview.step=preview.width;preview.encoding="mono8";
-        preview.data=AreaPreview(message.data,message.width,message.height);
+        const size_t previewBin=config_["preview_bin"].as<size_t>(32);
+        if(previewBin<1 || previewBin>64)throw std::runtime_error("invalid preview_bin");
+        preview.width=(message.width+previewBin-1)/previewBin;preview.height=(message.height+previewBin-1)/previewBin;preview.step=preview.width;preview.encoding="mono8";
+        preview.data=AreaPreview(message.data,message.width,message.height,previewBin);
         const auto radiometry=LoadRadiometry(config_);
         const bool displaySrgb=config_["preview_srgb"].as<bool>(true) &&
           (backend_=="optix" || (backend_=="cuda_tiles" && radiometry.enabled));
         if(displaySrgb)DisplaySrgb(preview.data,radiometry.black);
         meta["preview_transfer"]=displaySrgb?"srgb_display_only":"identity";
         previewPub_->publish(preview);
-        meta["preview_seconds"]=Seconds(Clock::now()-start);meta["preview_area_bin"]=32;
+        meta["preview_seconds"]=Seconds(Clock::now()-start);meta["preview_area_bin"]=previewBin;
       }
       std::ofstream json(output_/(name.str()+".json")); json<<meta.dump(2)<<'\n'; json.close();
       if (!json) throw std::runtime_error("metadata archive write failed");
@@ -682,6 +706,7 @@ class GzLineScan final: public gz::sim::System,
   YAML::Node config_;
   std::unique_ptr<Optics> optics_;
   std::unique_ptr<Trigger> trigger_;
+  ProjectedEncoder projectedEncoder_;
   gz::sim::RenderUtil render_;
   std::vector<gz::rendering::CameraPtr> cameras_;
   gz::sim::Entity model_=gz::sim::kNullEntity;
@@ -689,7 +714,7 @@ class GzLineScan final: public gz::sim::System,
   std::deque<Sample> history_;
   std::deque<Event> pending_;
   gz::math::Pose3d offset_;
-  double radius_=0,track_=0,now_=0,exposure_=0,spacing_=0,maxSpeed_=0;
+  double radius_=0,track_=0,wheelbase_=0,now_=0,exposure_=0,spacing_=0,maxSpeed_=0;
   double wheelSpreadAbsolute_=.01,wheelSpreadRelative_=0;
   bool enabled_=false,active_=false;
   std::string motion_,backend_,terrainPath_;
