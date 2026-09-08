@@ -1,0 +1,86 @@
+{
+  "zero_headless": {
+    "passed": true,
+    "scope": "rectangle motion only; capture integration pending",
+    "profile": "zero",
+    "gui_rviz": false,
+    "region_m": [
+      3.0,
+      2.0
+    ],
+    "track_spacing_m": 1.0,
+    "tracks": [
+      {
+        "track_id": 0,
+        "running_samples": 376,
+        "reference_error_max_m": 0.01819461471651804
+      },
+      {
+        "track_id": 1,
+        "running_samples": 378,
+        "reference_error_max_m": 0.01962693899973261
+      }
+    ],
+    "final": {
+      "time_s": 67.49000000000001,
+      "state": "COMPLETED",
+      "reason": "",
+      "motion_state": "HOLD",
+      "step_index": 6,
+      "step_count": 6,
+      "capture_integrated": false,
+      "position_m": [
+        6.916146869491751,
+        0.5001884287475241,
+        0.6482688269966697
+      ]
+    }
+  },
+  "normal_gui": {
+    "passed": true,
+    "scope": "rectangle motion only; capture integration pending",
+    "profile": "normal",
+    "gui_rviz": true,
+    "region_m": [
+      8.0,
+      4.0
+    ],
+    "track_spacing_m": 1.0,
+    "tracks": [
+      {
+        "track_id": 0,
+        "running_samples": 878,
+        "reference_error_max_m": 0.07910347642823863
+      },
+      {
+        "track_id": 1,
+        "running_samples": 880,
+        "reference_error_max_m": 0.061949864812735775
+      },
+      {
+        "track_id": 2,
+        "running_samples": 879,
+        "reference_error_max_m": 0.06721489543029295
+      },
+      {
+        "track_id": 3,
+        "running_samples": 924,
+        "reference_error_max_m": 0.07544014222791824
+      }
+    ],
+    "final": {
+      "time_s": 216.49200000000002,
+      "state": "COMPLETED",
+      "reason": "",
+      "motion_state": "HOLD",
+      "step_index": 14,
+      "step_count": 14,
+      "capture_integrated": false,
+      "position_m": [
+        6.919336150926803,
+        1.483884786892133,
+        0.6436159251300589
+      ]
+    }
+  }
+}

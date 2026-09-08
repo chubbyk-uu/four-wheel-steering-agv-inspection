@@ -1,0 +1,3 @@
+#!/usr/bin/env python3
+from agv_mission.execution_node import main
+main()
