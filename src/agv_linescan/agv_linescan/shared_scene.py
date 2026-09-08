@@ -5,6 +5,7 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 import numpy as np
 from PIL import Image
+from .collision_proxy import validate_proxy
 
 
 def digest(path):
@@ -156,14 +157,63 @@ def validate(manifest):
         for pose in model.iter('pose'):
             if any(float(x)!=0 for x in pose.text.split()):raise ValueError('unexpected scene transform')
         link=model.find('link');asset=assets[model.get('name')]
+        collision_path=validate_proxy(root,asset) if 'collision_proxy' in asset else (root/asset['mesh']).resolve()
         for kind in ('visual','collision'):
             items=link.findall(kind)
             if len(items)!=1:raise ValueError('geometry count mismatch')
             geo=items[0].find('geometry/mesh')
-            if geo is None or Path(geo.findtext('uri')).resolve()!=(root/asset['mesh']).resolve() or geo.findtext('scale')!='1 1 1':
+            expected=collision_path if kind=='collision' else (root/asset['mesh']).resolve()
+            if geo is None or Path(geo.findtext('uri')).resolve()!=expected or geo.findtext('scale')!='1 1 1':
                 raise ValueError('visual/collision geometry mismatch')
             if kind=='visual' and 'linear_reflectance' in asset:
                 expected=[asset['linear_reflectance']]*3+[1.]
                 if [float(x) for x in items[0].findtext('material/diffuse','').split()]!=expected:
                     raise ValueError('diffuse material mismatch')
+    if 'ground_material' in m:
+        material=m['ground_material']
+        if material['schema']=='agv.ground_material.xy.v1':
+            w,h=material['width'],material['height']
+            if not (0<w<=32768 and 0<h<=32768):raise ValueError('invalid material resolution')
+            for field,channels in (('color',1),('normal',2),('roughness_map',1)):
+                if field not in material:continue
+                entry=material[field];file=root/entry['file']
+                if file.parent.resolve()!=root or file.stat().st_size!=w*h*channels or digest(file)!=entry['sha256']:
+                    raise ValueError('ground material integrity mismatch')
+        elif material['schema']=='agv.ground_material.tiles.v1':
+            nx,ny=material['tiles_x'],material['tiles_y'];stride=material['core_pixels']+2*material['gutter_pixels'];seen=set()
+            for tile in material['tiles']:
+                key=(tile['ix'],tile['iy'])
+                if key in seen or not (0<=key[0]<nx and 0<=key[1]<ny):raise ValueError('invalid/duplicate tile key')
+                seen.add(key)
+                for field,channels in (('color',1),('normal',2)):
+                    entry=tile[field];file=root/entry['file']
+                    if file.parent.resolve()!=root or file.stat().st_size!=stride*stride*channels or len(entry['sha256'])!=64:
+                        raise ValueError('tiled material file contract mismatch')
+            if len(seen)!=nx*ny:raise ValueError('missing material tile entry')
+            # Content hashes are checked in the loader before each tile becomes GPU-ready.
+        else:raise ValueError('unsupported ground material')
+        for model in models:
+            asset=assets[model.get('name')]
+            if asset.get('material')!='ground':continue
+            pbr=model.find('link/visual/material/pbr/metal')
+            if pbr is None or float(pbr.findtext('roughness','-1'))!=material.get('roughness',.60):
+                raise ValueError('GZ/OptiX roughness mismatch')
+            for tag in ('albedo_map','normal_map'):
+                file=Path(pbr.findtext(tag,''))
+                if file.parent.resolve()!=root or file.name not in m['display_materials']:
+                    raise ValueError('GZ material must reference checked shared display assets')
+            projection=asset.get('display_uv_projection',m.get('display_uv_projection'))
+            origin=np.asarray(projection['origin_xy_m']);span=np.asarray(projection['span_xy_m'])
+            if origin.shape!=(2,) or span.shape!=(2,) or not np.isfinite(origin).all() or not np.isfinite(span).all() or not np.all(span>0):
+                raise ValueError('invalid display UV projection')
+            vertices=[];uv=[]
+            for line in (root/asset['mesh']).read_text().splitlines():
+                parts=line.split()
+                if parts and parts[0]=='v':vertices.append([float(v) for v in parts[1:3]])
+                if parts and parts[0]=='vt':uv.append([float(v) for v in parts[1:3]])
+                if parts and parts[0]=='f':
+                    if any(len(t.split('/'))<2 or t.split('/')[0]!=t.split('/')[1] for t in parts[1:]):
+                        raise ValueError('display mesh face UV indices mismatch')
+            if len(uv)!=len(vertices) or not np.allclose(uv,(np.asarray(vertices)-origin)/span,rtol=0,atol=1e-8):
+                raise ValueError('display mesh UV/world-coordinate mismatch')
     return m

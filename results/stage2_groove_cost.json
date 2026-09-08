@@ -1,0 +1,422 @@
+{
+  "scope": "isolated incremental geometry cost; no normal/roughness/color textures or GUI/physics/ROS/archive",
+  "crack": {
+    "source": "imagegen",
+    "source_sha256": "5bb49bee37f76982172491ef41041f0dd352f7b403b92600f939dc77a6a6847f",
+    "variant": 0,
+    "length_extent_m": 2.2,
+    "transverse_extent_m": 0.14,
+    "nominal_main_width_min_mm": 0.7999999797903001,
+    "nominal_main_width_max_mm": 2.0000000949949026,
+    "nominal_main_width_median_mm": 1.0819911258295178,
+    "width_semantics": "image-derived centerline, calibrated local diameter; alpha edge, tips and branch unions not independent width samples",
+    "procedural_crack_paths": false
+  },
+  "crack_depth_m": 0.002,
+  "joint_width_m": 0.008,
+  "joint_depth_m": 0.003,
+  "area_m2": 25,
+  "geometry_checks": "positive winding, nondegenerate, projected area 25 m2, depth bounds; shared visual/collision OBJ",
+  "memory_scope": "explicit cudaMalloc allocations including GAS build scratch retained by current implementation; excludes opaque driver/context and Gazebo",
+  "target_lines_per_second": 11000,
+  "fixtures": {
+    "plane": {
+      "triangles": 2,
+      "vertices": 4,
+      "timing": {
+        "measurements": [
+          {
+            "active_lines_per_second": 148833.3383916442,
+            "allocated_device_bytes": 1187860,
+            "image": "samples_4.pgm",
+            "max_batch_ms": 3.448466,
+            "median_batch_ms": 1.653389,
+            "p99_batch_ms": 2.68787,
+            "samples": 4
+          },
+          {
+            "active_lines_per_second": 91942.6635471444,
+            "allocated_device_bytes": 1187860,
+            "image": "samples_8.pgm",
+            "max_batch_ms": 7.174776,
+            "median_batch_ms": 2.597306,
+            "p99_batch_ms": 4.238619,
+            "samples": 8
+          },
+          {
+            "active_lines_per_second": 54225.72208777291,
+            "allocated_device_bytes": 1187860,
+            "image": "samples_16.pgm",
+            "max_batch_ms": 6.424274,
+            "median_batch_ms": 4.640639,
+            "p99_batch_ms": 5.725785,
+            "samples": 16
+          },
+          {
+            "active_lines_per_second": 29078.99418989308,
+            "allocated_device_bytes": 1187860,
+            "image": "samples_32.pgm",
+            "max_batch_ms": 11.117439,
+            "median_batch_ms": 8.705539,
+            "p99_batch_ms": 10.873454,
+            "samples": 32
+          },
+          {
+            "active_lines_per_second": 15108.242765074478,
+            "allocated_device_bytes": 1187860,
+            "image": "samples_64.pgm",
+            "max_batch_ms": 19.252235,
+            "median_batch_ms": 16.888016,
+            "p99_batch_ms": 19.000828,
+            "samples": 64
+          }
+        ],
+        "noise": false,
+        "prnu": false,
+        "rows": 256,
+        "scope": "production kernel / AI-derived groove fixture; identical reflectance; no textures, ROS/GZ/archive; timings include synchronous readback, exclude image writing",
+        "timing_repeats": 128,
+        "width": 4096
+      },
+      "reverse_order_timing": {
+        "measurements": [
+          {
+            "active_lines_per_second": 148943.2935136686,
+            "allocated_device_bytes": 1187860,
+            "image": "samples_4.pgm",
+            "max_batch_ms": 2.747028,
+            "median_batch_ms": 1.664424,
+            "p99_batch_ms": 2.476068,
+            "samples": 4
+          },
+          {
+            "active_lines_per_second": 92503.63478618722,
+            "allocated_device_bytes": 1187860,
+            "image": "samples_8.pgm",
+            "max_batch_ms": 3.573584,
+            "median_batch_ms": 2.616807,
+            "p99_batch_ms": 3.431476,
+            "samples": 8
+          },
+          {
+            "active_lines_per_second": 53213.61430697651,
+            "allocated_device_bytes": 1187860,
+            "image": "samples_16.pgm",
+            "max_batch_ms": 6.130474,
+            "median_batch_ms": 4.714203,
+            "p99_batch_ms": 5.521549,
+            "samples": 16
+          },
+          {
+            "active_lines_per_second": 28593.85525607394,
+            "allocated_device_bytes": 1187860,
+            "image": "samples_32.pgm",
+            "max_batch_ms": 10.644646,
+            "median_batch_ms": 8.878647,
+            "p99_batch_ms": 10.41682,
+            "samples": 32
+          },
+          {
+            "active_lines_per_second": 14814.811392158279,
+            "allocated_device_bytes": 1187860,
+            "image": "samples_64.pgm",
+            "max_batch_ms": 19.849332,
+            "median_batch_ms": 17.313552,
+            "p99_batch_ms": 19.372837,
+            "samples": 64
+          }
+        ],
+        "noise": false,
+        "prnu": false,
+        "rows": 256,
+        "scope": "production kernel / AI-derived groove fixture; identical reflectance; no textures, ROS/GZ/archive; timings include synchronous readback, exclude image writing",
+        "timing_repeats": 128,
+        "width": 4096
+      }
+    },
+    "flat_dense": {
+      "triangles": 210422,
+      "vertices": 105315,
+      "timing": {
+        "measurements": [
+          {
+            "active_lines_per_second": 146933.82429773646,
+            "allocated_device_bytes": 25639732,
+            "image": "samples_4.pgm",
+            "max_batch_ms": 3.296937,
+            "median_batch_ms": 1.674878,
+            "p99_batch_ms": 2.875831,
+            "samples": 4
+          },
+          {
+            "active_lines_per_second": 92250.10130816721,
+            "allocated_device_bytes": 25639732,
+            "image": "samples_8.pgm",
+            "max_batch_ms": 4.230607,
+            "median_batch_ms": 2.659056,
+            "p99_batch_ms": 3.623719,
+            "samples": 8
+          },
+          {
+            "active_lines_per_second": 53230.179500700135,
+            "allocated_device_bytes": 25639732,
+            "image": "samples_16.pgm",
+            "max_batch_ms": 6.207109,
+            "median_batch_ms": 4.699933,
+            "p99_batch_ms": 6.139791,
+            "samples": 16
+          },
+          {
+            "active_lines_per_second": 29012.574110534588,
+            "allocated_device_bytes": 25639732,
+            "image": "samples_32.pgm",
+            "max_batch_ms": 10.394554,
+            "median_batch_ms": 8.712403,
+            "p99_batch_ms": 10.320884,
+            "samples": 32
+          },
+          {
+            "active_lines_per_second": 15021.577734517978,
+            "allocated_device_bytes": 25639732,
+            "image": "samples_64.pgm",
+            "max_batch_ms": 20.022242,
+            "median_batch_ms": 17.071135,
+            "p99_batch_ms": 19.210645,
+            "samples": 64
+          }
+        ],
+        "noise": false,
+        "prnu": false,
+        "rows": 256,
+        "scope": "production kernel / AI-derived groove fixture; identical reflectance; no textures, ROS/GZ/archive; timings include synchronous readback, exclude image writing",
+        "timing_repeats": 128,
+        "width": 4096
+      },
+      "reverse_order_timing": {
+        "measurements": [
+          {
+            "active_lines_per_second": 149292.020362925,
+            "allocated_device_bytes": 25639732,
+            "image": "samples_4.pgm",
+            "max_batch_ms": 2.458424,
+            "median_batch_ms": 1.667883,
+            "p99_batch_ms": 2.360321,
+            "samples": 4
+          },
+          {
+            "active_lines_per_second": 92827.97359199394,
+            "allocated_device_bytes": 25639732,
+            "image": "samples_8.pgm",
+            "max_batch_ms": 3.788969,
+            "median_batch_ms": 2.634206,
+            "p99_batch_ms": 3.254544,
+            "samples": 8
+          },
+          {
+            "active_lines_per_second": 53545.549317814606,
+            "allocated_device_bytes": 25639732,
+            "image": "samples_16.pgm",
+            "max_batch_ms": 7.940023,
+            "median_batch_ms": 4.679851,
+            "p99_batch_ms": 6.068383,
+            "samples": 16
+          },
+          {
+            "active_lines_per_second": 28189.6342781562,
+            "allocated_device_bytes": 25639732,
+            "image": "samples_32.pgm",
+            "max_batch_ms": 10.43345,
+            "median_batch_ms": 9.032845,
+            "p99_batch_ms": 10.36268,
+            "samples": 32
+          },
+          {
+            "active_lines_per_second": 14687.157911370858,
+            "allocated_device_bytes": 25639732,
+            "image": "samples_64.pgm",
+            "max_batch_ms": 19.833966,
+            "median_batch_ms": 17.40326,
+            "p99_batch_ms": 19.735639,
+            "samples": 64
+          }
+        ],
+        "noise": false,
+        "prnu": false,
+        "rows": 256,
+        "scope": "production kernel / AI-derived groove fixture; identical reflectance; no textures, ROS/GZ/archive; timings include synchronous readback, exclude image writing",
+        "timing_repeats": 128,
+        "width": 4096
+      }
+    },
+    "grooves": {
+      "triangles": 210422,
+      "vertices": 105315,
+      "timing": {
+        "measurements": [
+          {
+            "active_lines_per_second": 147105.53804629433,
+            "allocated_device_bytes": 25639732,
+            "image": "samples_4.pgm",
+            "max_batch_ms": 2.900649,
+            "median_batch_ms": 1.681385,
+            "p99_batch_ms": 2.697307,
+            "samples": 4
+          },
+          {
+            "active_lines_per_second": 91842.90130469554,
+            "allocated_device_bytes": 25639732,
+            "image": "samples_8.pgm",
+            "max_batch_ms": 4.146243,
+            "median_batch_ms": 2.655751,
+            "p99_batch_ms": 3.672415,
+            "samples": 8
+          },
+          {
+            "active_lines_per_second": 52876.97013954165,
+            "allocated_device_bytes": 25639732,
+            "image": "samples_16.pgm",
+            "max_batch_ms": 6.120372,
+            "median_batch_ms": 4.757223,
+            "p99_batch_ms": 6.09438,
+            "samples": 16
+          },
+          {
+            "active_lines_per_second": 28746.83174371037,
+            "allocated_device_bytes": 25639732,
+            "image": "samples_32.pgm",
+            "max_batch_ms": 10.951117,
+            "median_batch_ms": 8.822957,
+            "p99_batch_ms": 10.347536,
+            "samples": 32
+          },
+          {
+            "active_lines_per_second": 14962.123620121887,
+            "allocated_device_bytes": 25639732,
+            "image": "samples_64.pgm",
+            "max_batch_ms": 20.255168,
+            "median_batch_ms": 17.046779,
+            "p99_batch_ms": 19.500242,
+            "samples": 64
+          }
+        ],
+        "noise": false,
+        "prnu": false,
+        "rows": 256,
+        "scope": "production kernel / AI-derived groove fixture; identical reflectance; no textures, ROS/GZ/archive; timings include synchronous readback, exclude image writing",
+        "timing_repeats": 128,
+        "width": 4096
+      },
+      "reverse_order_timing": {
+        "measurements": [
+          {
+            "active_lines_per_second": 146329.65041650925,
+            "allocated_device_bytes": 25639732,
+            "image": "samples_4.pgm",
+            "max_batch_ms": 3.228052,
+            "median_batch_ms": 1.683754,
+            "p99_batch_ms": 2.462012,
+            "samples": 4
+          },
+          {
+            "active_lines_per_second": 92448.15828036537,
+            "allocated_device_bytes": 25639732,
+            "image": "samples_8.pgm",
+            "max_batch_ms": 3.622258,
+            "median_batch_ms": 2.646455,
+            "p99_batch_ms": 3.525744,
+            "samples": 8
+          },
+          {
+            "active_lines_per_second": 53512.928871736214,
+            "allocated_device_bytes": 25639732,
+            "image": "samples_16.pgm",
+            "max_batch_ms": 6.134807,
+            "median_batch_ms": 4.690691,
+            "p99_batch_ms": 5.745513,
+            "samples": 16
+          },
+          {
+            "active_lines_per_second": 28528.46448700249,
+            "allocated_device_bytes": 25639732,
+            "image": "samples_32.pgm",
+            "max_batch_ms": 10.751322,
+            "median_batch_ms": 8.867483,
+            "p99_batch_ms": 10.46222,
+            "samples": 32
+          },
+          {
+            "active_lines_per_second": 14859.15604424026,
+            "allocated_device_bytes": 25639732,
+            "image": "samples_64.pgm",
+            "max_batch_ms": 19.494638,
+            "median_batch_ms": 17.204069,
+            "p99_batch_ms": 19.262458,
+            "samples": 64
+          }
+        ],
+        "noise": false,
+        "prnu": false,
+        "rows": 256,
+        "scope": "production kernel / AI-derived groove fixture; identical reflectance; no textures, ROS/GZ/archive; timings include synchronous readback, exclude image writing",
+        "timing_repeats": 128,
+        "width": 4096
+      }
+    }
+  },
+  "image_checks": [
+    {
+      "samples": 4,
+      "flat_control_max_dn": 0,
+      "changed_pixels": 129552,
+      "max_dn": 133
+    },
+    {
+      "samples": 8,
+      "flat_control_max_dn": 0,
+      "changed_pixels": 129658,
+      "max_dn": 133
+    },
+    {
+      "samples": 16,
+      "flat_control_max_dn": 0,
+      "changed_pixels": 129695,
+      "max_dn": 133
+    },
+    {
+      "samples": 32,
+      "flat_control_max_dn": 0,
+      "changed_pixels": 129724,
+      "max_dn": 133
+    },
+    {
+      "samples": 64,
+      "flat_control_max_dn": 0,
+      "changed_pixels": 129724,
+      "max_dn": 133
+    }
+  ],
+  "hardware": {
+    "gpu": "NVIDIA GeForce RTX 5080",
+    "driver": "616.64",
+    "platform": "WSL2 Ubuntu 24.04",
+    "runtime": "isolated OptiX 610.57.04"
+  },
+  "test_order": [
+    [
+      "plane",
+      "flat_dense",
+      "grooves"
+    ],
+    [
+      "grooves",
+      "flat_dense",
+      "plane"
+    ]
+  ],
+  "source_sha256": {
+    "tools/validate_groove_cost.py": "8ec98dbb1a0532dd57641ea06cb5513b81d9a7d603ac8254cc7df5a9cb1cef52",
+    "src/agv_linescan/tools/benchmark_grooves.cpp": "40eb1835ef533935e919e20a5649d391c5219dc63527d24ada737a2c65399f38",
+    "src/agv_linescan/src/optix/scan.cu": "16b6f4d0e375ce40bae86e5f2b528dde9c86f60a4f2333ec6a5cdae066c4420d",
+    "src/agv_description/config/linescan.yaml": "742e0cc6b9ee14a08adb43991ea92eb394a7436bdac3d0b6bc59e2a6a0cf333f"
+  }
+}

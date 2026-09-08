@@ -24,7 +24,7 @@ class VisualizationTF(Node):
         self.listener=TransformListener(self.buffer,self)
         self.pending=deque()
         self.frames=0;self.dropped=0;self.max_age=0.
-        self.links=[f'{corner}_{part}_link' for corner in ('fl','fr','rl','rr') for part in ('steer','wheel')]
+        self.links=[f'{corner}_{part}_link' for corner in ('fl','fr','rl','rr') for part in ('suspension','steer','wheel')]
         self.pub=self.create_publisher(TFMessage,'/visualization/tf',10)
         self.status=self.create_publisher(String,'/visualization/status',10)
         self.create_subscription(Odometry,'/ground_truth/odom',self.odom,10)

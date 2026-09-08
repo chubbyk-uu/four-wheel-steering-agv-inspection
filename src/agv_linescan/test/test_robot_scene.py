@@ -38,14 +38,16 @@ def test_box_normals_point_outward():
     assert np.all((n*t.mean(1)).sum(1)>0)
 
 
-def test_led_emitters_follow_same_fixed_mount(tmp_path):
+@pytest.mark.parametrize("length", [.60, 1.20])
+def test_led_emitters_follow_same_fixed_mount(tmp_path, length):
     urdf='''<robot name="lamp"><link name="base"/><link name="led_link">
     <visual><geometry><box size=".035 .60 .035"/></geometry></visual></link>
     <joint name="mount" type="fixed"><parent link="base"/><child link="led_link"/>
     <origin xyz=".95 0 -.06" rpy="0 0 0"/></joint></robot>'''
+    urdf=urdf.replace('.035 .60 .035', f'.035 {length} .035')
     light=json.loads(export(urdf,tmp_path).read_text())['led_emitters']
     assert light['link']=='base'
-    np.testing.assert_allclose(light['positions_m'], [[.95,y,-.082] for y in [-.21,-.07,.07,.21]],atol=1e-8)
+    np.testing.assert_allclose(light['positions_m'], [[.95,y*(length/2-.02),-.082] for y in [-.75,-.25,.25,.75]],atol=1e-8)
 
 
 def test_split_material_links_preserves_baked_geometry_and_dynamics(tmp_path):

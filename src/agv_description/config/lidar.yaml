@@ -1,0 +1,11 @@
+# C8 prototype; uniform 8-beam approximation, NOT the measured ring-angle table.
+model: lslidar_c8_prototype
+channels: 8
+horizontal_samples: 1000
+rate_hz: 10.0
+min_range_m: 0.3
+max_range_m: 50.0
+vertical_min_deg: -12.0
+vertical_max_deg: 12.0
+range_noise_stddev_m: 0.01
+# Exact C8 ring angles and minimum range need the installed unit's calibration.

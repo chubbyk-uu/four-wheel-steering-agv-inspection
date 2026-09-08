@@ -1,28 +1,37 @@
 # 混凝土道面资产
 
-已选定 **Concrete047A** 为默认底纹。通过 tools/fetch_ambient_concrete.py 下载；烘焙器默认使用该材质。
+当前使用 **ambientCG Concrete047A** 颜色＋NormalGL法线，统一粗糙度0.60。源图暂按整张2.1 m项目尺度映射，非官方实测尺度。源图片转换为线性反射率近似，不是实测BRDF。
 
-历史对比底纹Gravel：https://polyhaven.com/a/gravel_concrete_03 ，CC0，作者Charlotte Baglioni。官方8K Diffuse PNG，标注宽2.1 m；8K约0.256 mm/纹素。旧Brushed Concrete 03样片已因方向纹理与重复外观问题停用，保留作历史记录。源图按sRGB解码后转换线性反射率近似，并非实测反射率或完整BRDF。
+## 当前资产与恢复
 
-generated/concrete_cracks_ai_v1.png 和 concrete_spalls_ai_v1.png 是本轮imagegen生成的透明底素材，分别为三种长裂缝和三种小面积剥落，不是现场采集或测量真值。裂缝形态来自生图工具，不使用随机折线等程序生成裂缝轨迹。原始PNG保留不修改。
+| 本地目录 | 用途 |
+|---|---|
+| `source/` | Concrete047A颜色、法线、粗糙度源通道及下载/哈希记录 |
+| `generated/` | 三张AI缺陷原图和提示词，保留用于复现 |
+| `baked_fullwidth_20m_v1/` | 当前20×10 m全宽道路，含视野余量、共享细沟槽及浅碰撞代理 |
+| `baked_branch_crack_v2c/` | 旧/新分叉局部对照及精细碰撞诊断，历史夹具 |
+| `baked_branch_collision_v1/` | 同源简化碰撞对照，历史夹具 |
 
-烘焙器从AI裂缝图提取连通主体及中心线，保留走势与分叉，做物理尺寸校准、反射率转换和重采样。主干名义局部直径限制在0.8—2.0 mm，范围来自图像原始粗细变化经截限，不声称是自然裂缝的统计分布。尖端、分叉并集及最终栅格量化不能用名义直径替代独立宽度测量。三个模板纵向长度2.2/2.4/2.6 m；所有模板保留原始图便于审查。
+高清源图与烘焙产物被Git忽略，不能仅靠克隆获取；源下载记录、AI原图和生成代码保留。恢复当前道路：
 
-小面积剥落宽25/35/45 mm，首版仅反射外观，几何深度0，不影响轮胎接地。5×5 m板块、8 mm板缝；白色标线宽0.15 m，中心虚线3 m实段/6 m空段，边线位于距两侧1.5 m处。这是可调整的示例布局，不声明符合任何道路标线规范。中心纵缝与中心线部分重合。
+```bash
+python3 tools/fetch_ambient_concrete.py
+python3 tools/fetch_concrete_pbr.py
+python3 tools/generate_streaming_road.py --output assets/road/baked_fullwidth_20m_v1 --length 20 --full-width
+```
 
-烘焙分辨率0.25 mm/纹素，每块2048²有效区、2纹素真实邻域边框；保存Mono8线性反射率PGM和类别标签PNG。源图细节不放大到5 m：使用2.1 m项目映射尺度，以重叠匹配、最小误差切线和窄羽化拼接底纹，不使用固定2.1 m取模平铺。保存布局与混合蒙版以便复现；低分辨率只用于选择接缝，实际烘焙仍采样8K源图。局部内容复用及仅三种缺陷模板仍不代表大地图唯一定位/拼接验收。
+输出目录必须不存在；已有有效资产直接复用。需要代理时使用下载工具的`--proxy`参数。生成20 m全宽道路约13.34 GB无损磁盘纹素，运行使用有界GPU缓存，不将所有高清数据一次装入显存。精细网格、颜色与法线供OptiX采集，GZ使用同源概览与视觉几何。详见[全宽道路与恢复步骤](../../docs/STAGE2_FULLWIDTH_ROAD.md)。100 m全宽仍待扩展，历史100 m中央扫描走廊不能冒充全宽。
 
-大文件本地生成，不提交仓库。metadata记录来源和校验，generated中保留AI原图。输出schema为agv.road.baked.v1，尚未接入OptiX材质/UV采样，不能传给旧cuda_tiles就声称共享场景已完成。
+## 缺陷、标线与尺度
 
-复现：
-- python3 tools/fetch_ambient_concrete.py
-- python3 tools/bake_concrete_road.py --output assets/road/baked_concrete047a_new --length 10 --width 10
-- python3 tools/check_baked_road.py assets/road/baked_concrete047a_new
+5×5 m板块、8 mm板缝；中央双黄实线各宽15 cm、净距15 cm，纵向板缝位于两黄线之间；两侧白实线中心距路边0.5 m。由`tools/road_markings.py`统一定义，具体布局不声明满足某一地区法规。
 
-输出overview.png是从实际原生瓦片面积平均得到的4 mm/纹素彩色概览；crack_256mm_closeup.png与crack_256mm_before.png是同坐标的256×256 mm加缺陷前后对照，也从瓦片生成时的同一缓冲区提取，不另行渲染。manifest保存像素坐标和米制范围。overview_mono.png和局部Mono8图可与落盘PGM独立逐像素比对。
+AI原图提供裂缝形态，不是现场采集或尺寸真值。不使用程序随机折线代替裂缝形态；从同源图提取轮廓，生成颜色/法线与真实沟槽。细长分叉主干名义宽0.8–2.0 mm，尖端、分叉并集和最终像素宽度需单独测量。20 m道路使用已确认的分叉版本，仍只有少量模板复用，不代表缺陷训练集足够多样。
 
-运行 python3 tools/preview_baked_road.py assets/road/baked_concrete047a_new 得到带位置与尺度说明的comparison.png。四块5×5 m板形成10×10 m样片；全场目标仍100×10 m或更宽。所有预览均为烘焙纹理，不是相机照片。
+当前烘焙0.25 mm/纹素、2048核心＋每边2像素邻域边框。GZ/OptiX共享成像几何；稀疏浅沟槽可使用显式有界碰撞代理，不能将较深坑洞、台阶或坡面任意填平。参考[分叉裂缝](../../docs/STAGE2_BRANCH_CRACK.md)、[碰撞代理](../../docs/STAGE2_COLLISION_PROXY.md)。
 
-已选定Concrete047A，见[比较记录](../../../docs/STAGE2_CONCRETE047A_COMPARE.md)。官方物理尺寸未知，暂按2.1 m项目映射；沿用已通过检查的样片布局，后续接入OptiX纹理采样。
+## 历史与清理
 
-目录清理后，仅保留Concrete047A颜色源图、当前baked_concrete047a_v1、AI原图及来源元数据。旧Brushed/Gravel高分辨率源图与烘焙目录、已解压ZIP已删除，小型历史报告和选材预览保留。下载器会校验已有颜色图并直接复用，不因ZIP清理重新下载。需要恢复Gravel时先运行 `python3 tools/fetch_concrete_source.py --asset gravel_concrete_03`，再按历史记录烘焙。
+Brushed/Gravel已停用，保留小型选材报告；其源图和大体积烘焙已删除。`baked_concrete047a_v1`、`baked_pbr_probe_v1`、`baked_shared_road_v1`、`baked_streaming_road_v1`也是历史生成目录，当前本地不再保留。相应文档中的名称是复现输出名，不是现成入口。历史虚线方案也已替换为双黄实线。
+
+完整采集不提交Git，保留与清理范围见[维护审计](../../docs/MAINTENANCE_AUDIT.md)。旧65 kg/16 mm档案及平场仅作历史回归，不能套用当前550 kg/20 mm/v7配置。

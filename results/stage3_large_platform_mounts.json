@@ -1,0 +1,58 @@
+{
+  "passed": true,
+  "gui_rviz": false,
+  "equilibrium_base_height_m": 0.6484269851378284,
+  "suspension_positions_m": [
+    0.00174517417778018,
+    0.0017451741777801718,
+    0.0014010335685311422,
+    0.0014010335685311368
+  ],
+  "loaded_battery_clearance_m": 0.24993199313716613,
+  "cases": [
+    {
+      "case": "forward",
+      "position_error_m": 4.005251241779496e-09,
+      "yaw_error_rad": 2.24993411820151e-18
+    },
+    {
+      "case": "lateral",
+      "position_error_m": 4.1622125301916196e-08,
+      "yaw_error_rad": 2.0816681711721685e-15
+    },
+    {
+      "case": "diagonal",
+      "position_error_m": 1.2875985816643772e-08,
+      "yaw_error_rad": 1.0756673329836985e-13
+    },
+    {
+      "case": "rotate",
+      "position_error_m": 1.3563447953733473e-07,
+      "yaw_error_rad": 0.05441288027903024
+    },
+    {
+      "case": "reverse",
+      "position_error_m": 5.697649706986036e-06,
+      "yaw_error_rad": 5.79547299039973e-10
+    }
+  ],
+  "max_speed_measured_m_s": 2.7777776808183807,
+  "clouds": {
+    "left": {
+      "width": 1000,
+      "height": 8,
+      "frame": "lidar_left_link",
+      "bytes": 256000
+    },
+    "right": {
+      "width": 1000,
+      "height": 8,
+      "frame": "lidar_right_link",
+      "bytes": 256000
+    }
+  },
+  "tf_snapshots": 0,
+  "bad_tf_snapshots": 0,
+  "final_state": "HOLD",
+  "scope": "ideal velocity/position servos, no claim of motor torque saturation or autonomous obstacle avoidance"
+}

@@ -1,0 +1,12 @@
+{
+  "schema": "agv.mission.preview_validation.v1",
+  "passed": true,
+  "track_count": 4,
+  "fixed_track_spacing_m": 1.0,
+  "segments": 21,
+  "path_poses": 563,
+  "markers": 34,
+  "frame": "world",
+  "preview_publishes_cmd_vel": false,
+  "execution_validated": false
+}

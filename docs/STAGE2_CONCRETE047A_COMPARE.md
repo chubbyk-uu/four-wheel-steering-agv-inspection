@@ -1,5 +1,7 @@
 # Concrete047A 与 Gravel 同布局比较
 
+> 历史实验记录：本文参数、性能和“当前/默认”描述属于当时版本，不作为新版验收。现行550 kg、20 mm/4K/1.5 m、1 m轨迹间距、11 kHz目标见[当前模型基线](LARGE_AGV_REBUILD.md)。历史命令须按现行配置调整，旧16 mm标定不可用于新版；大体积实验资产可能已清理，复现需重新生成。
+
 选材结论：用户已确认采用Concrete047A，设为烘焙默认材质；Gravel样片仅保留作历史对比。
 
 来源：[ambientCG Concrete 047 A](https://ambientcg.com/view?id=Concrete047A)，CC0。通过用户指定代理下载8K-PNG ZIP（1,033,558,405字节），仅提取8192² Color PNG用于本轮烘焙。下载脚本固定提取目标路径，读取时校验ZIP成员CRC，并归档本地SHA256；未声称与官方发布的摘要比对。完整元数据和摘要在assets/road/source/Concrete047A_api.json、Concrete047A_download.json。

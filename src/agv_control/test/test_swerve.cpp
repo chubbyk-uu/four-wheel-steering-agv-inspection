@@ -61,7 +61,7 @@ TEST(Transitions, RestartWhileMovingBrakesBeforeSteering){
  Controller c;Four a{},v{.4,.4,.4,.4};
  auto r=c.update({0,.5,0},a,v,.01);
  EXPECT_EQ(c.mode(),Mode::Brake);EXPECT_EQ(r.angle,a);
- EXPECT_NEAR(r.speed[0],.392,1e-9);
+ EXPECT_NEAR(r.speed[0],.4-Config{}.decel*.01,1e-9);
  c.reset();r=c.update({},a,v,.01);EXPECT_EQ(c.mode(),Mode::Brake);
 }
 TEST(Transitions, AlignmentNeedsActualWheelAngles){
@@ -207,4 +207,31 @@ TEST(Transitions, OneWheelCrossesZeroWithoutStoppingWholeVehicle){
   a=r.angle;v=r.speed;
  }
  EXPECT_NEAR(v[0],-.0499,.001);EXPECT_NEAR(v[1],.1701,.001);
+}
+
+TEST(DriveLimits, SeparateAccelerationAndDecelerationBothSigns){
+ for(double sign : {-1.,1.}) {
+  Config cfg;cfg.accel=.8;cfg.decel=1.;Controller c(cfg);Four a{},v{};
+  for(int k=0;k<150;++k){auto r=c.update({sign,0,0},a,v,.01);
+   for(size_t i=0;i<4;++i)EXPECT_LE(std::abs(r.speed[i]-v[i]),.008+1e-10);
+   a=r.angle;v=r.speed;}
+  ASSERT_NEAR(v[0],sign,1e-8);
+  auto slower=c.update({sign*.2,0,0},a,v,.01);
+  EXPECT_NEAR(slower.speed[0],sign*.99,1e-8);
+  a=slower.angle;v=slower.speed;
+  auto stop=c.update({},a,v,.01);
+  EXPECT_EQ(c.mode(),Mode::Brake);EXPECT_NEAR(stop.speed[0],sign*.98,1e-8);
+  a=stop.angle;v=stop.speed;
+  for(int k=0;k<350;++k){auto r=c.update({-sign,0,0},a,v,.01);
+   for(size_t i=0;i<4;++i){
+    EXPECT_GE(v[i]*r.speed[i],-1e-12);
+    double rate=std::abs(r.speed[i])>std::abs(v[i])?.8:1.;
+    EXPECT_LE(std::abs(r.speed[i]-v[i]),rate*.01+1e-10);
+   }
+   a=r.angle;v=r.speed;}
+  EXPECT_NEAR(v[0],-sign,1e-8);
+ }
+}
+TEST(DriveLimits, RejectInvalidDeceleration){
+ Config c;for(double value:std::array<double,4>{0.,-1.,INFINITY,NAN}){c.decel=value;EXPECT_THROW(Controller{c},std::invalid_argument);}
 }

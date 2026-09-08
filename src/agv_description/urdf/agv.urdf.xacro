@@ -6,9 +6,11 @@
   <xacro:arg name="camera_config" default="$(find agv_description)/config/linescan.yaml"/>
   <xacro:property name="cam" value="${xacro.load_yaml('$(arg camera_config)')}"/>
   <xacro:property name="camera_height" value="${cam.nominal_width_m*cam.focal_length_m/(cam.width*cam.pixel_pitch_m)}"/>
+  <xacro:property name="lid" value="${xacro.load_yaml('$(find agv_description)/config/lidar.yaml')}"/>
   <material name="orange"><color rgba="1 0.23 0.025 1"/></material>
   <material name="white"><color rgba="0.85 0.87 0.89 1"/></material>
   <material name="metal"><color rgba="0.35 0.38 0.40 1"/></material>
+  <material name="lidar_blue"><color rgba="0.04 0.18 0.30 1"/></material>
   <material name="tire"><color rgba="0.045 0.045 0.045 1"/></material>
   <xacro:macro name="box_inertia" params="m x y z">
     <inertial><mass value="${m}"/><inertia ixx="${m*(y*y+z*z)/12}" iyy="${m*(x*x+z*z)/12}" izz="${m*(x*x+y*y)/12}" ixy="0" ixz="0" iyz="0"/></inertial>
@@ -16,57 +18,134 @@
   <xacro:macro name="box_visual" params="x y z xyz rpy color">
     <visual><origin xyz="${xyz}" rpy="${rpy}"/><geometry><box size="${x} ${y} ${z}"/></geometry><material name="${color}"/></visual>
   </xacro:macro>
-  <!-- base_link is at chassis centre, nominally 0.36 m above ground. -->
+  <!-- Large 550 kg AGV; base_link nominally 0.65m above ground. Battery is low. -->
   <link name="base_link">
-    <xacro:box_inertia m="${p.mass-24.0}" x="${p.body_length}" y="${p.body_width}" z="0.22"/>
-    <xacro:box_visual x="${p.body_length}" y="${p.body_width}" z="0.18" xyz="0 0 0" rpy="0 0 0" color="orange"/>
-    <collision><geometry><box size="${p.body_length} ${p.body_width} 0.18"/></geometry></collision>
-    <xacro:box_visual x="0.53" y="0.60" z="0.055" xyz="-0.10 0 0.12" rpy="0 0 0" color="white"/>
-    <xacro:box_visual x="0.27" y="0.60" z="0.035" xyz="0.28 0 0.12" rpy="0 0.20 0" color="white"/>
-    <xacro:box_visual x="0.85" y="0.018" z="0.06" xyz="0 0.331 0" rpy="0 0 0" color="white"/>
-    <xacro:box_visual x="0.85" y="0.018" z="0.06" xyz="0 -0.331 0" rpy="0 0 0" color="white"/>
-    <!-- Short L brackets physically meet the chassis and the back/top of the LED.
-         Bracket mass is included in the chassis budget; both worlds see geometry. -->
-    <xacro:macro name="led_bracket" params="y">
-      <xacro:property name="lamp_x" value="${cam.camera_x_m+cam.led_forward_offset_m}"/>
-      <xacro:property name="arm_length" value="${lamp_x-p.body_length/2+0.04}"/>
-      <xacro:property name="arm_x" value="${lamp_x-arm_length/2+0.015}"/>
-      <xacro:property name="arm_z" value="${cam.led_height_m-cam.base_nominal_height_m+0.04}"/>
-      <xacro:box_visual x="${arm_length}" y="0.025" z="0.025" xyz="${arm_x} ${y} ${arm_z}" rpy="0 0 0" color="metal"/>
-      <collision><origin xyz="${arm_x} ${y} ${arm_z}"/><geometry><box size="${arm_length} 0.025 0.025"/></geometry></collision>
-      <xacro:box_visual x="0.025" y="0.025" z="0.06" xyz="${lamp_x} ${y} ${arm_z-0.025}" rpy="0 0 0" color="metal"/>
-      <collision><origin xyz="${lamp_x} ${y} ${arm_z-0.025}"/><geometry><box size="0.025 0.025 0.06"/></geometry></collision>
+    <xacro:box_inertia m="${p.mass-337.2}" x="1.90" y="1.10" z="0.50"/>
+    <visual><geometry><mesh filename="file://$(find agv_description)/meshes/large_body.obj"/></geometry><material name="orange"/></visual>
+    <collision><geometry><mesh filename="file://$(find agv_description)/meshes/large_body.obj"/></geometry></collision>
+    <xacro:box_visual x="0.96" y="0.74" z="0.025" xyz="0 0 0.4375" rpy="0 0 0" color="white"/>
+    <xacro:box_visual x="0.46" y="0.74" z="0.018" xyz="0.71 0 0.373" rpy="0 0.2797 0" color="white"/>
+    <xacro:box_visual x="0.46" y="0.74" z="0.018" xyz="-0.71 0 0.373" rpy="0 -0.2797 0" color="white"/>
+    <xacro:box_visual x="1.80" y="0.025" z="0.14" xyz="0 0.558 0.12" rpy="0 0 0" color="white"/>
+    <xacro:box_visual x="1.80" y="0.025" z="0.14" xyz="0 -0.558 0.12" rpy="0 0 0" color="white"/>
+    <xacro:macro name="trim" params="sign">
+      <xacro:box_visual x="0.018" y="0.32" z="0.13" xyz="${sign*.957} 0.32 0.15" rpy="0 0 0" color="tire"/>
+      <xacro:box_visual x="0.018" y="0.32" z="0.13" xyz="${sign*.957} -0.32 0.15" rpy="0 0 0" color="tire"/>
+      <xacro:box_visual x="0.02" y="0.18" z="0.018" xyz="${sign*.971} 0.32 0.15" rpy="0 0 0" color="orange"/>
+      <xacro:box_visual x="0.02" y="0.18" z="0.018" xyz="${sign*.971} -0.32 0.15" rpy="0 0 0" color="orange"/>
     </xacro:macro>
-    <xacro:led_bracket y="0.24"/>
-    <xacro:led_bracket y="-0.24"/>
-    <xacro:box_visual x="0.10" y="0.06" z="0.025" xyz="0.49 0 0.06" rpy="0 0 0" color="metal"/>
-    <!-- Visual bracket proxy; mass remains included in the chassis budget. -->
-    <xacro:box_visual x="0.025" y="0.04" z="${camera_height-cam.base_nominal_height_m-0.02}" xyz="0.49 0 ${(camera_height-cam.base_nominal_height_m)/2+0.05}" rpy="0 0 0" color="metal"/>
-    <xacro:box_visual x="${cam.camera_x_m-0.49}" y="0.04" z="0.025" xyz="${(cam.camera_x_m+0.49)/2} 0 ${camera_height-cam.base_nominal_height_m+0.04}" rpy="0 0 0" color="metal"/>
-    <visual><origin xyz="-0.24 0 0.18"/><geometry><cylinder radius="0.023" length="0.04"/></geometry><material name="orange"/></visual>
+    <xacro:trim sign="1"/><xacro:trim sign="-1"/>
+    <!-- Rear antenna shelf below the roof edge; longer posts retain antenna height. -->
+    <xacro:box_visual x="0.20" y="1.24" z="0.04" xyz="-0.85 0 0.235" rpy="0 0 0" color="orange"/>
+    <collision><origin xyz="-0.85 0 0.235"/><geometry><box size="0.20 1.24 0.04"/></geometry></collision>
+    <xacro:macro name="gnss_post" params="sign">
+      <xacro:box_visual x="0.035" y="0.035" z="0.26" xyz="-0.85 ${sign*p.gnss_baseline/2} 0.385" rpy="0 0 0" color="white"/>
+      <collision><origin xyz="-0.85 ${sign*p.gnss_baseline/2} 0.385"/><geometry><box size="0.035 0.035 0.26"/></geometry></collision>
+    </xacro:macro>
+    <xacro:gnss_post sign="1"/><xacro:gnss_post sign="-1"/>
+    <!-- Short front camera frame and lower, forward-aiming LED arms. -->
+    <xacro:macro name="front_arm" params="y">
+      <!-- Bolt to the front vertical face below the opening lid; uprights stay ahead of x=.95. -->
+      <xacro:box_visual x="0.08" y="0.08" z="0.12" xyz="0.97 ${y} 0.15" rpy="0 0 0" color="white"/>
+      <collision><origin xyz="0.97 ${y} 0.15"/><geometry><box size="0.08 0.08 0.12"/></geometry></collision>
+      <xacro:box_visual x="0.04" y="0.04" z="0.30" xyz="1.005 ${y} 0.29" rpy="0 0 0" color="white"/>
+      <collision><origin xyz="1.005 ${y} 0.29"/><geometry><box size="0.04 0.04 0.30"/></geometry></collision>
+      <xacro:box_visual x="0.17" y="0.035" z="0.035" xyz="1.065 ${y} 0.44" rpy="0 0 0" color="white"/>
+      <collision><origin xyz="1.065 ${y} 0.44"/><geometry><box size="0.17 0.035 0.035"/></geometry></collision>
+      <xacro:box_visual x="0.04" y="0.04" z="0.34" xyz="0.94 ${y} -0.01" rpy="0 0 0" color="metal"/>
+      <collision><origin xyz="0.94 ${y} -0.01"/><geometry><box size="0.04 0.04 0.34"/></geometry></collision>
+      <xacro:box_visual x="0.12" y="0.04" z="0.04" xyz="0.97 ${y} -0.16" rpy="0 0 0" color="metal"/>
+      <collision><origin xyz="0.97 ${y} -0.16"/><geometry><box size="0.12 0.04 0.04"/></geometry></collision>
+    </xacro:macro>
+    <xacro:front_arm y="0.24"/><xacro:front_arm y="-0.24"/>
+    <xacro:box_visual x="0.05" y="0.54" z="0.03" xyz="1.10 0 0.44" rpy="0 0 0" color="white"/>
+    <visual><origin xyz="0 0 0.48"/><geometry><cylinder radius="0.04" length="0.05"/></geometry><material name="orange"/></visual>
   </link>
-  <xacro:macro name="wheel" params="name x y">
-    <link name="${name}_steer_link">
-      <xacro:box_inertia m="2.5" x="0.10" y="0.11" z="0.12"/>
-      <xacro:box_visual x="0.08" y="0.11" z="0.08" xyz="0 0 0" rpy="0 0 0" color="metal"/>
-      <xacro:box_visual x="0.035" y="0.018" z="0.10" xyz="0 0.055 -0.07" rpy="0 0 0" color="metal"/>
-      <xacro:box_visual x="0.035" y="0.018" z="0.10" xyz="0 -0.055 -0.07" rpy="0 0 0" color="metal"/>
-      <collision><geometry><box size="0.08 0.11 0.08"/></geometry></collision>
+  <link name="battery_link">
+    <xacro:box_inertia m="200" x="0.72" y="${p.body_width}" z="0.4984"/>
+    <xacro:box_visual x="0.72" y="${p.body_width}" z="0.4984" xyz="0 0 0" rpy="0 0 0" color="orange"/>
+    <collision><geometry><box size="0.72 ${p.body_width} 0.4984"/></geometry></collision>
+  </link>
+  <joint name="battery_mount" type="fixed"><parent link="base_link"/><child link="battery_link"/><origin xyz="0 0 -0.1492"/></joint>
+  <xacro:macro name="gnss" params="name sign">
+    <link name="gnss_${name}_link"><xacro:box_inertia m="0.6" x="0.14" y="0.14" z="0.035"/>
+      <visual><geometry><cylinder radius="0.07" length="0.035"/></geometry><material name="white"/></visual>
+      <collision><geometry><cylinder radius="0.07" length="0.035"/></geometry></collision>
     </link>
-    <joint name="${name}_steer_joint" type="revolute"><parent link="base_link"/><child link="${name}_steer_link"/>
-      <origin xyz="${x} ${y} -0.14"/><axis xyz="0 0 1"/>
-      <limit lower="${-p.steer_hard_limit}" upper="${p.steer_hard_limit}" effort="50" velocity="${p.steer_rate}"/>
+    <joint name="gnss_${name}_mount" type="fixed"><parent link="base_link"/><child link="gnss_${name}_link"/><origin xyz="-0.85 ${sign*p.gnss_baseline/2} ${p.gnss_top_height-p.base_height-.0175}"/></joint>
+  </xacro:macro>
+  <xacro:gnss name="left" sign="1"/><xacro:gnss name="right" sign="-1"/>
+  <!-- C8 appearance and collision, mounted upside-down; scan model follows separately. -->
+  <xacro:macro name="lidar" params="name sign">
+    <link name="lidar_${name}_link"><xacro:box_inertia m="1" x="0.10" y="0.10" z="0.08"/>
+      <visual><geometry><cylinder radius="0.05" length="0.08"/></geometry><material name="metal"/></visual>
+      <visual><origin xyz="0 0 0.012"/><geometry><cylinder radius="0.051" length="0.045"/></geometry><material name="lidar_blue"/></visual>
+      <collision><geometry><cylinder radius="0.05" length="0.08"/></geometry></collision>
+      <xacro:box_visual x="0.16" y="0.13" z="0.14" xyz="0 0 -0.11" rpy="0 0 0" color="white"/>
+      <collision><origin xyz="0 0 -0.11"/><geometry><box size="0.16 0.13 0.14"/></geometry></collision>
+    </link>
+    <gazebo reference="lidar_${name}_link">
+      <sensor name="lidar_${name}" type="gpu_lidar">
+        <topic>/lidar/${name}</topic><gz_frame_id>lidar_${name}_link</gz_frame_id>
+        <update_rate>${lid.rate_hz}</update_rate><always_on>true</always_on><visualize>false</visualize>
+        <lidar><scan><horizontal><samples>${lid.horizontal_samples}</samples><resolution>1</resolution><min_angle>${-pi}</min_angle><max_angle>${pi-2*pi/lid.horizontal_samples}</max_angle></horizontal>
+          <vertical><samples>${lid.channels}</samples><resolution>1</resolution><min_angle>${lid.vertical_min_deg*pi/180}</min_angle><max_angle>${lid.vertical_max_deg*pi/180}</max_angle></vertical></scan>
+          <range><min>${lid.min_range_m}</min><max>${lid.max_range_m}</max><resolution>0.01</resolution></range>
+          <noise type="gaussian"><mean>0</mean><stddev>${lid.range_noise_stddev_m}</stddev></noise>
+        </lidar>
+      </sensor>
+    </gazebo>
+    <joint name="lidar_${name}_mount" type="fixed"><parent link="base_link"/><child link="lidar_${name}_link"/><origin xyz="0.79 ${sign*.585} 0.015" rpy="${pi} 0 0"/></joint>
+  </xacro:macro>
+  <xacro:lidar name="left" sign="1"/><xacro:lidar name="right" sign="-1"/>
+  <xacro:macro name="tread" params="i">
+    <xacro:if value="${i &lt; 24}">
+      <visual><origin xyz="${(p.wheel_radius-.004)*sin(i*pi/12)} 0 ${(p.wheel_radius-.004)*cos(i*pi/12)}" rpy="0 ${i*pi/12} 0"/><geometry><box size="0.038 ${p.wheel_width*.86} 0.008"/></geometry><material name="tire"/></visual>
+      <xacro:tread i="${i+1}"/>
+    </xacro:if>
+  </xacro:macro>
+  <xacro:macro name="spring_rings" params="i">
+    <xacro:if value="${i &lt; 8}">
+      <visual><origin xyz="-0.045 0 ${.005+i*.02}"/><geometry><cylinder radius="0.033" length="0.005"/></geometry><material name="metal"/></visual>
+      <xacro:spring_rings i="${i+1}"/>
+    </xacro:if>
+  </xacro:macro>
+  <xacro:macro name="wheel" params="name x y">
+    <link name="${name}_suspension_link">
+      <xacro:box_inertia m="3" x="0.15" y="0.15" z="0.14"/>
+      <xacro:box_visual x="0.15" y="0.15" z="0.08" xyz="0 0 0" rpy="0 0 0" color="metal"/>
+      <xacro:box_visual x="0.028" y="0.028" z="0.20" xyz="0.045 0 0.09" rpy="0 0 0" color="white"/>
+      <visual><origin xyz="-0.045 0 0.08"/><geometry><cylinder radius="0.025" length="0.17"/></geometry><material name="tire"/></visual>
+      <xacro:spring_rings i="${0}"/>
+    </link>
+    <joint name="${name}_suspension_joint" type="prismatic">
+      <parent link="base_link"/><child link="${name}_suspension_link"/><origin xyz="${x} ${y} -0.15"/><axis xyz="0 0 1"/>
+      <limit lower="${-p.suspension_travel}" upper="${p.suspension_travel}" effort="15000" velocity="1"/>
+      <dynamics damping="${p.suspension_damping}" friction="0"/>
+    </joint>
+    <gazebo reference="${name}_suspension_joint"><springStiffness>${p.suspension_stiffness}</springStiffness><springReference>${p.suspension_preload}</springReference></gazebo>
+    <link name="${name}_steer_link">
+      <xacro:box_inertia m="12" x="0.16" y="0.20" z="0.20"/>
+      <xacro:box_visual x="0.15" y="0.19" z="0.09" xyz="0 0 0" rpy="0 0 0" color="metal"/>
+      <xacro:box_visual x="0.065" y="0.025" z="0.20" xyz="0 0.105 -0.10" rpy="0 0 0" color="white"/>
+      <xacro:box_visual x="0.065" y="0.025" z="0.20" xyz="0 -0.105 -0.10" rpy="0 0 0" color="white"/>
+      <collision><geometry><box size="0.15 0.19 0.09"/></geometry></collision>
+    </link>
+    <joint name="${name}_steer_joint" type="revolute"><parent link="${name}_suspension_link"/><child link="${name}_steer_link"/>
+      <origin xyz="0 0 -0.10"/><axis xyz="0 0 1"/>
+      <limit lower="${-p.steer_hard_limit}" upper="${p.steer_hard_limit}" effort="${p.steer_effort}" velocity="${p.steer_rate}"/>
       <dynamics damping="0.5" friction="0.1"/>
     </joint>
     <link name="${name}_wheel_link">
-      <inertial><mass value="3.0"/><inertia ixx="${3*(3*p.wheel_radius**2+p.wheel_width**2)/12}" iyy="${3*p.wheel_radius**2/2}" izz="${3*(3*p.wheel_radius**2+p.wheel_width**2)/12}" ixy="0" ixz="0" iyz="0"/></inertial>
-      <visual><origin rpy="${pi/2} 0 0"/><geometry><cylinder radius="${p.wheel_radius}" length="${p.wheel_width}"/></geometry><material name="tire"/></visual>
+      <inertial><mass value="18.0"/><inertia ixx="${18*(3*p.wheel_radius**2+p.wheel_width**2)/12}" iyy="${18*p.wheel_radius**2/2}" izz="${18*(3*p.wheel_radius**2+p.wheel_width**2)/12}" ixy="0" ixz="0" iyz="0"/></inertial>
+      <xacro:tread i="${0}"/>
+      <visual><origin rpy="${pi/2} 0 0"/><geometry><cylinder radius="${p.wheel_radius-.006}" length="${p.wheel_width}"/></geometry><material name="tire"/></visual>
       <collision><origin rpy="${pi/2} 0 0"/><geometry><cylinder radius="${p.wheel_radius}" length="${p.wheel_width}"/></geometry></collision>
-      <visual><origin xyz="0 ${p.wheel_width/2+0.002} 0" rpy="${pi/2} 0 0"/><geometry><cylinder radius="0.048" length="0.006"/></geometry><material name="metal"/></visual>
-      <visual><origin xyz="0 ${-p.wheel_width/2-0.002} 0" rpy="${pi/2} 0 0"/><geometry><cylinder radius="0.048" length="0.006"/></geometry><material name="metal"/></visual>
+      <visual><origin xyz="0 ${p.wheel_width/2+0.002} 0" rpy="${pi/2} 0 0"/><geometry><cylinder radius="0.085" length="0.006"/></geometry><material name="metal"/></visual>
+      <visual><origin xyz="0 ${-p.wheel_width/2-0.002} 0" rpy="${pi/2} 0 0"/><geometry><cylinder radius="0.085" length="0.006"/></geometry><material name="metal"/></visual>
     </link>
     <joint name="${name}_drive_joint" type="continuous"><parent link="${name}_steer_link"/><child link="${name}_wheel_link"/>
-      <origin xyz="0 0 ${-0.22+p.wheel_radius}"/><axis xyz="0 1 0"/><limit effort="35" velocity="${p.max_speed/p.wheel_radius}"/><dynamics damping="0.02"/></joint>
+      <origin xyz="0 0 -0.20"/><axis xyz="0 1 0"/><limit effort="${p.drive_effort}" velocity="${p.max_speed/p.wheel_radius}"/><dynamics damping="0.02"/></joint>
     <gazebo reference="${name}_wheel_link"><mu1>0.8</mu1><mu2>0.8</mu2><kp>1000000</kp><kd>100</kd></gazebo>
   </xacro:macro>
   <xacro:wheel name="fl" x="${p.wheelbase/2}" y="${p.track/2}"/>
@@ -78,7 +157,7 @@
   <joint name="camera_mount" type="fixed"><parent link="base_link"/><child link="camera_link"/><origin xyz="${cam.camera_x_m} 0 ${camera_height-cam.base_nominal_height_m+0.04}"/></joint>
   <link name="camera_optical_frame"/>
   <joint name="camera_optical_joint" type="fixed"><parent link="camera_link"/><child link="camera_optical_frame"/><origin xyz="0 0 -0.04" rpy="${pi} 0 ${pi/2}"/></joint>
-  <link name="led_link"><xacro:box_inertia m="1.0" x="0.035" y="0.60" z="0.035"/><xacro:box_visual x="0.035" y="0.60" z="0.035" xyz="0 0 0" rpy="0 0 0" color="white"/><collision><geometry><box size="0.035 0.60 0.035"/></geometry></collision></link>
+  <link name="led_link"><xacro:box_inertia m="1.0" x="0.035" y="${cam.led_length_m}" z="0.035"/><xacro:box_visual x="0.035" y="${cam.led_length_m}" z="0.035" xyz="0 0 0" rpy="0 0 0" color="white"/><collision><geometry><box size="0.035 ${cam.led_length_m} 0.035"/></geometry></collision></link>
   <joint name="led_mount" type="fixed"><parent link="base_link"/><child link="led_link"/><origin xyz="${cam.camera_x_m+cam.led_forward_offset_m} 0 ${cam.led_height_m-cam.base_nominal_height_m}" rpy="0 ${atan(cam.led_forward_offset_m/cam.led_height_m)} 0"/></joint>
   <!-- One physical strip, approximated by a row of lenses. Attach to base_link
        so URDF fixed-joint reduction cannot detach the lights from the vehicle. -->
@@ -88,7 +167,7 @@
       <xacro:property name="tilt" value="${atan(cam.led_forward_offset_m/cam.led_height_m)}"/>
       <xacro:property name="lx" value="${cam.camera_x_m+cam.led_forward_offset_m-0.022*sin(tilt)}"/>
       <xacro:property name="lz" value="${cam.led_height_m-0.022*cos(tilt)}"/>
-      <xacro:property name="ly" value="${0.28*fraction}"/>
+      <xacro:property name="ly" value="${(cam.led_length_m/2-.02)*fraction}"/>
       <xacro:property name="target_y" value="${0.8*cam.radiometry.led_half_width_m*fraction}"/>
       <xacro:property name="distance" value="${sqrt((cam.camera_x_m-lx)**2+(target_y-ly)**2+lz**2)}"/>
       <gazebo reference="base_link">
@@ -111,6 +190,8 @@
       <joint name="${name}_steer_joint"><command_interface name="position"><param name="min">${-p.steer_hard_limit}</param><param name="max">${p.steer_hard_limit}</param></command_interface><state_interface name="position"/><state_interface name="velocity"/></joint>
       <joint name="${name}_drive_joint"><command_interface name="velocity"><param name="min">${-p.max_speed/p.wheel_radius}</param><param name="max">${p.max_speed/p.wheel_radius}</param></command_interface><state_interface name="position"/><state_interface name="velocity"/></joint>
     </xacro:macro>
+    <xacro:macro name="passive" params="name"><joint name="${name}_suspension_joint"><state_interface name="position"/><state_interface name="velocity"/></joint></xacro:macro>
+    <xacro:passive name="fl"/><xacro:passive name="fr"/><xacro:passive name="rl"/><xacro:passive name="rr"/>
     <xacro:interfaces name="fl"/><xacro:interfaces name="fr"/><xacro:interfaces name="rl"/><xacro:interfaces name="rr"/>
   </ros2_control>
   <gazebo><plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin"><parameters>$(arg controllers)</parameters></plugin>

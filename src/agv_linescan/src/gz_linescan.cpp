@@ -67,6 +67,9 @@ class GzLineScan final: public gz::sim::System,
                  gz::sim::EntityComponentManager &, gz::sim::EventManager &) override {
     const auto configPath=sdf->Get<std::string>("config");
     config_=YAML::LoadFile(configPath);
+    wheelSpreadAbsolute_=config_["wheel_speed_spread_absolute_m_s"].as<double>(.01);
+    wheelSpreadRelative_=config_["wheel_speed_spread_relative"].as<double>(0);
+    WheelSpeedSpreadLimit(0,wheelSpreadAbsolute_,wheelSpreadRelative_);
     backend_=sdf->Get<std::string>("backend","render").first;
     if (backend_!="render" && backend_!="cuda_grid" && backend_!="cuda_tiles" && backend_!="optix") throw std::runtime_error("unknown sampling backend");
 #ifndef AGV_HAS_CUDA
@@ -243,11 +246,12 @@ class GzLineScan final: public gz::sim::System,
       }
       lastDriveSpeed_=(speeds[0]+speeds[1]+speeds[2]+speeds[3])/4;
       const auto range=std::minmax_element(speeds.begin(),speeds.end());
-      valid=valid && *range.second-*range.first<=.01 &&
+      const double spreadLimit=WheelSpeedSpreadLimit(std::isfinite(lastDriveSpeed_)?lastDriveSpeed_:0,wheelSpreadAbsolute_,wheelSpreadRelative_);
+      valid=valid && *range.second-*range.first<=spreadLimit &&
           std::abs((speeds[1]+speeds[3]-speeds[0]-speeds[2])/(2*track_))<=config_["max_yaw_rate_rad_s"].as<double>();
       if(enabled_ && !valid) scanMotion_={{"wheel_speeds_m_s",speeds},{"wheel_speed_spread_m_s",*range.second-*range.first},
         {"max_abs_steer_rad",maxSteer},{"encoder_yaw_estimate_rad_s",(speeds[1]+speeds[3]-speeds[0]-speeds[2])/(2*track_)},
-        {"speed_limit_m_s",maxSpeed_},{"wheel_spread_limit_m_s",.01},
+        {"speed_limit_m_s",maxSpeed_},{"wheel_spread_limit_m_s",spreadLimit},
         {"steer_limit_rad",config_["max_steer_rad"].as<double>()},{"yaw_limit_rad_s",config_["max_yaw_rate_rad_s"].as<double>()}};
       if (enabled_ && motion_=="DRIVE" && valid) {
         try {
@@ -501,6 +505,7 @@ class GzLineScan final: public gz::sim::System,
             }
           }
           result=optix->Sample(poses,transforms,warm?0:lines.front().sequence);
+          tileStatistics_=Json::parse(optix->MaterialStatistics());
           if(warm){lines.clear();sceneTimes.clear();return;}
         } else
 #endif
@@ -625,9 +630,10 @@ class GzLineScan final: public gz::sim::System,
     }
     if(backend_=="optix") {
       meta["scene_backend"]="optix_shared_mesh_dynamic_robot";
+      meta["tile_statistics"]=tileStatistics_;
       meta["scene_contract"]=sceneContract_;meta["robot_contract"]=robotContract_;
       meta["scene_time_model"]="static shared world; camera and robot links interpolated per exposure from physics snapshots";
-      meta["radiometry"]="optix_relative_strip_v1: projected LED band with four actual fixture shadow rays; procedural grid and diffuse robot colors; ambient constant; not absolute photometry";
+      meta["radiometry"]="optix_relative_strip_v1: projected LED band with four actual fixture shadow rays; scene-declared grid or material, diffuse robot colors; ambient constant; not absolute photometry";
       meta["radiometry_config_yaml"]=YAML::Dump(config_["radiometry"]);
       meta["dynamic_pose_archive"]="ephemeral per exposure; block archive contains sparse camera tags only";
     }
@@ -657,7 +663,13 @@ class GzLineScan final: public gz::sim::System,
       if(previewPub_->get_subscription_count()){
         start=Clock::now();sensor_msgs::msg::Image preview;preview.header=message.header;
         preview.width=(message.width+31)/32;preview.height=(message.height+31)/32;preview.step=preview.width;preview.encoding="mono8";
-        preview.data=AreaPreview(message.data,message.width,message.height);previewPub_->publish(preview);
+        preview.data=AreaPreview(message.data,message.width,message.height);
+        const auto radiometry=LoadRadiometry(config_);
+        const bool displaySrgb=config_["preview_srgb"].as<bool>(true) &&
+          (backend_=="optix" || (backend_=="cuda_tiles" && radiometry.enabled));
+        if(displaySrgb)DisplaySrgb(preview.data,radiometry.black);
+        meta["preview_transfer"]=displaySrgb?"srgb_display_only":"identity";
+        previewPub_->publish(preview);
         meta["preview_seconds"]=Seconds(Clock::now()-start);meta["preview_area_bin"]=32;
       }
       std::ofstream json(output_/(name.str()+".json")); json<<meta.dump(2)<<'\n'; json.close();
@@ -678,6 +690,7 @@ class GzLineScan final: public gz::sim::System,
   std::deque<Event> pending_;
   gz::math::Pose3d offset_;
   double radius_=0,track_=0,now_=0,exposure_=0,spacing_=0,maxSpeed_=0;
+  double wheelSpreadAbsolute_=.01,wheelSpreadRelative_=0;
   bool enabled_=false,active_=false;
   std::string motion_,backend_,terrainPath_;
   Json tileStatistics_,sceneContract_,robotContract_,scanMotion_;

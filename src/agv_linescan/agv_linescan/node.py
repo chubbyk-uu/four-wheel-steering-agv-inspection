@@ -29,6 +29,9 @@ class LineScanNode(Node):
         self.declare_parameter('platform', '')
         self.declare_parameter('output_dir', '/tmp/agv_linescan')
         self.c = yaml.safe_load(Path(self.get_parameter('config').value).read_text())
+        absolute=self.c.get('wheel_speed_spread_absolute_m_s',.01);relative=self.c.get('wheel_speed_spread_relative',0)
+        if not np.isfinite([absolute,relative]).all() or absolute<0 or not 0<=relative<=.05:
+            raise ValueError('invalid wheel speed consistency tolerance')
         platform = yaml.safe_load(Path(self.get_parameter('platform').value).read_text())
         self.radius = platform['wheel_radius']
         self.track = platform['track']
@@ -118,7 +121,8 @@ class LineScanNode(Node):
             if not np.all(np.isfinite(steering+speed.tolist()+[distance])):
                 raise ValueError('nonfinite feedback')
             # Conservative straight +/-X gate, including wheel disagreement.
-            if (max(map(abs, steering)) > self.c['max_steer_rad'] or np.ptp(speed) > .01
+            spread_limit=max(self.c.get('wheel_speed_spread_absolute_m_s',.01),self.c.get('wheel_speed_spread_relative',0)*abs(float(np.mean(speed))))
+            if (max(map(abs, steering)) > self.c['max_steer_rad'] or np.ptp(speed) > spread_limit
                     or abs(yaw_rate) > self.c['max_yaw_rate_rad_s']
                     or max(abs(speed)) > self.c['max_scan_speed_m_s']):
                 self.stop('unsupported_scan_motion')

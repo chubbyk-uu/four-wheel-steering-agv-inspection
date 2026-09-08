@@ -34,11 +34,11 @@ def main():
                 for light in list(link.findall('light')):
                     if light.get('name', '').startswith('led_strip_'): link.remove(light)
         ET.SubElement(model,'static').text='true'
-        ET.SubElement(model,'pose').text='0 0 0.36 0 0 0'
+        ET.SubElement(model,'pose').text='0 0 0.65 0 0 0'
         world=ET.parse(root/'src/agv_bringup/worlds/flat.sdf').getroot()
         w=world.find('world');w.append(model)
         w.append(ET.fromstring('''<plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors"><render_engine>ogre2</render_engine></plugin>'''))
-        w.append(ET.fromstring('''<model name="observer"><static>true</static><pose>2.1 -2.7 1.8 0 0.46 2.17</pose><link name="link"><sensor name="camera" type="camera"><always_on>true</always_on><update_rate>2</update_rate><topic>/model_preview</topic><camera><horizontal_fov>0.90</horizontal_fov><image><width>1280</width><height>960</height><format>R8G8B8</format></image><clip><near>0.05</near><far>100</far></clip></camera></sensor></link></model>'''))
+        w.append(ET.fromstring('''<model name="observer"><static>true</static><pose>3.2 -4.2 2.7 0 0.36 2.17</pose><link name="link"><sensor name="camera" type="camera"><always_on>true</always_on><update_rate>2</update_rate><topic>/model_preview</topic><camera><horizontal_fov>0.90</horizontal_fov><image><width>1280</width><height>960</height><format>R8G8B8</format></image><clip><near>0.05</near><far>100</far></clip></camera></sensor></link></model>'''))
         path=temp/'render.sdf';ET.ElementTree(world).write(path)
         os.environ['GZ_PARTITION']='agv_render_'+str(os.getpid())
         os.environ['ROS_DOMAIN_ID']='74'

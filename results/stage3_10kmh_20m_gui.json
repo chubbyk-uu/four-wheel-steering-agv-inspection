@@ -1,0 +1,148 @@
+{
+  "passed": true,
+  "motion_evaluation": {
+    "scope": "ground-truth evaluation only, never command input; each pose uses its own timestamp",
+    "duration_s": 7.2,
+    "displacement_m": [
+      20.00075880659521,
+      -1.4118084479264326e-10,
+      -1.8178298647475444e-06
+    ],
+    "average_world_velocity_m_s": [
+      2.7778831675826683,
+      -1.9608450665644896e-11,
+      -2.524763701038256e-07
+    ]
+  },
+  "correction": {},
+  "corrected_received_blocks": 0,
+  "gazebo_gui": true,
+  "rviz": true,
+  "rviz_world_start": [
+    8.325002294283674,
+    2.4999999999412568,
+    0.648428674718109
+  ],
+  "rviz_world_end": [
+    28.270205545487723,
+    2.49999999978067,
+    0.6484268569744341
+  ],
+  "display_sync": {
+    "frames": 1049,
+    "dropped_pending": 0,
+    "pending": 0,
+    "max_sim_age_s": 0.015000000000000001,
+    "mode": "same_stamp_interpolated_display_only"
+  },
+  "backend": "optix_shared_mesh_dynamic_robot",
+  "rows": [
+    4096,
+    4096,
+    4096,
+    4096,
+    4096,
+    4096,
+    4096,
+    4096,
+    4096,
+    4096,
+    4096,
+    4096,
+    4096,
+    1357
+  ],
+  "speed_m_s": 2.777777777777778,
+  "steady_wall_start_s": 25894.484202978,
+  "steady_wall_end_s": 25901.753348581,
+  "display_frames": 1098,
+  "display_bad_stamps": 0,
+  "simulation_seconds": 7.200000000000001,
+  "wall_seconds": 7.269145603000652,
+  "real_time_factor": 0.9904877950206269,
+  "sampling_line_rate": 43141.557009929005,
+  "wheel_motion_diagnostics": {
+    "fl_wheel_link": {
+      "local_position_range_m": [
+        6.927791673660977e-14,
+        6.217248937900877e-15,
+        0.0009459560824491842
+      ],
+      "max_z_step_m": 1.0117928717079394e-10,
+      "z_max_m": 0.1999999838304221,
+      "z_min_m": 0.19999997914012718
+    },
+    "fr_wheel_link": {
+      "local_position_range_m": [
+        6.750155989720952e-14,
+        6.217248937900877e-15,
+        0.0009459560811392875
+      ],
+      "max_z_step_m": 1.0118095250533088e-10,
+      "z_max_m": 0.19999998383033857,
+      "z_min_m": 0.19999997914012624
+    },
+    "rl_wheel_link": {
+      "local_position_range_m": [
+        6.838973831690964e-14,
+        6.217248937900877e-15,
+        0.0009382241136772773
+      ],
+      "max_z_step_m": 6.354206050218636e-11,
+      "z_max_m": 0.1999999828485184,
+      "z_min_m": 0.19999997904674172
+    },
+    "rr_wheel_link": {
+      "local_position_range_m": [
+        6.750155989720952e-14,
+        5.773159728050814e-15,
+        0.0009382240932344077
+      ],
+      "max_z_step_m": 6.353240156187212e-11,
+      "z_max_m": 0.19999998302126282,
+      "z_min_m": 0.19999997901828154
+    }
+  },
+  "metrics": {
+    "lines": 54605,
+    "mapping_seconds": 0.0,
+    "physics_step_wall_interval_max_seconds": 0.00190211,
+    "physics_step_wall_interval_p99_upper_seconds": 0.0015,
+    "readback_seconds": 0.0,
+    "render_seconds": 1.2657169509999997,
+    "renders": 163815,
+    "sampling_batch_max_seconds": 0.009479047,
+    "scene_update_seconds": 0.0
+  },
+  "write_seconds": 0.071133095,
+  "publish_call_seconds": 0.042505344,
+  "received_blocks": 14,
+  "ros_all_blocks_byte_identical": true,
+  "nominal_encoder_line_rate_hz": 7585.185185185186,
+  "receive_interval_max_seconds": 0.5540435219991195,
+  "final_motion_state": "HOLD",
+  "grid_geometry": [],
+  "occlusion_probe": false,
+  "tile_statistics": {
+    "batch_wait_seconds_max": 3.3143e-05,
+    "bytes_read": 2172723264,
+    "cache_slots": 32,
+    "cold_warm_seconds": 0.212339532,
+    "device_payload_bytes": 404232320,
+    "evictions": 149,
+    "load_seconds_max": 0.018051856,
+    "load_seconds_total": 2.357236383,
+    "required_tile_misses_after_warm": 0,
+    "slot_pins": 0,
+    "tile_loads": 172
+  },
+  "sampling_queue_high_water_lines": 76,
+  "sampling_queue_observed_wait_max_s": 0.009134181000263197,
+  "sampling_queue_high_water_jobs": 10,
+  "notes": "OptiX shared static mesh plus thirteen robot links with per-exposure transforms and configured LED shadow samples; ROS images and PGM archive. Sampling rate excludes physics/ROS/archive. Not the independent durable-write throughput acceptance.",
+  "full_block_delivery_lines_per_wall_second": 7522.889182389375,
+  "full_acceptance_passed": false,
+  "archive_retention": "local_data/10kmh_20m_large_v7/session; ignored by Git",
+  "demo_scene": "tools/prepare_speed_demo_scene.py: original 20m road shifted +10m with acceleration/braking aprons",
+  "startup_failure": "Initial apron mesh lacked normals and caused DART crash; normals corrected before successful run"
+}

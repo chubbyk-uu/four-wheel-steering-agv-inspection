@@ -21,3 +21,6 @@ assets/road/source/*.zip
 *.key
 .venv/
 /publication-*/
+
+# Retained local captures and cleanup audit; never publish machine-local data.
+/local_data/

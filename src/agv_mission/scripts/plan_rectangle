@@ -1,0 +1,52 @@
+#!/usr/bin/env python3
+"""Plan a rectangle, archive the request/result, optionally publish RViz preview."""
+import argparse
+import json
+from pathlib import Path
+import sys
+import yaml
+from ament_index_python.packages import get_package_share_directory
+from agv_mission.planner import Vehicle, PlanningError, plan
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('request', type=Path)
+    parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--save-request', type=Path)
+    parser.add_argument('--platform', type=Path)
+    parser.add_argument('--camera', type=Path)
+    parser.add_argument('--publish', action='store_true', help='publish static preview until Ctrl-C; never execute motion')
+    args = parser.parse_args()
+    config = Path(get_package_share_directory('agv_description')) / 'config'
+    try:
+        request = yaml.safe_load(args.request.read_text())
+        platform = yaml.safe_load((args.platform or config/'platform.yaml').read_text())
+        camera = yaml.safe_load((args.camera or config/'linescan.yaml').read_text())
+        result = plan(request, Vehicle.from_configs(platform, camera))
+        # Refuse accidental request/config overwrite, including symbolic links.
+        inputs = {p.resolve() for p in [args.request, args.platform or config/'platform.yaml',
+                                       args.camera or config/'linescan.yaml']}
+        outputs = [args.output] + ([args.save_request] if args.save_request else [])
+        if any(p.resolve() in inputs for p in outputs) or len({p.resolve() for p in outputs}) != len(outputs):
+            raise PlanningError('output paths must differ from inputs and each other')
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        temporary = args.output.with_suffix(args.output.suffix+'.tmp')
+        temporary.write_text(json.dumps(result, indent=2, allow_nan=False)+'\n')
+        temporary.replace(args.output)
+        if args.save_request:
+            args.save_request.parent.mkdir(parents=True, exist_ok=True)
+            args.save_request.write_text(yaml.safe_dump(request, sort_keys=False))
+    except (PlanningError, OSError, yaml.YAMLError, KeyError, TypeError) as exc:
+        print(f'Planning rejected: {exc}', file=sys.stderr)
+        return 2
+    print(json.dumps({key: result[key] for key in ('status', 'track_count', 'actual_track_spacing_m',
+                      'lead_distance_m', 'runout_distance_m', 'total_base_translation_m')}, indent=2), flush=True)
+    if args.publish:
+        from agv_mission.preview import publish
+        publish(result)
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())

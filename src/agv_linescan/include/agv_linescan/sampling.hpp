@@ -6,6 +6,12 @@
 #include <gz/math/Pose3.hh>
 
 namespace agv_linescan {
+// Absolute floor preserves low-speed gating; relative tolerance scales with travel speed.
+inline double WheelSpeedSpreadLimit(double meanSpeed,double absolute,double relative) {
+  if(!std::isfinite(meanSpeed)||!std::isfinite(absolute)||!std::isfinite(relative)||absolute<0||relative<0||relative>.05)
+    throw std::invalid_argument("invalid wheel speed consistency tolerance");
+  return std::max(absolute,relative*std::abs(meanSpeed));
+}
 struct Event { double time, distance; int direction; };
 class Trigger {
  public:

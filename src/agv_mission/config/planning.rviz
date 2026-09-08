@@ -1,0 +1,47 @@
+Panels:
+  - Class: rviz_common/Displays
+    Name: Displays
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Class: rviz_default_plugins/Grid
+      Name: Road Grid
+      Enabled: true
+      Cell Size: 1
+      Plane Cell Count: 100
+    - Class: rviz_default_plugins/MarkerArray
+      Name: Mission Preview
+      Enabled: true
+      Marker Topic:
+        Value: /mission/preview/markers
+        Depth: 1
+        Durability Policy: Transient Local
+        Reliability Policy: Reliable
+        History Policy: Keep Last
+    - Class: rviz_default_plugins/Path
+      Name: Base Poses
+      Enabled: false
+      Topic:
+        Value: /mission/preview/base_path
+        Depth: 1
+        Durability Policy: Transient Local
+        Reliability Policy: Reliable
+        History Policy: Keep Last
+  Global Options:
+    Fixed Frame: world
+    Background Color: 38; 38; 42
+    Frame Rate: 30
+  Tools:
+    - Class: rviz_default_plugins/Interact
+    - Class: rviz_default_plugins/MoveCamera
+  Views:
+    Current:
+      Class: rviz_default_plugins/Orbit
+      Distance: 24
+      Focal Point: {X: 10, Y: 0, Z: 0}
+      Pitch: 1.4
+      Yaw: -1.57
+      Target Frame: world
+Window Geometry:
+  Width: 1000
+  Height: 800

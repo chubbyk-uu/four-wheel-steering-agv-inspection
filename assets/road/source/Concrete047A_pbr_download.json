@@ -1,0 +1,24 @@
+{
+  "url": "https://ambientcg.com/get?file=Concrete047A_8K-PNG.zip",
+  "license": "CC0",
+  "normal_convention": "OpenGL tangent-space; image rows downward, UV v upward",
+  "maps": {
+    "Concrete047A_8K-PNG_NormalGL.png": {
+      "sha256": "0d6bc29a38413406ee4a8f07b37d7ea263e5dcfac15c4b7825c78e87da29894a",
+      "resolution": [
+        8192,
+        8192
+      ],
+      "mode": "RGB"
+    },
+    "Concrete047A_8K-PNG_Roughness.png": {
+      "sha256": "a63121323991a8be0c3f083f5288dea4f69fd2ac31d924958a3c3f0177a2868d",
+      "resolution": [
+        8192,
+        8192
+      ],
+      "mode": "L"
+    }
+  },
+  "archive_sha256": "2cd4005d3662e6feff891cffafe6fbdf4fdecb6ba697cc00498cea07b3029a2e"
+}

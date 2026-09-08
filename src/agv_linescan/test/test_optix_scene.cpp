@@ -109,3 +109,97 @@ TEST_F(OptixTest, LampQuadratureBoundsAndUnshadowedInvariance){
  for(unsigned count:{0,257})
   EXPECT_THROW(OptixScene({0},(dir/"scene.json").string(),(dir/"robot.json").string(),AGV_TEST_OPTIX_PTX,16,sensor,count),std::invalid_argument);
 }
+
+// Hardware texture interpolation oracle under ambient-only illumination, independent of BRDF.
+TEST_F(OptixTest, GroundTextureSamplingIntegrityAndCoverage){
+ gpu.reset();sensor.ambient=41;
+ auto writeMap=[&](const std::string& name,const std::vector<unsigned char>& bytes){
+  std::ofstream f(dir/name,std::ios::binary);f.write((const char*)bytes.data(),bytes.size());f.close();
+  return Json{{"file",name},{"sha256",hashFile(dir/name)}};
+ };
+ auto color=writeMap("color.raw",{0,64,128,255});
+ std::ifstream input(dir/"scene.json");Json m;input>>m;
+ m["assets"][0]["material"]="ground";
+ m["ground_material"]={{"schema","agv.ground_material.xy.v1"},{"width",2},{"height",2},
+   {"origin_xy_m",{0,0}},{"span_xy_m",{1,1}},{"color",color},{"roughness",.8}};
+ auto makeSampler=[&](){std::ofstream(dir/"scene.json")<<m;
+  return std::make_unique<OptixScene>(std::vector<float>{0},(dir/"scene.json").string(),(dir/"robot.json").string(),AGV_TEST_OPTIX_PTX,16,sensor);};
+ gpu=makeSampler();
+ for(auto& s:poses[0].samples){s.origin[0]=.5f;s.origin[1]=.5f;}
+ auto code=gpu->Sample(poses,{away,away,away},0).pixels[0];
+ EXPECT_NEAR(code,SensorCode(sensor,MeanElectrons(sensor,(0+64+128+255)/(4.f*255),0,41,0,0),0,0),1);
+ for(auto& s:poses[0].samples){s.origin[0]=.75f;s.origin[1]=.75f;}
+ EXPECT_EQ(gpu->Sample(poses,{away,away,away},0).pixels[0],SensorCode(sensor,MeanElectrons(sensor,1,0,41,0,0),0,0));
+ poses[0].samples[1].origin[0]=1.1f;
+ EXPECT_THROW(gpu->Sample(poses,{away,away,away},0),std::runtime_error);
+ m["ground_material"]["color"]["sha256"]="incorrect";
+ EXPECT_THROW(makeSampler(),std::runtime_error);
+ m["ground_material"]["color"]=writeMap("color.raw",{0,64,128});
+ EXPECT_THROW(makeSampler(),std::runtime_error);
+}
+
+TEST_F(OptixTest, GroundNormalAndRoughnessAffectDirectLight){
+ gpu.reset();sensor.ledPeak=40;
+ auto writeMap=[&](const std::string& name,const std::vector<unsigned char>& bytes){
+  std::ofstream f(dir/name,std::ios::binary);f.write((const char*)bytes.data(),bytes.size());f.close();
+  return Json{{"file",name},{"sha256",hashFile(dir/name)}};
+ };
+ std::ifstream input(dir/"scene.json");Json m;input>>m;m["assets"][0]["material"]="ground";
+ m["ground_material"]={{"schema","agv.ground_material.xy.v1"},{"width",1},{"height",1},
+  {"origin_xy_m",{-1,-1}},{"span_xy_m",{2,2}},{"color",writeMap("color.raw",{128})},{"roughness",.8}};
+ auto sample=[&](){std::ofstream(dir/"scene.json")<<m;
+  OptixScene sampler({0},(dir/"scene.json").string(),(dir/"robot.json").string(),AGV_TEST_OPTIX_PTX,16,sensor,16);
+  return sampler.Sample(poses,{away,away,away},0).pixels[0];};
+ auto base=sample();
+ m["ground_material"]["normal"]=writeMap("normal.raw",{128,128});
+ EXPECT_NEAR(sample(),base,1);
+ m["ground_material"]["normal"]=writeMap("normal.raw",{204,128});
+ EXPECT_NE(sample(),base);
+ m["ground_material"].erase("normal");
+ m["ground_material"]["roughness_map"]=writeMap("rough.raw",{204});
+ EXPECT_EQ(sample(),base); // .8 constant map and .8 uniform parameter agree.
+ m["ground_material"]["roughness_map"]=writeMap("rough.raw",{26});
+ EXPECT_NE(sample(),base);
+ m["ground_material"]["span_xy_m"]={0,1};
+ EXPECT_THROW(sample(),std::runtime_error);
+}
+
+TEST_F(OptixTest, StreamedMaterialSeamsEvictionReverseAndCorruption){
+ gpu.reset();sensor.ambient=41;
+ auto writeMap=[&](const std::string& name,const std::vector<unsigned char>& bytes){
+  std::ofstream f(dir/name,std::ios::binary);f.write((const char*)bytes.data(),bytes.size());f.close();
+  return Json{{"file",name},{"sha256",hashFile(dir/name)}};
+ };
+ std::ifstream input(dir/"scene.json");Json m;input>>m;m["assets"][0]["material"]="ground";
+ Json material={{"schema","agv.ground_material.tiles.v1"},{"tiles_x",4},{"tiles_y",1},
+  {"core_pixels",4},{"gutter_pixels",1},{"texel_m",.1},{"origin_xy_m",{0,0}},
+  {"height_bounds_m",{0,0}},{"roughness",.6},{"cache_slots",2},
+  {"prefetch_ahead_m",0},{"prefetch_behind_m",0},{"required_wait_timeout_s",1},
+  {"tiles",Json::array()}};
+ for(int tile=0;tile<4;++tile){
+  std::vector<unsigned char> color,normal;
+  for(int y=-1;y<5;++y)for(int x=-1;x<5;++x){
+   color.push_back(32+8*(tile*4+x));normal.push_back(128);normal.push_back(128);
+  }
+  material["tiles"].push_back({{"ix",tile},{"iy",0},
+   {"color",writeMap("tile"+std::to_string(tile)+".raw",color)},
+   {"normal",writeMap("normal"+std::to_string(tile)+".raw",normal)}});
+ }
+ m["ground_material"]=material;std::ofstream(dir/"scene.json")<<m;
+ gpu=std::make_unique<OptixScene>(std::vector<float>{0},(dir/"scene.json").string(),(dir/"robot.json").string(),AGV_TEST_OPTIX_PTX,16,sensor);
+ for(float x:{.2f,.399f,.4f,.401f,.8f,1.2f,1.4f,1.2f,.8f,.4f,.2f}){
+  for(auto& p:poses[0].samples){p.origin[0]=x;p.origin[1]=.2f;}
+  float reflectance=(32+8*(x/.1f-.5f))/255.f;
+  EXPECT_NEAR(gpu->Sample(poses,{away,away,away},33).pixels[0],
+   SensorCode(sensor,MeanElectrons(sensor,reflectance,0,41,0,0),33,0),1);
+  EXPECT_EQ(Json::parse(gpu->MaterialStatistics())["slot_pins"],0);
+ }
+ auto stats=Json::parse(gpu->MaterialStatistics());EXPECT_GT(stats["evictions"].get<int>(),0);EXPECT_EQ(stats["cache_slots"],2);
+ // First tile is resident; corrupt a future tile and require it after recreation.
+ gpu.reset();std::ofstream(dir/"tile3.raw",std::ios::binary)<<"bad";
+ gpu=std::make_unique<OptixScene>(std::vector<float>{0},(dir/"scene.json").string(),(dir/"robot.json").string(),AGV_TEST_OPTIX_PTX,16,sensor);
+ EXPECT_NO_THROW(gpu->Sample(poses,{away,away,away},33));
+ for(auto& p:poses[0].samples)p.origin[0]=1.4f;
+ EXPECT_THROW(gpu->Sample(poses,{away,away,away},33),std::runtime_error);
+ EXPECT_EQ(Json::parse(gpu->MaterialStatistics())["slot_pins"],0);
+}

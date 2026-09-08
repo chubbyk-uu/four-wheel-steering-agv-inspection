@@ -13,6 +13,9 @@ class OptixScene {
   OptixScene(const OptixScene&)=delete;
   OptixScene& operator=(const OptixScene&)=delete;
   const std::vector<std::string>& Links() const;
+  // Owned cudaMalloc bytes + logical CUDA array payload; excludes array padding and driver/context.
+  size_t AllocatedDeviceBytes() const;
+  std::string MaterialStatistics() const;
   GridBatch Sample(const std::vector<GridExposure>& poses,
                    const std::vector<LinkTransform>& transforms,uint64_t firstGlobalLine);
  private:

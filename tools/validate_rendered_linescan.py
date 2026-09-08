@@ -22,11 +22,15 @@ def evaluate(args):
     from validate_motion import Evaluator
     rclpy.init()
     node=Evaluator()
+    source_config=yaml.safe_load(Path(args.camera_config or "src/agv_description/config/linescan.yaml").read_text())
+    spacing=source_config["line_spacing_m"]
+    platform_config=yaml.safe_load(Path("src/agv_description/config/platform.yaml").read_text())
+    braking_wait=abs(args.speed)/platform_config["drive_decel"]+1
     def run_for(seconds, command):
         start=node.get_clock().now().nanoseconds*1e-9
         # Explicitly allow slower-than-real-time rendering benchmarks. Bound
         # total work by expected scan lines, and separately detect a dead clock.
-        deadline=time.monotonic()+max(60,seconds+seconds*abs(args.speed)/(1.2/4096)*.12)
+        deadline=time.monotonic()+max(60,seconds+seconds*abs(args.speed)/spacing*.12)
         previous=start; advanced=time.monotonic()
         while node.get_clock().now().nanoseconds*1e-9-start<seconds:
             node.command(command); rclpy.spin_once(node,timeout_sec=.01)
@@ -58,7 +62,7 @@ def evaluate(args):
             nonlocal display_frames, display_bad_stamps
             display_frames+=1
             stamps={(t.header.stamp.sec,t.header.stamp.nanosec) for t in message.transforms}
-            if len(message.transforms)!=9 or len(stamps)!=1: display_bad_stamps+=1
+            if len(message.transforms)!=13 or len(stamps)!=1: display_bad_stamps+=1
             for transform in message.transforms:
                 if transform.header.frame_id=='world' and transform.child_frame_id=='base_link':
                     p=transform.transform.translation
@@ -109,7 +113,7 @@ def evaluate(args):
         enable(True)
         if args.expect_terrain_failure:
             before=node.get_clock().now().nanoseconds
-            run_for(max(2,abs(args.speed)/.8+1),(0,0,0))
+            run_for(max(2,braking_wait),(0,0,0))
             assert node.state=='HOLD' and node.get_clock().now().nanoseconds>before
             assert not received
             assert any('terrain_sampling_failure' in m for m in statuses), statuses
@@ -122,7 +126,7 @@ def evaluate(args):
                 shutil.copyfile(source,destination)
                 enable(True,expect_failure=False)
                 run_for(args.distance/abs(args.speed),(args.speed,0,0))
-                run_for(max(2,abs(args.speed)/.8+1),(0,0,0))
+                run_for(max(2,braking_wait),(0,0,0))
                 enable(False)
                 run_for(.5,(0,0,0))
                 assert received and node.state=='HOLD'
@@ -135,6 +139,7 @@ def evaluate(args):
             return
         if args.rviz: assert world_transform, 'RViz world -> base_link transform missing'
         tf_start=list(world_transform)
+        odom_start=node.odom
         wall_start=time.monotonic()
         sim_start=node.get_clock().now().nanoseconds*1e-9
         run_for(args.distance/abs(args.speed),(args.speed,0,0))
@@ -142,8 +147,10 @@ def evaluate(args):
         elapsed=wall_end-wall_start
         simulated=node.get_clock().now().nanoseconds*1e-9-sim_start
         tf_end=list(world_transform)
-        run_for(max(2,abs(args.speed)/.8+1),(0,0,0))
-        enable(False)
+        odom_end=node.odom
+        if args.stop_capture_before_brake: enable(False)
+        run_for(max(2,braking_wait),(0,0,0))
+        if not args.stop_capture_before_brake: enable(False)
         run_for(.5,(0,0,0))
         assert node.state=='HOLD'
         if args.correction_profile:
@@ -168,7 +175,7 @@ def evaluate(args):
             diagnostics=dict(speed_m_s=args.speed,simulation_seconds=simulated,wall_seconds=elapsed,
                 real_time_factor=simulated/elapsed,final_motion_state=node.state,
                 archived_blocks=len(blocks),archived_lines=sum(b['rows'] for b in blocks),
-                expected_command_distance_lines=args.distance/(1.2/4096),received_blocks=len(received),
+                expected_command_distance_lines=args.distance/spacing,received_blocks=len(received),
                 event_reasons=dict(Counter(e['reason'] for e in events)),
                 motion_rejection_examples=motion[:8],
                 final_metrics=blocks[-1]['cumulative_sampling_metrics'] if blocks else {},
@@ -183,12 +190,12 @@ def evaluate(args):
                     'max_abs_steer_rad':max(m['max_abs_steer_rad'] for m in motion),
                     'abs_encoder_yaw_rad_s':max(abs(m['encoder_yaw_estimate_rad_s']) for m in motion)}
             (Path(args.archive)/'diagnostics.json').write_text(json.dumps(diagnostics,indent=2)+'\n')
-        assert blocks and sum(b['rows'] for b in blocks)>args.distance/(1.2/4096)*.97
+        assert blocks and sum(b['rows'] for b in blocks)>args.distance/spacing*.97
         assert any(b['rows']==args.block_rows for b in blocks)
         assert len({b['segment_id'] for b in blocks})==1,[(b['rows'],b['end_reason']) for b in blocks]
         for a,b in zip(blocks,blocks[1:]):
             assert b['first']['global_line']==a['last']['global_line']+1
-            assert abs(abs(b['first']['encoder_distance_m']-a['last']['encoder_distance_m'])-1.2/4096)<1e-8
+            assert abs(abs(b['first']['encoder_distance_m']-a['last']['encoder_distance_m'])-spacing)<1e-8
         for b in blocks:
             assert len(b['pose_tags']) <= 5
             if args.rviz: assert b.get('preview_subscribers',0)>=1, 'RViz preview subscriber disappeared'
@@ -196,6 +203,9 @@ def evaluate(args):
                 assert b['invalid_pixels'] == 0
             if args.backend == 'cuda_tiles':
                 assert b['tile_statistics']['required_tile_misses'] == 0
+            if args.backend == 'optix' and b.get('tile_statistics'):
+                assert b['tile_statistics']['required_tile_misses_after_warm'] == 0, b['tile_statistics']
+                assert b['tile_statistics']['slot_pins'] == 0
             if args.backend in ('cuda_tiles', 'optix'):
                 assert b['sampling_queue_high_water_lines'] <= b['sampling_queue_capacity_lines']
                 assert b['sampling_queue_observed_wait_max_s'] <= b['sampling_queue_max_wait_s']
@@ -233,7 +243,7 @@ def evaluate(args):
                         if args.probe:
                             # A raised red plate at x=1.2, y=.5 must cover the
                             # ground grid. Sampling geometry accounts for its z=.06.
-                            center_row=round((1.2-b['first']['camera_position_world_m'][0])/(1.2/4096))
+                            center_row=round((1.2-b['first']['camera_position_world_m'][0])/spacing)
                             source_q=np.interp(.5/((height-.06)*scale),rays,q)
                             center_col=round(source_q*2048+2047.5)
                             roi=pixels[center_row-30:center_row+31,center_col-30:center_col+31]
@@ -247,9 +257,9 @@ def evaluate(args):
             # Prototype timing budgets: nominal physics step is 1 ms.
             assert metrics['physics_step_wall_interval_max_seconds'] <= .010
             assert metrics['physics_step_wall_interval_p99_upper_seconds'] <= .002
-            assert metrics['sampling_batch_max_seconds'] <= blocks[-1]['cuda_batch_rows']*(1.2/4096)/abs(args.speed)
+            assert metrics['sampling_batch_max_seconds'] <= blocks[-1]['cuda_batch_rows']*spacing/abs(args.speed)
             if len(received_at)>1:
-                assert max(np.diff(received_at)) <= 1.5*args.block_rows*(1.2/4096)/abs(args.speed)
+                assert max(np.diff(received_at)) <= 1.5*args.block_rows*spacing/abs(args.speed)
         if args.rviz:
             assert display_frames>0 and display_bad_stamps==0, 'Incoherent visualization snapshots'
         if args.correction_profile:
@@ -267,7 +277,15 @@ def evaluate(args):
                 cm=json.loads((corrected_dir/(name+'.json')).read_text())
                 assert all(cm[k]==b[k] for k in ('first','last','pose_tags','rows','reference'))
         sample_seconds=sum(metrics[k] for k in ('render_seconds','readback_seconds','mapping_seconds'))
-        report=dict(passed=True,correction=correction_status,corrected_received_blocks=len(corrected_payloads),gazebo_gui=args.gui,rviz=args.rviz,rviz_world_start=tf_start,rviz_world_end=tf_end,display_sync=display_status,backend=blocks[0]['scene_backend'],archive=str(session),
+        def odom_stamp(m): return m.header.stamp.sec+m.header.stamp.nanosec*1e-9
+        odom_dt=odom_stamp(odom_end)-odom_stamp(odom_start)
+        assert odom_dt>0
+        def position(m):
+            p=m.pose.pose.position;return np.array([p.x,p.y,p.z])
+        displacement=position(odom_end)-position(odom_start)
+        motion_evaluation=dict(scope='ground-truth evaluation only, never command input; each pose uses its own timestamp',
+            duration_s=odom_dt,displacement_m=displacement.tolist(),average_world_velocity_m_s=(displacement/odom_dt).tolist())
+        report=dict(passed=True,motion_evaluation=motion_evaluation,correction=correction_status,corrected_received_blocks=len(corrected_payloads),gazebo_gui=args.gui,rviz=args.rviz,rviz_world_start=tf_start,rviz_world_end=tf_end,display_sync=display_status,backend=blocks[0]['scene_backend'],archive=str(session),
                     rows=[b['rows'] for b in blocks],speed_m_s=args.speed,
                     steady_wall_start_s=wall_start,steady_wall_end_s=wall_end,display_frames=display_frames,display_bad_stamps=display_bad_stamps,
                     simulation_seconds=simulated,wall_seconds=elapsed,real_time_factor=simulated/elapsed,
@@ -287,11 +305,11 @@ def evaluate(args):
                     notes=('CUDA timings include pose packing and batch upload/sampling/readback. Static unobstructed plane; configured CUDA radiometry is recorded in the archive.' if args.backend!='render' else 'Scene held at physics-step time; camera interpolated per exposure.')+' Sampling rate excludes physics/ROS/archive, not end-to-end throughput.')
         if args.backend == 'optix':
             assert all(b['scene_backend']=='optix_shared_mesh_dynamic_robot' and b['calibration_id'].endswith('-optix-strip-v1') for b in blocks)
-            assert all(len(b['robot_contract']['link_names'])==9 for b in blocks)
+            assert all(len(b['robot_contract']['link_names'])==13 for b in blocks)
             full_received=[t for (w,h,stamp,n),t in zip(received,received_at) if h==args.block_rows]
             report['full_block_delivery_lines_per_wall_second']=(len(full_received)-1)*args.block_rows/(full_received[-1]-full_received[0]) if len(full_received)>1 else None
             report['full_acceptance_passed']=False
-            report['notes']='OptiX shared static mesh plus nine robot links with per-exposure transforms, four LED shadow rays; ROS images and PGM archive. Sampling rate excludes physics/ROS/archive. No correction subscriber or fsync; not full throughput acceptance.'
+            report['notes']='OptiX shared static mesh plus thirteen robot links with per-exposure transforms and configured LED shadow samples; ROS images and PGM archive. Sampling rate excludes physics/ROS/archive. Not the independent durable-write throughput acceptance.'
         (Path(args.archive)/'summary.json').write_text(json.dumps(report,indent=2)+'\n')
         print(json.dumps(report),flush=True)
         if args.view_hold: run_for(args.view_hold,(0,0,0))
@@ -307,6 +325,7 @@ def main():
     parser.add_argument('--reference-target',action='store_true')
     parser.add_argument('--gui',action='store_true')
     parser.add_argument('--rviz',action='store_true')
+    parser.add_argument('--stop-capture-before-brake',action='store_true')
     parser.add_argument('--view-hold',type=float,default=0)
     parser.add_argument('--speed',type=float,default=.05)
     parser.add_argument('--warmup',type=float,default=3)
@@ -339,6 +358,8 @@ def main():
             command.extend(['--view-hold',str(args.view_hold)])
             if args.correction_profile: command.extend(['--correction-profile',args.correction_profile])
             if args.reference_target: command.append('--reference-target')
+            if args.stop_capture_before_brake: command.append('--stop-capture-before-brake')
+            if args.camera_config: command.extend(['--camera-config',args.camera_config])
             if args.gui: command.append('--gui')
             if args.rviz: command.append('--rviz')
             if args.repair_missing_tile: command.extend(['--repair-missing-tile',*args.repair_missing_tile])

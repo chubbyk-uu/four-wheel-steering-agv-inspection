@@ -2,28 +2,37 @@
 width: 4096
 # Overscan/oversampling guard for the C++ renderer's distorted ray mapping.
 render_width: 5120
+# Lines per image; default full block is 4096 x 4096. A stopped scan keeps its short tail.
 block_rows: 4096
+# Display-only sRGB transfer for linear OptiX / radiometric CUDA previews.
+# Raw Mono8, archived PGM and offline correction stay linear.
+preview_srgb: true
 pixel_pitch_m: 0.000007
-focal_length_m: 0.016
-nominal_width_m: 1.2
-line_spacing_m: 0.00029296875
+focal_length_m: 0.020
+nominal_width_m: 1.5
+line_spacing_m: 0.0003662109375
 exposure_s: 0.00002
 # q = (raw_column - center) / (width / 2); ray_x = S/(2*f) * polynomial(q).
 # Monotonic raw-pixel-to-ray polynomial; asymmetric terms are supported.
 ray_polynomial: [0.0, 1.0, 0.0, 0.04]
-calibration_id: nominal-linescan-4k-16mm-v5
-# Keep the entire downward scan plane ahead of the front support arms (x <= .62).
-camera_x_m: 0.70
-base_nominal_height_m: 0.36
+calibration_id: nominal-linescan-4k-20mm-large-v7
+# Keep the entire downward scan plane ahead of the front support mounts (x < 1.10 below the optical centre).
+camera_x_m: 1.15
+base_nominal_height_m: 0.65
 # Signed offset from camera: behind the scan plane, close to the chassis front.
 led_forward_offset_m: -0.18
-led_height_m: 0.30
+led_height_m: 0.45
+led_length_m: 1.20
 grid_spacing_m: 0.10
 grid_line_width_m: 0.002
 grid_extent_m: 20.0
 grid_dark: 25
 grid_light: 210
 # Only straight forward/backward scanning is accepted in the first prototype.
+# Allow small contact-induced front/rear encoder disagreement at slab joints.
+# Limit = max(absolute floor, relative * abs(mean wheel speed)); yaw gate remains independent.
+wheel_speed_spread_absolute_m_s: 0.01
+wheel_speed_spread_relative: 0.01
 max_steer_rad: 0.02
 max_yaw_rate_rad_s: 0.02
 max_scan_speed_m_s: 0.25
@@ -36,7 +45,7 @@ radiometry:
   enabled: true
   noise: true
   led_peak_relative: 40.0
-  led_half_width_m: 0.85
+  led_half_width_m: 0.90
   led_half_depth_m: 0.08
   ambient_relative: 1.0
   shadow_transmission: 0.1

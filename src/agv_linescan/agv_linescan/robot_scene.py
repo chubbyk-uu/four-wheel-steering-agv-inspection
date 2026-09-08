@@ -48,6 +48,33 @@ def triangles(geometry, facets=64):
             result.extend([[v[0], v[1], v[2]], [v[0], v[2], v[3]],
                            [(0, 0, -h), v[1], v[0]], [(0, 0, h), v[3], v[2]]])
         return np.array(result)
+    mesh = geometry.find('mesh')
+    if mesh is not None:
+        uri = mesh.attrib['filename']
+        if uri.startswith('package://'):
+            from ament_index_python.packages import get_package_share_directory
+            package, relative = uri[len('package://'):].split('/', 1)
+            path = Path(get_package_share_directory(package))/relative
+        else:
+            path = Path(uri.removeprefix('file://'))
+        if path.suffix.lower() != '.obj':
+            raise ValueError('ray exporter currently accepts triangular OBJ meshes only')
+        vertices, faces = [], []
+        for line in path.read_text().splitlines():
+            fields = line.split()
+            if not fields: continue
+            if fields[0] == 'v': vertices.append(list(map(float, fields[1:4])))
+            if fields[0] == 'f':
+                if len(fields) != 4: raise ValueError('OBJ must be triangulated')
+                ids = [int(f.split('/')[0]) for f in fields[1:]]
+                if any(i <= 0 or i > len(vertices) for i in ids):
+                    raise ValueError('invalid OBJ index')
+                faces.append([i-1 for i in ids])
+        scale = np.array(list(map(float, mesh.get('scale', '1 1 1').split())))
+        points = np.asarray(vertices, dtype=float)
+        if scale.shape != (3,) or np.any(scale <= 0) or not np.isfinite(scale).all() or not faces or not np.isfinite(points).all():
+            raise ValueError('invalid OBJ geometry or scale')
+        return (points*scale)[faces]
     raise ValueError('unsupported URDF visual geometry; refusing to omit it')
 
 
@@ -91,9 +118,11 @@ def export(urdf, destination):
     if 'led_link' in links:
         moving, pose = group('led_link')
         # Same emitter plane as the 21 GZ display spots: 22mm below bar centre.
+        half_length = float(links['led_link'].find('visual/geometry/box').get('size').split()[1])/2-.02
+        if half_length <= 0: raise ValueError('LED strip too short')
         light = []
         for i in range(4):
-            point = pose @ np.array([0., -.28+.56*(i+.5)/4, -.022, 1.])
+            point = pose @ np.array([0., -half_length+2*half_length*(i+.5)/4, -.022, 1.])
             light.append(point[:3].tolist())
         document['led_emitters'] = {'link': moving, 'positions_m': light}
     (target/'robot_scene.json').write_text(json.dumps(document, separators=(',', ':'))+'\n')

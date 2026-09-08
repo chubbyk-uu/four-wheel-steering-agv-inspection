@@ -12,13 +12,13 @@ using Four = std::array<double, 4>;
 struct Twist { double x{}, y{}, yaw{}; };
 struct Config {
   double wheelbase{0.65}, track{0.55}, radius{0.1}, soft{185*pi/180};
-  double rate{1.2}, steer_accel{3.0}, max_speed{10/3.6}, max_yaw{0.8}, accel{0.8};
+  double rate{1.2}, steer_accel{3.0}, max_speed{10/3.6}, max_yaw{0.8}, accel{0.8}, decel{1.0};
   double reorient{0.30}, aligned{0.035}, stopped{0.025}, hysteresis{0.08};
   double lateral_mismatch{0.12};
   double max_lateral_speed{1.0};
   double limit_reserve{10*pi/180}, wheel_deadband{0.005};
   void validate() const {
-    for (double v : {wheelbase,track,radius,soft,rate,steer_accel,max_speed,max_yaw,accel,reorient,aligned,stopped,hysteresis,lateral_mismatch,max_lateral_speed,limit_reserve,wheel_deadband})
+    for (double v : {wheelbase,track,radius,soft,rate,steer_accel,max_speed,max_yaw,accel,decel,reorient,aligned,stopped,hysteresis,lateral_mismatch,max_lateral_speed,limit_reserve,wheel_deadband})
       if (!std::isfinite(v) || v <= 0) throw std::invalid_argument("invalid controller parameter");
     if (soft < pi/2 || aligned >= reorient || limit_reserve >= soft-pi/2 || wheel_deadband>=stopped)
       throw std::invalid_argument("invalid steering thresholds");
@@ -158,12 +158,18 @@ class Controller {
       }
     }
     // One interpolation fraction preserves coordinated wheel-speed proportions.
-    Four desired_speed{}; double largest_delta=0;
+    Four desired_speed{}; double f=1;
     for(size_t i=0;i<4;++i) {
       desired_speed[i]=mode_==Mode::Drive?target.speed[i]*common_scale:0;
-      largest_delta=std::max(largest_delta,std::abs(desired_speed[i]-out_.speed[i]));
+      const double old=out_.speed[i], next=desired_speed[i];
+      const double delta=std::abs(next-old);
+      if(delta==0) continue;
+      const bool crossing=old*next<0;
+      const double limit=(crossing||std::abs(next)<std::abs(old))?c_.decel:c_.accel;
+      f=std::min(f,limit*dt/delta);
+      // A sign reversal must reach zero before accelerating in the new direction.
+      if(crossing)f=std::min(f,std::abs(old)/delta);
     }
-    const double f=largest_delta>0?std::min(1.0,c_.accel*dt/largest_delta):1;
     for(size_t i=0;i<4;++i)out_.speed[i]+=f*(desired_speed[i]-out_.speed[i]);
     return out_;
   }

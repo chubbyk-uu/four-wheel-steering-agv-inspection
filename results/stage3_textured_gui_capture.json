@@ -1,0 +1,136 @@
+{
+  "passed": true,
+  "motion_evaluation": {
+    "scope": "ground-truth evaluation only, never command input; each pose uses its own timestamp",
+    "duration_s": 9.200000000000001,
+    "displacement_m": [
+      4.599999981579225,
+      -1.0360512447959991e-10,
+      1.602051824534101e-13
+    ],
+    "average_world_velocity_m_s": [
+      0.4999999979977418,
+      -1.1261426573869553e-11,
+      1.7413606788414138e-14
+    ]
+  },
+  "correction": {},
+  "corrected_received_blocks": 0,
+  "gazebo_gui": true,
+  "rviz": true,
+  "rviz_world_start": [
+    3.1867534949773626,
+    2.499999999981096,
+    0.6484268593438175
+  ],
+  "rviz_world_end": [
+    7.786753476571483,
+    2.4999999998773332,
+    0.6484268593436849
+  ],
+  "display_sync": {
+    "frames": 799,
+    "dropped_pending": 0,
+    "pending": 0,
+    "max_sim_age_s": 0.015000000000000001,
+    "mode": "same_stamp_interpolated_display_only"
+  },
+  "backend": "optix_shared_mesh_dynamic_robot",
+  "rows": [
+    4096,
+    4096,
+    4096,
+    282
+  ],
+  "speed_m_s": 0.5,
+  "steady_wall_start_s": 25043.77783504,
+  "steady_wall_end_s": 25052.977046844,
+  "display_frames": 835,
+  "display_bad_stamps": 0,
+  "simulation_seconds": 9.2,
+  "wall_seconds": 9.199211803999788,
+  "real_time_factor": 1.0000856808188576,
+  "sampling_line_rate": 44078.92066692689,
+  "wheel_motion_diagnostics": {
+    "fl_wheel_link": {
+      "local_position_range_m": [
+        1.9539925233402755e-14,
+        4.884981308350689e-15,
+        1.281469785840983e-08
+      ],
+      "max_z_step_m": 6.361361437612345e-11,
+      "z_max_m": 0.19999998544770414,
+      "z_min_m": 0.19999997913917816
+    },
+    "fr_wheel_link": {
+      "local_position_range_m": [
+        1.7763568394002505e-14,
+        5.329070518200751e-15,
+        1.1960944568123466e-08
+      ],
+      "max_z_step_m": 6.360900695057126e-11,
+      "z_max_m": 0.1999999854481564,
+      "z_min_m": 0.1999999791391731
+    },
+    "rl_wheel_link": {
+      "local_position_range_m": [
+        1.0658141036401503e-14,
+        5.329070518200751e-15,
+        1.0221964275025641e-08
+      ],
+      "max_z_step_m": 6.661338147750939e-16,
+      "z_max_m": 0.1999999798533953,
+      "z_min_m": 0.1999999798533338
+    },
+    "rr_wheel_link": {
+      "local_position_range_m": [
+        1.1546319456101628e-14,
+        5.329070518200751e-15,
+        9.757022245704405e-09
+      ],
+      "max_z_step_m": 6.264699869973356e-11,
+      "z_max_m": 0.19999998606682184,
+      "z_min_m": 0.19999997985333395
+    }
+  },
+  "metrics": {
+    "lines": 12570,
+    "mapping_seconds": 0.0,
+    "physics_step_wall_interval_max_seconds": 0.001571038,
+    "physics_step_wall_interval_p99_upper_seconds": 0.0013000000000000002,
+    "readback_seconds": 0.0,
+    "render_seconds": 0.2851703220000001,
+    "renders": 37710,
+    "sampling_batch_max_seconds": 0.009320974,
+    "scene_update_seconds": 0.0
+  },
+  "write_seconds": 0.016101909,
+  "publish_call_seconds": 0.010320952,
+  "received_blocks": 4,
+  "ros_all_blocks_byte_identical": true,
+  "nominal_encoder_line_rate_hz": 1365.3333333333333,
+  "receive_interval_max_seconds": 2.9969731830024102,
+  "final_motion_state": "HOLD",
+  "grid_geometry": [],
+  "occlusion_probe": false,
+  "tile_statistics": {
+    "batch_wait_seconds_max": 2.4096e-05,
+    "bytes_read": 707398272,
+    "cache_slots": 32,
+    "cold_warm_seconds": 0.251133315,
+    "device_payload_bytes": 404232320,
+    "evictions": 32,
+    "load_seconds_max": 0.024172147,
+    "load_seconds_total": 0.7570568639999998,
+    "required_tile_misses_after_warm": 0,
+    "slot_pins": 0,
+    "tile_loads": 56
+  },
+  "sampling_queue_high_water_lines": 12,
+  "sampling_queue_observed_wait_max_s": 0.008826109999063192,
+  "sampling_queue_high_water_jobs": 9,
+  "notes": "OptiX shared static mesh plus thirteen robot links with per-exposure transforms and configured LED shadow samples; ROS images and PGM archive. Sampling rate excludes physics/ROS/archive. Not the independent durable-write throughput acceptance.",
+  "full_block_delivery_lines_per_wall_second": 1367.2624896613343,
+  "full_acceptance_passed": false,
+  "archive_retention": "local_data/current_large_v7_gui/session; not committed"
+}

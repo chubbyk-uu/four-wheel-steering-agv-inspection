@@ -1,0 +1,6 @@
+newmtl body_orange
+Ka 0.3 0.09 0.01
+Kd 1.0 0.30 0.025
+Ks 0.08 0.08 0.08
+Ns 12
+d 1

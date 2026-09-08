@@ -1,0 +1,414 @@
+{
+  "scope": "production OptixScene staged material + GPU readback; no GUI/physics/ROS/calibration/archive; short active throughput not acceptance",
+  "target_hz": 11000,
+  "texel_m": 0.00025,
+  "texture_resolution": [
+    10400,
+    6400
+  ],
+  "roughness_constant": 0.5997871632524244,
+  "crack": {
+    "source": "imagegen",
+    "source_sha256": "5bb49bee37f76982172491ef41041f0dd352f7b403b92600f939dc77a6a6847f",
+    "variant": 0,
+    "length_extent_m": 2.2,
+    "transverse_extent_m": 0.14,
+    "nominal_main_width_min_mm": 0.7999999797903001,
+    "nominal_main_width_max_mm": 2.0000000949949026,
+    "nominal_main_width_median_mm": 1.0819911258295178,
+    "width_semantics": "image-derived centerline, calibrated local diameter; alpha edge, tips and branch unions not independent width samples",
+    "procedural_crack_paths": false
+  },
+  "triangles": 210422,
+  "test_orders": [
+    [
+      "color",
+      "normal",
+      "roughness"
+    ],
+    [
+      "roughness",
+      "normal",
+      "color"
+    ]
+  ],
+  "fixtures": {
+    "color": [
+      {
+        "measurements": [
+          {
+            "active_lines_per_second": 129272.5657013869,
+            "allocated_device_bytes": 92199780,
+            "image": "samples_4.pgm",
+            "max_batch_ms": 3.100648,
+            "median_batch_ms": 1.911517,
+            "p99_batch_ms": 3.021339,
+            "samples": 4
+          },
+          {
+            "active_lines_per_second": 79816.03145231004,
+            "allocated_device_bytes": 92199780,
+            "image": "samples_8.pgm",
+            "max_batch_ms": 4.11853,
+            "median_batch_ms": 3.128014,
+            "p99_batch_ms": 3.934887,
+            "samples": 8
+          },
+          {
+            "active_lines_per_second": 45640.002853001584,
+            "allocated_device_bytes": 92199780,
+            "image": "samples_16.pgm",
+            "max_batch_ms": 7.319932,
+            "median_batch_ms": 5.524231,
+            "p99_batch_ms": 6.932735,
+            "samples": 16
+          },
+          {
+            "active_lines_per_second": 24063.356396957915,
+            "allocated_device_bytes": 92199780,
+            "image": "samples_32.pgm",
+            "max_batch_ms": 12.321504,
+            "median_batch_ms": 10.572564,
+            "p99_batch_ms": 12.195195,
+            "samples": 32
+          },
+          {
+            "active_lines_per_second": 12313.972826970967,
+            "allocated_device_bytes": 92199780,
+            "image": "samples_64.pgm",
+            "max_batch_ms": 24.386533,
+            "median_batch_ms": 20.673123,
+            "p99_batch_ms": 23.374193,
+            "samples": 64
+          }
+        ],
+        "noise": false,
+        "prnu": false,
+        "rows": 256,
+        "scope": "production kernel / shared groove mesh and staged Concrete047A material; Sample includes GPU readback; no GUI/ROS/archive",
+        "timing_repeats": 128,
+        "width": 4096
+      },
+      {
+        "measurements": [
+          {
+            "active_lines_per_second": 129378.5455863102,
+            "allocated_device_bytes": 92199780,
+            "image": "samples_4.pgm",
+            "max_batch_ms": 2.72888,
+            "median_batch_ms": 1.913703,
+            "p99_batch_ms": 2.663724,
+            "samples": 4
+          },
+          {
+            "active_lines_per_second": 79501.03859392094,
+            "allocated_device_bytes": 92199780,
+            "image": "samples_8.pgm",
+            "max_batch_ms": 4.504296,
+            "median_batch_ms": 3.102886,
+            "p99_batch_ms": 4.308187,
+            "samples": 8
+          },
+          {
+            "active_lines_per_second": 45304.00579918927,
+            "allocated_device_bytes": 92199780,
+            "image": "samples_16.pgm",
+            "max_batch_ms": 7.086165,
+            "median_batch_ms": 5.593662,
+            "p99_batch_ms": 6.984669,
+            "samples": 16
+          },
+          {
+            "active_lines_per_second": 24121.75971155145,
+            "allocated_device_bytes": 92199780,
+            "image": "samples_32.pgm",
+            "max_batch_ms": 12.389835,
+            "median_batch_ms": 10.521715,
+            "p99_batch_ms": 12.231094,
+            "samples": 32
+          },
+          {
+            "active_lines_per_second": 12315.526021179261,
+            "allocated_device_bytes": 92199780,
+            "image": "samples_64.pgm",
+            "max_batch_ms": 24.472728,
+            "median_batch_ms": 20.688007,
+            "p99_batch_ms": 23.447676,
+            "samples": 64
+          }
+        ],
+        "noise": false,
+        "prnu": false,
+        "rows": 256,
+        "scope": "production kernel / shared groove mesh and staged Concrete047A material; Sample includes GPU readback; no GUI/ROS/archive",
+        "timing_repeats": 128,
+        "width": 4096
+      }
+    ],
+    "normal": [
+      {
+        "measurements": [
+          {
+            "active_lines_per_second": 128335.69509707269,
+            "allocated_device_bytes": 225319780,
+            "image": "samples_4.pgm",
+            "max_batch_ms": 2.793207,
+            "median_batch_ms": 1.939994,
+            "p99_batch_ms": 2.440458,
+            "samples": 4
+          },
+          {
+            "active_lines_per_second": 79010.39518608719,
+            "allocated_device_bytes": 225319780,
+            "image": "samples_8.pgm",
+            "max_batch_ms": 4.263493,
+            "median_batch_ms": 3.101891,
+            "p99_batch_ms": 4.09501,
+            "samples": 8
+          },
+          {
+            "active_lines_per_second": 45125.69319230142,
+            "allocated_device_bytes": 225319780,
+            "image": "samples_16.pgm",
+            "max_batch_ms": 7.323975,
+            "median_batch_ms": 5.585794,
+            "p99_batch_ms": 7.153091,
+            "samples": 16
+          },
+          {
+            "active_lines_per_second": 23885.599193730985,
+            "allocated_device_bytes": 225319780,
+            "image": "samples_32.pgm",
+            "max_batch_ms": 12.326506,
+            "median_batch_ms": 10.593507,
+            "p99_batch_ms": 12.291906,
+            "samples": 32
+          },
+          {
+            "active_lines_per_second": 12270.411443458212,
+            "allocated_device_bytes": 225319780,
+            "image": "samples_64.pgm",
+            "max_batch_ms": 25.579049,
+            "median_batch_ms": 20.781765,
+            "p99_batch_ms": 23.668854,
+            "samples": 64
+          }
+        ],
+        "noise": false,
+        "prnu": false,
+        "rows": 256,
+        "scope": "production kernel / shared groove mesh and staged Concrete047A material; Sample includes GPU readback; no GUI/ROS/archive",
+        "timing_repeats": 128,
+        "width": 4096
+      },
+      {
+        "measurements": [
+          {
+            "active_lines_per_second": 127761.33583584601,
+            "allocated_device_bytes": 225319780,
+            "image": "samples_4.pgm",
+            "max_batch_ms": 2.692489,
+            "median_batch_ms": 1.942939,
+            "p99_batch_ms": 2.554751,
+            "samples": 4
+          },
+          {
+            "active_lines_per_second": 78637.48349531982,
+            "allocated_device_bytes": 225319780,
+            "image": "samples_8.pgm",
+            "max_batch_ms": 4.654952,
+            "median_batch_ms": 3.113502,
+            "p99_batch_ms": 4.358978,
+            "samples": 8
+          },
+          {
+            "active_lines_per_second": 44990.866351608136,
+            "allocated_device_bytes": 225319780,
+            "image": "samples_16.pgm",
+            "max_batch_ms": 7.219221,
+            "median_batch_ms": 5.621813,
+            "p99_batch_ms": 7.20698,
+            "samples": 16
+          },
+          {
+            "active_lines_per_second": 23928.674894406584,
+            "allocated_device_bytes": 225319780,
+            "image": "samples_32.pgm",
+            "max_batch_ms": 12.752314,
+            "median_batch_ms": 10.56037,
+            "p99_batch_ms": 12.45608,
+            "samples": 32
+          },
+          {
+            "active_lines_per_second": 12326.66366533272,
+            "allocated_device_bytes": 225319780,
+            "image": "samples_64.pgm",
+            "max_batch_ms": 23.64821,
+            "median_batch_ms": 20.704284,
+            "p99_batch_ms": 23.003849,
+            "samples": 64
+          }
+        ],
+        "noise": false,
+        "prnu": false,
+        "rows": 256,
+        "scope": "production kernel / shared groove mesh and staged Concrete047A material; Sample includes GPU readback; no GUI/ROS/archive",
+        "timing_repeats": 128,
+        "width": 4096
+      }
+    ],
+    "roughness": [
+      {
+        "measurements": [
+          {
+            "active_lines_per_second": 127515.9727784686,
+            "allocated_device_bytes": 291879780,
+            "image": "samples_4.pgm",
+            "max_batch_ms": 2.41862,
+            "median_batch_ms": 1.951618,
+            "p99_batch_ms": 2.413587,
+            "samples": 4
+          },
+          {
+            "active_lines_per_second": 78191.1123745687,
+            "allocated_device_bytes": 291879780,
+            "image": "samples_8.pgm",
+            "max_batch_ms": 4.306644,
+            "median_batch_ms": 3.14967,
+            "p99_batch_ms": 4.075998,
+            "samples": 8
+          },
+          {
+            "active_lines_per_second": 44963.0631413889,
+            "allocated_device_bytes": 291879780,
+            "image": "samples_16.pgm",
+            "max_batch_ms": 8.007047,
+            "median_batch_ms": 5.550705,
+            "p99_batch_ms": 6.707174,
+            "samples": 16
+          },
+          {
+            "active_lines_per_second": 23925.852789189943,
+            "allocated_device_bytes": 291879780,
+            "image": "samples_32.pgm",
+            "max_batch_ms": 12.645892,
+            "median_batch_ms": 10.600605,
+            "p99_batch_ms": 12.157067,
+            "samples": 32
+          },
+          {
+            "active_lines_per_second": 12319.759781708137,
+            "allocated_device_bytes": 291879780,
+            "image": "samples_64.pgm",
+            "max_batch_ms": 23.671875,
+            "median_batch_ms": 20.728157,
+            "p99_batch_ms": 23.663054,
+            "samples": 64
+          }
+        ],
+        "noise": false,
+        "prnu": false,
+        "rows": 256,
+        "scope": "production kernel / shared groove mesh and staged Concrete047A material; Sample includes GPU readback; no GUI/ROS/archive",
+        "timing_repeats": 128,
+        "width": 4096
+      },
+      {
+        "measurements": [
+          {
+            "active_lines_per_second": 125197.00197958974,
+            "allocated_device_bytes": 291879780,
+            "image": "samples_4.pgm",
+            "max_batch_ms": 5.731339,
+            "median_batch_ms": 1.960456,
+            "p99_batch_ms": 2.96027,
+            "samples": 4
+          },
+          {
+            "active_lines_per_second": 77557.51044547686,
+            "allocated_device_bytes": 291879780,
+            "image": "samples_8.pgm",
+            "max_batch_ms": 4.307503,
+            "median_batch_ms": 3.245277,
+            "p99_batch_ms": 4.30457,
+            "samples": 8
+          },
+          {
+            "active_lines_per_second": 44806.55785980428,
+            "allocated_device_bytes": 291879780,
+            "image": "samples_16.pgm",
+            "max_batch_ms": 7.146422,
+            "median_batch_ms": 5.656611,
+            "p99_batch_ms": 6.989122,
+            "samples": 16
+          },
+          {
+            "active_lines_per_second": 23893.401287659945,
+            "allocated_device_bytes": 291879780,
+            "image": "samples_32.pgm",
+            "max_batch_ms": 13.297346,
+            "median_batch_ms": 10.581361,
+            "p99_batch_ms": 12.544861,
+            "samples": 32
+          },
+          {
+            "active_lines_per_second": 12296.907443211652,
+            "allocated_device_bytes": 291879780,
+            "image": "samples_64.pgm",
+            "max_batch_ms": 23.736876,
+            "median_batch_ms": 20.762454,
+            "p99_batch_ms": 23.509316,
+            "samples": 64
+          }
+        ],
+        "noise": false,
+        "prnu": false,
+        "rows": 256,
+        "scope": "production kernel / shared groove mesh and staged Concrete047A material; Sample includes GPU readback; no GUI/ROS/archive",
+        "timing_repeats": 128,
+        "width": 4096
+      }
+    ]
+  },
+  "bake": {
+    "seconds": 12.248302293000052,
+    "texel_m": 0.00025,
+    "roughness_mean": 0.5997871632524244,
+    "normal_max_tilt_deg": 85.75594152028569,
+    "layout": "same color-derived placements/alpha for all maps; normalize blended normals; flip NormalGL Y for world XY",
+    "source_sha256": {
+      "Color": "8dd48afdbd43c1249c3999e65093e4c41fc12892c06e2d6b66f261877f66c102",
+      "NormalGL": "0d6bc29a38413406ee4a8f07b37d7ea263e5dcfac15c4b7825c78e87da29894a",
+      "Roughness": "a63121323991a8be0c3f083f5288dea4f69fd2ac31d924958a3c3f0177a2868d"
+    }
+  },
+  "image_metrics": {
+    "normal": {
+      "mean_abs_dn": 8.382843017578125,
+      "p95_dn": 23.0,
+      "max_dn": 178,
+      "fraction_over_2dn": 0.7866319119930267
+    },
+    "roughness": {
+      "mean_abs_dn": 0.41481858491897583,
+      "p95_dn": 2.0,
+      "max_dn": 103,
+      "fraction_over_2dn": 0.024414151906967163
+    }
+  },
+  "deterministic_images": true,
+  "hardware": {
+    "gpu": "NVIDIA GeForce RTX 5080",
+    "driver": "616.64",
+    "platform": "WSL2 Ubuntu 24.04",
+    "optix_runtime": "610.57.04"
+  },
+  "memory_scope": "owned cudaMalloc bytes plus logical CUDA array payload; excludes CUDA array padding, driver/context, host and GUI allocations",
+  "source_sha256": {
+    "tools/validate_pbr_cost.py": "d56d246214325130912bd11f6d54cf6e1c9566accf09a5d9abd9345e13729d9c",
+    "tools/concrete_quilt.py": "f072f06960e1e6e39e97cd0fcd86c5a3905869577717cacaf66d90aad3dae64c",
+    "src/agv_linescan/src/optix/scan.cu": "d35ffb97b45e4e22e8deb37469268279f4c02f1a858bfb491c7fb3327d1b52e8",
+    "src/agv_linescan/src/optix/scene.cpp": "7ac8294a2f3211cd6f2e94c091a1615cd95b85166a1a2a764b4061ece93b9ab4",
+    "src/agv_description/config/linescan.yaml": "742e0cc6b9ee14a08adb43991ea92eb394a7436bdac3d0b6bc59e2a6a0cf333f"
+  }
+}

@@ -37,3 +37,14 @@ TEST(Pose, ExposureTimesRemainDistinct) {
   EXPECT_NEAR(Interpolate(a,b,.75).Rot().Yaw(),.00075,1e-9);
   EXPECT_THROW(Interpolate(a,b,1.1),std::runtime_error);
 }
+
+TEST(ScanMotion, ContactTransientToleranceKeepsLowSpeedAndSlipRejection) {
+  // Recorded 10 km/h slab crossing: front/rear spread peaks at .015424 m/s.
+  for(double direction:{-1.,1.}){
+    EXPECT_GT(WheelSpeedSpreadLimit(direction*2.77778,.01,.01),.015424);
+    EXPECT_LT(WheelSpeedSpreadLimit(direction*2.77778,.01,.01),.04); // Larger disagreement still rejects.
+    EXPECT_LT(WheelSpeedSpreadLimit(direction*.1,.01,.01),.015424); // Low speed retains strict floor.
+  }
+  EXPECT_DOUBLE_EQ(WheelSpeedSpreadLimit(2.77778,.01,0),.01); // Legacy config.
+  EXPECT_THROW(WheelSpeedSpreadLimit(0,.01,.2),std::invalid_argument);
+}

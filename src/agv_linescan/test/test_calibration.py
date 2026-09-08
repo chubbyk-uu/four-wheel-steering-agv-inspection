@@ -145,3 +145,55 @@ def test_live_pairing_and_duplicate_failure(tmp_path,monkeypatch,metadata_first)
         node.process();assert node.next_block==2 and not node.error
         node.receive('image',im);assert 'duplicate' in node.error
     finally:node.destroy_node();rclpy.shutdown()
+
+
+def offline_fixture(tmp_path):
+    import json,yaml
+    from PIL import Image
+    from agv_linescan.calibration import capture_signature
+    source=tmp_path/'raw';source.mkdir()
+    config=yaml.safe_load((Path(__file__).resolve().parents[2]/'agv_description/config/linescan.yaml').read_text())
+    config.update(width=64,block_rows=17,calibration_id='source')
+    (source/'calibration.yaml').write_text(yaml.safe_dump(config))
+    profile=fixture_profile();profile['conditions']['capture_signature']=capture_signature(config)
+    path=tmp_path/'profile.json';path.write_text(json.dumps(profile))
+    for block,first,rows in ((0,0,17),(1,17,3)):
+        m=dict(block_id=block,segment_id=0,width=64,rows=rows,encoding='mono8',reference='last_line_exposure_midpoint',
+            exposure_s=.00002,calibration_id='source',first=dict(global_line=first,time_s=first*.001),
+            last=dict(global_line=first+rows-1,time_s=(first+rows-1)*.001),pose_tags=[dict(global_line=first),dict(global_line=first+rows-1)])
+        (source/f'block_{block:06d}.json').write_text(json.dumps(m))
+        Image.fromarray(np.tile(np.arange(64,dtype=np.uint8)+100,(rows,1))).save(source/f'block_{block:06d}.pgm')
+    return source,path
+
+
+def test_offline_session_configurable_rows_short_tail_and_source_preservation(tmp_path):
+    import json
+    from PIL import Image
+    from agv_linescan.offline_correction import process_session
+    source,profile=offline_fixture(tmp_path);before={p.name:p.read_bytes() for p in source.iterdir()}
+    out=tmp_path/'corrected';r=process_session(source,profile,out)
+    assert r['rows']==20 and r['blocks']==2 and r['configured_block_rows']==17 and r['tail_block_rows']==3
+    assert r['rows_overlap_added']==0
+    c=Correction(json.loads(profile.read_text()))
+    for block in range(2):
+        name=f'block_{block:06d}';raw=np.array(Image.open(source/(name+'.pgm')))
+        assert np.array_equal(np.array(Image.open(out/(name+'.pgm'))),c.apply(raw)[0])
+        a=json.loads((source/(name+'.json')).read_text());b=json.loads((out/(name+'.json')).read_text())
+        assert all(a[k]==b[k] for k in ('first','last','pose_tags','rows','reference'))
+    assert before=={p.name:p.read_bytes() for p in source.iterdir()}
+    with pytest.raises(FileExistsError):process_session(source,profile,out)
+
+
+@pytest.mark.parametrize('fault',['missing_image','missing_block','line_gap'])
+def test_offline_rejects_incomplete_or_discontinuous_session(tmp_path,fault):
+    import json
+    from agv_linescan.offline_correction import process_session
+    source,profile=offline_fixture(tmp_path)
+    if fault=='missing_image':(source/'block_000001.pgm').unlink()
+    elif fault=='missing_block':
+        (source/'block_000000.pgm').unlink();(source/'block_000000.json').unlink()
+    else:
+        path=source/'block_000001.json';m=json.loads(path.read_text())
+        m['first']['global_line']+=1;m['last']['global_line']+=1;path.write_text(json.dumps(m))
+    with pytest.raises(ValueError):process_session(source,profile,tmp_path/'corrected')
+    assert not (tmp_path/'corrected').exists()

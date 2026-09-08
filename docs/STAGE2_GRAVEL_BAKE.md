@@ -1,5 +1,7 @@
 # Gravel Concrete 03：同源底纹与一致预览
 
+> 历史实验记录：本文参数、性能和“当前/默认”描述属于当时版本，不作为新版验收。现行550 kg、20 mm/4K/1.5 m、1 m轨迹间距、11 kHz目标见[当前模型基线](LARGE_AGV_REBUILD.md)。历史命令须按现行配置调整，旧16 mm标定不可用于新版；大体积实验资产可能已清理，复现需重新生成。
+
 清理说明：本页为历史记录；旧高分辨率源图与烘焙目录已删除，仅保留元数据、报告和小预览。当前采用Concrete047A，见 STAGE2_CONCRETE047A_COMPARE.md。
 用户否决旧Brushed Concrete 03烘焙外观，改选 https://polyhaven.com/a/gravel_concrete_03 。保留5×5 m板块、标线、小破损，以及原imagegen产生的细长裂缝。旧样片保留但不继续扩展。
 

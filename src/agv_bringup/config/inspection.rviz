@@ -9,7 +9,7 @@ Visualization Manager:
       Enabled: true
       Cell Size: 1
       Plane Cell Count: 200
-      Reference Frame: <Fixed Frame>
+      Reference Frame: world
       Color: 160; 160; 164
       Alpha: 0.5
     - Class: rviz_default_plugins/RobotModel
@@ -41,7 +41,7 @@ Visualization Manager:
   Enabled: true
   Global Options:
     Background Color: 38; 38; 42
-    Fixed Frame: world
+    Fixed Frame: base_link
     Frame Rate: 30
   Name: root
   Tools:
@@ -50,7 +50,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 2.6
+      Distance: 4.2
       Focal Point:
         X: 0.2
         Y: 0

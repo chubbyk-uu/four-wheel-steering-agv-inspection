@@ -5,7 +5,7 @@ import os
 import xml.etree.ElementTree as ET
 import yaml
 import xacro
-from ament_index_python.packages import get_package_share_directory
+from ament_index_python.packages import get_package_share_directory, get_package_prefix
 from launch import LaunchDescription
 from launch.actions import GroupAction, DeclareLaunchArgument, IncludeLaunchDescription, OpaqueFunction, RegisterEventHandler, EmitEvent, SetEnvironmentVariable
 from launch.event_handlers import OnProcessExit
@@ -20,8 +20,8 @@ def setup(context):
     bringup = Path(get_package_share_directory('agv_bringup'))
     platform = LaunchConfiguration('platform').perform(context)
     config = yaml.safe_load(Path(platform).read_text())
-    if not 50 <= config['mass'] <= 80:
-        raise ValueError('Stage 1 mass must be within 50 to 80 kg')
+    if not 400 <= config['mass'] <= 700:
+        raise ValueError('Large AGV mass must be within validated design range 400 to 700 kg')
     behavior = str(bringup / 'config/motion.yaml')
     camera_config = LaunchConfiguration('camera_config').perform(context)
     robot = xacro.process_file(str(desc / 'urdf/agv.urdf.xacro'), mappings={
@@ -63,7 +63,6 @@ def setup(context):
                              yaml.safe_load(Path(camera_config).read_text()),
                              probe=LaunchConfiguration('scan_probe').perform(context).lower() == 'true')
         if backend in ('render', 'cuda_grid', 'cuda_tiles', 'optix'):
-            from ament_index_python.packages import get_package_prefix
             tree = ET.parse(world_path)
             plugin = ET.SubElement(tree.getroot().find('world'), 'plugin',
                 filename=str(Path(get_package_prefix('agv_linescan'))/'lib/libagv_gz_linescan.so'),
@@ -84,6 +83,14 @@ def setup(context):
             if block_rows:
                 ET.SubElement(plugin, 'block_rows').text = block_rows
             tree.write(world_path, encoding='unicode')
+    sensor_tree = ET.parse(world_path)
+    sensor_world = sensor_tree.getroot().find('world')
+    if not any(p.get('name') == 'gz::sim::systems::Sensors' for p in sensor_world.findall('plugin')):
+        sensors = ET.SubElement(sensor_world, 'plugin', filename='gz-sim-sensors-system', name='gz::sim::systems::Sensors')
+        ET.SubElement(sensors, 'render_engine').text = 'ogre2'
+    with tempfile.NamedTemporaryFile(prefix='agv_sensors_', suffix='.sdf', delete=False) as f:
+        world_path = f.name
+    sensor_tree.write(world_path, encoding='unicode')
     gz = IncludeLaunchDescription(PythonLaunchDescriptionSource(str(
         Path(get_package_share_directory('ros_gz_sim')) / 'launch/gz_sim.launch.py')),
         launch_arguments={'gz_args': '-r ' + ('-s ' if headless else '--gui-config ' + LaunchConfiguration('gui_config').perform(context) + ' ') + world_path,
@@ -127,6 +134,7 @@ def setup(context):
                             parameters=[{'use_sim_time': True}], remappings=[('/tf','/visualization/tf')], output='screen'))
     if not headless and LaunchConfiguration('follow_camera').perform(context).lower() == 'true':
         actions.append(Node(package='agv_bringup', executable='follow_camera.py', output='screen'))
+    actions.append(SetEnvironmentVariable('GZ_GUI_PLUGIN_PATH', str(Path(get_package_prefix('agv_bringup'))/'lib') + os.pathsep + os.environ.get('GZ_GUI_PLUGIN_PATH','')))
     return actions + [gz,
         RegisterEventHandler(OnProcessExit(target_action=controller,
             on_exit=[EmitEvent(event=Shutdown(reason='Motion controller exited'))])),
@@ -134,10 +142,12 @@ def setup(context):
         Node(package='robot_state_publisher', executable='robot_state_publisher',
              parameters=[{'robot_description': robot, 'use_sim_time': True, 'publish_frequency': 100.0}]),
         Node(package='ros_gz_sim', executable='create', arguments=[
-            '-name', 'agv', '-topic', 'robot_description', '-z', '0.365', '-x', LaunchConfiguration('spawn_x'), '-y', LaunchConfiguration('spawn_y')]),
+            '-name', 'agv', '-topic', 'robot_description', '-z', str(config['base_height']+.005), '-x', LaunchConfiguration('spawn_x'), '-y', LaunchConfiguration('spawn_y')]),
         Node(package='ros_gz_bridge', executable='parameter_bridge', arguments=[
             '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
-            '/ground_truth/odom@nav_msgs/msg/Odometry[gz.msgs.Odometry']),
+            '/ground_truth/odom@nav_msgs/msg/Odometry[gz.msgs.Odometry',
+            '/lidar/left/points@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked',
+            '/lidar/right/points@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked']),
         spawner, controller]
 
 
@@ -145,10 +155,10 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument('headless', default_value='false'),
         DeclareLaunchArgument('rviz', default_value='false'),
-        DeclareLaunchArgument('follow_camera', default_value='false', choices=['true', 'false']),
+        DeclareLaunchArgument('follow_camera', default_value='true', choices=['true', 'false']),
         DeclareLaunchArgument('gui_config', default_value=str(Path(get_package_share_directory('agv_bringup'))/'config/gui.config')),
         DeclareLaunchArgument('linescan', default_value='false'),
-        DeclareLaunchArgument('correction_profile', default_value=''),
+        DeclareLaunchArgument('correction_profile', default_value='', description='Optional online diagnostic only; normal workflow corrects archived raw images offline'),
         DeclareLaunchArgument('camera_config', default_value=str(Path(get_package_share_directory('agv_description'))/'config/linescan.yaml')),
         DeclareLaunchArgument('linescan_backend', default_value='render', choices=['render', 'analytic', 'cuda_grid', 'cuda_tiles', 'optix']),
         DeclareLaunchArgument('terrain_manifest', default_value=''),
@@ -157,7 +167,7 @@ def generate_launch_description():
         DeclareLaunchArgument('spawn_y', default_value='0'),
         DeclareLaunchArgument('scan_speed_limit', default_value='0.25'),
         DeclareLaunchArgument('scan_probe', default_value='false'),
-        DeclareLaunchArgument('scan_block_rows', default_value=''),
+        DeclareLaunchArgument('scan_block_rows', default_value='', description='C++ sensor lines per image (1..16384); empty uses camera YAML block_rows, default 4096'),
         DeclareLaunchArgument('capture_dir', default_value='/tmp/agv_linescan'),
         DeclareLaunchArgument('gpu_backend', default_value='d3d12', choices=['d3d12', 'native']),
         DeclareLaunchArgument('gpu_adapter', default_value='NVIDIA'),

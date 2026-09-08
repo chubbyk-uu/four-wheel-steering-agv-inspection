@@ -1,0 +1,723 @@
+{
+  "scope": "local production OptixScene + synchronous readback; no GZ/physics/ROS/archive timing; noise and PRNU disabled in matched fixture",
+  "full_11khz_acceptance": false,
+  "target_hz": 11000,
+  "build": {
+    "texel_m": 0.00025,
+    "trial_footprint_m": [
+      2,
+      2
+    ],
+    "optical_corridor_m": [
+      2.6,
+      1.6
+    ],
+    "support_ground_m": [
+      5,
+      5
+    ],
+    "geometry_shared_with_GZ_visual_and_collision": true,
+    "roughness": 0.6,
+    "source_scale_m": 2.1,
+    "source_scale_basis": "project mapping, not measured",
+    "source_hashes": {
+      "Color": "8dd48afdbd43c1249c3999e65093e4c41fc12892c06e2d6b66f261877f66c102",
+      "NormalGL": "0d6bc29a38413406ee4a8f07b37d7ea263e5dcfac15c4b7825c78e87da29894a"
+    },
+    "cases": {
+      "old": {
+        "source": "imagegen",
+        "source_sha256": "5bb49bee37f76982172491ef41041f0dd352f7b403b92600f939dc77a6a6847f",
+        "variant": 0,
+        "length_extent_m": 2.2,
+        "transverse_extent_m": 0.14,
+        "nominal_main_width_min_mm": 0.7999999797903001,
+        "nominal_main_width_max_mm": 2.0000000949949026,
+        "nominal_main_width_median_mm": 1.0819911258295178,
+        "width_semantics": "image-derived centerline, calibrated local diameter; alpha edge, tips and branch unions not independent width samples",
+        "procedural_crack_paths": false,
+        "origin_xy_m": [
+          1.4,
+          -0.07
+        ],
+        "triangles": 206566,
+        "vertices": 103384,
+        "texture_payload_MiB": 190.4296875,
+        "scene_manifest_sha256": "4b1e645ddcde4d8bc4f4c0c6c653c28dd5433024811b718c18f1a74e77849481"
+      },
+      "branched": {
+        "source": "built-in image_gen",
+        "source_file": "concrete_crack_branch_ai_v2.png",
+        "source_sha256": "bb35fe2d75f1c84f20e1e99f3a1f95fc52ee9fbb0bf4a74e9cbee021df4ebf7b",
+        "source_canvas_px": [
+          1774,
+          887
+        ],
+        "raster_shape": [
+          3313,
+          7200
+        ],
+        "texel_m": 0.00025,
+        "extent_m": [
+          1.8,
+          0.82825
+        ],
+        "isotropic_resize": true,
+        "procedural_paths": false,
+        "nominal_width_mm": [
+          0.7999999523162842,
+          1.2748967409133911,
+          2.0
+        ],
+        "width_semantics": "local centerline diameter; branch unions and antialiased tips are not independent widths",
+        "depth_min_m": -0.0020000000949949026,
+        "depth_max_m": -0.0,
+        "skeleton_endpoints": 18,
+        "extraction": "source-scale thinning, <12 px terminal spur pruning, 0.55 px path simplification; isotropic subpixel rasterization",
+        "endpoint_count_scope": "raster topology including edge irregularities; not manual count of major branches",
+        "substrate": "Concrete047A unchanged outside defect",
+        "roughness": 0.6,
+        "origin_xy_m": [
+          1.6,
+          -0.414125
+        ],
+        "triangles": 355562,
+        "vertices": 177882,
+        "texture_payload_MiB": 190.4296875,
+        "scene_manifest_sha256": "be8a1d3691ec101760335c5ccacd71df60f325241961fe18dbca393e467c5270"
+      }
+    },
+    "color_changed_pixels": 122777,
+    "normal_changed_pixels": 121530,
+    "outside_defect_material_equal": true
+  },
+  "cases": {
+    "old": [
+      {
+        "measurements": [
+          {
+            "active_lines_per_second": 130361.8169792495,
+            "allocated_device_bytes": 224871052,
+            "image": "samples_4.pgm",
+            "max_batch_ms": 2.751675,
+            "median_batch_ms": 1.92228,
+            "p99_batch_ms": 2.556756,
+            "samples": 4,
+            "total_sample_seconds": 0.251361946
+          },
+          {
+            "active_lines_per_second": 80525.40843391247,
+            "allocated_device_bytes": 224871052,
+            "image": "samples_8.pgm",
+            "max_batch_ms": 4.718326,
+            "median_batch_ms": 3.038762,
+            "p99_batch_ms": 3.80559,
+            "samples": 8,
+            "total_sample_seconds": 0.40692746100000016
+          },
+          {
+            "active_lines_per_second": 46213.87876173083,
+            "allocated_device_bytes": 224871052,
+            "image": "samples_16.pgm",
+            "max_batch_ms": 7.092771,
+            "median_batch_ms": 5.447227,
+            "p99_batch_ms": 6.377818,
+            "samples": 16,
+            "total_sample_seconds": 0.7090510659999999
+          },
+          {
+            "active_lines_per_second": 24796.435588662225,
+            "allocated_device_bytes": 224871052,
+            "image": "samples_32.pgm",
+            "max_batch_ms": 13.232322,
+            "median_batch_ms": 10.294872,
+            "p99_batch_ms": 12.084027,
+            "samples": 32,
+            "total_sample_seconds": 1.3214802540000001
+          },
+          {
+            "active_lines_per_second": 12848.814231290175,
+            "allocated_device_bytes": 224871052,
+            "image": "samples_64.pgm",
+            "max_batch_ms": 22.867411,
+            "median_batch_ms": 19.824337,
+            "p99_batch_ms": 21.743249,
+            "samples": 64,
+            "total_sample_seconds": 2.5502742440000006
+          }
+        ],
+        "noise": false,
+        "prnu": false,
+        "rows": 256,
+        "scope": "production kernel / fixture geometry and material from scene manifest; no ROS/GZ/archive; timings include synchronous readback, exclude image writing",
+        "timing_repeats": 128,
+        "width": 4096
+      },
+      {
+        "measurements": [
+          {
+            "active_lines_per_second": 129932.53017043411,
+            "allocated_device_bytes": 224871052,
+            "image": "samples_4.pgm",
+            "max_batch_ms": 2.616543,
+            "median_batch_ms": 1.942801,
+            "p99_batch_ms": 2.344396,
+            "samples": 4,
+            "total_sample_seconds": 0.2521924260000002
+          },
+          {
+            "active_lines_per_second": 80620.63362001767,
+            "allocated_device_bytes": 224871052,
+            "image": "samples_8.pgm",
+            "max_batch_ms": 4.453931,
+            "median_batch_ms": 3.05866,
+            "p99_batch_ms": 3.857635,
+            "samples": 8,
+            "total_sample_seconds": 0.40644681799999993
+          },
+          {
+            "active_lines_per_second": 46385.67808894595,
+            "allocated_device_bytes": 224871052,
+            "image": "samples_16.pgm",
+            "max_batch_ms": 7.233932,
+            "median_batch_ms": 5.348646,
+            "p99_batch_ms": 6.852546,
+            "samples": 16,
+            "total_sample_seconds": 0.7064249430000002
+          },
+          {
+            "active_lines_per_second": 24838.487447329757,
+            "allocated_device_bytes": 224871052,
+            "image": "samples_32.pgm",
+            "max_batch_ms": 12.140529,
+            "median_batch_ms": 10.260524,
+            "p99_batch_ms": 11.877389,
+            "samples": 32,
+            "total_sample_seconds": 1.319242972
+          },
+          {
+            "active_lines_per_second": 12852.56869789457,
+            "allocated_device_bytes": 224871052,
+            "image": "samples_64.pgm",
+            "max_batch_ms": 22.409909,
+            "median_batch_ms": 19.754105,
+            "p99_batch_ms": 22.108696,
+            "samples": 64,
+            "total_sample_seconds": 2.549529262999999
+          }
+        ],
+        "noise": false,
+        "prnu": false,
+        "rows": 256,
+        "scope": "production kernel / fixture geometry and material from scene manifest; no ROS/GZ/archive; timings include synchronous readback, exclude image writing",
+        "timing_repeats": 128,
+        "width": 4096
+      }
+    ],
+    "branched": [
+      {
+        "measurements": [
+          {
+            "active_lines_per_second": 128744.77949702293,
+            "allocated_device_bytes": 242181676,
+            "image": "samples_4.pgm",
+            "max_batch_ms": 2.708332,
+            "median_batch_ms": 1.951,
+            "p99_batch_ms": 2.470384,
+            "samples": 4,
+            "total_sample_seconds": 0.2545190580000001
+          },
+          {
+            "active_lines_per_second": 80235.67112804878,
+            "allocated_device_bytes": 242181676,
+            "image": "samples_8.pgm",
+            "max_batch_ms": 4.397203,
+            "median_batch_ms": 3.088829,
+            "p99_batch_ms": 3.786718,
+            "samples": 8,
+            "total_sample_seconds": 0.40839690800000006
+          },
+          {
+            "active_lines_per_second": 45527.9667658403,
+            "allocated_device_bytes": 242181676,
+            "image": "samples_16.pgm",
+            "max_batch_ms": 7.324906,
+            "median_batch_ms": 5.490963,
+            "p99_batch_ms": 6.525546,
+            "samples": 16,
+            "total_sample_seconds": 0.7197334369999997
+          },
+          {
+            "active_lines_per_second": 24707.411314736542,
+            "allocated_device_bytes": 242181676,
+            "image": "samples_32.pgm",
+            "max_batch_ms": 12.055339,
+            "median_batch_ms": 10.304774,
+            "p99_batch_ms": 11.674054,
+            "samples": 32,
+            "total_sample_seconds": 1.326241733
+          },
+          {
+            "active_lines_per_second": 12757.216417315227,
+            "allocated_device_bytes": 242181676,
+            "image": "samples_64.pgm",
+            "max_batch_ms": 22.728971,
+            "median_batch_ms": 19.978259,
+            "p99_batch_ms": 22.533653,
+            "samples": 64,
+            "total_sample_seconds": 2.5685854129999988
+          }
+        ],
+        "noise": false,
+        "prnu": false,
+        "rows": 256,
+        "scope": "production kernel / fixture geometry and material from scene manifest; no ROS/GZ/archive; timings include synchronous readback, exclude image writing",
+        "timing_repeats": 128,
+        "width": 4096
+      },
+      {
+        "measurements": [
+          {
+            "active_lines_per_second": 128597.07218750808,
+            "allocated_device_bytes": 242181676,
+            "image": "samples_4.pgm",
+            "max_batch_ms": 3.433913,
+            "median_batch_ms": 1.945468,
+            "p99_batch_ms": 2.425152,
+            "samples": 4,
+            "total_sample_seconds": 0.2548114
+          },
+          {
+            "active_lines_per_second": 79526.62359773833,
+            "allocated_device_bytes": 242181676,
+            "image": "samples_8.pgm",
+            "max_batch_ms": 4.543382,
+            "median_batch_ms": 3.123968,
+            "p99_batch_ms": 4.029888,
+            "samples": 8,
+            "total_sample_seconds": 0.41203811400000007
+          },
+          {
+            "active_lines_per_second": 45563.78582182383,
+            "allocated_device_bytes": 242181676,
+            "image": "samples_16.pgm",
+            "max_batch_ms": 10.57831,
+            "median_batch_ms": 5.466828,
+            "p99_batch_ms": 7.110219,
+            "samples": 16,
+            "total_sample_seconds": 0.7191676329999999
+          },
+          {
+            "active_lines_per_second": 24721.08174341706,
+            "allocated_device_bytes": 242181676,
+            "image": "samples_32.pgm",
+            "max_batch_ms": 12.163811,
+            "median_batch_ms": 10.282867,
+            "p99_batch_ms": 11.939349,
+            "samples": 32,
+            "total_sample_seconds": 1.325508339000001
+          },
+          {
+            "active_lines_per_second": 12733.50657868507,
+            "allocated_device_bytes": 242181676,
+            "image": "samples_64.pgm",
+            "max_batch_ms": 22.819038,
+            "median_batch_ms": 20.080933,
+            "p99_batch_ms": 22.164074,
+            "samples": 64,
+            "total_sample_seconds": 2.573368129000001
+          }
+        ],
+        "noise": false,
+        "prnu": false,
+        "rows": 256,
+        "scope": "production kernel / fixture geometry and material from scene manifest; no ROS/GZ/archive; timings include synchronous readback, exclude image writing",
+        "timing_repeats": 128,
+        "width": 4096
+      }
+    ]
+  },
+  "orders": [
+    [
+      "old",
+      "branched"
+    ],
+    [
+      "branched",
+      "old"
+    ]
+  ],
+  "images_deterministic": true,
+  "old_raw_sha256": "b9a1d036fa21c26af89b639e4b1765665f082a371b67f3011b8e999998b8caac",
+  "branched_raw_sha256": "5e4e92df6d1d6d80810a364438771d122bcf4138e91455d1ee9be2dc58f2dab7",
+  "image_difference": {
+    "changed_pixels": 147613,
+    "max_dn": 189
+  },
+  "added_triangles": 148996,
+  "comparison_16_samples": {
+    "old_rate_range": [
+      46213.87876173083,
+      46385.67808894595
+    ],
+    "new_rate_range": [
+      45527.9667658403,
+      45563.78582182383
+    ],
+    "extra_explicit_device_MiB": 16.508697509765625,
+    "old_mean_batch_ms": 5.52920316015625,
+    "new_mean_batch_ms": 5.620707304687499
+  },
+  "sampling_stress": {
+    "measurements": [
+      {
+        "active_lines_per_second": 45927.78218793505,
+        "allocated_device_bytes": 242181676,
+        "image": "samples_16.pgm",
+        "max_batch_ms": 8.817927,
+        "median_batch_ms": 5.475339,
+        "p99_batch_ms": 6.836873,
+        "samples": 16,
+        "total_sample_seconds": 45.66194795600013
+      }
+    ],
+    "noise": false,
+    "prnu": false,
+    "rows": 256,
+    "scope": "production kernel / fixture geometry and material from scene manifest; no ROS/GZ/archive; timings include synchronous readback, exclude image writing",
+    "timing_repeats": 8192,
+    "width": 4096
+  },
+  "figures": {
+    "transfer": "sRGB display only, pedestal 4 DN removed",
+    "exposure_us": 20,
+    "rows": 8192,
+    "width": 4096,
+    "calibrated": false
+  },
+  "extraction_tests": {
+    "passed": 2
+  },
+  "production_road_replaced": false,
+  "user_appearance_approved": true,
+  "manifest_metadata_fix": "Added length_m/width_m required by launch; mesh and texture hashes unchanged after sampling test.",
+  "vehicle_gui": {
+    "passed": true,
+    "correction": {},
+    "corrected_received_blocks": 0,
+    "gazebo_gui": true,
+    "rviz": true,
+    "rviz_world_start": [
+      0.7412281894429547,
+      -1.3924192528001362e-12,
+      0.35999832402434606
+    ],
+    "rviz_world_end": [
+      2.8312300429489885,
+      -1.9512910552964186e-10,
+      0.35999999882089095
+    ],
+    "display_sync": {
+      "frames": 449,
+      "dropped_pending": 0,
+      "pending": 0,
+      "max_sim_age_s": 0.005,
+      "mode": "same_stamp_interpolated_display_only"
+    },
+    "backend": "optix_shared_mesh_dynamic_robot",
+    "rows": [
+      4096,
+      3070
+    ],
+    "speed_m_s": 0.5,
+    "steady_wall_start_s": 10576.539090989,
+    "steady_wall_end_s": 10581.668117963,
+    "display_frames": 475,
+    "display_bad_stamps": 0,
+    "simulation_seconds": 4.2,
+    "wall_seconds": 5.129026974000226,
+    "real_time_factor": 0.8188687681485013,
+    "sampling_line_rate": 57203.59956084942,
+    "wheel_motion_diagnostics": {
+      "fl_wheel_link": {
+        "local_position_range_m": [
+          3.1086244689504383e-15,
+          8.326672684688674e-16,
+          3.885780586188048e-16
+        ],
+        "max_z_step_m": 9.075740159403267e-12,
+        "z_max_m": 0.09999999948027011,
+        "z_min_m": 0.09999999781646407
+      },
+      "fr_wheel_link": {
+        "local_position_range_m": [
+          3.1086244689504383e-15,
+          8.881784197001252e-16,
+          3.885780586188048e-16
+        ],
+        "max_z_step_m": 1.302574714756588e-11,
+        "z_max_m": 0.09999999942859211,
+        "z_min_m": 0.09999999823477462
+      },
+      "rl_wheel_link": {
+        "local_position_range_m": [
+          3.1086244689504383e-15,
+          8.881784197001252e-16,
+          3.3306690738754696e-16
+        ],
+        "max_z_step_m": 1.3702896625167327e-06,
+        "z_max_m": 0.09999999905935819,
+        "z_min_m": 0.09999668286316982
+      },
+      "rr_wheel_link": {
+        "local_position_range_m": [
+          3.1086244689504383e-15,
+          8.326672684688674e-16,
+          3.885780586188048e-16
+        ],
+        "max_z_step_m": 1.3702895681477756e-06,
+        "z_max_m": 0.099999999455196,
+        "z_min_m": 0.09999668288186708
+      }
+    },
+    "metrics": {
+      "lines": 7166,
+      "mapping_seconds": 0.0,
+      "physics_step_wall_interval_max_seconds": 0.003438159,
+      "physics_step_wall_interval_p99_upper_seconds": 0.0026000000000000003,
+      "readback_seconds": 0.0,
+      "render_seconds": 0.125271837,
+      "renders": 21498,
+      "sampling_batch_max_seconds": 0.00614759,
+      "scene_update_seconds": 0.0
+    },
+    "write_seconds": 0.008235966,
+    "publish_call_seconds": 0.009707799,
+    "received_blocks": 2,
+    "ros_all_blocks_byte_identical": true,
+    "nominal_encoder_line_rate_hz": 1706.6666666666667,
+    "receive_interval_max_seconds": 2.5014192719991115,
+    "final_motion_state": "HOLD",
+    "grid_geometry": [],
+    "occlusion_probe": false,
+    "tile_statistics": null,
+    "sampling_queue_high_water_lines": 10,
+    "sampling_queue_observed_wait_max_s": 0.005423296999651939,
+    "sampling_queue_high_water_jobs": 6,
+    "notes": "OptiX shared static mesh plus nine robot links with per-exposure transforms, four LED shadow rays; ROS images and PGM archive. Sampling rate excludes physics/ROS/archive. No correction subscriber or fsync; not full throughput acceptance.",
+    "full_block_delivery_lines_per_wall_second": null,
+    "full_acceptance_passed": false
+  },
+  "vehicle_headless": {
+    "passed": true,
+    "correction": {},
+    "corrected_received_blocks": 0,
+    "gazebo_gui": false,
+    "rviz": false,
+    "rviz_world_start": [],
+    "rviz_world_end": [],
+    "display_sync": {},
+    "backend": "optix_shared_mesh_dynamic_robot",
+    "rows": [
+      4096,
+      3071
+    ],
+    "speed_m_s": 0.5,
+    "steady_wall_start_s": 10637.299268179,
+    "steady_wall_end_s": 10642.291940171,
+    "display_frames": 0,
+    "display_bad_stamps": 0,
+    "simulation_seconds": 4.2,
+    "wall_seconds": 4.992671992000396,
+    "real_time_factor": 0.8412329123021761,
+    "sampling_line_rate": 66611.50870652476,
+    "wheel_motion_diagnostics": {
+      "fl_wheel_link": {
+        "local_position_range_m": [
+          3.1086244689504383e-15,
+          8.326672684688674e-16,
+          3.885780586188048e-16
+        ],
+        "max_z_step_m": 9.075740159403267e-12,
+        "z_max_m": 0.09999999948026839,
+        "z_min_m": 0.09999999781646407
+      },
+      "fr_wheel_link": {
+        "local_position_range_m": [
+          3.1086244689504383e-15,
+          8.881784197001252e-16,
+          3.885780586188048e-16
+        ],
+        "max_z_step_m": 1.302574714756588e-11,
+        "z_max_m": 0.09999999942859211,
+        "z_min_m": 0.09999999823477462
+      },
+      "rl_wheel_link": {
+        "local_position_range_m": [
+          3.1086244689504383e-15,
+          8.881784197001252e-16,
+          3.3306690738754696e-16
+        ],
+        "max_z_step_m": 1.3702896625167327e-06,
+        "z_max_m": 0.09999999906371393,
+        "z_min_m": 0.09999668286316982
+      },
+      "rr_wheel_link": {
+        "local_position_range_m": [
+          3.1086244689504383e-15,
+          8.881784197001252e-16,
+          3.885780586188048e-16
+        ],
+        "max_z_step_m": 1.3702895681477756e-06,
+        "z_max_m": 0.099999999455196,
+        "z_min_m": 0.09999668288186708
+      }
+    },
+    "metrics": {
+      "lines": 7167,
+      "mapping_seconds": 0.0,
+      "physics_step_wall_interval_max_seconds": 0.002677569,
+      "physics_step_wall_interval_p99_upper_seconds": 0.0024000000000000002,
+      "readback_seconds": 0.0,
+      "render_seconds": 0.10759402000000001,
+      "renders": 21501,
+      "sampling_batch_max_seconds": 0.004706192,
+      "scene_update_seconds": 0.0
+    },
+    "write_seconds": 0.014085115,
+    "publish_call_seconds": 0.012115732,
+    "received_blocks": 2,
+    "ros_all_blocks_byte_identical": true,
+    "nominal_encoder_line_rate_hz": 1706.6666666666667,
+    "receive_interval_max_seconds": 2.4127619920000143,
+    "final_motion_state": "HOLD",
+    "grid_geometry": [],
+    "occlusion_probe": false,
+    "tile_statistics": null,
+    "sampling_queue_high_water_lines": 7,
+    "sampling_queue_observed_wait_max_s": 0.003752677001102711,
+    "sampling_queue_high_water_jobs": 4,
+    "notes": "OptiX shared static mesh plus nine robot links with per-exposure transforms, four LED shadow rays; ROS images and PGM archive. Sampling rate excludes physics/ROS/archive. No correction subscriber or fsync; not full throughput acceptance.",
+    "full_block_delivery_lines_per_wall_second": null,
+    "full_acceptance_passed": false
+  },
+  "vehicle_old_gui": {
+    "passed": true,
+    "correction": {},
+    "corrected_received_blocks": 0,
+    "gazebo_gui": true,
+    "rviz": true,
+    "rviz_world_start": [
+      0.7412281894476155,
+      8.425369364871122e-11,
+      0.3599983240100097
+    ],
+    "rviz_world_end": [
+      2.831230043013096,
+      -3.3197505925239617e-10,
+      0.35999999852094944
+    ],
+    "display_sync": {
+      "frames": 449,
+      "dropped_pending": 0,
+      "pending": 0,
+      "max_sim_age_s": 0.015000000000000001,
+      "mode": "same_stamp_interpolated_display_only"
+    },
+    "backend": "optix_shared_mesh_dynamic_robot",
+    "rows": [
+      4096,
+      3075
+    ],
+    "speed_m_s": 0.5,
+    "steady_wall_start_s": 10689.306168837,
+    "steady_wall_end_s": 10693.504710292,
+    "display_frames": 475,
+    "display_bad_stamps": 0,
+    "simulation_seconds": 4.200000000000001,
+    "wall_seconds": 4.1985414549999405,
+    "real_time_factor": 1.000347393259229,
+    "sampling_line_rate": 59957.20488657825,
+    "wheel_motion_diagnostics": {
+      "fl_wheel_link": {
+        "local_position_range_m": [
+          4.440892098500626e-15,
+          8.881784197001252e-16,
+          3.885780586188048e-16
+        ],
+        "max_z_step_m": 8.955558516987594e-12,
+        "z_max_m": 0.099999998708862,
+        "z_min_m": 0.09999999814810229
+      },
+      "fr_wheel_link": {
+        "local_position_range_m": [
+          4.218847493575595e-15,
+          7.771561172376096e-16,
+          4.440892098500626e-16
+        ],
+        "max_z_step_m": 7.645606370232372e-12,
+        "z_max_m": 0.09999999872348653,
+        "z_min_m": 0.09999999821251909
+      },
+      "rl_wheel_link": {
+        "local_position_range_m": [
+          3.552713678800501e-15,
+          8.326672684688674e-16,
+          4.440892098500626e-16
+        ],
+        "max_z_step_m": 1.370289945623604e-06,
+        "z_max_m": 0.09999999878127896,
+        "z_min_m": 0.09999671598451715
+      },
+      "rr_wheel_link": {
+        "local_position_range_m": [
+          3.552713678800501e-15,
+          7.771561172376096e-16,
+          4.440892098500626e-16
+        ],
+        "max_z_step_m": 1.370289377466971e-06,
+        "z_max_m": 0.09999999878161803,
+        "z_min_m": 0.09999671605670946
+      }
+    },
+    "metrics": {
+      "lines": 7171,
+      "mapping_seconds": 0.0,
+      "physics_step_wall_interval_max_seconds": 0.001694902,
+      "physics_step_wall_interval_p99_upper_seconds": 0.0013000000000000002,
+      "readback_seconds": 0.0,
+      "render_seconds": 0.119601973,
+      "renders": 21513,
+      "sampling_batch_max_seconds": 0.00615128,
+      "scene_update_seconds": 0.0
+    },
+    "write_seconds": 0.010217078000000001,
+    "publish_call_seconds": 0.006525762,
+    "received_blocks": 2,
+    "ros_all_blocks_byte_identical": true,
+    "nominal_encoder_line_rate_hz": 1706.6666666666667,
+    "receive_interval_max_seconds": 1.7863934179986245,
+    "final_motion_state": "HOLD",
+    "grid_geometry": [],
+    "occlusion_probe": false,
+    "tile_statistics": null,
+    "sampling_queue_high_water_lines": 10,
+    "sampling_queue_observed_wait_max_s": 0.005475546999150538,
+    "sampling_queue_high_water_jobs": 6,
+    "notes": "OptiX shared static mesh plus nine robot links with per-exposure transforms, four LED shadow rays; ROS images and PGM archive. Sampling rate excludes physics/ROS/archive. No correction subscriber or fsync; not full throughput acceptance.",
+    "full_block_delivery_lines_per_wall_second": null,
+    "full_acceptance_passed": false
+  },
+  "vehicle_realtime_regression": {
+    "old_gui_rtf": 1.000347393259229,
+    "branched_gui_rtf": 0.8188687681485013,
+    "branched_headless_rtf": 0.8412329123021761,
+    "resolved": true,
+    "scope": "short 2.1 m passes at 0.5 m/s; geometry/contact overhead suspected, not isolated; do not propagate to production road yet",
+    "resolution": "Explicit collision proxy in local scene; see stage2_collision_proxy.json. Detailed-mesh measurements retained above."
+  },
+  "preview_transfer_verified_in_gui_metadata": "srgb_display_only",
+  "sampling_11khz_regression_passed": true,
+  "full_road_rollout_ready": false,
+  "collision_proxy_followup": "stage2_collision_proxy.json"
+}

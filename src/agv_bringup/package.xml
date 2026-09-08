@@ -4,6 +4,12 @@
 <maintainer email="maintainers@example.com">AGV maintainers</maintainer><license>Apache-2.0</license>
 <buildtool_depend>ament_cmake</buildtool_depend>
 <depend>agv_description</depend>
+<depend>gz_gui_vendor</depend>
+<depend>gz_rendering_vendor</depend>
+<depend>gz_plugin_vendor</depend>
+<depend>gz_transport_vendor</depend>
+<build_depend>qtbase5-dev</build_depend>
+<build_depend>qtdeclarative5-dev</build_depend>
 <depend>agv_control</depend>
 <exec_depend>agv_linescan</exec_depend>
 <exec_depend>rviz2</exec_depend>

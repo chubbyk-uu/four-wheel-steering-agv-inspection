@@ -1,0 +1,64 @@
+{
+  "passed": true,
+  "gui_rviz": true,
+  "equilibrium_base_height_m": 0.6484269851378284,
+  "suspension_positions_m": [
+    0.00174517417778018,
+    0.0017451741777801718,
+    0.0014010335685311422,
+    0.0014010335685311368
+  ],
+  "loaded_battery_clearance_m": 0.24993199313716613,
+  "cases": [
+    {
+      "case": "forward",
+      "position_error_m": 4.005254350403881e-09,
+      "yaw_error_rad": 1.2964059638007173e-18
+    },
+    {
+      "case": "lateral",
+      "position_error_m": 4.3926156600988057e-08,
+      "yaw_error_rad": 3.011479954295737e-15
+    },
+    {
+      "case": "diagonal",
+      "position_error_m": 1.287594287457749e-08,
+      "yaw_error_rad": 1.2141676553056868e-13
+    },
+    {
+      "case": "rotate",
+      "position_error_m": 1.3568117170985892e-07,
+      "yaw_error_rad": 0.054412880379154926
+    },
+    {
+      "case": "reverse",
+      "position_error_m": 1.691070004784452e-08,
+      "yaw_error_rad": 1.7645884753392238e-12
+    }
+  ],
+  "max_speed_measured_m_s": 2.7777776808190446,
+  "clouds": {
+    "left": {
+      "width": 1000,
+      "height": 8,
+      "frame": "lidar_left_link",
+      "bytes": 256000
+    },
+    "right": {
+      "width": 1000,
+      "height": 8,
+      "frame": "lidar_right_link",
+      "bytes": 256000
+    }
+  },
+  "tf_snapshots": 3900,
+  "bad_tf_snapshots": 0,
+  "display_geometry": {
+    "max_attachment_error_m": 1.6653345369377348e-16,
+    "max_relative_center_step_m": 0.0027014611296239943,
+    "max_snapshot_gap_s": 0.020000000000010232,
+    "nonmonotonic_stamps": 0
+  },
+  "final_state": "HOLD",
+  "scope": "ideal velocity/position servos, no claim of motor torque saturation or autonomous obstacle avoidance"
+}

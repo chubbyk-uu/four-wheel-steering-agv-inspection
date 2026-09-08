@@ -40,3 +40,21 @@ def test_out_of_domain_is_not_silently_wrapped():
 def test_cut_follows_low_error_path():
     error=np.ones((10,7));error[:,3]=0
     assert np.array_equal(minimum_cut(error),np.full(10,3))
+
+
+def test_pbr_channels_replay_one_layout_at_tile_boundaries():
+    q=make();xs=np.linspace(0,2,137);ys=np.linspace(-1,1,149)
+    channel=255-q.source
+    lut=np.arange(256,dtype=np.float32)/255
+    a=q.sample(xs,ys,source=channel,lut=lut)
+    b=np.concatenate([q.sample(xs,y,source=channel,lut=lut) for y in np.array_split(ys,3)])
+    assert np.array_equal(a,b)
+    # Complementary source patterns remain registered through every quilting seam.
+    assert np.max(np.abs(a+q.sample(xs,ys)-1))<=1/255+1e-6
+    assert np.array_equal(q.sample(xs,ys),q.sample(xs,ys,source=q.source,lut=q.lut))
+
+
+def test_pbr_rejects_mismatched_source_resolution():
+    q=make()
+    with pytest.raises(ValueError,match='source dimensions'):
+        q.sample([0],[0],source=q.source[::2])

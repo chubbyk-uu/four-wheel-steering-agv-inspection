@@ -109,3 +109,74 @@ def test_distorted_footprints_at_all_roi_edges_hit_extended_ground(tmp_path):
                 edges=np.roll(triangles,-1,axis=1)-triangles
                 cross=edges[:,:,0]*relative[:,:,1]-edges[:,:,1]*relative[:,:,0]
                 assert np.any(np.all(cross>=-1e-8,axis=1))
+
+@pytest.fixture
+def textured_bundle(tmp_path):
+    path=tmp_path/'pbr';generate(path,BASE,length=10,width=2,margin=0)
+    mp=path/'manifest.json';m=json.loads(mp.read_text())
+    for name,data in [('color.raw',bytes([128]*4)),('normal.raw',bytes([128]*8))]:(path/name).write_bytes(data)
+    m['ground_material']=dict(schema='agv.ground_material.xy.v1',width=2,height=2,
+        origin_xy_m=[0,0],span_xy_m=[1,1],roughness=.60,
+        color=dict(file='color.raw',sha256=digest(path/'color.raw')),
+        normal=dict(file='normal.raw',sha256=digest(path/'normal.raw')))
+    m['assets'][0]['material']='ground'
+    m['display_uv_projection']=dict(origin_xy_m=[0,0],span_xy_m=[.1,.1])
+    tree=ET.parse(path/'world.sdf');visual=tree.find('.//visual')
+    metal=ET.SubElement(ET.SubElement(ET.SubElement(visual,'material'),'pbr'),'metal')
+    for tag,text in [('albedo_map',str(path/'grid.png')),('normal_map',str(path/'grid.png')),('roughness','0.60')]:ET.SubElement(metal,tag).text=text
+    tree.write(path/'world.sdf',encoding='unicode');m['world_sha256']=digest(path/'world.sdf');mp.write_text(json.dumps(m))
+    validate(mp)
+    return path
+
+def test_pbr_raw_integrity_and_display_roughness(textured_bundle):
+    p=textured_bundle;mp=p/'manifest.json'
+    (p/'normal.raw').write_bytes(bytes([100]*8))
+    with pytest.raises(ValueError,match='integrity'):validate(mp)
+    m=json.loads(mp.read_text());m['ground_material']['normal']['sha256']=digest(p/'normal.raw')
+    tree=ET.parse(p/'world.sdf');tree.find('.//roughness').text='.9';tree.write(p/'world.sdf',encoding='unicode')
+    m['world_sha256']=digest(p/'world.sdf');mp.write_text(json.dumps(m))
+    with pytest.raises(ValueError,match='roughness mismatch'):validate(mp)
+
+def test_rehashed_uv_coordinate_change_rejected(textured_bundle):
+    p=textured_bundle;mp=p/'manifest.json';obj=p/'terrain.obj'
+    s=obj.read_text();lines=s.splitlines();i=next(i for i,v in enumerate(lines) if v.startswith('vt '));lines[i]='vt 9 9'
+    obj.write_text('\n'.join(lines)+'\n');m=json.loads(mp.read_text());m['assets'][0]['sha256']=digest(obj);mp.write_text(json.dumps(m))
+    with pytest.raises(ValueError,match='UV/world-coordinate'):validate(mp)
+
+
+@pytest.fixture
+def proxy_bundle(tmp_path):
+    path=tmp_path/'proxy';generate(path,BASE,length=10,width=2,margin=0)
+    mp=path/'manifest.json';m=json.loads(mp.read_text())
+    obj=path/'contact.obj'
+    obj.write_text('v 0 -1 0\nv 10 -1 0\nv 10 1 0\nv 0 1 0\nvn 0 0 1\nf 1//1 2//1 3//1\nf 1//1 3//1 4//1\n')
+    m['assets'][0]['collision_proxy']=dict(method='shallow_horizontal_rectangle_v1',mesh=obj.name,
+        sha256=digest(obj),plane_z_m=0,max_surface_deviation_m=.002)
+    tree=ET.parse(path/'world.sdf');tree.find('.//collision/geometry/mesh/uri').text=str(obj)
+    tree.write(path/'world.sdf',encoding='unicode');m['world_sha256']=digest(path/'world.sdf')
+    mp.write_text(json.dumps(m));return path
+
+
+def test_explicit_collision_proxy_leaves_optical_mesh_unchanged(proxy_bundle):
+    p=proxy_bundle;m=validate(p/'manifest.json')
+    assert m['assets'][0]['mesh']=='terrain.obj'
+    assert m['assets'][0]['collision_proxy']['mesh']=='contact.obj'
+    tree=ET.parse(p/'world.sdf')
+    assert tree.findtext('.//visual/geometry/mesh/uri')!=tree.findtext('.//collision/geometry/mesh/uri')
+
+
+@pytest.mark.parametrize('fault',['deep_pit','raised','footprint','loose_bound','undeclared','checksum'])
+def test_proxy_cannot_silently_remove_large_geometry_or_change_extent(proxy_bundle,fault):
+    p=proxy_bundle;mp=p/'manifest.json';m=json.loads(mp.read_text());a=m['assets'][0]
+    if fault in ('deep_pit','raised'):
+        obj=p/a['mesh'];s=obj.read_text().splitlines()
+        i=next(i for i,line in enumerate(s) if line.startswith('v '))
+        xyz=s[i].split();xyz[3]='-.02' if fault=='deep_pit' else '.01';s[i]=' '.join(xyz)
+        obj.write_text('\n'.join(s)+'\n');a['sha256']=digest(obj)
+    elif fault in ('footprint','checksum'):
+        obj=p/'contact.obj';obj.write_text(obj.read_text().replace('v 10 1 0','v 9 1 0'))
+        if fault=='footprint': a['collision_proxy']['sha256']=digest(obj)
+    elif fault=='loose_bound':a['collision_proxy']['max_surface_deviation_m']=.1
+    elif fault=='undeclared':a.pop('collision_proxy')
+    mp.write_text(json.dumps(m))
+    with pytest.raises(ValueError,match='proxy|geometry mismatch'):validate(mp)

@@ -19,6 +19,7 @@ class SwerveNode : public rclcpp::Node {
     c.rate=declare_parameter("steer_rate",c.rate);c.steer_accel=declare_parameter("steer_accel",c.steer_accel);
     c.max_speed=declare_parameter("max_speed",c.max_speed);c.max_yaw=declare_parameter("max_yaw_rate",c.max_yaw);
     c.accel=declare_parameter("drive_accel",c.accel);
+    c.decel=declare_parameter("drive_decel",c.decel);
     c.reorient=declare_parameter("reorient_angle",c.reorient);c.aligned=declare_parameter("aligned_angle",c.aligned);
     c.lateral_mismatch=declare_parameter("max_lateral_mismatch",c.lateral_mismatch);
     c.max_lateral_speed=declare_parameter("max_lateral_speed",c.max_lateral_speed);

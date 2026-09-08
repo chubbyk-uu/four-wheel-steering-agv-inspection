@@ -1,0 +1,85 @@
+{
+  "initial_tracking": {
+    "trackMode": "FOLLOW_FREE_LOOK",
+    "followTarget": {
+      "name": "agv"
+    },
+    "followOffset": {
+      "x": -4,
+      "y": -3,
+      "z": 2.6
+    },
+    "followPgain": 0.2
+  },
+  "initial_pose": {
+    "position": {
+      "x": 0.41500282287597656,
+      "y": -2.9999985694885254,
+      "z": 2.9600000381469727
+    },
+    "orientation": {
+      "x": -0.02170688472688198,
+      "y": 0.17274968326091766,
+      "z": 0.1227705180644989,
+      "w": 0.9770433902740479
+    }
+  },
+  "rotated_pose": {
+    "position": {
+      "x": 0.41500282287597656,
+      "y": -2.9999985694885254,
+      "z": 2.9600000381469727
+    },
+    "orientation": {
+      "x": 0.010182607918977737,
+      "y": 0.11123295873403549,
+      "z": -0.0905914381146431,
+      "w": 0.9896043539047241
+    }
+  },
+  "settled_pose": {
+    "position": {
+      "x": 0.41500282287597656,
+      "y": -2.9999985694885254,
+      "z": 2.9600000381469727
+    },
+    "orientation": {
+      "x": 0.010182607918977737,
+      "y": 0.11123295873403549,
+      "z": -0.0905914381146431,
+      "w": 0.9896043539047241
+    }
+  },
+  "final_pose": {
+    "position": {
+      "x": 2.8250207901000977,
+      "y": -3.0000083446502686,
+      "z": 2.9600000381469727
+    },
+    "orientation": {
+      "x": 0.010182607918977737,
+      "y": 0.11123295873403549,
+      "z": -0.0905914381146431,
+      "w": 0.9896043539047241
+    }
+  },
+  "mouse_rotation_rad": 0.4503158497166348,
+  "released_rotation_drift_rad": 0.0,
+  "moving_rotation_drift_rad": 0.0,
+  "robot_displacement_m": 2.4099949514883,
+  "camera_displacement_m": 2.410017967224121,
+  "final_motion_state": "HOLD",
+  "final_tracking": {
+    "trackMode": "FOLLOW_FREE_LOOK",
+    "followTarget": {
+      "name": "agv"
+    },
+    "followOffset": {
+      "x": -4,
+      "y": -3,
+      "z": 2.6
+    },
+    "followPgain": 0.2
+  },
+  "passed": true
+}

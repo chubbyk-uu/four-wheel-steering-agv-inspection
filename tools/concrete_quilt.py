@@ -79,7 +79,12 @@ class ConcreteQuilt:
         self.guide=canvas
         self.feather=feather;self.candidates=candidates
 
-    def sample(self,xs,ys):
+    def sample(self,xs,ys,source=None,lut=None):
+        # All PBR channels replay the exact color-derived placements and alpha masks.
+        source=self.source if source is None else source
+        lut=self.lut if lut is None else lut
+        if source.shape!=self.source.shape:
+            raise ValueError('quilt channels must share source dimensions and channels')
         xs=np.asarray(xs,dtype=np.float64);ys=np.asarray(ys,dtype=np.float64)
         gx=(xs-self.origin[0])/self.gsd
         gy=(ys-self.origin[1])/self.gsd
@@ -100,8 +105,8 @@ class ConcreteQuilt:
             # Never wrap a source border: each candidate lies wholly inside the source.
             u=np.float32((px+p['sx'])*ratio-.5)
             v=np.float32((py+p['sy'])*ratio-.5)
-            color=cv2.remap(self.source,u,v,cv2.INTER_LINEAR,borderMode=cv2.BORDER_REPLICATE)
-            rgb[sl]=rgb[sl]*(1-alpha[:,:,None])+self.lut[color]*alpha[:,:,None]
+            color=cv2.remap(source,u,v,cv2.INTER_LINEAR,borderMode=cv2.BORDER_REPLICATE)
+            rgb[sl]=rgb[sl]*(1-alpha[:,:,None])+lut[color]*alpha[:,:,None]
             filled[sl]=filled[sl]*(1-alpha)+alpha
         if np.any(filled<.99999):raise ValueError('quilt contains unfilled samples')
         return rgb

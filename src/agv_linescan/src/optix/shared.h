@@ -3,7 +3,13 @@
 #include <cuda_runtime.h>
 #include "agv_linescan/optix_scene.hpp"
 struct RayGeometry {OptixTraversableHandle handle;float3* vertices;float* reflectance;float3 lo,hi;};
+struct MaterialTile {cudaTextureObject_t color,normal;};
 struct ScanParams {
+ const int* tileMap;const MaterialTile* materialTiles;
+ unsigned tilesX,tilesY,tileCore,tileGutter;float tileTexel;
+ cudaTextureObject_t colorTexture,normalTexture,roughTexture;
+ float textureOriginX,textureOriginY,textureSpanX,textureSpanY;
+ float roughness;
  RayGeometry* geometry;unsigned links,width;
  const agv_linescan::GridExposure* poses;
  const agv_linescan::LinkTransform* transforms;

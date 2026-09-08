@@ -1,5 +1,6 @@
 #include "shared.h"
 #include "scene_io.h"
+#include "material_cache.h"
 #include <optix_stubs.h>
 #include <optix_function_table_definition.h>
 #include <optix_stack_size.h>
@@ -12,18 +13,38 @@ struct alignas(OPTIX_SBT_RECORD_ALIGNMENT) Record {char header[OPTIX_SBT_RECORD_
 struct OptixScene::Impl {
  OptixDeviceContext context=nullptr;OptixModule module=nullptr;OptixPipeline pipeline=nullptr;
  OptixProgramGroup groups[4]={};OptixShaderBindingTable sbt={};cudaStream_t stream=nullptr;
- std::vector<CUdeviceptr> allocations;std::vector<std::string> links;
+ std::vector<cudaArray_t> textureArrays;std::vector<cudaTextureObject_t> textureObjects;
+ std::vector<CUdeviceptr> allocations;std::vector<std::string> links;size_t allocatedBytes=0;
+ std::unique_ptr<MaterialCache> cache;
  ScanParams params={};CUdeviceptr dp=0;size_t capacity=0;
  unsigned char* host=nullptr;unsigned* invalidHost=nullptr;
- CUdeviceptr alloc(size_t n,const void* data=nullptr){CUdeviceptr p=0;CU(cudaMalloc((void**)&p,n));allocations.push_back(p);if(data)CU(cudaMemcpy((void*)p,data,n,cudaMemcpyHostToDevice));return p;}
+ CUdeviceptr alloc(size_t n,const void* data=nullptr){CUdeviceptr p=0;CU(cudaMalloc((void**)&p,n));allocations.push_back(p);allocatedBytes+=n;if(data)CU(cudaMemcpy((void*)p,data,n,cudaMemcpyHostToDevice));return p;}
  ~Impl(){
   if(stream)cudaStreamSynchronize(stream);
+  cache.reset();
   if(pipeline)optixPipelineDestroy(pipeline);
   for(auto g:groups)if(g)optixProgramGroupDestroy(g);
   if(module)optixModuleDestroy(module);
+  for(auto t:textureObjects)cudaDestroyTextureObject(t);
+  for(auto a:textureArrays)cudaFreeArray(a);
   for(auto p:allocations)cudaFree((void*)p);
   if(host)cudaFreeHost(host);if(invalidHost)cudaFreeHost(invalidHost);
   if(stream)cudaStreamDestroy(stream);if(context)optixDeviceContextDestroy(context);
+ }
+ cudaTextureObject_t texture(const std::filesystem::path& directory,const nlohmann::json& entry,unsigned width,unsigned height,unsigned channels){
+  auto path=directory/entry.at("file").get<std::string>();
+  if(entry.at("sha256")!=Sha256(path))throw std::runtime_error("material checksum mismatch");
+  size_t bytes=size_t(width)*height*channels;
+  if(std::filesystem::file_size(path)!=bytes)throw std::runtime_error("material byte count mismatch");
+  std::vector<unsigned char> data(bytes);std::ifstream f(path,std::ios::binary);f.read((char*)data.data(),bytes);
+  if(!f)throw std::runtime_error("material read failed");
+  cudaChannelFormatDesc format=channels==2?cudaCreateChannelDesc<uchar2>():cudaCreateChannelDesc<unsigned char>();
+  cudaArray_t array=nullptr;CU(cudaMallocArray(&array,&format,width,height));textureArrays.push_back(array);allocatedBytes+=bytes;
+  CU(cudaMemcpy2DToArray(array,0,0,data.data(),width*channels,width*channels,height,cudaMemcpyHostToDevice));
+  cudaResourceDesc resource={};resource.resType=cudaResourceTypeArray;resource.res.array.array=array;
+  cudaTextureDesc desc={};desc.normalizedCoords=1;desc.filterMode=cudaFilterModeLinear;desc.readMode=cudaReadModeNormalizedFloat;
+  desc.addressMode[0]=desc.addressMode[1]=cudaAddressModeClamp;
+  cudaTextureObject_t object=0;CU(cudaCreateTextureObject(&object,&resource,&desc,nullptr));textureObjects.push_back(object);return object;
  }
  RayGeometry build(const std::vector<float3>& vertices,const std::vector<float>& reflectance){
   if(vertices.empty()||vertices.size()%3||reflectance.size()!=vertices.size()/3)throw std::runtime_error("invalid ray mesh");
@@ -42,6 +63,8 @@ struct OptixScene::Impl {
   return result;
  }
 };
+size_t OptixScene::AllocatedDeviceBytes() const { return impl_->allocatedBytes+(impl_->cache?impl_->cache->Bytes():0); }
+std::string OptixScene::MaterialStatistics()const{return impl_->cache?impl_->cache->Statistics():"null";}
 OptixScene::OptixScene(const std::vector<float>& rays,const std::string& scene,const std::string& robot,
                       const std::string& ptxPath,size_t capacity,Radiometry sensor,unsigned lampSamples):impl_(std::make_unique<Impl>()){
  auto& s=*impl_;sensor.Validate();
@@ -52,7 +75,37 @@ OptixScene::OptixScene(const std::vector<float>& rays,const std::string& scene,c
  s.capacity=capacity;s.params.width=rays.size();
  CU(cudaFree(0));OX(optixInit());OptixDeviceContextOptions options={};OX(optixDeviceContextCreate(nullptr,&options,&s.context));CU(cudaStreamCreate(&s.stream));
  auto vertices=LoadScene(scene);auto manifest=ReadJson(scene);std::vector<float> reflectance;
- for(auto a:manifest.at("assets")){float value=a.value("linear_reflectance",a.at("name").get<std::string>()=="terrain"?-1.f:.45f);if(!std::isfinite(value)||value>1||(a.contains("linear_reflectance")&&value<0))throw std::runtime_error("invalid static reflectance");reflectance.insert(reflectance.end(),a.at("triangles").get<size_t>(),value);}
+ if(manifest.contains("ground_material")){
+  const auto& m=manifest.at("ground_material");
+  if(m.at("schema")=="agv.ground_material.tiles.v1"){
+   s.params.roughness=m.value("roughness",.60f);
+   if(!std::isfinite(s.params.roughness)||s.params.roughness<.1f||s.params.roughness>1)throw std::runtime_error("invalid roughness");
+   size_t offset=0;
+   for(const auto& asset:manifest.at("assets")){
+    size_t count=asset.at("triangles").get<size_t>()*3;
+    if(asset.value("material",std::string())=="ground")for(size_t i=offset;i<offset+count;++i)
+     if(vertices[i].z<m.at("height_bounds_m").at(0).get<float>()-1e-7f||vertices[i].z>m.at("height_bounds_m").at(1).get<float>()+1e-7f)throw std::runtime_error("textured mesh violates prefetch height bounds");
+    offset+=count;
+   }
+   s.cache=std::make_unique<MaterialCache>(m,std::filesystem::path(scene).parent_path(),rays);s.cache->Bind(s.params);
+  }else {
+  if(m.at("schema")!="agv.ground_material.xy.v1")throw std::runtime_error("unsupported material projection");
+  unsigned w=m.at("width"),h=m.at("height");
+  if(!w||!h||w>32768||h>32768)throw std::runtime_error("invalid material resolution");
+  s.params.textureOriginX=m.at("origin_xy_m").at(0);s.params.textureOriginY=m.at("origin_xy_m").at(1);
+  s.params.textureSpanX=m.at("span_xy_m").at(0);s.params.textureSpanY=m.at("span_xy_m").at(1);
+  s.params.roughness=m.value("roughness",.60f);
+  for(float x:{s.params.textureOriginX,s.params.textureOriginY,s.params.textureSpanX,s.params.textureSpanY,s.params.roughness})
+   if(!std::isfinite(x))throw std::runtime_error("nonfinite material geometry");
+  if(s.params.textureSpanX<=0||s.params.textureSpanY<=0||s.params.roughness<.1f||s.params.roughness>1)throw std::runtime_error("invalid material parameters");
+  auto directory=std::filesystem::path(scene).parent_path();
+  s.params.colorTexture=s.texture(directory,m.at("color"),w,h,1);
+  if(m.contains("normal"))s.params.normalTexture=s.texture(directory,m.at("normal"),w,h,2);
+  if(m.contains("roughness_map"))s.params.roughTexture=s.texture(directory,m.at("roughness_map"),w,h,1);
+  }
+ }
+
+ for(auto a:manifest.at("assets")){float value=a.value("linear_reflectance",a.at("name").get<std::string>()=="terrain"?-1.f:.45f);if(!std::isfinite(value)||value>1||(a.contains("linear_reflectance")&&value<0))throw std::runtime_error("invalid static reflectance");if(a.value("material",std::string())=="ground"){if(!s.params.colorTexture&&!s.cache)throw std::runtime_error("missing ground material");value=-2.f;}reflectance.insert(reflectance.end(),a.at("triangles").get<size_t>(),value);}
  std::vector<RayGeometry> geometry={s.build(vertices,reflectance)};
  auto description=ReadJson(robot);
  if(description.at("schema")!="agv.robot.ray_scene.v1" || Sha256(std::filesystem::path(robot).parent_path()/description.at("source_urdf").get<std::string>())!=description.at("source_sha256"))throw std::runtime_error("robot source contract mismatch");
@@ -120,6 +173,8 @@ GridBatch OptixScene::Sample(const std::vector<GridExposure>& poses,const std::v
             +double(m[2])*(double(m[4])*m[9]-double(m[5])*m[8]);
   if(std::abs(det-1)>1e-4)throw std::invalid_argument("link pose is not rigid: improper rotation");
  }
+ struct Release{MaterialCache* cache;~Release(){if(cache)cache->End();}} release{s.cache.get()};
+ if(s.cache)s.cache->Begin(poses,s.stream);
  s.params.first=first;
  CU(cudaMemcpyAsync((void*)s.params.poses,poses.data(),n*sizeof(GridExposure),cudaMemcpyHostToDevice,s.stream));
  CU(cudaMemcpyAsync((void*)s.params.transforms,transforms.data(),transforms.size()*sizeof(LinkTransform),cudaMemcpyHostToDevice,s.stream));

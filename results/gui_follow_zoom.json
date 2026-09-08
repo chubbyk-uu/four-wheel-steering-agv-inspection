@@ -1,0 +1,90 @@
+{
+  "initial_tracking": {
+    "trackMode": "FOLLOW_FREE_LOOK",
+    "followTarget": {
+      "name": "agv"
+    },
+    "followOffset": {
+      "x": -4,
+      "y": -3,
+      "z": 2.6
+    },
+    "followPgain": 0.2
+  },
+  "original_distance_m": 5.635601121442148,
+  "zoom_in_distance_m": 3.59341792634275,
+  "zoom_held_distance_m": 3.59341792634275,
+  "zoom_out_distance_m": 4.850606837175258,
+  "initial_pose": {
+    "position": {
+      "x": -4,
+      "y": -3,
+      "z": 2.9599990844726562
+    },
+    "orientation": {
+      "x": -0.02170688472688198,
+      "y": 0.17274968326091766,
+      "z": 0.1227705180644989,
+      "w": 0.9770433902740479
+    }
+  },
+  "rotated_pose": {
+    "position": {
+      "x": -4,
+      "y": -3,
+      "z": 2.9599990844726562
+    },
+    "orientation": {
+      "x": 0.0069980137050151825,
+      "y": 0.015852300450205803,
+      "z": -0.40378955006599426,
+      "w": 0.9146877527236938
+    }
+  },
+  "settled_pose": {
+    "position": {
+      "x": -3.4428319931030273,
+      "y": -2.5821239948272705,
+      "z": 2.597839832305908
+    },
+    "orientation": {
+      "x": 0.0069980137050151825,
+      "y": 0.015852300450205803,
+      "z": -0.40378955006599426,
+      "w": 0.9146877527236938
+    }
+  },
+  "final_pose": {
+    "position": {
+      "x": -1.0728319883346558,
+      "y": -2.5821239948272705,
+      "z": 2.5978407859802246
+    },
+    "orientation": {
+      "x": 0.0069980137050151825,
+      "y": 0.015852300450205803,
+      "z": -0.40378955006599426,
+      "w": 0.9146877527236938
+    }
+  },
+  "mouse_rotation_rad": 1.122078021879535,
+  "released_rotation_drift_rad": 0.0006108970572233564,
+  "moving_rotation_drift_rad": 0.0006108970572233564,
+  "robot_displacement_m": 2.370000000062054,
+  "camera_displacement_m": 2.3700000047683716,
+  "final_motion_state": "HOLD",
+  "final_tracking": {
+    "trackMode": "FOLLOW_FREE_LOOK",
+    "followTarget": {
+      "name": "agv"
+    },
+    "followOffset": {
+      "x": -3.4428319057002312,
+      "y": -2.5821239292751734,
+      "z": 2.2378407387051498
+    },
+    "followPgain": 0.2
+  },
+  "distance_after_drive_m": 4.850606837175258,
+  "passed": true
+}

@@ -1,15 +1,26 @@
-# Shared by Xacro and controller launch. SI units; provisional mechanical values.
-wheelbase: 0.65
-track: 0.55
-wheel_radius: 0.10
-wheel_width: 0.075
-body_length: 0.90
-body_width: 0.65
-mass: 65.0
+# Large AGV baseline. Geometry not supplied by user is an engineering estimate.
+wheelbase: 1.3
+track: 0.94
+wheel_radius: 0.2
+wheel_width: 0.16
+body_length: 1.9
+body_width: 1.1
+mass: 550.0
 steer_hard_limit: 3.3161255787892263
 steer_soft_limit: 3.2288591161895095
-steer_rate: 1.2
-steer_accel: 3.0
-max_speed: 2.777777777777778  # Simulation limit: 10 km/h; hardware target remains separate.
-max_yaw_rate: 0.8
+steer_rate: 0.65
+steer_accel: 1.5
+max_speed: 2.777777777777778
+max_yaw_rate: 0.35
 drive_accel: 0.8
+drive_decel: 1.0
+base_height: 0.65
+body_top_height: 1.1
+drive_effort: 150.0
+steer_effort: 180.0
+suspension_stiffness: 65000.0
+suspension_damping: 2800.0
+suspension_preload: -0.016
+suspension_travel: 0.05
+gnss_baseline: 1.1
+gnss_top_height: 1.2

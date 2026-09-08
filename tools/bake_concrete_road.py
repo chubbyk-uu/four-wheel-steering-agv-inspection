@@ -12,6 +12,7 @@ from scipy.ndimage import distance_transform_edt
 from PIL import Image
 from concrete_quilt import ConcreteQuilt
 from road_materials import MATERIALS, DEFAULT_MATERIAL
+from road_markings import paint as paint_markings, metadata as marking_metadata
 
 ROOT=Path(__file__).resolve().parents[1]
 CRACKS=ROOT/'assets/road/generated/concrete_cracks_ai_v1.png'
@@ -109,9 +110,7 @@ class Baker:
         joint=(np.minimum(x%5,5-x%5)<=.004)|(np.minimum((y+self.width/2)%5,5-(y+self.width/2)%5)<=.004)
         rgb[joint]=.045;labels[joint]=1
         if with_background:coverage[joint]=True
-        # Demonstration markings, configurable by editing layout; not a road-standard claim.
-        lane=(np.abs(np.abs(y)-(self.width/2-1.5))<=.075)|((np.abs(y)<=.075)&((x%9)<3))
-        rgb[lane]=np.clip(.72+.12*rgb[lane],0,1);labels[lane]=2
+        lane=paint_markings(rgb,xs,ys,self.width);labels[lane]=2
         if with_background:coverage[lane]=True
         for inst in self.instances:
             cx,cy=inst['center_m'];a=inst['angle_rad'];c,s=math.cos(a),math.sin(a)
@@ -201,7 +200,7 @@ def bake(out,length=10,width=10,texel=.00025,core=2048,material=DEFAULT_MATERIAL
     report=dict(schema='agv.road.baked.v1',length_m=length,width_m=width,origin_xy_m=[0,-width/2],
                 texel_m=texel,core_pixels=core,gutter_pixels=gutter,tiles_x=nx,tiles_y=ny,
                 layout='row_y_column_x',encoding='linear_reflectance_mono8',slab_size_m=[5,5],joint_width_m=.008,
-                lane_markings=dict(color='white',width_m=.15,dash_m=3,gap_m=6,scope='illustrative, not regulatory specification'),
+                lane_markings=marking_metadata(width),
                 cracks=[x[2] for x in b.cracks],instances=b.instances,labels=b.labels,tiles=tiles,
                 sources={str(p.relative_to(ROOT)):sha(p) for p in [b.source,CRACKS,SPALLS]},
                 material_id=material,material_name=b.material['name'],
