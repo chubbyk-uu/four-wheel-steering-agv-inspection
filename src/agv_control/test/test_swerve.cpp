@@ -196,6 +196,33 @@ TEST(Kinematics, StationaryShortestChoiceMustLeaveLimitReserve){
  const auto r=c.allocate({.3,0,0},a,a,false,true);
  for(size_t i=0;i<4;++i){EXPECT_NEAR(r.angle[i],0,1e-9);EXPECT_GT(r.speed[i],0);}
 }
+TEST(Kinematics, SpinRecoveryLongTravelIsRequiredOnlyByStationaryLimitReserve){
+ Config cfg;cfg.wheelbase=1.3;cfg.track=.94;Controller c(cfg);Four zero{};
+ for(double direction:{-1.,1.}) {
+  const auto direct=c.allocate({0,0,direction*.3},zero,zero,false,true);
+  const auto straight=c.allocate({.4,0,0},direct.angle,direct.angle,false,true);
+  for(size_t i=0;i<4;++i) {
+   EXPECT_LT(std::abs(direct.angle[i]),pi/2);
+   EXPECT_NEAR(straight.angle[i],0,1e-9);
+  }
+  Four lateral;lateral.fill(direction*pi/2);
+  const auto spin=c.allocate({0,0,direction*.3},lateral,lateral,false,true);
+  const auto constrained=c.allocate({.4,0,0},spin.angle,spin.angle,false,true);
+  const auto unrestricted=c.allocate({.4,0,0},spin.angle,spin.angle,false,false);
+  int long_turns=0;
+  for(size_t i=0;i<4;++i) {
+   EXPECT_NEAR(constrained.angle[i],0,1e-9);
+   if(std::abs(spin.angle[i])>pi/2) {
+    ++long_turns;
+    EXPECT_NEAR(std::abs(unrestricted.angle[i]),pi,1e-9);
+    EXPECT_LT(std::abs(unrestricted.angle[i]-spin.angle[i]),pi/2);
+    EXPECT_LT(cfg.soft-std::abs(unrestricted.angle[i]),cfg.limit_reserve);
+    EXPECT_LT(unrestricted.speed[i],0);
+   }
+  }
+  EXPECT_EQ(long_turns,2);
+ }
+}
 TEST(Transitions, OneWheelCrossesZeroWithoutStoppingWholeVehicle){
  Controller c;Four a{},v{};Target r;
  for(int n=0;n<500;++n){r=c.update({.16,-.13,.4},a,v,.01);a=r.angle;v=r.speed;}

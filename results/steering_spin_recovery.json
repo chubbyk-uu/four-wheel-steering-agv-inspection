@@ -1,0 +1,154 @@
+{
+  "passed": true,
+  "cases": [
+    {
+      "case": "straight_spin",
+      "before_spin_deg": [
+        -1.4363513837685824e-17,
+        -1.7658236022384284e-17,
+        -2.4098770404917005e-17,
+        -1.3442634672340464e-17
+      ],
+      "wheels": [
+        {
+          "before_deg": -54.13017648229458,
+          "after_deg": -0.0006761570205330088,
+          "travel_deg": 54.12950032527405,
+          "nearest_without_reserve_deg": 0.0,
+          "nearest_reserve_deg": 185.0,
+          "nearest_rejected_by_reserve": false
+        },
+        {
+          "before_deg": 54.1301764822631,
+          "after_deg": 0.0006761572406514258,
+          "travel_deg": 54.129500325022455,
+          "nearest_without_reserve_deg": 0.0,
+          "nearest_reserve_deg": 185.0,
+          "nearest_rejected_by_reserve": false
+        },
+        {
+          "before_deg": 54.13017648226151,
+          "after_deg": 0.0006761570265230804,
+          "travel_deg": 54.12950032523499,
+          "nearest_without_reserve_deg": 0.0,
+          "nearest_reserve_deg": 185.0,
+          "nearest_rejected_by_reserve": false
+        },
+        {
+          "before_deg": -54.1301764822951,
+          "after_deg": -0.0006761567264218245,
+          "travel_deg": 54.12950032556868,
+          "nearest_without_reserve_deg": 0.0,
+          "nearest_reserve_deg": 185.0,
+          "nearest_rejected_by_reserve": false
+        }
+      ],
+      "recovery_reasons": [
+        "STOP_REQUEST"
+      ]
+    },
+    {
+      "case": "left_shift_spin",
+      "before_spin_deg": [
+        89.9999997124568,
+        89.99999971245921,
+        89.99999971245592,
+        89.99999971245843
+      ],
+      "wheels": [
+        {
+          "before_deg": 125.86982351770679,
+          "after_deg": 0.0012010878160393734,
+          "travel_deg": 125.86862242989075,
+          "nearest_without_reserve_deg": 180.0,
+          "nearest_reserve_deg": 4.999999999999995,
+          "nearest_rejected_by_reserve": true
+        },
+        {
+          "before_deg": 54.13017648226306,
+          "after_deg": -3.633991555208714e-11,
+          "travel_deg": 54.130176482299404,
+          "nearest_without_reserve_deg": 0.0,
+          "nearest_reserve_deg": 185.0,
+          "nearest_rejected_by_reserve": false
+        },
+        {
+          "before_deg": 54.1301764822617,
+          "after_deg": 7.30528764429745e-11,
+          "travel_deg": 54.13017648218865,
+          "nearest_without_reserve_deg": 0.0,
+          "nearest_reserve_deg": 185.0,
+          "nearest_rejected_by_reserve": false
+        },
+        {
+          "before_deg": 125.86982351770595,
+          "after_deg": 0.0012010878791867752,
+          "travel_deg": 125.86862242982679,
+          "nearest_without_reserve_deg": 180.0,
+          "nearest_reserve_deg": 4.999999999999995,
+          "nearest_rejected_by_reserve": true
+        }
+      ],
+      "recovery_reasons": [
+        "ALIGN_WHEEL_MOTION",
+        "STOP_REQUEST"
+      ]
+    },
+    {
+      "case": "right_shift_spin",
+      "before_spin_deg": [
+        89.99999971236761,
+        89.99999971244435,
+        89.99999971245455,
+        89.99999971244543
+      ],
+      "wheels": [
+        {
+          "before_deg": 125.86982351773672,
+          "after_deg": 0.001185513141574824,
+          "travel_deg": 125.86863800459513,
+          "nearest_without_reserve_deg": 180.0,
+          "nearest_reserve_deg": 4.999999999999995,
+          "nearest_rejected_by_reserve": true
+        },
+        {
+          "before_deg": 54.13017648229439,
+          "after_deg": -2.082624794605204e-11,
+          "travel_deg": 54.130176482315214,
+          "nearest_without_reserve_deg": 0.0,
+          "nearest_reserve_deg": 185.0,
+          "nearest_rejected_by_reserve": false
+        },
+        {
+          "before_deg": 54.1301764822959,
+          "after_deg": 1.0974707653957445e-10,
+          "travel_deg": 54.13017648218616,
+          "nearest_without_reserve_deg": 0.0,
+          "nearest_reserve_deg": 185.0,
+          "nearest_rejected_by_reserve": false
+        },
+        {
+          "before_deg": 125.86982351773737,
+          "after_deg": 0.001185513137792748,
+          "travel_deg": 125.86863800459959,
+          "nearest_without_reserve_deg": 180.0,
+          "nearest_reserve_deg": 4.999999999999995,
+          "nearest_rejected_by_reserve": true
+        }
+      ],
+      "recovery_reasons": [
+        "ALIGN_WHEEL_MOTION",
+        "STOP_REQUEST"
+      ]
+    }
+  ],
+  "final_motion_state": "HOLD",
+  "soft_limit_deg": 185.0,
+  "stationary_reserve_deg": 10.0,
+  "wheel_order": [
+    "fl",
+    "fr",
+    "rl",
+    "rr"
+  ]
+}
