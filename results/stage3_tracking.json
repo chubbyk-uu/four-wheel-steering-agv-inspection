@@ -1,0 +1,356 @@
+{
+  "scope": "Single-segment fused-pose time tracking on flat ground; no camera acquisition or rectangle executor",
+  "unit_tests": {
+    "agv_mission": 39,
+    "agv_control": 25,
+    "agv_localization": 19,
+    "includes_colcon_wrappers": true,
+    "failures": 0
+  },
+  "normal_gui": {
+    "profile": "normal",
+    "gui_rviz": true,
+    "cases": [
+      {
+        "case": "forward",
+        "passed": true,
+        "final_state": "COMPLETED",
+        "reason": "",
+        "terminal_trims": 0,
+        "reconfigurations": 1,
+        "estimated_goal_error_m": 0.030605070533991936,
+        "estimated_heading_error_rad": -0.0028231347997749972,
+        "truth_goal_error_m": 0.036504452070658264,
+        "truth_heading_error_rad": 0.002087243183074163,
+        "truth_roll_pitch_peak_deg": [
+          0.0353806932251029,
+          0.21042842330740136
+        ],
+        "roll_pitch_peak_deg": [
+          0.12031794485213651,
+          0.34100541050497785
+        ],
+        "reference_error_rmse_m": 0.051551444317843885,
+        "wheel_steer_total_travel_rad": [
+          1.3447662292705873,
+          1.2252575811354849,
+          0.7207265202102342,
+          0.673700613212425
+        ],
+        "nominal_profile_duration_s": 8.5625,
+        "elapsed_sim_s": 11.700000000000001
+      },
+      {
+        "case": "lateral",
+        "passed": true,
+        "final_state": "COMPLETED",
+        "reason": "",
+        "terminal_trims": 0,
+        "reconfigurations": 0,
+        "estimated_goal_error_m": 0.00967436784221425,
+        "estimated_heading_error_rad": 0.006757964759871383,
+        "truth_goal_error_m": 0.08249583083546128,
+        "truth_heading_error_rad": -0.005815218861025097,
+        "truth_roll_pitch_peak_deg": [
+          0.40978735119781223,
+          0.14394390025582168
+        ],
+        "roll_pitch_peak_deg": [
+          0.5106511862730758,
+          0.21612564094341502
+        ],
+        "reference_error_rmse_m": 0.03742465521584871,
+        "wheel_steer_total_travel_rad": [
+          1.700434075538928,
+          1.6112070217778345,
+          1.809212961448776,
+          1.7274558330873215
+        ],
+        "nominal_profile_duration_s": 2.5625,
+        "elapsed_sim_s": 8.580999999999996
+      },
+      {
+        "case": "rotate",
+        "passed": true,
+        "final_state": "COMPLETED",
+        "reason": "",
+        "terminal_trims": 0,
+        "reconfigurations": 0,
+        "estimated_goal_error_m": 0.015800546459833475,
+        "estimated_heading_error_rad": -0.004684297585436221,
+        "truth_goal_error_m": 0.01776994743085549,
+        "truth_heading_error_rad": -0.0008695430959767119,
+        "truth_roll_pitch_peak_deg": [
+          0.29554474140652515,
+          0.027424645637578515
+        ],
+        "roll_pitch_peak_deg": [
+          0.30545871233538274,
+          0.06446486064087215
+        ],
+        "reference_error_rmse_m": 0.023307243445195917,
+        "wheel_steer_total_travel_rad": [
+          1.0099955327814862,
+          1.1030196108933645,
+          1.1340786658248516,
+          1.0315219193969232
+        ],
+        "nominal_profile_duration_s": 14.024703947692505,
+        "elapsed_sim_s": 16.64
+      },
+      {
+        "case": "reverse",
+        "passed": true,
+        "final_state": "COMPLETED",
+        "reason": "",
+        "terminal_trims": 0,
+        "reconfigurations": 0,
+        "estimated_goal_error_m": 0.02815818029237799,
+        "estimated_heading_error_rad": 0.02144197113733653,
+        "truth_goal_error_m": 0.02977747217662896,
+        "truth_heading_error_rad": 0.007466547398396168,
+        "truth_roll_pitch_peak_deg": [
+          0.009600125170928377,
+          0.1959947522861154
+        ],
+        "roll_pitch_peak_deg": [
+          0.07559737927719141,
+          0.22355339624709183
+        ],
+        "reference_error_rmse_m": 0.03594161968622463,
+        "wheel_steer_total_travel_rad": [
+          1.3249747726465257,
+          2.5668706452488252,
+          1.3995878379261484,
+          2.6555018546417717
+        ],
+        "nominal_profile_duration_s": 4.5625,
+        "elapsed_sim_s": 9.88000000000001
+      },
+      {
+        "case": "short_triangle",
+        "passed": true,
+        "final_state": "COMPLETED",
+        "reason": "",
+        "terminal_trims": 1,
+        "reconfigurations": 0,
+        "estimated_goal_error_m": 0.03953535239010312,
+        "estimated_heading_error_rad": -0.008035340201948377,
+        "truth_goal_error_m": 0.028119838133937116,
+        "truth_heading_error_rad": -0.013287796229709077,
+        "truth_roll_pitch_peak_deg": [
+          0.04465902736416681,
+          0.25555848824486493
+        ],
+        "roll_pitch_peak_deg": [
+          0.08336207790832942,
+          0.37245696060513844
+        ],
+        "reference_error_rmse_m": 0.03247912705964103,
+        "wheel_steer_total_travel_rad": [
+          1.6531770138733544,
+          1.261353180256555,
+          1.5862707341426905,
+          1.3432401580295916
+        ],
+        "nominal_profile_duration_s": 0.7348469228349535,
+        "elapsed_sim_s": 9.159999999999997
+      }
+    ]
+  },
+  "zero_headless": {
+    "profile": "zero",
+    "gui_rviz": false,
+    "cases": [
+      {
+        "case": "forward",
+        "passed": true,
+        "final_state": "COMPLETED",
+        "reason": "",
+        "terminal_trims": 0,
+        "reconfigurations": 0,
+        "estimated_goal_error_m": 0.01764645694012361,
+        "estimated_heading_error_rad": 0.0036400269968396245,
+        "truth_goal_error_m": 0.01745108237875249,
+        "truth_heading_error_rad": 0.0036399798252312408,
+        "truth_roll_pitch_peak_deg": [
+          0.028887228857105672,
+          0.22084767157483556
+        ],
+        "roll_pitch_peak_deg": [
+          0.02887773181152183,
+          0.2821834290055445
+        ],
+        "reference_error_rmse_m": 0.03854697803917766,
+        "wheel_steer_total_travel_rad": [
+          0.5175814412731665,
+          0.48507394341487925,
+          0.31108166586021824,
+          0.285306950705769
+        ],
+        "nominal_profile_duration_s": 8.5625,
+        "elapsed_sim_s": 9.440000000000001
+      },
+      {
+        "case": "lateral",
+        "passed": true,
+        "final_state": "COMPLETED",
+        "reason": "",
+        "terminal_trims": 0,
+        "reconfigurations": 0,
+        "estimated_goal_error_m": 0.014040353941443037,
+        "estimated_heading_error_rad": 0.010080509462719808,
+        "truth_goal_error_m": 0.013963741912393395,
+        "truth_heading_error_rad": 0.010080403243717135,
+        "truth_roll_pitch_peak_deg": [
+          0.438288209309047,
+          0.026754784760507876
+        ],
+        "roll_pitch_peak_deg": [
+          0.5567068939908634,
+          0.026645462287250846
+        ],
+        "reference_error_rmse_m": 0.040628246298796175,
+        "wheel_steer_total_travel_rad": [
+          1.8020864825930023,
+          1.6918354087889724,
+          1.849826584455621,
+          1.7078452567093625
+        ],
+        "nominal_profile_duration_s": 2.5625,
+        "elapsed_sim_s": 6.280000000000001
+      },
+      {
+        "case": "rotate",
+        "passed": true,
+        "final_state": "COMPLETED",
+        "reason": "",
+        "terminal_trims": 0,
+        "reconfigurations": 0,
+        "estimated_goal_error_m": 0.0053852067411280435,
+        "estimated_heading_error_rad": 0.017414319292656313,
+        "truth_goal_error_m": 0.0052584073938084595,
+        "truth_heading_error_rad": 0.01741431883771451,
+        "truth_roll_pitch_peak_deg": [
+          0.31064327272833236,
+          0.021833739593089242
+        ],
+        "roll_pitch_peak_deg": [
+          0.315470565258388,
+          0.026477383203850086
+        ],
+        "reference_error_rmse_m": 0.005385409369931595,
+        "wheel_steer_total_travel_rad": [
+          0.6157061385360769,
+          0.5442780046312446,
+          0.6399191826640966,
+          0.7132033107850713
+        ],
+        "nominal_profile_duration_s": 14.024703947692505,
+        "elapsed_sim_s": 17.560000000000002
+      },
+      {
+        "case": "reverse",
+        "passed": true,
+        "final_state": "COMPLETED",
+        "reason": "",
+        "terminal_trims": 0,
+        "reconfigurations": 0,
+        "estimated_goal_error_m": 0.01298038834013805,
+        "estimated_heading_error_rad": -0.00409665012034886,
+        "truth_goal_error_m": 0.012985327728037285,
+        "truth_heading_error_rad": -0.004096656031836588,
+        "truth_roll_pitch_peak_deg": [
+          0.001232696387586005,
+          0.19517947023261412
+        ],
+        "roll_pitch_peak_deg": [
+          0.006061707244470854,
+          0.28941473439762605
+        ],
+        "reference_error_rmse_m": 0.01884489926096744,
+        "wheel_steer_total_travel_rad": [
+          2.228398226207199,
+          0.9762304434820492,
+          1.0997551858872263,
+          2.3407467570367775
+        ],
+        "nominal_profile_duration_s": 4.5625,
+        "elapsed_sim_s": 9.579999999999998
+      },
+      {
+        "case": "short_triangle",
+        "passed": true,
+        "final_state": "COMPLETED",
+        "reason": "",
+        "terminal_trims": 1,
+        "reconfigurations": 0,
+        "estimated_goal_error_m": 0.0019943661952876194,
+        "estimated_heading_error_rad": 0.0033819172250653604,
+        "truth_goal_error_m": 0.0013999538688764343,
+        "truth_heading_error_rad": 0.0033816557034832976,
+        "truth_roll_pitch_peak_deg": [
+          0.045179910455219754,
+          0.25036142826192925
+        ],
+        "roll_pitch_peak_deg": [
+          0.06321605024417931,
+          0.3360378086742162
+        ],
+        "reference_error_rmse_m": 0.007310629681802166,
+        "wheel_steer_total_travel_rad": [
+          1.4257786710434803,
+          0.958573263780588,
+          1.2373109325328449,
+          1.1458608332573714
+        ],
+        "nominal_profile_duration_s": 0.7348469228349535,
+        "elapsed_sim_s": 8.959999999999994
+      }
+    ]
+  },
+  "fault_stopping": {
+    "passed": true,
+    "cases": [
+      {
+        "case": "cancel",
+        "passed": true,
+        "reason": "CANCELED",
+        "fault_to_hold_sim_s": 0.49900000000000055,
+        "final_state": "FAULT",
+        "final_motion_state": "HOLD"
+      },
+      {
+        "case": "gnss_loss",
+        "passed": true,
+        "reason": "STALE_OR_UNREADY_LOCALIZATION",
+        "fault_to_hold_sim_s": 0.5179999999999971,
+        "final_state": "FAULT",
+        "final_motion_state": "HOLD"
+      }
+    ]
+  },
+  "clock_watchdog": {
+    "passed": true,
+    "clock_stall_to_zero_wall_s": 0.40007823199994164,
+    "final_state": "FEEDBACK_HOLD",
+    "final_motor_commands_rad_s": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "scope": "standalone controller with live mocked feedback/commands and frozen clock; not physical braking"
+  },
+  "known_limits": [
+    "0.5 m/s translation only; 10 km/h closed-loop and imaging integration pending",
+    "Startup source-feedback gaps observed in earlier GUI runs; strict freshness protection retained, 5-second ready/hold dwell added; cause not fully isolated",
+    "Truth error is independent of estimated terminal tolerance; no pixel-level accuracy claim"
+  ],
+  "fixed_failures": [
+    "Sub-deadband terminal correction stalled in HOLD: explicit rest-to-rest trim profiles",
+    "Noisy position trim starved larger heading error: filtered normalized error prioritization",
+    "Changing alignment probe under estimated heading noise: latch probe during alignment",
+    "Frozen ROS clock retained prior drive targets: independent wall-clock stop guard"
+  ]
+}

@@ -245,6 +245,8 @@ class MeasurementAdapter(Node):
         fix_ok=age['gnss'] is not None and 0<=age['gnss']<.5
         state='READY' if local_ok and filters_ok and fix_ok and self.tilt_ready else 'NOT_READY'
         self.status.publish(String(data=json.dumps({'state':state,'measurement_age_s':age,
+                    'filter_age_s':{'local':local_filter_age if math.isfinite(local_filter_age) else None,
+                                    'global':global_filter_age if math.isfinite(global_filter_age) else None},
                     'tilt_initialized':self.tilt_ready,'delivery_queue_peak':self.queue.peak,
                     'stop_required':state!='READY'})))
 

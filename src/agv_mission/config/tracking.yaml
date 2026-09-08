@@ -1,0 +1,30 @@
+# First low-speed tracking baseline; body commands still pass through swerve limits.
+position_gain: 0.7
+heading_gain: 0.8
+feedback_filter_s: 0.25
+position_deadband_m: 0.01
+heading_deadband_rad: 0.004
+max_position_feedback_m_s: 0.12
+max_heading_feedback_rad_s: 0.06
+cross_command_ratio: 0.20
+position_tolerance_m: 0.05
+heading_tolerance_rad: 0.025
+stopped_speed_m_s: 0.025
+stopped_yaw_rate_rad_s: 0.015
+settle_time_s: 0.5
+angular_accel_rad_s2: 0.15
+angular_decel_rad_s2: 0.20
+angular_speed_rad_s: 0.25
+alignment_linear_probe_m_s: 0.025
+alignment_angular_probe_rad_s: 0.02
+feedback_age_limit_s: 0.12
+wall_timeout_s: 0.35
+max_tracking_error_m: 0.6
+max_heading_error_rad: 0.35
+segment_timeout_s: 90.0
+
+terminal_dwell_s: 0.4
+terminal_translation_speed_m_s: 0.08
+terminal_rotation_speed_rad_s: 0.06
+max_terminal_trims: 3
+initial_ready_hold_s: 5.0

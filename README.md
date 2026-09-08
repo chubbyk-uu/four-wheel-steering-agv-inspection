@@ -13,7 +13,7 @@
 - 已选 **Concrete047A**：10 × 10 m 离线样片、5 × 5 m 板缝、标线、AI 图像来源的 0.8–2 mm 名义宽裂缝和小破损。已完成[小场景 OptiX 颜色、法线与粗糙度采样试验](docs/STAGE2_PBR_COST.md)，已完成[双黄线/白边线共享路段的低速 GUI＋RViz 采集](docs/STAGE2_SHARED_ROAD.md)；默认启动场景仍为网格；[100 m 中央扫描走廊的有界材质缓存](docs/STAGE2_STREAMED_ROAD.md)已通过独立 11 kHz 原图落盘＋ROS 校验，以及 10 km/h、60 m 的无 GUI / GUI＋RViz 整车连续采集；20 m全宽试片也已验证，但以上性能记录使用旧65 kg/16 mm模型，不代表新版验收。
 - 覆盖规划、避障、RTK/IMU/里程计融合与完整巡检拼接尚未完成。11 kHz 是当前专项采样验收目标（不再要求 22 kHz）；10 km/h 的正常等距供给约7.59 kHz，不等于完整链路已达到 11 kHz。
 
-新版已通过GUI运动及20 m水泥道路低速OptiX原图/ROS联合采集复测；[文档、显示与清理审计](docs/MAINTENANCE_AUDIT.md)。新版参数、近似边界及验证：[550 kg重建记录](docs/LARGE_AGV_REBUILD.md)。默认轨迹间距1.00 m，加速度0.8/减速度1.0 m/s²；[规划、闭环与采集实施计划](docs/MISSION_IMPLEMENTATION_PLAN.md)。两台8线雷达点云已接入；[矩形规划与RViz预览](src/agv_mission/README.md)已实现，默认固定1 m行距，[三维融合定位](src/agv_localization/README.md)已接入，任务轨迹闭环、执行和自主避障仍待实现。
+新版已通过GUI运动及20 m水泥道路低速OptiX原图/ROS联合采集复测；[文档、显示与清理审计](docs/MAINTENANCE_AUDIT.md)。新版参数、近似边界及验证：[550 kg重建记录](docs/LARGE_AGV_REBUILD.md)。默认轨迹间距1.00 m，加速度0.8/减速度1.0 m/s²；[规划、闭环与采集实施计划](docs/MISSION_IMPLEMENTATION_PLAN.md)。两台8线雷达点云已接入；[矩形规划与RViz预览](src/agv_mission/README.md)已实现，默认固定1 m行距，[三维融合定位](src/agv_localization/README.md)已接入，[单段梯形/三角形时间闭环](docs/TRACKING_IMPLEMENTATION.md)已接入，完整矩形执行、采集联动和自主避障仍待实现。
 
 规范：[PROJECT_SPEC.md](PROJECT_SPEC.md)。当前结果与历史实验见 [docs](docs)，其中早期参数和性能结论只适用于对应实验。
 

@@ -1,6 +1,6 @@
-# 矩形巡检规划与预览
+# 矩形巡检规划与单段时间闭环
 
-当前交付是规划核心和预览，不发运动指令。定位融合、从车辆当前位置接入任务、时间闭环、采集门和任务面板按[实施计划](../../docs/MISSION_IMPLEMENTATION_PLAN.md)继续接入。
+当前已交付规划核心、预览和独立单段时间闭环。规划预览不发运动指令；`track_segment`会通过底层控制器执行运动。完整矩形执行、从车辆当前位置接入任务、采集门和任务面板按[实施计划](../../docs/MISSION_IMPLEMENTATION_PLAN.md)继续接入。
 
 ## 快速运行
 
@@ -51,3 +51,24 @@ ROS_DOMAIN_ID=93 python3 tools/validate_rectangle_preview.py \
 ```
 
 几何/消息共23项pytest通过（colcon含2项包装共25项）：固定间距、窄区/非整除宽度、正反扫描端点、相机偏置、段连续性、地图平移旋转、高度、误差预算、非对称加减速、越界和非法输入。另完成CLI保存/重载一致及真实ROS话题接收验证。未把这些测试计作闭环控制或GUI实车运动验收。
+
+## 单段时间闭环
+
+先在独立终端启动仿真（定位必须开启），再执行下列命令。确保没有其他`/cmd_vel`发布者、车辆周围有足够运动和转向空间；输出目录必须是新目录。
+
+```bash
+ros2 launch agv_bringup sim.launch.py localization:=true rviz:=true
+```
+
+```bash
+source /opt/ros/jazzy/setup.bash
+source install/local_setup.bash
+ros2 run agv_mission track_segment --ros-args \
+  -p use_sim_time:=true -p autostart:=true \
+  -p displacement_xy_m:='[4.0, 0.0]' -p speed:=0.5 \
+  -p output_dir:=local_data/tracking_manual_01
+```
+
+位移相对于启动时的融合姿态。横移用`[0.0, 1.0]`，后退用`[-2.0, 0.0]`；旋转改为`-p kind:=rotate -p angle_rad:=3.141592653589793 -p speed:=0.25`，此时speed单位rad/s。每个实例仅执行一段。默认不自动开始，可调用`/mission/start_segment`（std_srvs/srv/Trigger）；开始前须连续5秒定位READY且底层HOLD。取消调用`/mission/cancel_segment`，故障/取消后不自动恢复。
+
+参考位置由梯形/三角形速度曲线按仿真时间积分，速度前馈叠加融合位姿反馈；轮组BRAKE/ALIGN时参考暂停并重新定时。完成要求终点位姿、低速和HOLD同时满足。当前是平面单段验证，未接区域执行和采集门。配置、实测与限制见[时间闭环记录](../../docs/TRACKING_IMPLEMENTATION.md)。

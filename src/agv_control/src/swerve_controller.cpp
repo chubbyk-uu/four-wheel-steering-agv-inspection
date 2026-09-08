@@ -64,7 +64,18 @@ class SwerveNode : public rclcpp::Node {
  private:
   void tick(){
     const auto time=now();const double dt=(time-last_).seconds();
-    if(dt==0)return;
+    const auto wall=std::chrono::steady_clock::now();
+    if(dt==0) {
+      // A stopped ROS clock may mean a lost clock bridge while physics still
+      // runs. Do not let the previous motor velocities persist indefinitely.
+      if(std::chrono::duration<double>(wall-clock_wall_).count()>timeout_) {
+        std_msgs::msg::Float64MultiArray stop;stop.data={0,0,0,0};drive_pub_->publish(stop);
+        command_valid_=false;core_->reset();
+        std_msgs::msg::String state;state.data="FEEDBACK_HOLD";state_pub_->publish(state);
+      }
+      return;
+    }
+    clock_wall_=wall;
     last_=time;
     const double feedback_age=(time-feedback_stamp_).seconds();
     if(dt<0||dt>0.1||!have_feedback_||feedback_age>0.2||feedback_age< -0.05){
@@ -86,6 +97,7 @@ class SwerveNode : public rclcpp::Node {
   std::unique_ptr<agv::Controller> core_;
   agv::Four angles_{},speeds_{},steer_rates_{};agv::Twist command_;
   double radius_{},hard_{},timeout_{};bool have_feedback_{false},command_valid_{false};
+  std::chrono::steady_clock::time_point clock_wall_{std::chrono::steady_clock::now()};
   rclcpp::Time last_{0,0,RCL_ROS_TIME},feedback_stamp_{0,0,RCL_ROS_TIME},command_stamp_{0,0,RCL_ROS_TIME};
   rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr steer_pub_,drive_pub_;
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr state_pub_,reason_pub_;
