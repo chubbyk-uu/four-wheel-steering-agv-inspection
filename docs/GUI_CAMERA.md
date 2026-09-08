@@ -21,7 +21,7 @@
 
 ## 使用水泥贴图道路
 
-普通启动仍使用网格世界；水泥贴图资产并未删除。已按[全宽道路记录](STAGE2_FULLWIDTH_ROAD.md)生成当前20 m全宽资产后，从仓库根目录启动：
+普通启动仍使用网格世界；水泥贴图资产并未删除。已按[全宽道路记录](archive/stage2/STAGE2_FULLWIDTH_ROAD.md)生成当前20 m全宽资产后，从仓库根目录启动：
 
 ```bash
 source /opt/ros/jazzy/setup.bash
@@ -40,4 +40,4 @@ python3 tools/validate_gui_camera.py --output /tmp/agv-camera-check.json
 
 ## RViz显示
 
-默认Fixed Frame为`base_link`，Grid Reference Frame为`world`，通过`/visualization/tf`同时间戳轮组快照显示悬挂及转向。世界网格相对跟车视角移动，车体与固定附件保持刚性连接。该显示参考系不改变控制、定位或归档坐标；自行切回world时，逐部件latest-time查询仍可能混入异步世界位姿。旧同时间戳计数只能证明消息一致性，不能证明屏幕无抖动。最新检查见[维护记录](MAINTENANCE_AUDIT.md)。
+默认Fixed Frame为`base_link`，Grid Reference Frame为`world`，通过`/visualization/tf`同时间戳轮组快照显示悬挂及转向。世界网格相对跟车视角移动，车体与固定附件保持刚性连接。该显示参考系不改变控制、定位或归档坐标；自行切回world时，逐部件latest-time查询仍可能混入异步世界位姿。旧同时间戳计数只能证明消息一致性，不能证明屏幕无抖动。最新检查见[维护记录](archive/integration/MAINTENANCE_AUDIT.md)。

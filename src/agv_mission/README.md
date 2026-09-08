@@ -25,7 +25,7 @@ rviz2 -d src/agv_mission/config/planning.rviz
 
 不加`--publish`仅保存JSON并退出；保存的request.yaml可以重新载入。预览发布`/mission/preview/base_path`和`/mission/preview/markers`，Reliable＋Transient Local，晚启动RViz也可接收。独立规划视图Fixed Frame=world，不加载机器人；车辆现有RViz防脱节配置保持不变。自定义地图frame时同步调整RViz固定坐标系。Ctrl-C退出预览。
 
-![几何规划预览](../../docs/rectangle_plan_preview.png)
+![几何规划预览](../../docs/images/rectangle_plan_preview.png)
 
 上图是规划JSON绘制的示意图，不是闭环运动结果。绿色为相机扫描中心与名义幅宽，蓝虚线为扫描时底盘中心，粉色为非采集运动，橙色圆为保守旋转包络。
 
@@ -71,7 +71,7 @@ ros2 run agv_mission track_segment --ros-args \
 
 位移相对于启动时的融合姿态。横移用`[0.0, 1.0]`，后退用`[-2.0, 0.0]`；旋转改为`-p kind:=rotate -p angle_rad:=3.141592653589793 -p speed:=0.25`，此时speed单位rad/s。每个实例仅执行一段。默认不自动开始，可调用`/mission/start_segment`（std_srvs/srv/Trigger）；开始前须连续5秒定位READY且底层HOLD。取消调用`/mission/cancel_segment`，故障/取消后不自动恢复。
 
-参考位置由梯形/三角形速度曲线按仿真时间积分，速度前馈叠加融合位姿反馈；轮组BRAKE/ALIGN时参考暂停并重新定时。完成要求终点位姿、低速和HOLD同时满足。当前是平面单段验证，未接区域执行和采集门。配置、实测与限制见[时间闭环记录](../../docs/TRACKING_IMPLEMENTATION.md)。
+参考位置由梯形/三角形速度曲线按仿真时间积分，速度前馈叠加融合位姿反馈；轮组BRAKE/ALIGN时参考暂停并重新定时。完成要求终点位姿、低速和HOLD同时满足。当前是平面单段验证，未接区域执行和采集门。配置、实测与限制见[时间闭环记录](../../docs/archive/integration/TRACKING_IMPLEMENTATION.md)。
 
 完整矩形运动执行入口已接入，使用方法与限制见[矩形执行](../../docs/RECTANGLE_EXECUTION.md)；采集验收另行记录。
 

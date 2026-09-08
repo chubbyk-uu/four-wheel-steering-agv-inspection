@@ -2,20 +2,17 @@
 
 四轮独立驱动、独立转向（4WIDS）的 ROS 2 / Gazebo 巡检仿真项目。八电机底盘支持横移、斜行和原地旋转；控制器根据实际轮组状态处理驱动反转、转向限位、制动和停稳对轮。
 
-![AGV](docs/agv_large_model.png)
+![AGV](docs/images/agv_large_model.png)
 
 ## 当前范围
 
-- 550 kg悬挂底盘，车体约1.90×1.10 m，含两侧雷达宽1.30 m；仿真限速 **10 km/h**。
-- 线阵相机 **4096 像素 / 1.5 m**，约 **0.366 mm/像素**；20 mm镜头，名义光心高度约1.046 m。
-- 编码器等距触发，沿同一路径连续生成无重叠图块；标签参考末行，支持稀疏位姿记录。
-- 可选 CUDA 平面后端与实验性 OptiX 三角网格后端，含相对条形 LED、遮挡、曝光和横向畸变模型。
-- 已选 **Concrete047A**：10 × 10 m 离线样片、5 × 5 m 板缝、标线、AI 图像来源的 0.8–2 mm 名义宽裂缝和小破损。已完成[小场景 OptiX 颜色、法线与粗糙度采样试验](docs/STAGE2_PBR_COST.md)，已完成[双黄线/白边线共享路段的低速 GUI＋RViz 采集](docs/STAGE2_SHARED_ROAD.md)；默认启动场景仍为网格；[100 m 中央扫描走廊的有界材质缓存](docs/STAGE2_STREAMED_ROAD.md)已通过独立 11 kHz 原图落盘＋ROS 校验，以及 10 km/h、60 m 的无 GUI / GUI＋RViz 整车连续采集；20 m全宽试片也已验证，但以上性能记录使用旧65 kg/16 mm模型，不代表新版验收。
-- 覆盖规划、避障、RTK/IMU/里程计融合与完整巡检拼接尚未完成。11 kHz 是当前专项采样验收目标（不再要求 22 kHz）；10 km/h 的正常等距供给约7.59 kHz，不等于完整链路已达到 11 kHz。
+- 550 kg四悬挂底盘，八电机四驱四转；仿真限速10 km/h，加速度0.8、减速度1.0 m/s²。转向从±190°硬限位保留8°静止目标余量。
+- 线阵相机20 mm、4096像素/1.5 m，约0.366 mm/像素；编码器等距触发，默认4096行/块，Mono8原图与稀疏末行参考标签归档。
+- 矩形规划、三维RTK/IMU/轮里程计融合、梯形/三角形时间闭环和按轨采集联动已实现。当前矩形联合验证速度0.5 m/s，轨迹间距1 m，换道不后退。
+- OptiX共享几何、颜色＋法线和有界高清瓦片缓存已接入；当前20×10 m Concrete047A全宽道路已修正显示UV。普通启动默认网格，水泥道路需显式载入。
+- 暂停恢复/补扫、RViz任务面板、自主避障、完整条带拼接及TIFF仍待实现。新版独立11 kHz、10 km/h矩形闭环和100×10 m全宽长时验收仍待完成；旧模型性能不能替代新版验收。
 
-新版已通过GUI运动及20 m水泥道路低速OptiX原图/ROS联合采集复测；[文档、显示与清理审计](docs/MAINTENANCE_AUDIT.md)。新版参数、近似边界及验证：[550 kg重建记录](docs/LARGE_AGV_REBUILD.md)。默认轨迹间距1.00 m，加速度0.8/减速度1.0 m/s²；[规划、闭环与采集实施计划](docs/MISSION_IMPLEMENTATION_PLAN.md)。两台8线雷达点云已接入；[矩形规划与RViz预览](src/agv_mission/README.md)已实现，默认固定1 m行距，[三维融合定位](src/agv_localization/README.md)已接入，[单段梯形/三角形时间闭环](docs/TRACKING_IMPLEMENTATION.md)已接入，[矩形任务执行](docs/RECTANGLE_EXECUTION.md)与[采集联动](docs/RECTANGLE_CAPTURE.md)已接入；暂停补扫、RViz任务面板和自主避障仍待实现。
-
-规范：[PROJECT_SPEC.md](PROJECT_SPEC.md)。当前结果与历史实验见 [docs](docs)，其中早期参数和性能结论只适用于对应实验。
+**接续工作先读[当前状态与下一步](docs/CURRENT_STATUS.md)，按任务查[文档索引](docs/README.md)。** 完整约束见[项目规范](PROJECT_SPEC.md)；历史实验已归档，重要问题及证据单独保留入口。
 
 ## 环境与安装
 
@@ -115,7 +112,7 @@ python3 tools/correct_linescan_session.py \
   --output /path/to/new_corrected_directory
 ```
 
-无需启动ROS、Gazebo或GPU。输出目录必须新建；原图不改动，行数、首末时间和少量位置标签保留。缺块/图像尺寸不符或标定条件不匹配会报错。仓库中的`linescan_calibration_concrete_16mm.json`仅用于旧版档案；当前20 mm/v7及新版条光的标定仍需重新生成，不能直接套用旧文件。详见[水泥路面离线校正](docs/STAGE2_CONCRETE_CORRECTION.md)。
+无需启动ROS、Gazebo或GPU。输出目录必须新建；原图不改动，行数、首末时间和少量位置标签保留。缺块/图像尺寸不符或标定条件不匹配会报错。仓库中的`linescan_calibration_concrete_16mm.json`仅用于旧版档案；当前20 mm/v7及新版条光的标定仍需重新生成，不能直接套用旧文件。详见[离线处理指南](docs/OFFLINE_PROCESSING.md)。
 
 ## 可选 CUDA / OptiX
 
@@ -138,7 +135,7 @@ ros2 launch agv_bringup sim.launch.py gpu_backend:=native \
   scene_manifest:=/tmp/agv_flat_scene/manifest.json spawn_x:=2
 ```
 
-WSL OptiX 是**实验性单独配置**，基础 CUDA 可用不表示 OptiX 可用。详见 [WSL 实验记录](docs/STAGE2_OPTIX_WSL.md)。已有相容隔离运行库时，配置 `AGV_OPTIX_RUNTIME`，通过 `bash tools/with_optix_runtime.sh bash` 进入子进程，再加载 ROS 和工作区并启动。脚本不安装驱动或替换系统库；新机器需要重新验证，不能仅靠克隆复现驱动兼容性。
+WSL OptiX 是**实验性单独配置**，基础 CUDA 可用不表示 OptiX 可用。详见 [WSL 实验记录](docs/archive/stage2/STAGE2_OPTIX_WSL.md)。已有相容隔离运行库时，配置 `AGV_OPTIX_RUNTIME`，通过 `bash tools/with_optix_runtime.sh bash` 进入子进程，再加载 ROS 和工作区并启动。脚本不安装驱动或替换系统库；新机器需要重新验证，不能仅靠克隆复现驱动兼容性。
 
 ## 恢复混凝土样片
 
@@ -152,9 +149,9 @@ python3 tools/check_baked_road.py assets/road/baked_concrete047a_v1
 python3 tools/preview_baked_road.py assets/road/baked_concrete047a_v1
 ```
 
-输出目录必须不存在，防止覆盖已有资产。下载约 1 GB，样片约 1.6 GiB，建议为此过程预留至少 4 GiB 磁盘空间；100 × 10 m 全场资产需要更多。OptiX有界材质缓存已实现；上述命令只恢复旧版平面样片。当前20 m全宽三维道路的恢复入口见[全宽道路](docs/STAGE2_FULLWIDTH_ROAD.md)，不能把全场高清图块一次性装进显存。
+输出目录必须不存在，防止覆盖已有资产。下载约 1 GB，样片约 1.6 GiB，建议为此过程预留至少 4 GiB 磁盘空间；100 × 10 m 全场资产需要更多。OptiX有界材质缓存已实现；上述命令只恢复旧版平面样片。当前20 m全宽三维道路的恢复入口见[当前道路恢复指南](docs/ROAD_ASSETS.md)，不能把全场高清图块一次性装进显存。
 
-Concrete047A 为 [ambientCG CC0 素材](https://ambientcg.com/view?id=Concrete047A)。官方物理尺寸未给出，暂按整张 2.1 m 映射。烘焙约 0.25 mm/纹素；裂缝尖端、分叉和最终相机像素宽度仍需独立验证。[当前样片](docs/concrete047a_comparison.png)。
+Concrete047A 为 [ambientCG CC0 素材](https://ambientcg.com/view?id=Concrete047A)。官方物理尺寸未给出，暂按整张 2.1 m 映射。烘焙约 0.25 mm/纹素；裂缝尖端、分叉和最终相机像素宽度仍需独立验证。[当前样片](docs/images/concrete047a_comparison.png)。
 
 ## 检查与项目结构
 
@@ -179,6 +176,6 @@ OptiX/GPU 测试需要对应硬件和运行库；纯 CPU 构建不注册这些�
 
 源码按 Apache-2.0 分发；外部素材与生成资产说明见 [THIRD_PARTY.md](THIRD_PARTY.md)。公开仓库不含旧本地 Git 历史、机器工作约定、原始进程日志、个人代理配置、SDK/驱动、构建目录和完整采集数据。详见[发布范围](docs/REPOSITORY.md)。
 
-已有旧版全宽道路若在GUI中看不到中央双黄线，请按[路面显示对齐说明](docs/ROAD_DISPLAY_ALIGNMENT.md)迁移显示UV；无需重新下载或烘焙高清纹素。新生成的道路已使用修订后的映射。
+已有旧版全宽道路若在GUI中看不到中央双黄线，请按[路面显示对齐说明](docs/issues/ROAD_DISPLAY_ALIGNMENT.md)迁移显示UV；无需重新下载或烘焙高清纹素。新生成的道路已使用修订后的映射。
 
 控制、GUI、贴图与采图变更的实际观察验收见[验收约定](docs/VISUAL_ACCEPTANCE.md)，其中列明现有工具及各自验证范围。

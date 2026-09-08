@@ -50,7 +50,7 @@
 
 模型500/550/600 kg变体总质量、正定惯量、8主动关节/4被动悬挂、GNSS间距及高度检查通过。无GUI运动、静载平衡与双点云通过；GUI＋RViz运动及点云测试通过；此后电池舱和斜肩形状修订另做模型/渲染检查，新版低速GUI/OptiX采集已通过，独立11 kHz与新版平场仍待复测。图为GZ实际模型渲染，不是AI效果图。
 
-![新版AGV](agv_large_model.png)
+![新版AGV](images/agv_large_model.png)
 
 旧版65 kg、16 mm/1.2 m的11 kHz吞吐、标定和平场结果保留为历史基线，不能直接作为新车、新光学、新悬挂的验收。新的calibration_id为`nominal-linescan-4k-20mm-large-v7`，旧参考配置应拒绝兼容。GUI默认保持可旋转/滚轮缩放的跟车方式。
 
@@ -68,8 +68,8 @@ RViz默认显示参考系改为base_link，世界网格仍使用world，使跟�
 
 最新安装修订后复测：550 kg静载base_link高度0.648427 m，计入车体俯仰的电池舱最低角离地0.249932 m；前进、横移、斜行、原地转向、倒退与10 km/h速度检查通过，结束HOLD。该次为无GUI运动复测，结果见[记录](../results/stage3_large_platform_mounts.json)。
 
-最终安装版本的GUI运动与水泥路面联合采集复核见[维护审计](MAINTENANCE_AUDIT.md)。
+最终安装版本的GUI运动与水泥路面联合采集复核见[维护审计](archive/integration/MAINTENANCE_AUDIT.md)。
 
 加减速更新后的任务实施次序见[详细计划](MISSION_IMPLEMENTATION_PLAN.md)。此前0.5/0.5 m/s²运动/采集记录仍保留历史参数。
 
-本次降低条光后，几何检查再次通过257条相机射线零车体遮挡和257个位置光锥覆盖；既有光度/平场结论不得直接继承，后续按新安装重新标定。见[稳定性修订](SCAN_STABILITY.md)。
+本次降低条光后，几何检查再次通过257条相机射线零车体遮挡和257个位置光锥覆盖；既有光度/平场结论不得直接继承，后续按新安装重新标定。见[稳定性修订](issues/SCAN_STABILITY.md)。

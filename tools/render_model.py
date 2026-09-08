@@ -18,7 +18,7 @@ from PIL import Image as PILImage
 
 def main():
     parser=argparse.ArgumentParser()
-    parser.add_argument('--output', default='docs/agv_stage1.png')
+    parser.add_argument('--output', default='docs/images/agv_stage1.png')
     parser.add_argument('--led-off', action='store_true', help='Render a comparison without the attached LED lights')
     args=parser.parse_args()
     root=Path(__file__).resolve().parents[1]

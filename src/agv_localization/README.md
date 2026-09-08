@@ -82,4 +82,4 @@ python3 tools/validate_localization.py --profile normal --gui \
   --output local_data/localization/check_outage_01.json
 ```
 
-测试器开启并关闭自己的仿真，发送车体速度指令，经原有对轮/制动状态机完成前进、横移、旋转和倒退，最终检查HOLD。真值仅用于评估。回归门限是故障检测门限，不是真机精度承诺；最新实测与残余边界见[定位验收记录](../../docs/LOCALIZATION_IMPLEMENTATION.md)。
+测试器开启并关闭自己的仿真，发送车体速度指令，经原有对轮/制动状态机完成前进、横移、旋转和倒退，最终检查HOLD。真值仅用于评估。回归门限是故障检测门限，不是真机精度承诺；最新实测与残余边界见[定位验收记录](../../docs/archive/integration/LOCALIZATION_IMPLEMENTATION.md)。

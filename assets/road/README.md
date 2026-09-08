@@ -20,7 +20,7 @@ python3 tools/fetch_concrete_pbr.py
 python3 tools/generate_streaming_road.py --output assets/road/baked_fullwidth_20m_v1 --length 20 --full-width
 ```
 
-输出目录必须不存在；已有有效资产直接复用。需要代理时使用下载工具的`--proxy`参数。生成20 m全宽道路约13.34 GB无损磁盘纹素，运行使用有界GPU缓存，不将所有高清数据一次装入显存。精细网格、颜色与法线供OptiX采集，GZ使用同源概览与视觉几何。详见[全宽道路与恢复步骤](../../docs/STAGE2_FULLWIDTH_ROAD.md)。100 m全宽仍待扩展，历史100 m中央扫描走廊不能冒充全宽。
+输出目录必须不存在；已有有效资产直接复用。需要代理时使用下载工具的`--proxy`参数。生成20 m全宽道路约13.34 GB无损磁盘纹素，运行使用有界GPU缓存，不将所有高清数据一次装入显存。精细网格、颜色与法线供OptiX采集，GZ使用同源概览与视觉几何。详见[全宽道路与恢复步骤](../../docs/archive/stage2/STAGE2_FULLWIDTH_ROAD.md)。100 m全宽仍待扩展，历史100 m中央扫描走廊不能冒充全宽。
 
 ## 缺陷、标线与尺度
 
@@ -28,10 +28,10 @@ python3 tools/generate_streaming_road.py --output assets/road/baked_fullwidth_20
 
 AI原图提供裂缝形态，不是现场采集或尺寸真值。不使用程序随机折线代替裂缝形态；从同源图提取轮廓，生成颜色/法线与真实沟槽。细长分叉主干名义宽0.8–2.0 mm，尖端、分叉并集和最终像素宽度需单独测量。20 m道路使用已确认的分叉版本，仍只有少量模板复用，不代表缺陷训练集足够多样。
 
-当前烘焙0.25 mm/纹素、2048核心＋每边2像素邻域边框。GZ/OptiX共享成像几何；稀疏浅沟槽可使用显式有界碰撞代理，不能将较深坑洞、台阶或坡面任意填平。参考[分叉裂缝](../../docs/STAGE2_BRANCH_CRACK.md)、[碰撞代理](../../docs/STAGE2_COLLISION_PROXY.md)。
+当前烘焙0.25 mm/纹素、2048核心＋每边2像素邻域边框。GZ/OptiX共享成像几何；稀疏浅沟槽可使用显式有界碰撞代理，不能将较深坑洞、台阶或坡面任意填平。参考[分叉裂缝](../../docs/archive/stage2/STAGE2_BRANCH_CRACK.md)、[碰撞代理](../../docs/issues/COLLISION_PROXY.md)。
 
 ## 历史与清理
 
 Brushed/Gravel已停用，保留小型选材报告；其源图和大体积烘焙已删除。`baked_concrete047a_v1`、`baked_pbr_probe_v1`、`baked_shared_road_v1`、`baked_streaming_road_v1`也是历史生成目录，当前本地不再保留。相应文档中的名称是复现输出名，不是现成入口。历史虚线方案也已替换为双黄实线。
 
-完整采集不提交Git，保留与清理范围见[维护审计](../../docs/MAINTENANCE_AUDIT.md)。旧65 kg/16 mm档案及平场仅作历史回归，不能套用当前550 kg/20 mm/v7配置。
+完整采集不提交Git，保留与清理范围见[维护审计](../../docs/archive/integration/MAINTENANCE_AUDIT.md)。旧65 kg/16 mm档案及平场仅作历史回归，不能套用当前550 kg/20 mm/v7配置。

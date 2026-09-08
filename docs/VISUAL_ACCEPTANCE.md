@@ -6,10 +6,10 @@
 
 | 修改内容 | 必查行为 | 现有检查 |
 |---|---|---|
-| 运动分配、转向限位或换道策略 | 直行与横移后正反原地旋转、恢复直行；每轮实际起止角、驱动反向与最短合法分支；限位拒绝原因 | `tools/validate_spin_recovery.py`，C++转向回归；[限位记录](STEERING_SPIN_RECOVERY.md) |
+| 运动分配、转向限位或换道策略 | 直行与横移后正反原地旋转、恢复直行；每轮实际起止角、驱动反向与最短合法分支；限位拒绝原因 | `tools/validate_spin_recovery.py`，C++转向回归；[限位记录](issues/STEERING_SPIN_RECOVERY.md) |
 | 跟车视角或GUI交互 | 实际鼠标拖动被锁定、滚轮缩放保持、车辆移动和掉头后仍在视野内、最终HOLD | `tools/validate_gui_camera.py`；[视角记录](GUI_CAMERA.md) |
-| 地面烘焙、分块或UV映射 | 实际Ogre2渲染的标线位于已知世界坐标；检查双黄线、白边线、板缝及采图对应区域 | `tools/render_road_alignment.py`，共享场景回归；[映射记录](ROAD_DISPLAY_ALIGNMENT.md) |
-| 闭环扫描或预览链路 | GUI＋RViz＋原图归档；实际运动是否弯曲图像、预览分辨率、连续ROI、原图与ROS像素一致 | `tools/validate_rectangle_execution.py --gui --scene ...`，稳定性及覆盖审计；[扫描记录](SCAN_STABILITY.md) |
+| 地面烘焙、分块或UV映射 | 实际Ogre2渲染的标线位于已知世界坐标；检查双黄线、白边线、板缝及采图对应区域 | `tools/render_road_alignment.py`，共享场景回归；[映射记录](issues/ROAD_DISPLAY_ALIGNMENT.md) |
+| 闭环扫描或预览链路 | GUI＋RViz＋原图归档；实际运动是否弯曲图像、预览分辨率、连续ROI、原图与ROS像素一致 | `tools/validate_rectangle_execution.py --gui --scene ...`，稳定性及覆盖审计；[扫描记录](issues/SCAN_STABILITY.md) |
 
 所有会移动车辆的工具须独占速度指令来源，不能与任务执行器同时运行；使用实际仿真时间戳，结束确认停车。演示前明确正在测试哪种动作，避免把停车检查或短暂对轮当作完整运动演示。
 

@@ -1,6 +1,6 @@
 # 融合定位首版误差与时序参数
 
-2026-09-08。用户确定GNSS RTK 10 Hz，FIX水平可信精度2–3 cm、垂直3–5 cm；其余采用下表首版仿真设计。本文件记录参数约定；`localization:=true`已接入测量与双EKF，默认不影响未启用定位的旧演示，见[实现与验收](LOCALIZATION_IMPLEMENTATION.md)。参数不是指定真机设备的性能规格。
+2026-09-08。用户确定GNSS RTK 10 Hz，FIX水平可信精度2–3 cm、垂直3–5 cm；其余采用下表首版仿真设计。本文件记录参数约定；`localization:=true`已接入测量与双EKF，默认不影响未启用定位的旧演示，见[实现与验收](archive/integration/LOCALIZATION_IMPLEMENTATION.md)。参数不是指定真机设备的性能规格。
 
 ## 精度口径与GNSS
 
@@ -64,7 +64,7 @@
 
 采用robot_localization，局部轮速＋IMU EKF 100 Hz，全局加入GNSS的EKF 50 Hz；从首版就采用三维状态估计与地表约束的控制接口（正式架构不锁死z/roll/pitch），只是当前测试地形为平面。高度是接触约束下的估计/规划变量，底盘不能独立升降；坡面和高差后续单独验收。
 
-全局滤波计划启用`smooth_lagged_data=true`、`history_length=1.0 s`，匹配GNSS迟到消息；输出到当前控制时刻的预测、TF时间戳与回放修正均须测试。该参数处理已知测量时刻的迟到数据，不修复错误时间戳，亦不代替异步队列。详见[官方延迟数据处理参数](https://github.com/cra-ros-pkg/robot_localization/blob/rolling-devel/doc/state_estimation_nodes.rst)。
+全局滤波已启用`smooth_lagged_data=true`、`history_length=1.0 s`，匹配GNSS迟到消息；输出到当前控制时刻的预测、TF时间戳与回放修正均须测试。该参数处理已知测量时刻的迟到数据，不修复错误时间戳，亦不代替异步队列。详见[官方延迟数据处理参数](https://github.com/cra-ros-pkg/robot_localization/blob/rolling-devel/doc/state_estimation_nodes.rst)。
 
 用户确认真机已有双GNSS天线，初始航向采用有效双天线相对基线解＋安装外参；IMU完成重力方向初始化并提供高频传播。默认不再依赖人工输入yaw或先行驶求方向。单基线不能单独提供全部三轴姿态。最新安装为尾部x=−0.85 m平台、左右1.10 m基线、顶端名义1.20 m；航向10 Hz、延时50 ms＋σ=5 ms抖动。航向协方差从相对基线及外参传播，不固定指定0.20°；GNSS位置共模误差与相对基线噪声分开建模。详见[三维与航向设计](SURFACE_HEADING_STRIP_DESIGN.md)。
 
@@ -83,3 +83,5 @@
 ## 已实现的接地模型约束
 
 无垂直速度观测的初版在2 s FIX失锁时出现明显高度外推误差。当前新增独立`/localization/contact_velocity`：持续接地条件下车体法向vz≈0，σ=0.02 m/s，模型约束而非编码器直接测量。它不锁定世界Z，三维滤波和沿坡面高度变化接口保留；离地/强悬挂跳动时不适用。开关、实测及边界见[实现说明](../src/agv_localization/README.md)。
+
+全局EKF过程噪声及跟踪反馈的后续调整见[扫描稳定性记录](issues/SCAN_STABILITY.md)；测量噪声精度未降低，扫描闭环仍使用全局融合位姿。运行与参数配置以定位包README及YAML为准。
