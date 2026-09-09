@@ -57,8 +57,8 @@ extern "C" __global__ void __raygen__scan(){
   bool material=!g && params.geometry[0].reflectance[id]==-2.f;
   float albedo=0,roughness=params.roughness;float3 shadingNormal=n;
   if(material){
-   float u=(p.x-params.textureOriginX)/params.textureSpanX,v=(p.y-params.textureOriginY)/params.textureSpanY;
-   if(u<0||u>1||v<0||v>1){valid=false;continue;} // Never silently clamp an uncovered primary ray.
+   float textureU=(p.x-params.textureOriginX)/params.textureSpanX,textureV=(p.y-params.textureOriginY)/params.textureSpanY;
+   if(textureU<0||textureU>1||textureV<0||textureV>1){valid=false;continue;} // Never silently clamp an uncovered primary ray.
    auto color=params.colorTexture,normal=params.normalTexture;
    if(params.tileMap){
     float x=(p.x-params.textureOriginX)/params.tileTexel,y=(p.y-params.textureOriginY)/params.tileTexel;
@@ -67,24 +67,25 @@ extern "C" __global__ void __raygen__scan(){
     int slot=params.tileMap[ty*params.tilesX+tx];if(slot<0){valid=false;continue;}
     auto tile=params.materialTiles[slot];color=tile.color;normal=tile.normal;
     float stride=params.tileCore+2*params.tileGutter;
-    u=(x-tx*params.tileCore+params.tileGutter)/stride;v=(y-ty*params.tileCore+params.tileGutter)/stride;
+    textureU=(x-tx*params.tileCore+params.tileGutter)/stride;textureV=(y-ty*params.tileCore+params.tileGutter)/stride;
    }
-   albedo=tex2D<float>(color,u,v);
+   albedo=tex2D<float>(color,textureU,textureV);
    if(normal){
-    auto xy=tex2D<float2>(normal,u,v);float nx=2*xy.x-1,ny=2*xy.y-1;
+    auto xy=tex2D<float2>(normal,textureU,textureV);float nx=2*xy.x-1,ny=2*xy.y-1;
     auto tangent=make_float3(n.z,0,-n.x);
     if(dot(tangent,tangent)<1e-8f)tangent=make_float3(0,n.z,-n.y);
     tangent=unit(tangent);auto bitangent=cross(n,tangent);
     shadingNormal=unit(add(add(mul(tangent,nx),mul(bitangent,ny)),mul(n,sqrtf(fmaxf(0,1-nx*nx-ny*ny)))));
    }
-   if(params.roughTexture)roughness=fminf(1,fmaxf(.1f,tex2D<float>(params.roughTexture,u,v)));
+   if(params.roughTexture)roughness=fminf(1,fmaxf(.1f,tex2D<float>(params.roughTexture,textureU,textureV)));
   }
   auto delta=sub(p,o);float pf=dot(delta,forward),pa=dot(delta,across),pd=dot(delta,down);
   float total=0,visible=0;
   // Midpoint quadrature on the actual fixture; count can be varied for convergence.
   float tilt=atan2f(sensor.ledForward,sensor.ledHeight);
   for(unsigned l=0;l<params.lampSamples;++l){
-   float ly=-.28f+.56f*(l+.5f)/params.lampSamples;
+   float emittingLength=sensor.ledLength-.04f; // 20 mm unlit end caps, same as URDF exporter.
+   float ly=emittingLength*((l+.5f)/params.lampSamples-.5f);
    auto lamp=add(o,add(mul(forward,sensor.ledForward-.022f*sinf(tilt)),
                  add(mul(across,ly),mul(down,sensor.cameraHeight-sensor.ledHeight+.022f*cosf(tilt)))));
    if(params.lampLink>=0){

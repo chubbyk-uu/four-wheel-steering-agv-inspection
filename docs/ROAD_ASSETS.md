@@ -25,3 +25,6 @@ python3 tools/fix_road_display_uv.py assets/road/baked_fullwidth_20m_v1/manifest
 该迁移不重烘焙高清纹素；完成后重启Gazebo。新生成器已修正。错误原因及实际渲染验证见[UV问题记录](issues/ROAD_DISPLAY_ALIGNMENT.md)。裂缝碰撞边界见[碰撞说明](issues/COLLISION_PROXY.md)。
 
 100×10 m全宽场景仍需后续预算及新版整车验收；历史100 m中央窄走廊与20 m全宽测试不是同一个范围。原始生成预算、旧性能和复现记录保留在[全宽实验](archive/stage2/STAGE2_FULLWIDTH_ROAD.md)、[100 m走廊实验](archive/stage2/STAGE2_STREAMED_ROAD.md)中。
+
+
+2026-09-09维护：旧小试片生成器也采用显式浅凹陷碰撞代理，与全宽生成器统一；不自动修改既有资产。参见[碰撞约束](issues/COLLISION_PROXY.md)。OptiX无灯具连杆的台架回退现在从led_length_m计算发光段，并保留两端各20 mm非发光区；正式整车仍从URDF导出的发光点计算。0.60/1.20 m台架与显式灯具坐标的真实GPU阴影对照已通过。回归数据见[场景护栏](../results/review_scene_guards.json)。

@@ -14,6 +14,7 @@ struct Radiometry {
   bool enabled=false, noise=true;
   float exposure=20e-6f, cameraHeight=.8370535714f;
   float ledHeight=.30f, ledForward=.25f, ledPeak=40;
+  float ledLength=.60f; // Historical fixture default; production loader requires configured length.
   float halfWidth=.85f, halfDepth=.08f;
   float ambient=1, shadowTransmission=.1f;
   float shadowStart=40, shadowEnd=50;
@@ -22,10 +23,10 @@ struct Radiometry {
   float referenceElectrons=10000, fullWell=12000, gain=1, black=4;
   uint32_t seed=1729;
   void Validate() const {
-    const float values[]={exposure,cameraHeight,ledHeight,ledForward,ledPeak,halfWidth,halfDepth,
+    const float values[]={exposure,cameraHeight,ledHeight,ledForward,ledLength,ledPeak,halfWidth,halfDepth,
       ambient,shadowTransmission,shadowStart,shadowEnd,vignette,prnu,readNoise,referenceIrradiance,referenceElectrons,fullWell,gain,black};
     for(float x:values) if(!std::isfinite(x)) throw std::invalid_argument("nonfinite radiometry parameter");
-    if(exposure<=0 || cameraHeight<=0 || ledHeight<=0 || halfWidth<=0 || halfDepth<=0 ||
+    if(exposure<=0 || cameraHeight<=0 || ledHeight<=0 || ledLength<=.04f || halfWidth<=0 || halfDepth<=0 ||
        ledPeak<0 || ambient<0 || shadowTransmission<0 || shadowTransmission>1 || shadowEnd<shadowStart ||
        vignette<0 || vignette>=1 || prnu<0 || prnu>.2f || readNoise<0 || referenceIrradiance<=0 || referenceElectrons<=0 ||
        fullWell<=0 || gain<=0 || black<0 || black>=255)

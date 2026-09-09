@@ -195,3 +195,24 @@ def test_proxy_cannot_silently_remove_large_geometry_or_change_extent(proxy_bund
     elif fault=='undeclared':a.pop('collision_proxy')
     mp.write_text(json.dumps(m))
     with pytest.raises(ValueError,match='proxy|geometry mismatch'):validate(mp)
+
+
+def test_probe_generator_uses_checked_proxy_for_collision(tmp_path):
+    import sys
+    import numpy as np
+    sys.path.insert(0,str(Path(__file__).resolve().parents[3]/'tools'))
+    from generate_textured_scene import write_world
+    from fullwidth_road import collision_mesh
+    vertices=np.array([[0.,-5,0],[10,-5,0],[10,5,0],[0,5,0]])
+    faces=np.array([[0,1,2],[0,2,3]])
+    proxy=collision_mesh(tmp_path,'terrain',vertices,faces)
+    optical=tmp_path/'terrain.obj'
+    optical.write_text('optical geometry is deliberately separate')
+    original=optical.read_bytes()
+    write_world(tmp_path,optical,tmp_path/proxy['mesh'])
+    tree=ET.parse(tmp_path/'world.sdf')
+    assert tree.findtext('.//visual/geometry/mesh/uri')==str(optical)
+    assert tree.findtext('.//collision/geometry/mesh/uri')==str(tmp_path/proxy['mesh'])
+    assert optical.read_bytes()==original and proxy['triangles']==2
+    vertices[0,2]=-.02
+    with pytest.raises(ValueError):collision_mesh(tmp_path,'deep',vertices,faces)

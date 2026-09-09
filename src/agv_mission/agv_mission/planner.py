@@ -49,9 +49,22 @@ class Vehicle:
 
     @classmethod
     def from_configs(cls, platform, camera):
-        # Deliberately explicit: revised body/accessories require a new envelope audit.
-        if abs(platform['body_length'] - 1.9) > 1e-6 or abs(platform['body_width'] - 1.1) > 1e-6:
-            raise PlanningError('vehicle envelope must be revalidated for changed body dimensions')
+        # Audited with the expanded URDF, including articulated wheel envelopes.
+        # Config changes must not silently reuse the 1.5 m operating envelope.
+        dimensions = {'body_length':1.9, 'body_width':1.1, 'wheelbase':1.3,
+                      'track':.94, 'wheel_radius':.2, 'wheel_width':.16,
+                      'base_height':.65, 'body_top_height':1.1,
+                      'gnss_baseline':1.1, 'gnss_top_height':1.2,
+                      'suspension_travel':.05}
+        optics = {'camera_x_m':1.15, 'led_length_m':1.2, 'led_height_m':.30,
+                  'led_forward_offset_m':-.0803847577293368,
+                  'base_nominal_height_m':.65, 'focal_length_m':.020,
+                  'nominal_width_m':1.5, 'pixel_pitch_m':.000007, 'width':4096}
+        for source, expected in ((platform,dimensions),(camera,optics)):
+            for key, value in expected.items():
+                actual=source.get(key)
+                if isinstance(actual,bool) or not isinstance(actual,(int,float)) or not math.isfinite(actual) or abs(actual-value)>1e-9:
+                    raise PlanningError('vehicle envelope must be revalidated for changed '+key)
         polynomial = camera['ray_polynomial']
         # Current optical model must remain monotone, as required by the sensor.
         if polynomial != [0.0, 1.0, 0.0, 0.04]:

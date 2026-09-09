@@ -132,3 +132,16 @@ def test_forward_runout_meets_next_entry_without_reverse(request_data,vehicle):
     for turn in turns:
         assert turn['points'][-1]['pose']==p['tracks'][turn['track_id']]['base_entry_pose']
     assert not any(s['kind']=='ENTRY' for s in p['segments'])
+
+
+@pytest.mark.parametrize('group,key,value', [
+    ('camera','led_length_m',1.8),('camera','camera_x_m',1.5),
+    ('camera','led_forward_offset_m',.2),('platform','wheelbase',1.8),
+    ('platform','gnss_baseline',2.),('platform','body_width',float('nan'))])
+def test_changed_accessories_require_envelope_reaudit(group,key,value):
+    directory=ROOT.parent/'agv_description/config'
+    platform=yaml.safe_load((directory/'platform.yaml').read_text())
+    camera=yaml.safe_load((directory/'linescan.yaml').read_text())
+    (camera if group=='camera' else platform)[key]=value
+    with pytest.raises(PlanningError,match='envelope'):
+        Vehicle.from_configs(platform,camera)

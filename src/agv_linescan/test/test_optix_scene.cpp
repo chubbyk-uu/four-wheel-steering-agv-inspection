@@ -203,3 +203,32 @@ TEST_F(OptixTest, StreamedMaterialSeamsEvictionReverseAndCorruption){
  EXPECT_THROW(gpu->Sample(poses,{away,away,away},33),std::runtime_error);
  EXPECT_EQ(Json::parse(gpu->MaterialStatistics())["slot_pins"],0);
 }
+
+TEST_F(OptixTest, ConfiguredFallbackLampMatchesExplicitEmitters) {
+ // Same finite lamp and shadow caster, represented once through the fixture
+ // fallback and once through explicit robot-local emitter coordinates.
+ sensor.ledPeak=40;
+ const float tilt=std::atan2(sensor.ledForward,sensor.ledHeight);
+ std::vector<float> rays;for(int i=0;i<128;++i)rays.push_back((i-63.5f)/128);
+ Json robot;{std::ifstream f(dir/"robot.json");f>>robot;}
+ for(auto& v:robot["groups"][0]["vertices"]){v[0]=v[0].get<float>()+.20f;v[2]=.15f;}
+ LinkTransform identity={1,0,0,0,0,1,0,0,0,0,1,0};
+ std::vector<uint8_t> previous;
+ for(float length:{.60f,1.20f}) {
+  sensor.ledLength=length;robot.erase("led_emitters");
+  std::ofstream(dir/"robot.json")<<robot;
+  gpu=std::make_unique<OptixScene>(rays,(dir/"scene.json").string(),(dir/"robot.json").string(),AGV_TEST_OPTIX_PTX,16,sensor,8);
+  auto fallback=gpu->Sample(poses,{identity,identity,identity},0).pixels;
+  Json points=Json::array();
+  for(int i=0;i<4;++i)points.push_back({.05f+sensor.ledForward-.022f*std::sin(tilt),
+    .025f+(length-.04f)*((i+.5f)/4-.5f),sensor.ledHeight-.022f*std::cos(tilt)});
+  robot["led_emitters"]={{"link","occluder"},{"positions_m",points}};
+  std::ofstream(dir/"robot.json")<<robot;
+  gpu=std::make_unique<OptixScene>(rays,(dir/"scene.json").string(),(dir/"robot.json").string(),AGV_TEST_OPTIX_PTX,16,sensor,8);
+  auto explicitLamp=gpu->Sample(poses,{identity,identity,identity},0).pixels;
+  ASSERT_EQ(fallback.size(),explicitLamp.size());
+  for(size_t i=0;i<fallback.size();++i)EXPECT_LE(std::abs(int(fallback[i])-int(explicitLamp[i])),1);
+  if(!previous.empty()){EXPECT_NE(previous,fallback);}
+  previous=fallback;
+ }
+}

@@ -40,6 +40,21 @@ def road_geometry(length=10):
     assert np.all(area>0) and abs(area.sum()/2-length*10)<1e-7
     return vertices,faces,stats
 
+def write_world(out,path,collision_path):
+    tree=ET.parse(ROOT/'src/agv_bringup/worlds/flat.sdf');world=tree.getroot().find('world')
+    for m in list(world.findall('model')):world.remove(m)
+    model=ET.SubElement(world,'model',name='terrain');ET.SubElement(model,'static').text='true';link=ET.SubElement(model,'link',name='road')
+    for kind in ('visual','collision'):
+        item=ET.SubElement(link,kind,name=kind);mesh=ET.SubElement(ET.SubElement(item,'geometry'),'mesh')
+        ET.SubElement(mesh,'uri').text=str(path if kind=='visual' else collision_path);ET.SubElement(mesh,'scale').text='1 1 1'
+        if kind=='visual':
+            material=ET.SubElement(item,'material');ET.SubElement(material,'diffuse').text='1 1 1 1'
+            metal=ET.SubElement(ET.SubElement(material,'pbr'),'metal')
+            ET.SubElement(metal,'albedo_map').text=str(out/'display_color.png')
+            ET.SubElement(metal,'normal_map',type='tangent').text=str(out/'display_normal.png')
+            ET.SubElement(metal,'roughness').text='0.60';ET.SubElement(metal,'metalness').text='0'
+    tree.write(out/'world.sdf',encoding='unicode')
+
 def main():
     p=argparse.ArgumentParser();p.add_argument('--output',required=True);a=p.parse_args()
     out=Path(a.output).resolve();out.mkdir(parents=True,exist_ok=False)
@@ -87,24 +102,14 @@ def main():
         n=np.cross(v[f[:,1]]-v[f[:,0]],v[f[:,2]]-v[f[:,0]]);n/=np.linalg.norm(n,axis=1)[:,None]
         np.savetxt(stream,n,fmt='vn %.9f %.9f %.9f')
         for i,face in enumerate(f):stream.write('f '+' '.join(f'{j+1}/{j+1}/{i+1}' for j in face)+'\n')
-    tree=ET.parse(ROOT/'src/agv_bringup/worlds/flat.sdf');world=tree.getroot().find('world')
-    for m in list(world.findall('model')):world.remove(m)
-    model=ET.SubElement(world,'model',name='terrain');ET.SubElement(model,'static').text='true';link=ET.SubElement(model,'link',name='road')
-    for kind in ('visual','collision'):
-        item=ET.SubElement(link,kind,name=kind);mesh=ET.SubElement(ET.SubElement(item,'geometry'),'mesh')
-        ET.SubElement(mesh,'uri').text=str(path);ET.SubElement(mesh,'scale').text='1 1 1'
-        if kind=='visual':
-            material=ET.SubElement(item,'material');ET.SubElement(material,'diffuse').text='1 1 1 1'
-            metal=ET.SubElement(ET.SubElement(material,'pbr'),'metal')
-            ET.SubElement(metal,'albedo_map').text=str(out/'display_color.png')
-            ET.SubElement(metal,'normal_map',type='tangent').text=str(out/'display_normal.png')
-            ET.SubElement(metal,'roughness').text='0.60';ET.SubElement(metal,'metalness').text='0'
-    tree.write(out/'world.sdf',encoding='unicode')
+    from fullwidth_road import collision_mesh
+    proxy=collision_mesh(out,'terrain',v,f)
+    write_world(out,path,out/proxy['mesh'])
     mat=dict(schema='agv.ground_material.xy.v1',width=w,height=h,origin_xy_m=[0,-.8],span_xy_m=[8,1.6],roughness=.60,
              color=dict(file='color.raw',sha256=sha(out/'color.raw')),normal=dict(file='normal.raw',sha256=sha(out/'normal.raw')))
     manifest=dict(schema='agv.shared.static_scene.v1',units='m',frame='world',transform='identity_world_baked',
         profile='textured_road_probe',length_m=10,width_m=10,world='world.sdf',world_sha256=sha(out/'world.sdf'),
-        assets=[dict(name='terrain',mesh=path.name,sha256=sha(path),triangles=len(f),material='ground')],
+        assets=[dict(name='terrain',mesh=path.name,sha256=sha(path),triangles=len(f),material='ground',collision_proxy=proxy)],
         ground_material=mat,display_materials={n:sha(out/n) for n in ('display_color.png','display_normal.png')},
         lane_markings=metadata(10),slab_size_m=[5,5],joint_width_m=.008,joint_depth_m=.003,crack=stats,
         optical_valid_bounds_xy_m=[0,8,-.8,.8],display_texel_m=.004,display_uv='u=x/10; v=1-(y+5)/10; image rows increase with world y',

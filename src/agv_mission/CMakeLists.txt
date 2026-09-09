@@ -7,6 +7,7 @@ install(PROGRAMS scripts/plan_rectangle scripts/track_segment scripts/execute_re
 install(DIRECTORY config DESTINATION share/${PROJECT_NAME})
 if(BUILD_TESTING)
   find_package(ament_cmake_pytest REQUIRED)
+  ament_add_pytest_test(test_envelope test/test_envelope.py)
   ament_add_pytest_test(test_planner test/test_planner.py)
   ament_add_pytest_test(test_preview test/test_preview.py)
   ament_add_pytest_test(test_tracking test/test_tracking.py)

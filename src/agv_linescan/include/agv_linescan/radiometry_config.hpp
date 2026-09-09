@@ -8,6 +8,7 @@ inline Radiometry LoadRadiometry(const YAML::Node& config) {
   c.cameraHeight=config["nominal_width_m"].as<float>()*config["focal_length_m"].as<float>()/
       (config["width"].as<float>()*config["pixel_pitch_m"].as<float>());
   c.ledHeight=config["led_height_m"].as<float>();c.ledForward=config["led_forward_offset_m"].as<float>();
+  c.ledLength=config["led_length_m"].as<float>();
   const auto r=config["radiometry"];
   if(r) {
     c.enabled=r["enabled"].as<bool>(false);c.noise=r["noise"].as<bool>(true);

@@ -1,0 +1,33 @@
+{
+  "maximum_radius_m": 1.245145109567312,
+  "links": {
+    "base_link": 1.1784762407448017,
+    "battery_link": 0.6573431371817918,
+    "gnss_left_link": 1.0825001321437824,
+    "gnss_right_link": 1.0825001321437824,
+    "lidar_left_link": 1.0860018416190647,
+    "lidar_right_link": 1.0860018416190647,
+    "fl_suspension_link": 0.9070005512677486,
+    "fl_steer_link": 0.9240340386085851,
+    "fl_wheel_link": 1.0823633845002976,
+    "fr_suspension_link": 0.9070005512677486,
+    "fr_steer_link": 0.9240340386085851,
+    "fr_wheel_link": 1.0823633845002976,
+    "rl_suspension_link": 0.9070005512677486,
+    "rl_steer_link": 0.9240340386085851,
+    "rl_wheel_link": 1.0823633845002976,
+    "rr_suspension_link": 0.9070005512677486,
+    "rr_steer_link": 0.9240340386085851,
+    "rr_wheel_link": 1.0823633845002976,
+    "camera_link": 1.201499063670047,
+    "led_link": 1.245145109567312
+  },
+  "probe_geometry": {
+    "optical_triangles": 229474,
+    "collision_triangles": 2,
+    "maximum_depth_m": 0.003,
+    "omitted_depression_area_fraction": 0.001656563749999912
+  },
+  "colcon_test_result": "210 tests, 0 errors, 0 failures, 0 skipped",
+  "lamp_validation": "Real OptiX comparison at 0.60/1.20 m fixture lengths, fallback versus explicit emitters: pixel difference <=1 DN, shadow changes with length."
+}

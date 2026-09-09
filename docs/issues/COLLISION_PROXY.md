@@ -62,3 +62,8 @@ bash tools/with_optix_runtime.sh bash -c '
 ```
 
 输出目录必须不存在；原始精细试片不修改，大纹理不重复烘焙。包装脚本仅用于项目实验性WSL运行库；普通Linux正确配置原生OptiX运行库后可直接执行ROS环境内的Python命令。
+
+
+## 2026-09-09：试片工具入口统一
+
+`generate_textured_scene.py`现在与`generate_streaming_road.py --full-width`复用同一个受校验代理生成函数，manifest显式记录collision_proxy。只替换物理接触网格，颜色/法线、光学沟槽及OptiX输入不变。重新生成旧试片几何得到229,474个光学三角形，代理2个三角形，最大凹深3 mm，省略凹陷投影比例约0.1657%，通过既有3 mm/1%约束。未重新烘焙大纹理，也未将旧355,562三角形试片的0.82实时率套用到它。已有资产不会被自动覆盖；生成器修复影响后续生成。
