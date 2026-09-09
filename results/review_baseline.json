@@ -223,5 +223,53 @@
       "rr"
     ]
   },
-  "image_observation": "Four full raw blocks inspected at 512 px overview; markings continuous, no obvious missing-line band. Not a subpixel stability certificate."
+  "image_observation": "Four full raw blocks inspected at 512 px overview; markings continuous, no obvious missing-line band. Not a subpixel stability certificate.",
+  "rectangle_motion_image_metrics": {
+    "elapsed_motion_sim_s": 55.882000000000005,
+    "state_time_sim_s": {
+      "PREP": 0.14099999999999646,
+      "ALIGNING": 12.857,
+      "RUNNING": 40.08500000000001,
+      "STOPPING": 2.8189999999999955
+    },
+    "xy_truth_rmse_m": 0.008220564311264982,
+    "xy_truth_error_max_m": 0.032285008632795945,
+    "yaw_truth_rmse_deg": 0.18759044353201798,
+    "global_xy_update_jump_p99_mm": 12.182572631920307,
+    "full_block_geometry": [
+      {
+        "lateral_nonlinearity_mm": 1.4258556153358137,
+        "block_id": 0,
+        "track_id": 0,
+        "lateral_span_mm": 8.066542368362962,
+        "heading_span_deg": 0.06983642342329242
+      },
+      {
+        "lateral_nonlinearity_mm": 0.3635970686554635,
+        "block_id": 1,
+        "track_id": 0,
+        "lateral_span_mm": 1.098855104831764,
+        "heading_span_deg": 0.001416837142897524
+      },
+      {
+        "lateral_nonlinearity_mm": 4.202888793458981,
+        "block_id": 4,
+        "track_id": 1,
+        "lateral_span_mm": 14.410095003591362,
+        "heading_span_deg": 0.0007556074475313324
+      },
+      {
+        "lateral_nonlinearity_mm": 1.5721191392085165,
+        "block_id": 5,
+        "track_id": 1,
+        "lateral_span_mm": 5.078865483193695,
+        "heading_span_deg": 0.00042519517064259214
+      }
+    ],
+    "full_block_lateral_span_median_mm": 6.572703925778328,
+    "full_block_lateral_nonlinearity_median_mm": 1.4989873772721651,
+    "full_block_heading_span_median_deg": 0.0010862222952144282,
+    "pass_reverse_command_samples": 0,
+    "entry_steps": 0
+  }
 }

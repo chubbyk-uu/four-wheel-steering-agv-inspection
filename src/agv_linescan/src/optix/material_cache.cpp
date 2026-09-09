@@ -1,13 +1,10 @@
 #include "material_cache.h"
-#include <openssl/sha.h>
+#include "verified_tile_file.h"
 #include <algorithm>
 #include <array>
 #include <chrono>
 #include <condition_variable>
-#include <fstream>
-#include <iomanip>
 #include <mutex>
-#include <sstream>
 #include <thread>
 using Json=nlohmann::json;
 namespace agv_linescan {
@@ -27,6 +24,9 @@ struct MaterialCache::Impl {
  mutable std::mutex mutex;std::condition_variable changed,wake;std::thread worker;
  bool stop=false,warmed=false;std::exception_ptr error;
  size_t loads=0,bytes=0,misses=0,evictions=0;double maxLoad=0,totalLoad=0,maxWait=0,warmSeconds=0;
+ VerifiedTileReader reader;
+ size_t hashBytes=0,verificationHits=0;
+ double readTotal=0,readMax=0,hashTotal=0,hashMax=0,uploadTotal=0,uploadMax=0;
  ~Impl(){
   {std::lock_guard<std::mutex> lock(mutex);stop=true;}wake.notify_all();
   if(worker.joinable())worker.join();
@@ -50,13 +50,10 @@ struct MaterialCache::Impl {
    b[0]=std::min(b[0],x);b[1]=std::max(b[1],x);b[2]=std::min(b[2],y);b[3]=std::max(b[3],y);
   }return b;
  }
- void Read(const Json& e,unsigned char* data,size_t count){
-  auto name=e.at("file").get<std::string>();auto file=root/name;
+ VerifiedTileReader::Result Read(const Json& e,unsigned char* data,size_t count){
+  auto name=e.at("file").get<std::string>();
   if(std::filesystem::path(name).is_absolute()||std::filesystem::path(name).has_parent_path())throw std::runtime_error("tile path must be a local filename");
-  std::ifstream f(file,std::ios::binary);f.read((char*)data,count);
-  if(size_t(f.gcount())!=count||f.peek()!=std::char_traits<char>::eof())throw std::runtime_error("tile missing/truncated: "+name);
-  unsigned char hash[32];SHA256(data,count,hash);std::ostringstream s;for(auto v:hash)s<<std::hex<<std::setw(2)<<std::setfill('0')<<int(v);
-  if(s.str()!=e.at("sha256"))throw std::runtime_error("tile checksum mismatch: "+name);
+  return reader.Read(root/name,e.at("sha256").get<std::string>(),data,count);
  }
  void Worker(){try{
   Check(cudaSetDevice(device));size_t plane=size_t(stride)*stride;
@@ -68,12 +65,20 @@ struct MaterialCache::Impl {
      return false;});
     if(stop)return;if(slots[slot].state)++evictions;slots[slot]={key,1,0};
    }
-   auto start=Clock::now();Read(entries[key].at("color"),staging,plane);Read(entries[key].at("normal"),staging+plane,plane*2);
+   auto start=Clock::now();auto colorTime=Read(entries[key].at("color"),staging,plane);auto normalTime=Read(entries[key].at("normal"),staging+plane,plane*2);
+   auto uploadStart=Clock::now();
    Check(cudaMemcpy2DToArrayAsync(arrays[2*slot],0,0,staging,stride,stride,stride,cudaMemcpyHostToDevice,upload));
    Check(cudaMemcpy2DToArrayAsync(arrays[2*slot+1],0,0,staging+plane,stride*2,stride*2,stride,cudaMemcpyHostToDevice,upload));
    Check(cudaStreamSynchronize(upload)); // Ready only after both complete; sampling uses another stream.
+   double uploadElapsed=Seconds(Clock::now()-uploadStart);
+   double readElapsed=colorTime.read_seconds+normalTime.read_seconds,hashElapsed=colorTime.hash_seconds+normalTime.hash_seconds;
    double elapsed=Seconds(Clock::now()-start);
-   {std::lock_guard<std::mutex> lock(mutex);slots[slot].state=2;++loads;bytes+=plane*3;maxLoad=std::max(maxLoad,elapsed);totalLoad+=elapsed;}
+   {std::lock_guard<std::mutex> lock(mutex);slots[slot].state=2;++loads;bytes+=plane*3;maxLoad=std::max(maxLoad,elapsed);totalLoad+=elapsed;
+    hashBytes+=(colorTime.hashed?plane:0)+(normalTime.hashed?plane*2:0);
+    verificationHits+=!colorTime.hashed;verificationHits+=!normalTime.hashed;
+    readTotal+=readElapsed;readMax=std::max(readMax,readElapsed);
+    hashTotal+=hashElapsed;hashMax=std::max(hashMax,hashElapsed);
+    uploadTotal+=uploadElapsed;uploadMax=std::max(uploadMax,uploadElapsed);}
    changed.notify_all();
   }
  }catch(...){std::lock_guard<std::mutex> lock(mutex);error=std::current_exception();changed.notify_all();}}
@@ -129,5 +134,5 @@ void MaterialCache::Begin(const std::vector<GridExposure>& poses,cudaStream_t st
 }
 void MaterialCache::End()noexcept{auto& s=*impl_;if(s.sampling)cudaStreamSynchronize(s.sampling);{std::lock_guard<std::mutex> lock(s.mutex);for(int i:s.pinned)--s.slots[i].pins;s.pinned.clear();}s.wake.notify_one();}
 size_t MaterialCache::Bytes()const{const auto& s=*impl_;return s.slots.size()*(size_t(s.stride)*s.stride*3+sizeof(MaterialTile))+size_t(s.nx)*s.ny*sizeof(int);}
-std::string MaterialCache::Statistics()const{auto& s=*impl_;std::lock_guard<std::mutex> lock(s.mutex);return Json{{"cache_slots",s.slots.size()},{"tile_loads",s.loads},{"evictions",s.evictions},{"required_tile_misses_after_warm",s.misses},{"bytes_read",s.bytes},{"load_seconds_max",s.maxLoad},{"load_seconds_total",s.totalLoad},{"batch_wait_seconds_max",s.maxWait},{"cold_warm_seconds",s.warmSeconds},{"device_payload_bytes",Bytes()},{"slot_pins",s.pinned.size()}}.dump();}
+std::string MaterialCache::Statistics()const{auto& s=*impl_;std::lock_guard<std::mutex> lock(s.mutex);return Json{{"cache_slots",s.slots.size()},{"tile_loads",s.loads},{"evictions",s.evictions},{"required_tile_misses_after_warm",s.misses},{"bytes_read",s.bytes},{"load_seconds_max",s.maxLoad},{"load_seconds_total",s.totalLoad},{"read_seconds_total",s.readTotal},{"read_seconds_max",s.readMax},{"sha256_bytes",s.hashBytes},{"verification_reuse_files",s.verificationHits},{"sha256_seconds_total",s.hashTotal},{"sha256_seconds_max",s.hashMax},{"upload_seconds_total",s.uploadTotal},{"upload_seconds_max",s.uploadMax},{"batch_wait_seconds_max",s.maxWait},{"cold_warm_seconds",s.warmSeconds},{"device_payload_bytes",Bytes()},{"slot_pins",s.pinned.size()}}.dump();}
 }
