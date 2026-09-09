@@ -44,3 +44,8 @@ ros2 service call /mission/pause std_srvs/srv/Trigger '{}'
 ros2 service call /mission/resume std_srvs/srv/Trigger '{}'
 ros2 service call /mission/cancel std_srvs/srv/Trigger '{}'
 ```
+
+
+补扫使用审计输出的`rescan_*.yaml`作为新的`request`，启动新的执行器与输出目录；先确认旧执行器已退出、车辆HOLD、定位与相机恢复健康，保持唯一cmd_vel发布者。FAULT不会因生成补扫请求而自动恢复。实际初始位姿仍经过执行器接近路径检查，候选规划通过不意味着任意停车位置都能直接接入。
+
+回归工具可用`tools/validate_rectangle_execution.py --gui --profile normal --scene ... --request .../rescan_000.yaml --output ...`复现补扫；它启动独立仿真实例，不代表故障进程原地无缝恢复。

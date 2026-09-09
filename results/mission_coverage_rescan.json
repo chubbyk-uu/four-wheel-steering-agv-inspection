@@ -1,0 +1,500 @@
+{
+  "schema": "agv.validation.coverage_rescan.v1",
+  "date": "2026-09-09",
+  "scope": "Flat-road sparse fused-pose coverage audit and independently validated rescan requests; no truth-pose credit.",
+  "cases": {
+    "moving_localization_fault_20260909_v2": {
+      "status": "NEEDS_RESCAN",
+      "tracks": [
+        {
+          "track_id": 0,
+          "direction": 1,
+          "assigned_road_y_m": [
+            -1.0,
+            0.0
+          ],
+          "estimated_covered_along_m": [
+            [
+              0.0,
+              0.7907343182183363
+            ]
+          ],
+          "unverified_along_m": [
+            [
+              0.7907343182183363,
+              3.0
+            ]
+          ],
+          "excluded_footprint_tags": 1,
+          "max_lateral_allowance_m": 0.286439837377903,
+          "quality_flags": [
+            "UNCERTAINTY_EXCEEDS_OVERLAP"
+          ]
+        },
+        {
+          "track_id": 1,
+          "direction": -1,
+          "assigned_road_y_m": [
+            0.0,
+            1.0
+          ],
+          "estimated_covered_along_m": [],
+          "unverified_along_m": [
+            [
+              0.0,
+              3.0
+            ]
+          ],
+          "excluded_footprint_tags": 0,
+          "max_lateral_allowance_m": null,
+          "quality_flags": [
+            "NO_CAPTURE_EVIDENCE"
+          ]
+        }
+      ],
+      "provenance": {
+        "plan_sha256": "33b2050f735a8fe236621893df842045429febd67bf2d4f8d53b6b3fb55bf88b",
+        "navigation_sha256": "361dc8627a5d73c7505601ee7b94d8fb6d29f2d4578488302b152091e46c55af",
+        "navigation_calibration_sha256": "d231ec9a166c16bff3434b072e2f71369d42376ab20dc47d18539888763996ae"
+      },
+      "input_blocks": 1,
+      "issues_count": 0,
+      "candidates": [
+        {
+          "source_track_id": 0,
+          "source_along_m": [
+            0.6907343182183363,
+            3.0
+          ],
+          "status": "PREVIEW_ONLY",
+          "request": {
+            "coverage_error_m": 0.1,
+            "drivable_bounds_xy_m": [
+              0.0,
+              20.0,
+              -5.0,
+              5.0
+            ],
+            "longitudinal_margin_m": 0.1,
+            "mission_id": "rectangle_execution_trial_rescan_000",
+            "optical_bounds_xy_m": [
+              -1.024,
+              21.504,
+              -6.144,
+              6.144
+            ],
+            "region": {
+              "start_xy_m": [
+                6.690734318218336,
+                -1.0
+              ],
+              "length_m": 2.309265681781664,
+              "width_m": 1.0
+            },
+            "road": {
+              "frame_id": "map",
+              "origin_xyz_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "surface": "flat",
+              "yaw_rad": 0.0
+            },
+            "sample_step_m": 0.1,
+            "scan_speed_m_s": 0.5,
+            "schema": "agv.rectangle.request.v1",
+            "track_spacing_m": 1.0,
+            "vehicle_sweep_radius_m": 1.5
+          }
+        },
+        {
+          "source_track_id": 1,
+          "source_along_m": [
+            0.0,
+            3.0
+          ],
+          "status": "PREVIEW_ONLY",
+          "request": {
+            "coverage_error_m": 0.1,
+            "drivable_bounds_xy_m": [
+              0.0,
+              20.0,
+              -5.0,
+              5.0
+            ],
+            "longitudinal_margin_m": 0.1,
+            "mission_id": "rectangle_execution_trial_rescan_001",
+            "optical_bounds_xy_m": [
+              -1.024,
+              21.504,
+              -6.144,
+              6.144
+            ],
+            "region": {
+              "start_xy_m": [
+                6.0,
+                0.0
+              ],
+              "length_m": 3.0,
+              "width_m": 1.0
+            },
+            "road": {
+              "frame_id": "map",
+              "origin_xyz_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "surface": "flat",
+              "yaw_rad": 0.0
+            },
+            "sample_step_m": 0.1,
+            "scan_speed_m_s": 0.5,
+            "schema": "agv.rectangle.request.v1",
+            "track_spacing_m": 1.0,
+            "vehicle_sweep_radius_m": 1.5
+          }
+        }
+      ]
+    },
+    "moving_camera_fault_20260909_v2": {
+      "status": "NEEDS_RESCAN",
+      "tracks": [
+        {
+          "track_id": 0,
+          "direction": 1,
+          "assigned_road_y_m": [
+            -1.0,
+            0.0
+          ],
+          "estimated_covered_along_m": [
+            [
+              0.0,
+              0.7567408901469049
+            ]
+          ],
+          "unverified_along_m": [
+            [
+              0.7567408901469049,
+              3.0
+            ]
+          ],
+          "excluded_footprint_tags": 0,
+          "max_lateral_allowance_m": 0.1443117034243515,
+          "quality_flags": []
+        },
+        {
+          "track_id": 1,
+          "direction": -1,
+          "assigned_road_y_m": [
+            0.0,
+            1.0
+          ],
+          "estimated_covered_along_m": [],
+          "unverified_along_m": [
+            [
+              0.0,
+              3.0
+            ]
+          ],
+          "excluded_footprint_tags": 0,
+          "max_lateral_allowance_m": null,
+          "quality_flags": [
+            "NO_CAPTURE_EVIDENCE"
+          ]
+        }
+      ],
+      "provenance": {
+        "plan_sha256": "33b2050f735a8fe236621893df842045429febd67bf2d4f8d53b6b3fb55bf88b",
+        "navigation_sha256": "918d0a4474bff8ddb6ff304228936979fc10382ebeba94785e8d5fe32110dd3e",
+        "navigation_calibration_sha256": "d231ec9a166c16bff3434b072e2f71369d42376ab20dc47d18539888763996ae"
+      },
+      "input_blocks": 1,
+      "issues_count": 0,
+      "candidates": [
+        {
+          "source_track_id": 0,
+          "source_along_m": [
+            0.656740890146905,
+            3.0
+          ],
+          "status": "PREVIEW_ONLY",
+          "request": {
+            "coverage_error_m": 0.1,
+            "drivable_bounds_xy_m": [
+              0.0,
+              20.0,
+              -5.0,
+              5.0
+            ],
+            "longitudinal_margin_m": 0.1,
+            "mission_id": "rectangle_execution_trial_rescan_000",
+            "optical_bounds_xy_m": [
+              -1.024,
+              21.504,
+              -6.144,
+              6.144
+            ],
+            "region": {
+              "start_xy_m": [
+                6.656740890146905,
+                -1.0
+              ],
+              "length_m": 2.3432591098530953,
+              "width_m": 1.0
+            },
+            "road": {
+              "frame_id": "map",
+              "origin_xyz_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "surface": "flat",
+              "yaw_rad": 0.0
+            },
+            "sample_step_m": 0.1,
+            "scan_speed_m_s": 0.5,
+            "schema": "agv.rectangle.request.v1",
+            "track_spacing_m": 1.0,
+            "vehicle_sweep_radius_m": 1.5
+          }
+        },
+        {
+          "source_track_id": 1,
+          "source_along_m": [
+            0.0,
+            3.0
+          ],
+          "status": "PREVIEW_ONLY",
+          "request": {
+            "coverage_error_m": 0.1,
+            "drivable_bounds_xy_m": [
+              0.0,
+              20.0,
+              -5.0,
+              5.0
+            ],
+            "longitudinal_margin_m": 0.1,
+            "mission_id": "rectangle_execution_trial_rescan_001",
+            "optical_bounds_xy_m": [
+              -1.024,
+              21.504,
+              -6.144,
+              6.144
+            ],
+            "region": {
+              "start_xy_m": [
+                6.0,
+                0.0
+              ],
+              "length_m": 3.0,
+              "width_m": 1.0
+            },
+            "road": {
+              "frame_id": "map",
+              "origin_xyz_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "surface": "flat",
+              "yaw_rad": 0.0
+            },
+            "sample_step_m": 0.1,
+            "scan_speed_m_s": 0.5,
+            "schema": "agv.rectangle.request.v1",
+            "track_spacing_m": 1.0,
+            "vehicle_sweep_radius_m": 1.5
+          }
+        }
+      ]
+    },
+    "pause_resume_20260909_v5": {
+      "status": "NEEDS_RESCAN",
+      "tracks": [
+        {
+          "track_id": 0,
+          "direction": 1,
+          "assigned_road_y_m": [
+            -1.0,
+            0.0
+          ],
+          "estimated_covered_along_m": [
+            [
+              0.0,
+              3.0
+            ]
+          ],
+          "unverified_along_m": [],
+          "excluded_footprint_tags": 0,
+          "max_lateral_allowance_m": 0.17508838106276864,
+          "quality_flags": []
+        },
+        {
+          "track_id": 1,
+          "direction": -1,
+          "assigned_road_y_m": [
+            0.0,
+            1.0
+          ],
+          "estimated_covered_along_m": [],
+          "unverified_along_m": [
+            [
+              0.0,
+              3.0
+            ]
+          ],
+          "excluded_footprint_tags": 12,
+          "max_lateral_allowance_m": 0.32644961635181985,
+          "quality_flags": [
+            "UNCERTAINTY_EXCEEDS_OVERLAP"
+          ]
+        }
+      ],
+      "provenance": {
+        "plan_sha256": "33b2050f735a8fe236621893df842045429febd67bf2d4f8d53b6b3fb55bf88b",
+        "navigation_sha256": "eac3ed1863f3f9f9d17c6d64b94fb8c865e2feee9e7e66ad8f41a3d4bab57fa7",
+        "navigation_calibration_sha256": "d231ec9a166c16bff3434b072e2f71369d42376ab20dc47d18539888763996ae"
+      },
+      "input_blocks": 6,
+      "issues_count": 0,
+      "candidates": [
+        {
+          "source_track_id": 1,
+          "source_along_m": [
+            0.0,
+            3.0
+          ],
+          "status": "PREVIEW_ONLY",
+          "request": {
+            "coverage_error_m": 0.1,
+            "drivable_bounds_xy_m": [
+              0.0,
+              20.0,
+              -5.0,
+              5.0
+            ],
+            "longitudinal_margin_m": 0.1,
+            "mission_id": "rectangle_execution_trial_rescan_000",
+            "optical_bounds_xy_m": [
+              -1.024,
+              21.504,
+              -6.144,
+              6.144
+            ],
+            "region": {
+              "start_xy_m": [
+                6.0,
+                0.0
+              ],
+              "length_m": 3.0,
+              "width_m": 1.0
+            },
+            "road": {
+              "frame_id": "map",
+              "origin_xyz_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "surface": "flat",
+              "yaw_rad": 0.0
+            },
+            "sample_step_m": 0.1,
+            "scan_speed_m_s": 0.5,
+            "schema": "agv.rectangle.request.v1",
+            "track_spacing_m": 1.0,
+            "vehicle_sweep_radius_m": 1.5
+          }
+        }
+      ]
+    },
+    "rescan_candidate_20260909": {
+      "status": "ESTIMATED_COMPLETE",
+      "tracks": [
+        {
+          "track_id": 0,
+          "direction": 1,
+          "assigned_road_y_m": [
+            -1.0,
+            0.0
+          ],
+          "estimated_covered_along_m": [
+            [
+              0.0,
+              2.309265681781664
+            ]
+          ],
+          "unverified_along_m": [],
+          "excluded_footprint_tags": 0,
+          "max_lateral_allowance_m": 0.17250606506185034,
+          "quality_flags": []
+        }
+      ],
+      "provenance": {
+        "plan_sha256": "cc4910b2a1fc0eefcdca174cebeb1c1cbd6cdf4ae43e37b6ec654fbd3468a392",
+        "navigation_sha256": "1e959719e6012497462066baff9297328920e6b4cb0be9e31d17bc2d3cdef525",
+        "navigation_calibration_sha256": "d231ec9a166c16bff3434b072e2f71369d42376ab20dc47d18539888763996ae"
+      },
+      "input_blocks": 2,
+      "issues_count": 0,
+      "candidates": []
+    }
+  },
+  "rescan_gui": {
+    "passed": true,
+    "profile": "normal",
+    "gui_rviz": true,
+    "region_m": [
+      2.309265681781664,
+      1.0
+    ],
+    "track_spacing_m": 0.0,
+    "wheel_steering_range_rad": {
+      "fl": [
+        -0.22221882848200386,
+        0.009655819159839164
+      ],
+      "fr": [
+        -0.22247244521097365,
+        0.009643278907222672
+      ],
+      "rl": [
+        -0.22089929121953789,
+        0.00794144269512515
+      ],
+      "rr": [
+        -0.22099708788831407,
+        0.007931867200190772
+      ]
+    },
+    "capture": [
+      {
+        "track_id": 0,
+        "blocks": 2,
+        "rows": 7253,
+        "truth_along_extent_m": [
+          -0.23532187465863696,
+          2.4204328838728255
+        ],
+        "continuous_roi": true
+      }
+    ]
+  },
+  "limitations": [
+    "Only the first fault-generated candidate was executed; second track remains uncollected.",
+    "No automatic fault restart or cross-session coverage merge.",
+    "ESTIMATED_COMPLETE applies only to the individual rescan request and declared sparse-motion assumptions.",
+    "Large propagated EKF uncertainty can leave existing imagery unverified; this is not proof of missing pixels.",
+    "GUI validation at 0.5 m/s, not 10 km/h or 11 kHz throughput acceptance."
+  ],
+  "tests": {
+    "command": "colcon test && colcon test-result --verbose",
+    "tests": 239,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0
+  }
+}
