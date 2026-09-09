@@ -139,9 +139,15 @@ def setup(context):
     if LaunchConfiguration('rviz').perform(context).lower() == 'true':
         actions.append(Node(package='agv_bringup', executable='visualization_tf.py',
                             parameters=[{'use_sim_time': True}], output='screen'))
-        actions.append(Node(package='rviz2', executable='rviz2', name='agv_rviz',
+        rviz_node=Node(package='rviz2', executable='rviz2', name='agv_rviz',
                             arguments=['-d', str(bringup/'config/inspection.rviz')],
-                            parameters=[{'use_sim_time': True}], remappings=[('/tf','/visualization/tf')], output='screen'))
+                            parameters=[{'use_sim_time': True}], remappings=[('/tf','/visualization/tf')], output='screen')
+        if not headless and LaunchConfiguration('gpu_backend').perform(context)=='d3d12':
+            # Stagger the two WSLg graphics clients; do not race their startup
+            # context creation. Controller failure still shuts down the launch.
+            actions.append(RegisterEventHandler(OnProcessExit(target_action=spawner,
+                on_exit=lambda event,context:[rviz_node] if event.returncode==0 else [])))
+        else:actions.append(rviz_node)
     if not headless and LaunchConfiguration('follow_camera').perform(context).lower() == 'true':
         actions.append(Node(package='agv_bringup', executable='follow_camera.py', output='screen'))
     actions.append(SetEnvironmentVariable('GZ_GUI_PLUGIN_PATH', str(Path(get_package_prefix('agv_bringup'))/'lib') + os.pathsep + os.environ.get('GZ_GUI_PLUGIN_PATH','')))

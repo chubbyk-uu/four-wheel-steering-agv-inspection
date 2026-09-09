@@ -23,6 +23,7 @@ from .preview import messages,coverage_messages
 from .execution_node import Executor
 from .capture_audit import audit_capture
 from .coverage import combine
+from .road_display import road_messages
 
 TERMINAL={'ACQUIRED','COMPLETED','CANCELED','FAULT'}
 
@@ -51,16 +52,19 @@ class Operator(Node):
         self.request['region'].update(start_xy_m=[6.,-1.],length_m=3.,width_m=2.)
         self.request['coverage_error_m']=.1;self.request['mission_id']='inspection'
         self.last_preview_wall=0.;self.response_id='';self.preview=None;self.coverage=None;self.message='请设置区域并预览轨迹';self.ok=True
-        self.block_keys=set();self.captured_rows=0;self.coverage_sent=None
+        self.last_image=None;self.block_keys=set();self.captured_rows=0;self.coverage_sent=None
         self.create_subscription(String,'/linescan/block_metadata',self.on_block,20)
         self.root=Path(self.declare_parameter('output_root','local_data/operator').value)
         self.navigation=Path(self.declare_parameter('navigation_dir','').value)
+        road_path=self.declare_parameter('road_display','').value
+        self.road=json.loads(Path(road_path).read_text()) if road_path else None
         self.pool=ThreadPoolExecutor(max_workers=1);self.ids=set();self.mode='';self.mode_wall=0.
         self.create_subscription(String,'/motion_state',self.motion,10)
         self.create_subscription(String,'/mission/status',lambda m:setattr(self,'last',json.loads(m.data)),20)
         self.create_subscription(String,'/mission/operator/request',self.receive,10)
         qos=QoSProfile(depth=1,durability=DurabilityPolicy.TRANSIENT_LOCAL)
         self.pub=self.create_publisher(String,'/mission/operator/state',qos)
+        self.road_pub=self.create_publisher(MarkerArray,'/mission/road/markers',qos)
         self.coverage_pub=self.create_publisher(MarkerArray,'/mission/coverage/markers',qos)
         self.path_pub=self.create_publisher(NavPath,'/mission/preview/base_path',qos)
         self.marker_pub=self.create_publisher(MarkerArray,'/mission/preview/markers',qos)
@@ -70,6 +74,7 @@ class Operator(Node):
     def on_block(self,msg):
         if not self.child:return
         value=json.loads(msg.data);key=value['last']['time_s']
+        self.last_image={k:value[k] for k in ('width','rows','end_reason')}
         if key not in self.block_keys:self.block_keys.add(key);self.captured_rows+=value['rows']
     def motion(self,m):self.mode=m.data;self.mode_wall=time.monotonic()
     def stopped(self):return self.mode=='HOLD' and time.monotonic()-self.mode_wall<.5
@@ -96,11 +101,9 @@ class Operator(Node):
             if action=='load':
                 candidate=yaml.safe_load(Path(command['path']).read_text());plan(candidate,self.vehicle)
                 if candidate['road']['frame_id']!='map':raise ValueError('执行任务必须使用map坐标系')
-                if candidate['scan_speed_m_s']>.8:raise ValueError('当前巡检入口采集限速0.8 m/s')
                 self.release();self.request=candidate;self.preview=None;self.clear_preview();self.message='已载入，请预览轨迹'
             elif action in ('preview','save','prepare'):
                 candidate=edited_request(self.request,command.get('fields',{}));preview=plan(candidate,self.vehicle)
-                if candidate['scan_speed_m_s']>.8:raise ValueError('当前巡检入口采集限速0.8 m/s；已验证基线0.5 m/s')
                 if action=='save':
                     with Path(command['path']).open('x') as f:yaml.safe_dump(candidate,f,sort_keys=False,allow_unicode=True)
                     self.message='请求已保存'
@@ -116,7 +119,7 @@ class Operator(Node):
                     folder=self.root/(time.strftime('%Y%m%d_%H%M%S')+'_'+uuid.uuid4().hex[:6]);folder.mkdir(parents=True)
                     request_path=folder/'request.yaml';request_path.write_text(yaml.safe_dump(candidate))
                     self.child=Executor(parameter_overrides=[Parameter('use_sim_time',value=self.get_parameter('use_sim_time').value),Parameter('request',value=str(request_path)),Parameter('output_dir',value=str(folder/'mission')),Parameter('capture',value=True)])
-                    self.block_keys=set();self.captured_rows=0;self.coverage=None;self.executor.add_node(self.child);self.message='任务已准备；定位连续就绪后可开始'
+                    self.last_image=None;self.block_keys=set();self.captured_rows=0;self.coverage=None;self.executor.add_node(self.child);self.message='任务已准备；定位连续就绪后可开始'
             elif action=='audit':
                 if not self.child or self.child.state not in TERMINAL:raise ValueError('请等待本任务结束或取消后再审计')
                 directory=self.child.output;output=directory.parent/('audit_'+uuid.uuid4().hex[:6])
@@ -148,6 +151,7 @@ class Operator(Node):
         path,markers=messages(self.preview,Time());self.path_pub.publish(path);self.marker_pub.publish(markers)
     def tick(self):
         if time.monotonic()-self.last_preview_wall>1.:
+            if self.road:self.road_pub.publish(road_messages(self.road))
             if self.preview:self.show_preview()
             if self.coverage:self.coverage_pub.publish(coverage_messages(self.coverage,Time()))
             self.last_preview_wall=time.monotonic()
@@ -171,14 +175,14 @@ class Operator(Node):
                 clear=Marker(action=Marker.DELETEALL);clear.header.frame_id='map';self.coverage_pub.publish(MarkerArray(markers=[clear]))
             self.coverage_sent=self.coverage
         status=dict(self.last)
-        status.update(captured_blocks=len(self.block_keys),captured_rows=self.captured_rows)
+        status.update(captured_blocks=len(self.block_keys),captured_rows=self.captured_rows,last_image=self.last_image)
         if self.child:
             if self.child.state=='READY' and self.child.capture.active is None and self.child.capture.future is None and self.child.capture.client.service_is_ready():
                 self.child.capture.request(False,reason='operator_prepare')
             status['state']=self.child.state
             status['ready_to_start']=self.child.state=='READY' and self.child.ready_since is not None and time.monotonic()-self.child.ready_since>=self.child.cfg['initial_ready_hold_s']
         else:status={'state':'IDLE'}
-        self.pub.publish(String(data=json.dumps(dict(response_id=self.response_id,request=self.request,preview_valid=self.preview is not None,editable=self.editable(),busy=bool(self.pending or self.job),ok=self.ok,message=self.message,status=status,coverage=self.coverage))))
+        self.pub.publish(String(data=json.dumps(dict(max_requested_speed_m_s=self.platform['max_speed'],response_id=self.response_id,request=self.request,preview_valid=self.preview is not None,editable=self.editable(),busy=bool(self.pending or self.job),ok=self.ok,message=self.message,status=status,coverage=self.coverage))))
     def close(self):
         self.release();self.pool.shutdown(wait=True);self.destroy_node()
 

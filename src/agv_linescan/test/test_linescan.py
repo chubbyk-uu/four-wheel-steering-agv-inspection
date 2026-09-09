@@ -111,6 +111,7 @@ def test_pose_slerp_and_plane_visibility(config):
 
 def test_blocks_no_duplicate_and_last_tag(config):
     config['block_rows'] = 8
+    config['min_tail_rows'] = 0
     camera = Camera(config)
     emitted = []
     blocks = Blocks(camera, lambda im, meta: emitted.append((im, meta)))
@@ -131,3 +132,28 @@ def test_exposure_integrates_motion(config):
     a[0][0], b[0][0] = 1-config['camera_x_m']-.002, 1-config['camera_x_m']+.002
     pixels, _ = camera.expose(a, b)
     assert np.any((pixels > config['grid_dark']) & (pixels < config['grid_light']))
+
+
+def test_short_tails_are_omitted_with_explicit_gap_event(config):
+    config['block_rows']=4096;config['min_tail_rows']=1000
+    camera=Camera(config);emitted=[];events=[]
+    blocks=Blocks(camera,lambda im,meta:emitted.append(meta),events.append)
+    for count in (999,1000):
+        for i in range(count):blocks.add(np.zeros(4096,dtype=np.uint8),np.ones(4096,dtype=bool),{'time_s':float(blocks.global_line)})
+        blocks.end_segment('capture_toggle')
+    assert [e['rows'] for e in emitted]==[1000]
+    assert events[0]['rows']==999 and events[0]['first']['global_line']==0 and events[0]['last']['global_line']==998
+    assert emitted[0]['first']['global_line']==999
+
+
+def test_residual_pulse_before_long_pause_gets_true_adjacent_time_anchors(config):
+    config['block_rows']=8
+    camera=Camera(config);out=[];blocks=Blocks(camera,lambda pixels,meta:out.append((pixels,meta)))
+    times=[0.,.01,.02,.039,3.5,3.51,3.52,3.53]
+    for i,t in enumerate(times):
+        blocks.add(np.full(camera.width,i,dtype=np.uint8),np.ones(camera.width,dtype=bool),{'time_s':t})
+    pixels,meta=out[0]
+    tags={t['global_line']:t for t in meta['pose_tags']}
+    assert tags[3]['time_s']==.039 and tags[4]['time_s']==3.5
+    assert meta['rows']==8 and len(out)==1
+    assert np.array_equal(pixels[:,0],np.arange(8))

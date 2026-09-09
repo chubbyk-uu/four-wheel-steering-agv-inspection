@@ -131,3 +131,20 @@ def test_lateral_limit_follows_platform_configuration():
         command=c.update([0,0,.65],[0,0,0,1],[0,0,0],'DRIVE',.02)
         assert abs(command[1])<=.03+1e-12
     assert command[1]==pytest.approx(.03)
+
+
+def test_planner_and_tracker_reserve_physical_braking_authority():
+    from pathlib import Path
+    import yaml
+    from agv_mission.planner import Vehicle
+    from agv_mission.tracking import trajectory_deceleration
+    root=Path(__file__).resolve().parents[2]
+    platform=yaml.safe_load((root/'agv_description/config/platform.yaml').read_text())
+    camera=yaml.safe_load((root/'agv_description/config/linescan.yaml').read_text())
+    cfg=yaml.safe_load((root/'agv_mission/config/tracking.yaml').read_text())
+    c=SegmentTracker([0,0,0],[0,0,0,1],'translate',[15,0],0,platform['max_speed'],platform,cfg)
+    vehicle=Vehicle.from_configs(platform,camera)
+    assert c.profile.decel==vehicle.decel==.8
+    assert platform['drive_decel']==1.
+    assert c.profile.dd==pytest.approx(platform['max_speed']**2/(2*vehicle.decel))
+    with pytest.raises(ValueError):trajectory_deceleration(dict(platform,trajectory_decel=1.1))

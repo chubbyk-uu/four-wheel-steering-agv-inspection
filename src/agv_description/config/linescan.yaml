@@ -4,6 +4,10 @@ width: 4096
 render_width: 5120
 # Lines per image; default full block is 4096 x 4096. A stopped scan keeps its short tail.
 block_rows: 4096
+# Partial images below this count are omitted; metadata events retain the gap.
+min_tail_rows: 1000
+# Add sparse anchors on both sides of long actual inter-line intervals.
+pose_tag_time_gap_s: 0.1
 # Display-only sRGB transfer for linear OptiX / radiometric CUDA previews.
 # Raw Mono8, archived PGM and offline correction stay linear.
 preview_srgb: true

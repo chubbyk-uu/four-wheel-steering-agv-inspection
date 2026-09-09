@@ -9,6 +9,9 @@ from launch.actions import DeclareLaunchArgument,OpaqueFunction,IncludeLaunchDes
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+from agv_mission.camera_limits import inspection_camera_config
+from agv_mission.road_display import build_road_display
+import json
 
 
 def setup(context):
@@ -17,15 +20,17 @@ def setup(context):
     scene=Path(LaunchConfiguration('scene_manifest').perform(context)).resolve()
     if not scene.is_file():raise ValueError('Restore road assets and set scene_manifest to the baked road manifest')
     config=yaml.safe_load((Path(get_package_share_directory('agv_description'))/'config/linescan.yaml').read_text())
-    config.update(projected_encoder=True,max_yaw_rate_rad_s=.08,max_scan_lateral_m_s=.10,max_scan_residual_m_s=.03)
+    platform=yaml.safe_load((Path(get_package_share_directory('agv_description'))/'config/platform.yaml').read_text())
+    config=inspection_camera_config(config,platform)
     camera=root/'camera.yaml';camera.write_text(yaml.safe_dump(config))
+    road=build_road_display(scene,root/'rviz_road');road_config=root/'rviz_road.json';road_config.write_text(json.dumps(road,indent=2))
     return [IncludeLaunchDescription(PythonLaunchDescriptionSource(str(share/'launch/sim.launch.py')),launch_arguments={
         'localization':'true','rviz':'true','linescan':'true','linescan_backend':'optix',
-        'scene_manifest':str(scene),'camera_config':str(camera),'scan_speed_limit':'.8','spawn_x':'3',
+        'scene_manifest':str(scene),'camera_config':str(camera),'scan_speed_limit':str(config['max_scan_speed_m_s']),'spawn_x':LaunchConfiguration('spawn_x').perform(context),
         'capture_dir':str(root/'raw'),'localization_output_dir':str(root/'navigation'),
         'gpu_backend':LaunchConfiguration('gpu_backend').perform(context),
         'headless':LaunchConfiguration('headless').perform(context)}.items()),
-        Node(package='agv_mission',executable='mission_operator',parameters=[{'use_sim_time':True,'output_root':str(root/'tasks'),'navigation_dir':str(root/'navigation')}],output='screen')]
+        Node(package='agv_mission',executable='mission_operator',parameters=[{'use_sim_time':True,'output_root':str(root/'tasks'),'navigation_dir':str(root/'navigation'),'road_display':str(road_config)}],output='screen')]
 
 
 def generate_launch_description():
@@ -33,4 +38,5 @@ def generate_launch_description():
         DeclareLaunchArgument('session_dir',default_value='local_data/inspection_'+time.strftime('%Y%m%d_%H%M%S')+'_'+uuid.uuid4().hex[:6]),
         DeclareLaunchArgument('scene_manifest',default_value='assets/road/baked_fullwidth_20m_v1/manifest.json'),
         DeclareLaunchArgument('gpu_backend',default_value='d3d12',choices=['d3d12','native']),
+        DeclareLaunchArgument('spawn_x',default_value='3'),
         DeclareLaunchArgument('headless',default_value='false'),OpaqueFunction(function=setup)])

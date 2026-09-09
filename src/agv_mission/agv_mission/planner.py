@@ -6,6 +6,7 @@ It checks declared static bounds, not unknown obstacles or tire dynamics.
 """
 from dataclasses import dataclass
 import math
+from .tracking import trajectory_deceleration
 
 
 class PlanningError(ValueError):
@@ -70,7 +71,7 @@ class Vehicle:
         if polynomial != [0.0, 1.0, 0.0, 0.04]:
             raise PlanningError('raw optical envelope must be revalidated for changed distortion')
         return cls(camera['nominal_width_m'], camera['camera_x_m'], platform['base_height'],
-                   platform['drive_accel'], platform['drive_decel'], platform['max_speed'])
+                   platform['drive_accel'], trajectory_deceleration(platform), platform['max_speed'])
 
 
 def plan(request, vehicle):

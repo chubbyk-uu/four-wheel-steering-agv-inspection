@@ -56,7 +56,7 @@ def main():
     if a.scene:
         camera_path=prepare(Path('src/agv_description/config/linescan.yaml'),a.output/'camera.yaml')
         extra=['linescan:=true','linescan_backend:=optix','scene_manifest:='+str(a.scene.resolve()),
-               'camera_config:='+str(camera_path.resolve()),'scan_speed_limit:=0.8','capture_dir:='+str(a.output/'raw')]
+               'camera_config:='+str(camera_path.resolve()),'scan_speed_limit:='+str(yaml.safe_load(camera_path.read_text())['max_scan_speed_m_s']),'capture_dir:='+str(a.output/'raw')]
     log=(a.output/'simulation.log').open('w')
     sim=subprocess.Popen(['ros2','launch','agv_bringup','sim.launch.py','localization:=true',
         'localization_profile:='+a.profile,'localization_output_dir:='+str(a.output/'navigation'),

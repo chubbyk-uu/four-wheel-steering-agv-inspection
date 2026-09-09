@@ -16,6 +16,8 @@ max_yaw_rate: 0.35
 max_lateral_speed: 1.0
 drive_accel: 0.8
 drive_decel: 1.0
+# Time-profile braking reserves actuator authority for feedback; physical limit stays 1.0.
+trajectory_decel: 0.8
 base_height: 0.65
 body_top_height: 1.1
 drive_effort: 150.0

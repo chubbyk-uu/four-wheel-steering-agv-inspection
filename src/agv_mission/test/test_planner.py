@@ -82,6 +82,8 @@ def test_road_transform_is_not_user_heading(request_data, vehicle):
 
 
 def test_braking_and_acceleration_distinct(request_data, vehicle):
+    from dataclasses import replace
+    vehicle=replace(vehicle,accel=.8,decel=1.)
     p=plan(request_data,vehicle)
     assert p['lead_distance_m'] == pytest.approx(.5**2/(2*.8)+.1)
     assert p['runout_distance_m'] == pytest.approx(.5**2/(2*1)+.1)

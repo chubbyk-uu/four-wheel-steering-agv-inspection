@@ -47,7 +47,7 @@ public:
     addField(form,"length","采集长度 / m",3,.01,10000,3);
     addField(form,"width","采集宽度 / m",2,.01,1000,3);
     addField(form,"spacing","轨道间距 / m",1,.1,1.5,3);
-    addField(form,"speed","采集速度 / m/s",.5,.05,.8,3);
+    addField(form,"speed","采集速度 / km/h",1.8,.18,10.,2);
     addField(form,"error","覆盖误差预算 / m",.1,0,.7,3);
     auto note=new QLabel("幅宽 1.5 m · 默认 4096 × 4096 行\n原图为灰度；平场与畸变校正离线进行");note->setWordWrap(true);layout->addWidget(note);
     auto row=new QGridLayout;layout->addLayout(row);
@@ -100,7 +100,7 @@ private:
     connect(s,qOverload<double>(&QDoubleSpinBox::valueChanged),this,[this]{dirty_=true;refresh();});
   }
   template<class F> void button(QGridLayout *row,int y,int x,const QString &key,const QString &label,F action){auto b=new QPushButton(label);b->setObjectName(key);buttons_[key]=b;row->addWidget(b,y,x);connect(b,&QPushButton::clicked,this,action);}
-  QJsonObject fields(){QJsonObject f{{"mission_id",id_->text()}};for(auto &p:numbers_)f[p.first]=p.second->value();return f;}
+  QJsonObject fields(){QJsonObject f{{"mission_id",id_->text()}};for(auto &p:numbers_)f[p.first]=p.second->value();f["speed"]=numbers_["speed"]->value()/3.6;return f;}
   void fileAction(const QString &action,const QString &title,const QString &filter){auto p=QFileDialog::getOpenFileName(this,title,QString(),filter);if(!p.isEmpty())send(action,{{"path",p}});}
   void send(const QString &action,QJsonObject value={}){
     if(!pub_)return;value["action"]=action;value["id"]=QUuid::createUuid().toString();
@@ -110,10 +110,11 @@ private:
   }
   void accept(const QJsonObject &value){
     if(value.isEmpty())return;stateData_=value;heartbeat_.restart();
+    numbers_["speed"]->setMaximum(value["max_requested_speed_m_s"].toDouble(10./3.6)*3.6);
     auto request=value["request"].toObject();auto encoded=QJsonDocument(request).toJson(QJsonDocument::Compact);
     if(encoded!=requestBytes_){
       requestBytes_=encoded;id_->setText(request["mission_id"].toString());auto r=request["region"].toObject();auto start=r["start_xy_m"].toArray();
-      QJsonObject f{{"start_x",start[0]},{"start_y",start[1]},{"length",r["length_m"]},{"width",r["width_m"]},{"spacing",request["track_spacing_m"]},{"speed",request["scan_speed_m_s"]},{"error",request["coverage_error_m"]}};
+      QJsonObject f{{"start_x",start[0]},{"start_y",start[1]},{"length",r["length_m"]},{"width",r["width_m"]},{"spacing",request["track_spacing_m"]},{"speed",request["scan_speed_m_s"].toDouble()*3.6},{"error",request["coverage_error_m"]}};
       for(auto &p:numbers_)p.second->setValue(f[p.first].toDouble());dirty_=false;
     }
     if(!previewId_.isEmpty() && value["response_id"].toString()==previewId_){if(value["ok"].toBool() && value["preview_valid"].toBool())dirty_=false;previewId_.clear();}
@@ -132,13 +133,19 @@ private:
     table_->resizeRowsToContents();
     auto candidates=c["rescan_candidates"].toArray();for(int i=0;i<candidates.size();++i){auto v=candidates[i].toObject();if(v["status"].toString()=="PREVIEW_ONLY")candidates_->addItem(QString("轨道 %1 · 补扫 %2").arg(v["source_track_id"].toInt()+1).arg(i+1),i);}
   }
+  QString imageDescription(const QJsonObject &image){
+    if(image.isEmpty())return "本任务尚无原图";
+    auto reason=image["end_reason"].toString();
+    auto kind=reason=="full"?"满帧":reason=="capture_toggle"?"结束尾图":"异常尾图";
+    return QString("最近原图：%1 × %2（%3）").arg(image["width"].toInt()).arg(image["rows"].toInt()).arg(kind);
+  }
   void refresh(){
     bool online=heartbeat_.isValid()&&heartbeat_.elapsed()<2000;
     bool editable=online&&stateData_["editable"].toBool()&&!stateData_["busy"].toBool();
     connection_->setText(online?"● 巡检后端已连接":"○ 巡检后端未连接 / 状态超时");
     auto s=stateData_["status"].toObject();auto state=s["state"].toString("IDLE");
     static const std::map<QString,QString> names{{"IDLE","未准备"},{"READY","等待开始"},{"RUNNING","运行中"},{"PAUSING","制动暂停中"},{"PAUSED","已暂停"},{"CANCELING","取消停车中"},{"CANCELED","已取消"},{"ACQUIRED","采集结束"},{"COMPLETED","运动完成"},{"FAULT","故障锁存"}};
-    auto it=names.find(state);state_->setText(QString("任务：%1  | 底盘：%2\n当前轨道：%3  | 相机：%4\n已归档：%6 张 · %7 行\n%5").arg(it==names.end()?state:it->second,s["motion_state"].toString("—"),s.contains("track_id")?QString::number(s["track_id"].toInt()+1):"—",s["capture_active"].toBool()?"等待脉冲 / 采集":"关闭",s["reason"].toString()).arg(s["captured_blocks"].toInt()).arg(s["captured_rows"].toInt()));
+    auto it=names.find(state);state_->setText(QString("任务：%1  | 底盘：%2\n当前轨道：%3  | 相机：%4\n已归档：%6 张 · %7 行\n%8\n%5").arg(it==names.end()?state:it->second,s["motion_state"].toString("—"),s.contains("track_id")?QString::number(s["track_id"].toInt()+1):"—",s["capture_close_failed"].toBool()?"归档未确认，需重启采集":s["capture_sensor_enabled"].toBool()?"等待脉冲 / 采集":"关闭",s["reason"].toString()).arg(s["captured_blocks"].toInt()).arg(s["captured_rows"].toInt()).arg(imageDescription(s["last_image"].toObject())));
     progress_->setRange(0,std::max(1,s["step_count"].toInt()));progress_->setValue(s["step_index"].toInt());
     for(auto &p:numbers_)p.second->setEnabled(editable);id_->setEnabled(editable);
     for(auto &p:buttons_)p.second->setEnabled(editable);

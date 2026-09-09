@@ -44,7 +44,7 @@ class LineScanNode(Node):
         self.pub = self.create_publisher(Image, '/linescan/image_raw', 2)
         self.tags_pub = self.create_publisher(String, '/linescan/block_metadata', 10)
         self.status_pub = self.create_publisher(String, '/linescan/status', 10)
-        self.blocks = Blocks(self.camera, self.emit)
+        self.blocks = Blocks(self.camera, self.emit, self.record_event)
         self.writer = ThreadPoolExecutor(max_workers=1, thread_name_prefix='linescan_archive')
         self.writes = deque()
         self.trigger = Trigger(self.camera.spacing)
@@ -61,6 +61,10 @@ class LineScanNode(Node):
         self.create_service(SetBool, '/linescan/set_enabled', self.enable)
         self.create_timer(.1, self.watchdog)
         self.get_logger().info(f'{self.camera.width}-pixel grid-plane sensor ready, initially disabled. Archive: {self.output}')
+
+    def record_event(self,event):
+        self.status_pub.publish(String(data=json.dumps(event)))
+        with (self.output/'events.jsonl').open('a') as f:f.write(json.dumps(event)+'\n')
 
     def enable(self, request, response):
         self.stop('capture_toggle')

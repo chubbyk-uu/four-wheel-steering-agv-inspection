@@ -57,7 +57,7 @@ source install/local_setup.bash
 
 ## 快速运行
 
-完整巡检界面：恢复道路资产并配置OptiX后，运行`ros2 launch agv_bringup inspection.launch.py`（原生Linux加`gpu_backend:=native`）。RViz右侧面板提供区域编辑、预览、采集控制、覆盖审计和补扫；默认等待操作，详见[面板使用说明](docs/RECTANGLE_EXECUTION.md#rviz巡检任务面板)。
+完整巡检界面：恢复道路资产并配置OptiX后，运行`ros2 launch agv_bringup inspection.launch.py`（原生Linux加`gpu_backend:=native`）。RViz显示同源低清跑道及可行驶边界，速度输入使用km/h、上限10 km/h。右侧面板提供区域编辑、预览、采集控制、覆盖审计和补扫；默认等待操作，详见[面板使用说明](docs/RECTANGLE_EXECUTION.md#rviz巡检任务面板)。
 
 
 原生 Linux：
@@ -104,7 +104,7 @@ ros2 service call /linescan/set_enabled std_srvs/srv/SetBool '{data: false}'
 
 相机默认输出线性Mono8灰度图。RViz的`/linescan/image_preview`及文档样片使用sRGB显示转换提亮中间调；原图与离线校正PGM保持线性。`linescan.yaml`中的`preview_srgb: false`可关闭预览转换，曝光和补光不随显示设置改变。
 
-默认完整原图为 **4096×4096**，纵向每图行数由 `src/agv_description/config/linescan.yaml` 的 `block_rows` 配置。OptiX/C++启动时也可传 `scan_block_rows:=2048` 改为4096×2048；默认仍为4096行。停止时保留短尾块，不填充或重复扫描行。
+默认完整原图为 **4096×4096**，纵向每图行数由 `src/agv_description/config/linescan.yaml` 的 `block_rows` 配置。OptiX/C++启动时也可传 `scan_block_rows:=2048` 改为4096×2048；默认仍为4096行。普通暂停保留缓存；结束、取消或故障时，默认丢弃不足1000行的尾图并记录行号缺口，达到1000行则按实际行数保存，不填充或重复扫描行。阈值由`min_tail_rows`配置，0表示保留所有非空尾图。
 
 正式流程只在线采集原图；平场和畸变在归档后离线处理，不设置 `correction_profile` 即不会启动在线校正节点。使用与当前安装/曝光相匹配的标定文件，处理完整 `session_cpp_*` 目录：
 

@@ -13,7 +13,15 @@ Visualization Manager:
       Plane Cell Count: 200
       Reference Frame: world
       Color: 160; 160; 164
-      Alpha: 0.5
+      Alpha: 0.15
+    - Class: rviz_default_plugins/MarkerArray
+      Name: 跑道与可行驶边界
+      Enabled: true
+      Topic:
+        Value: /mission/road/markers
+        Durability Policy: Transient Local
+        Reliability Policy: Reliable
+        Depth: 1
     - Class: rviz_default_plugins/RobotModel
       Name: AGV
       Enabled: true
@@ -44,7 +52,7 @@ Visualization Manager:
         Reliability Policy: Reliable
         Depth: 1
     - Class: rviz_default_plugins/Image
-      Name: Capture Preview
+      Name: 相机缩略预览（保留实际比例）
       Enabled: true
       Topic:
         Value: /linescan/image_preview

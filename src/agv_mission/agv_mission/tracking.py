@@ -9,6 +9,13 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 
 
+def trajectory_deceleration(platform):
+    value=platform.get("trajectory_decel",platform["drive_decel"])
+    if not math.isfinite(value) or not 0<value<=platform["drive_decel"]:
+        raise ValueError("trajectory deceleration must fit the physical braking limit")
+    return value
+
+
 def wrap(a):return math.atan2(math.sin(a),math.cos(a))
 
 
@@ -62,7 +69,7 @@ class SegmentTracker:
         self.terminal_filtered=None;self.outside_time=0.;self.trims=0;self.alignment_probe=None
         self.speed=speed if kind=='translate' else min(speed,config['angular_speed_rad_s'],platform['max_yaw_rate'])
         self.accel=platform['drive_accel'] if kind=='translate' else config['angular_accel_rad_s2']
-        self.decel=platform['drive_decel'] if kind=='translate' else config['angular_decel_rad_s2']
+        self.decel=trajectory_deceleration(platform) if kind=='translate' else config['angular_decel_rad_s2']
         self.profile=Profile(self.length,self.speed,self.accel,self.decel)
         self.clock=0.;self.offset=0.;self.elapsed=0.;self.settled=0.
         self.state='ALIGNING';self.reason='';self.filtered=np.zeros(3);self.command=np.zeros(3)
@@ -97,7 +104,7 @@ class SegmentTracker:
             if not math.isfinite(self.length) or self.length<1e-8:
                 self.fault('DEGENERATE_TERMINAL_TRANSLATION');return
             self.kind='translate';self.axis=delta/self.length;self.goal=p+r.apply([*delta,0.]);self.goal_rotation=r
-            self.speed=self.cfg['terminal_translation_speed_m_s'];self.accel=self.platform['drive_accel'];self.decel=self.platform['drive_decel']
+            self.speed=self.cfg['terminal_translation_speed_m_s'];self.accel=self.platform['drive_accel'];self.decel=trajectory_deceleration(self.platform)
         else:
             self.kind='rotate';self.length=abs(heading_error);self.sign=1 if heading_error>=0 else -1
             self.axis=np.zeros(2);self.goal=p.copy();self.goal_rotation=self.final_rotation
@@ -176,11 +183,17 @@ class SegmentTracker:
         if np.linalg.norm(e)>self.cfg['max_tracking_error_m'] or abs(eyaw)>self.cfg['max_heading_error_rad']:
             self.fault('TRACKING_ERROR_LIMIT');return self.command.copy()
         raw=np.r_[e,eyaw];alpha=dt/(self.cfg['feedback_filter_s']+dt)
-        self.filtered+=alpha*(raw-self.filtered)
+        delta=raw-self.filtered
+        self.filtered+=alpha*delta
+        if self.kind=="translate":
+            along_alpha=dt/(self.cfg.get("longitudinal_feedback_filter_s",self.cfg["feedback_filter_s"])+dt)
+            self.filtered[:2]+=self.axis*np.dot(delta[:2],self.axis)*(along_alpha-alpha)
         feedback=self.filtered.copy()
         for i,deadband in enumerate([self.cfg['position_deadband_m']]*2+[self.cfg['heading_deadband_rad']]):
             feedback[i]=math.copysign(max(0,abs(feedback[i])-deadband),feedback[i])
         linear=feedback[:2]*self.cfg['position_gain']
+        if self.kind=='translate':
+            linear+=self.axis*np.dot(feedback[:2],self.axis)*(self.cfg.get('longitudinal_position_gain',self.cfg['position_gain'])-self.cfg['position_gain'])
         norm=np.linalg.norm(linear)
         if norm>self.cfg['max_position_feedback_m_s']:linear*=self.cfg['max_position_feedback_m_s']/norm
         angular=float(np.clip(feedback[2]*self.cfg['heading_gain'],-self.cfg['max_heading_feedback_rad_s'],self.cfg['max_heading_feedback_rad_s']))

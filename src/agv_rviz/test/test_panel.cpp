@@ -17,6 +17,11 @@ private Q_SLOTS:
    v["status"]=QJsonObject{{"state","FAULT"}};v["editable"]=true;p.accept(v);QVERIFY(p.buttons_["audit"]->isEnabled());QVERIFY(!p.buttons_["resume"]->isEnabled());
    p.heartbeat_.invalidate();p.refresh();QVERIFY(!p.buttons_["audit"]->isEnabled());QVERIFY(!p.buttons_["start"]->isEnabled());
  }
+ void speedUnitsAndRawDimensions(){
+   MissionPanel p;p.numbers_["speed"]->setValue(10.);
+   QVERIFY(std::abs(p.fields()["speed"].toDouble()-10./3.6)<1e-12);
+   QCOMPARE(p.imageDescription(QJsonObject{{"width",4096},{"rows",1100},{"end_reason","unsupported_scan_motion"}}),QString("最近原图：4096 × 1100（异常尾图）"));
+ }
  void coverageDistinguishesUncertaintyFromMissingData(){
    MissionPanel p;QJsonObject c{{"status","NEEDS_RESCAN"},{"tracks",QJsonArray{
       QJsonObject{{"track_id",0},{"unverified_along_m",QJsonArray{QJsonArray{0.,3.}}},{"quality_flags",QJsonArray{"UNCERTAINTY_EXCEEDS_OVERLAP"}}},

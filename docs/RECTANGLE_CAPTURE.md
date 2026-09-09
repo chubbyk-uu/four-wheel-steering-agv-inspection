@@ -4,7 +4,7 @@
 
 ## 采集边界与成功语义
 
-每条原始档案包含少量区域外加速/驶出余量，后续按地面坐标裁切。门控不试图通过50 Hz ROS服务准确截出亚毫米边界，也不以参考路程触发拍照。行触发仍来自实际轮编码器，完整图块4096×4096、尾块保持实际行数，Mono8，未在线平场或畸变校正。
+每条原始档案包含少量区域外加速/驶出余量，后续按地面坐标裁切。门控不试图通过50 Hz ROS服务准确截出亚毫米边界，也不以参考路程触发拍照。行触发仍来自实际轮编码器，完整图块4096×4096、达到尾图阈值的尾块保持实际行数，Mono8，未在线平场或畸变校正。
 
 `COMPLETED`用于纯运动模式。开启采集时末态为`ACQUIRED`：表示运动完成、采集已关闭且写入确认，**不自动等于区域完整性验收通过**。验证工具随后检查原图、连续传感器段、采集端点和融合标签，成功写出独立报告；失败会保留全部证据。真实场景存在定位不确定度，自动覆盖认证、异常缺口补扫和故障恢复仍需后续实现。
 
@@ -38,7 +38,7 @@ python3 tools/prepare_mission_camera.py --output /tmp/agv_mission_camera.yaml
 ros2 launch agv_bringup sim.launch.py localization:=true rviz:=true \
   linescan:=true linescan_backend:=optix \
   scene_manifest:="$PWD/assets/road/baked_fullwidth_20m_v1/manifest.json" \
-  camera_config:=/tmp/agv_mission_camera.yaml scan_speed_limit:=0.8 \
+  camera_config:=/tmp/agv_mission_camera.yaml scan_speed_limit:=2.797777777777778 \
   spawn_x:=3 capture_dir:=/tmp/agv_mission_raw \
   localization_output_dir:=/tmp/agv_mission_navigation
 ```
@@ -69,8 +69,8 @@ python3 tools/label_mission_capture.py \
 | 动作 | 未满4096行的缓存 |
 |---|---|
 | 普通暂停 | 保留，等待编码器脉冲；恢复后凑满再输出 |
-| 本道结束、取消 | 输出有效尾图，记实际行数，等待写入确认 |
-| 故障 | 尽可能输出已有有效行，保留故障原因；存储/GPU本身故障不能保证写入成功，不报告完整采集 |
+| 本道结束、取消 | 不足1000行丢弃并记行号范围；否则输出有效尾图，等待写入确认 |
+| 故障 | 按同一1000行阈值处理已有有效行，保留故障原因；存储/GPU本身故障不能保证写入成功，不报告完整采集 |
 
 跨暂停图块额外保留停止前、恢复后相邻行的真实曝光时间/位置标签；因此每图不再硬限5个标签。仍不是逐行位姿归档，最后一行仍是图块参考。离线校正保留这些标签，融合导航标签在每个实际曝光时间独立插值；禁止按图块首末时间均匀推算整张图的行时刻。
 
@@ -114,3 +114,9 @@ python3 tools/audit_mission_capture.py \
 重新用当前审计器生成父任务及补扫的`coverage.json`后，运行`python3 tools/merge_mission_coverage.py --parent parent/coverage.json --child child/coverage.json --output combined.json`；多次补扫重复`--child`。要求补扫请求确为父报告生成的候选、场景合同哈希及光学标定一致、导航会话不同、误差下限不放宽。仅合并道路坐标的保守覆盖矩形，不拼图、不自动调度。既有定位故障与第一份补扫档案实测合并后第一道0–3 m完整、第二道0–3 m仍未采集，见[结果](../results/mission_coverage_merge.json)。
 
 协方差检查：当前重力倾角观测只在停稳窗口更新；移动时横滚/俯仰不确定度增长，经相机杆臂投影扩大地面覆盖余量。已确认这条实现与观测趋势，但尚未完成动态倾角观测的精度验证，不调整噪声数字来强行通过覆盖审计。
+
+尾图策略由`min_tail_rows`配置，默认1000，0关闭丢弃；只作用于结束、取消、故障的未满帧，配置为小尺寸的完整帧不受影响。丢弃时不发布图像、不写PGM或图块元数据，但记录`tail_discarded`事件、原结束原因、行数和全局首末行号，不复用这些行号；覆盖审计不能将缺失像素视为已覆盖。普通暂停不触发此策略。
+
+任务采集轮速门限取平台物理轮速上限加0.02 m/s数值容差，不使用本道名义速度作为截断门限，控制器仍限制10 km/h。意外分段（含`unsupported_scan_motion`）须令任务FAULT，禁止残缺图像静默完成。故障后关闭握手若无法确认归档，不反复重试，不冒充已归档；面板区分传感器已关闭与归档未确认，须重启采集实例后继续。
+
+暂停标签还按实际相邻扫描线时间间隔补充：间隔超过`pose_tag_time_gap_s`（默认0.1 s）时，记录间隔两侧相邻行。不能仅凭进入HOLD的一次通知判断恢复首行，因为HOLD后可能还有残余脉冲。该规则只增加稀疏标签，不改变触发、像素或帧边界；跨帧时两张图的末行/首行本来就有标签。

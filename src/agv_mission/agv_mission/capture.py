@@ -10,6 +10,7 @@ class CaptureGate:
     def __init__(self,node,output,enabled,state_timeout=.5):
         self.node=node;self.enabled=enabled;self.active=None if enabled else False;self.future=None;self.target=False
         self.track=None;self.intervals=[];self.error='';self.started_wall=0;self.close_reason='requested'
+        self.close_failed=False
         self.state_timeout=state_timeout;self.heartbeat=None;self.heartbeat_wall=0;self.enable_wall=0;self.enable_time=0
         self.client=node.create_client(SetBool,'/linescan/set_enabled') if enabled else None
         self.output=output
@@ -42,12 +43,16 @@ class CaptureGate:
         self.events.write(json.dumps(value)+'\n');self.events.flush()
         # All interruptions are archived. Spatial coverage is checked separately;
         # end-of-pass braking outside the ROI is not mislabeled as a missing strip.
-        if value.get('reason','').startswith('terrain_sampling_failure') or value.get('reason') in ('pose_gap','pose_outside_history','time_reset'):
+        reason=value.get('reason','')
+        expected=('capture_toggle','sampler_recovery','tail_discarded')
+        # A sensor segment break must never silently turn into ACQUIRED.
+        if reason and reason not in expected:
             self.error='CAMERA_'+value['reason']
     def block(self,msg):self.blocks.write(msg.data+'\n');self.blocks.flush()
     def request(self,value,track=None,reason='requested'):
         if not self.enabled:return True
         if self.future is not None:return False
+        if not value and self.close_failed:return False
         if self.active==value:return True
         if not self.client.service_is_ready():self.error='CAMERA_SERVICE_UNAVAILABLE';return False
         self.target=value;self.started_wall=time.monotonic()
@@ -62,9 +67,10 @@ class CaptureGate:
             return
         try:response=self.future.result()
         except Exception as exc:
-            self.future=None;self.error='CAMERA_HANDSHAKE_FAILED: '+str(exc);return
+            self.future=None;self.close_failed=not self.target;self.error='CAMERA_HANDSHAKE_FAILED: '+str(exc);return
         self.future=None
-        if not response.success:self.error='CAMERA_HANDSHAKE_FAILED: '+response.message;return
+        if not response.success:
+            self.close_failed=not self.target;self.error='CAMERA_HANDSHAKE_FAILED: '+response.message;return
         self.active=self.target
         if self.active:
             self.enable_wall=time.monotonic();self.enable_time=self.now()

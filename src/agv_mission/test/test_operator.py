@@ -43,3 +43,14 @@ def test_real_broker_initializes_without_motion_publisher():
     finally:
         if node:node.close()
         executor.shutdown();rclpy.try_shutdown()
+
+
+def test_inspection_gate_uses_physical_wheel_limit_not_nominal_pass_speed():
+    from agv_mission.camera_limits import inspection_camera_config
+    p=Path(__file__).resolve().parents[2]/'agv_description/config'
+    camera=yaml.safe_load((p/'linescan.yaml').read_text());platform=yaml.safe_load((p/'platform.yaml').read_text())
+    result=inspection_camera_config(camera,platform)
+    assert result['max_scan_speed_m_s']==platform['max_speed']+.02
+    assert result['max_scan_speed_m_s']>.8+.12
+    assert result['width']==4096 and result['block_rows']==4096
+    assert result['focal_length_m']==camera['focal_length_m']

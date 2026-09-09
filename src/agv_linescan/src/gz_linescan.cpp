@@ -6,6 +6,7 @@
 #include "agv_linescan/scan_motion.hpp"
 #include "agv_linescan/queue_budget.hpp"
 #include "agv_linescan/preview.hpp"
+#include "agv_linescan/tail_policy.hpp"
 #ifdef AGV_HAS_CUDA
 #include "agv_linescan/cuda_grid.hpp"
 #include "agv_linescan/cuda_tiles.hpp"
@@ -106,6 +107,10 @@ class GzLineScan final: public gz::sim::System,
     wheelbase_=platform["wheelbase"].as<double>();
     rows_=sdf->Get<size_t>("block_rows",config_["block_rows"].as<size_t>()).first;
     config_["block_rows"]=rows_;
+    minTailRows_=config_["min_tail_rows"].as<size_t>(1000);
+    DiscardShortTail(0,false,minTailRows_);
+    maxTagGap_=config_["pose_tag_time_gap_s"].as<double>(.1);
+    if(!std::isfinite(maxTagGap_) || maxTagGap_<=0)throw std::runtime_error("invalid pose tag time gap");
     exposure_=config_["exposure_s"].as<double>();
     // Read immutable configuration once, not for every exposure/link SLERP.
     maxSampleGap_=config_["max_sample_gap_s"].as<double>();
@@ -603,6 +608,9 @@ class GzLineScan final: public gz::sim::System,
 
   void AddLine(const uint8_t *pixels,const Line &line,double sceneTime) {
     const size_t row=buffer_.size()/optics_->width;
+    // A final residual encoder pulse may arrive after HOLD and consume its
+    // first anchor. Anchor the actual long inter-line gap as well.
+    if(row && line.event.time-lastLine_.event.time>maxTagGap_) MarkHoldBoundary();
     if (row%std::max(size_t(1),rows_/4)==0 || tagAfterHold_) {
       auto tag=Tag(line,sceneTime);
       if (!row) first_=tag;
@@ -624,6 +632,14 @@ class GzLineScan final: public gz::sim::System,
     if (buffer_.empty()) return;
     last_=Tag(lastLine_,lastSceneTime_);
     if (tags_.back()["global_line"]!=last_["global_line"]) tags_.push_back(last_);
+    const size_t count=buffer_.size()/optics_->width;
+    if(DiscardShortTail(count,reason=="full",minTailRows_)) {
+      Json event={{"reason","tail_discarded"},{"end_reason",reason},{"rows",count},{"minimum_rows",minTailRows_},
+        {"block_id",block_++},{"segment_id",segment_},{"first",first_},{"last",last_},{"simulation_time_s",lastSceneTime_}};
+      std::ofstream(output_/"events.jsonl",std::ios::app)<<event.dump()<<'\n';
+      std_msgs::msg::String message;message.data=event.dump();statusPub_->publish(message);
+      buffer_.clear();tags_=Json::array();invalidPixels_=0;return;
+    }
     Json meta={{"encoder_distance_model",config_["projected_encoder"].as<bool>(false)?"four_wheel_body_x_projection":"mean_signed_wheel_distance"},{"schema","agv.linescan.render.v1"},{"block_id",block_++},
       {"segment_id",segment_},{"width",optics_->width},{"rows",buffer_.size()/optics_->width},
       {"encoding","mono8"},{"first",first_},{"last",last_},{"pose_tags",tags_},
@@ -731,6 +747,8 @@ class GzLineScan final: public gz::sim::System,
     }));
   }
 
+  size_t minTailRows_=1000;
+  double maxTagGap_=.1;
   YAML::Node config_;
   std::unique_ptr<Optics> optics_;
   std::unique_ptr<Trigger> trigger_;

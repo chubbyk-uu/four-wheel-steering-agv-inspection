@@ -96,3 +96,26 @@ def test_state_before_first_ros_clock_is_not_a_camera_fault(tmp_path):
         g.on_state(SimpleNamespace(data=json.dumps(dict(time_s=12.,enabled=False))))
         assert not g.error and g.heartbeat is None
     finally:g.close()
+
+
+def test_scan_interruptions_fault_instead_of_silent_partial_success(tmp_path):
+    import json
+    n=Node();g=CaptureGate(n,tmp_path,True)
+    try:
+        for reason in ('unsupported_scan_motion','direction change','motion_UNKNOWN','nonfinite encoder'):
+            g.error='';g.event(SimpleNamespace(data=json.dumps(dict(reason=reason))))
+            assert g.error=='CAMERA_'+reason
+        g.error='';g.event(SimpleNamespace(data=json.dumps(dict(reason='capture_toggle'))));assert not g.error
+    finally:g.close()
+
+
+def test_failed_close_is_not_retried_or_reported_as_archived(tmp_path):
+    n=Node();g=CaptureGate(n,tmp_path,True)
+    try:
+        g.request(True,0);acknowledge(g,n);g.request(False)
+        n.client.future.set_result(SimpleNamespace(success=False,message='storage failed'));g.poll()
+        assert g.close_failed and g.active is True and 'disabled_ack_time_s' not in g.intervals[0]
+        count=len(n.client.requests)
+        for _ in range(5):assert not g.request(False)
+        assert len(n.client.requests)==count
+    finally:g.close()

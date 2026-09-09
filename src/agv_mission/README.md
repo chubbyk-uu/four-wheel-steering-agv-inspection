@@ -76,3 +76,5 @@ ros2 run agv_mission track_segment --ros-args \
 完整矩形运动执行入口已接入，使用方法与限制见[矩形执行](../../docs/RECTANGLE_EXECUTION.md)；采集验收另行记录。
 
 原图采集、稀疏融合标签及复现方法见[矩形采集联动](../../docs/RECTANGLE_CAPTURE.md)。
+
+时间轨迹当前使用`trajectory_decel: 0.8` m/s²，底层物理`drive_decel: 1.0` m/s²保持不变，留出反馈制动余量；加速度上限仍0.8 m/s²。规划器与执行器读取同一参考减速度，因此10 km/h的规划制动段约4.82 m（另加边界余量），物理极限制动距离仍约3.86 m。修改该参数后重新生成计划，旧计划不直接复用。

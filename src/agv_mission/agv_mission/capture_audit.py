@@ -76,6 +76,11 @@ def audit_capture(mission,navigation,output,platform,camera,uncertainty=.10):
         try:
             raw_camera=yaml.safe_load((archive/'calibration.yaml').read_text())
             if raw_camera['calibration_id'] not in (nav.cal['optical_intrinsic_id'],nav.cal['optical_intrinsic_id']+'-optix-strip-v1'):raise ValueError('sensor/navigation intrinsic ID mismatch')
+            # A session with only discarded tails still has a known scene identity.
+            manifest=archive/'scene_manifest.json'
+            if manifest.exists():
+                scene=json.loads(manifest.read_text())
+                scenes.add(hashlib.sha256(json.dumps(scene,sort_keys=True,separators=(',',':')).encode()).hexdigest())
             for key in ('width','pixel_pitch_m','focal_length_m','nominal_width_m','ray_polynomial'):
                 if raw_camera[key]!=camera[key]:raise ValueError('optical configuration changed: '+key)
         except (OSError,ValueError,KeyError) as exc:

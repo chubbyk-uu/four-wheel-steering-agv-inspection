@@ -141,8 +141,13 @@ class Trigger:
 
 
 class Blocks:
-    def __init__(self, camera, emit):
+    def __init__(self, camera, emit, event=None):
         self.camera, self.emit = camera, emit
+        self.event=event or (lambda event:None)
+        self.min_tail_rows=camera.config.get("min_tail_rows",1000)
+        if not isinstance(self.min_tail_rows,int) or not 0<=self.min_tail_rows<=16384:raise ValueError("invalid min_tail_rows")
+        self.max_tag_gap=camera.config.get("pose_tag_time_gap_s",.1)
+        if not math.isfinite(self.max_tag_gap) or self.max_tag_gap<=0:raise ValueError("invalid pose tag time gap")
         self.buffer = np.empty((camera.rows, camera.width), dtype=np.uint8)
         self.count = self.block = self.global_line = 0
         self.segment = 0
@@ -154,8 +159,11 @@ class Blocks:
         tag = dict(tag, global_line=self.global_line)
         if self.count == 0:
             self.first = tag
-        # Up to five sparse tags per full block, always including last row.
-        if self.count % max(1, self.camera.rows//4) == 0:
+        gap=self.count>0 and tag["time_s"]-self.last["time_s"]>self.max_tag_gap
+        if gap and self.tags[-1]["global_line"]!=self.last["global_line"]:
+            self.tags.append(self.last)
+        # Quarter-frame anchors plus both sides of actual long inter-line gaps.
+        if self.count % max(1, self.camera.rows//4) == 0 or gap:
             self.tags.append(tag)
         self.last = tag
         self.invalid += int(np.count_nonzero(~valid))
@@ -178,7 +186,9 @@ class Blocks:
                         end_reason=reason, invalid_pixels=self.invalid,
                         pose_source='simulation_ground_truth_sensor_generation_only',
                         scene_backend='analytic_unobstructed_grid_plane')
-        self.emit(self.buffer[:self.count].copy(), metadata)
+        if reason!='full' and self.count<self.min_tail_rows:
+            self.event(dict(reason='tail_discarded',end_reason=reason,rows=self.count,minimum_rows=self.min_tail_rows,block_id=self.block,segment_id=self.segment,first=self.first,last=self.last))
+        else:self.emit(self.buffer[:self.count].copy(), metadata)
         self.block += 1
         self.count = self.invalid = 0
         self.tags = []

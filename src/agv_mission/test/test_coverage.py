@@ -143,3 +143,14 @@ def test_incremental_rescans_keep_remaining_candidates_and_reject_replays():
     with pytest.raises(ValueError,match='duplicate'):combine(first,children[:1])
     final=combine(first,children[1:]);assert final['status']=='ESTIMATED_COMPLETE' and not final['rescan_candidates']
     assert len(final['merged_navigation_sha256'])==3
+
+
+def test_no_saved_tail_keeps_scene_identity_without_claiming_pixels(tmp_path):
+    import hashlib
+    mission,nav,raw,p,c=archive(tmp_path)
+    for path in raw.glob('block_*'):path.unlink()
+    scene={'schema':'test.scene','identity':'unchanged'}
+    (raw/'scene_manifest.json').write_text(json.dumps(scene))
+    report=audit_capture(mission,nav,tmp_path/'empty',p,c)
+    assert report['scene_contract_sha256']==[hashlib.sha256(json.dumps(scene,sort_keys=True,separators=(',',':')).encode()).hexdigest()]
+    assert not report['inputs'] and report['status']=='NEEDS_RESCAN'

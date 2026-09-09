@@ -24,3 +24,13 @@
 
 
 RViz面板改动后运行`tools/validate_operator_session.py --output 新目录 --inspect-seconds 25`，检查真实Gazebo/RViz联合流程、请求保存重载、越界拒绝、运行中锁定、暂停保留帧、审计与新任务取消；记录实际逐轮转角、ROS/原图哈希及最终HOLD。另需实际点击面板控件并观察状态改变，检查预览和覆盖标记显示正常、车辆移动时仍固定在道路坐标，而不是只检查ROS话题存在。启动时TF未就绪必须能恢复，不能留下红色预览状态。普通colcon包含Qt控件状态与后端护栏测试，不会自动启动完整GUI。WSLg下X11抓屏可能全黑，不能把黑色抓屏当作真实窗口；必要时从宿主窗口采集证据，公开图裁去本机标题/路径。
+
+巡检入口速度、尾图与道路显示改动后，另运行以下GUI场景（每次使用新输出目录）：
+
+- `tools/validate_operator_session.py --output local_data/check_08 --speed .8 --length 5 --width 2`：运行中改参数拒绝、暂停后满帧、重新准备与取消。
+- `tools/validate_operator_session.py --output local_data/check_10kmh --speed 2.777777777777778 --length 5 --width 1 --start-x 8 --spawn-x 1.93 --no-pause --no-cancel-probe`：有足够加减速空间的高速单道，检查终点、实际速度与实时率；不代表高速多道换道验收。
+- `tools/validate_operator_session.py --output local_data/check_tail --speed .2 --length .05 --width 1 --short-tail-probe`：不足1000行不输出图像，保留丢弃事件，覆盖报告不冒充完整。
+
+面板实际观察需包含同源路面、双黄线、白边线、青色道路边界及移动时坐标固定；小窗口是缩略图，原图尺寸另外显示。保存的满帧必须4096×4096，尾图至少1000行，ROS像素与PGM逐字节核对。验证器另保存逐轮转角与真值速度/时钟供诊断。
+
+同一工具加`--fault-probe`时，正常采集后另开新任务，在运动中注入`unsupported_scan_motion`状态事件，要求FAULT、HOLD、采集关闭；它验证任务层保护，不伪称真实渲染器故障。测试主流程通过但后续探针未完成时，结果`passed`保持false。

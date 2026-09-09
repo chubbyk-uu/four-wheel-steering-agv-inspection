@@ -159,7 +159,7 @@ class Executor(Node):
             self.capture.request(False,reason=self.reason or self.state.lower())
             if self.state=='CANCELING' and self.mode=='HOLD' and self.capture.active is False and self.capture.future is None:self.state='CANCELED'
         record={'time_s':now,'state':self.state,'reason':self.reason,'motion_state':self.mode,
-                'step_index':self.index,'step_count':len(self.steps),'capture_integrated':self.capture.enabled,'capture_active':self.capture.active,'command_body':self.last_command,'motion_reason':self.motion_reason}
+                'step_index':self.index,'step_count':len(self.steps),'capture_integrated':self.capture.enabled,'capture_active':self.capture.active,'capture_sensor_enabled':self.capture.heartbeat.get('enabled') if self.capture.heartbeat else None,'capture_close_failed':self.capture.close_failed,'command_body':self.last_command,'motion_reason':self.motion_reason}
         if self.steps and self.index<len(self.steps):record.update(kind=self.steps[self.index]['kind'],track_id=self.steps[self.index]['track_id'])
         if self.odom is not None:record['position_m']=self.pose()[0].tolist()
         if self.core:record.update(tracker_state=self.core.state,profile_time_s=self.core.clock,

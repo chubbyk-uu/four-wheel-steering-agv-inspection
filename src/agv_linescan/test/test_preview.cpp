@@ -1,4 +1,5 @@
 #include "agv_linescan/preview.hpp"
+#include "agv_linescan/tail_policy.hpp"
 #include <gtest/gtest.h>
 TEST(Preview, IntegratesThinLinesInsteadOfSkippingThem){
  std::vector<uint8_t> input(64*64,255);
@@ -21,4 +22,12 @@ TEST(Preview, DisplayTransferPreservesEndpointsAndLinearAveraging){
  EXPECT_GT(ramp[52],110);EXPECT_LT(ramp[52],130);
  EXPECT_TRUE(std::is_sorted(ramp.begin(),ramp.end()));
  EXPECT_THROW(agv_linescan::DisplaySrgb(ramp,255),std::invalid_argument);
+}
+
+TEST(TailPolicy, BoundaryAndFullFrames) {
+ EXPECT_TRUE(agv_linescan::DiscardShortTail(999,false,1000));
+ EXPECT_FALSE(agv_linescan::DiscardShortTail(1000,false,1000));
+ EXPECT_FALSE(agv_linescan::DiscardShortTail(512,true,1000));
+ EXPECT_FALSE(agv_linescan::DiscardShortTail(5,false,0));
+ EXPECT_THROW(agv_linescan::DiscardShortTail(1,false,20000),std::invalid_argument);
 }
