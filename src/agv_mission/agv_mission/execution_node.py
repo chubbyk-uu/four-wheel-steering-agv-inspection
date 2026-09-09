@@ -36,7 +36,7 @@ class Executor(Node):
         (self.output/'plan.json').write_text(json.dumps(self.plan,indent=2)+'\n')
         self.log=(self.output/'execution.jsonl').open('x')
         self.auto=self.declare_parameter('autostart',False).value
-        self.capture=CaptureGate(self,self.output,self.declare_parameter('capture',False).value)
+        self.capture=CaptureGate(self,self.output,self.declare_parameter('capture',False).value,self.cfg['capture_state_timeout_s'])
         self.odom=None;self.mode='';self.health={};self.arrivals={};self.last_command=[0.,0.,0.];self.motion_reason=''
         self.state='READY';self.reason='';self.ready_since=None;self.steps=[];self.index=0;self.core=None
         self.last_sim=None;self.last_clock=time.monotonic();self.step_attempts=0;self.stopped_since=None

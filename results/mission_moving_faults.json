@@ -1,0 +1,338 @@
+{
+  "date": "2026-09-09",
+  "scope": "GUI/RViz, normal noise, 0.5 m/s, moving fault stopping; not real-hardware/high-speed safety certification",
+  "cases": {
+    "moving_localization_fault_20260909_v2": {
+      "passed": true,
+      "scope": "moving fault braking and valid tail archive; incomplete ROI",
+      "profile": "normal",
+      "gui_rviz": true,
+      "follow_camera": true,
+      "wheel_steering_range_rad": {
+        "fl": [
+          -0.3155361848873815,
+          0.006225525873192744
+        ],
+        "fr": [
+          -0.31578013987183456,
+          0.006222762237024209
+        ],
+        "rl": [
+          -0.3145102935986932,
+          0.005680423571433282
+        ],
+        "rr": [
+          -0.3147516295964748,
+          0.005678157214331943
+        ]
+      },
+      "region_m": [
+        3.0,
+        2.0
+      ],
+      "track_spacing_m": 1.0,
+      "tracks": [
+        {
+          "track_id": 0,
+          "running_samples": 223,
+          "reference_error_max_m": 0.023505357050248074
+        },
+        {
+          "track_id": 1,
+          "running_samples": 0,
+          "reference_error_max_m": null
+        }
+      ],
+      "final": {
+        "time_s": 21.42,
+        "state": "FAULT",
+        "reason": "STALE_OR_UNREADY_LOCALIZATION",
+        "motion_state": "HOLD",
+        "step_index": 1,
+        "step_count": 5,
+        "capture_integrated": true,
+        "capture_active": false,
+        "command_body": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "motion_reason": "STOP_REQUEST",
+        "kind": "PASS",
+        "track_id": 0,
+        "position_m": [
+          5.997226425276445,
+          -0.49701597454553353,
+          0.6139245323835858
+        ],
+        "tracker_state": "RUNNING",
+        "profile_time_s": 2.8369999999999997,
+        "profile_duration_s": 12.142606092301396,
+        "terminal_trims": 0,
+        "reference_position_m": [
+          5.878447292628217,
+          -0.4985865562962709,
+          0.6514383252382964
+        ],
+        "reference_speed": 0.5,
+        "active_kind": "translate",
+        "along_reference_error_m": 0.011299709308824566,
+        "reference_position_error_m": 0.01146926603899641,
+        "reference_heading_error_rad": 0.0021814423551502296,
+        "goal_error_m": 4.539103180723394,
+        "goal_heading_error_rad": 0.0021814423551502296,
+        "reference_progress": 1.2622499999999999,
+        "health": {
+          "state": "READY",
+          "measurement_age_s": {
+            "wheel": 0.018000000000000682,
+            "imu": 0.010000000000001563,
+            "gnss": 0.08000000000000185
+          },
+          "filter_age_s": {
+            "local": 0.009000000000003894,
+            "global": 0.009000000000003894
+          },
+          "tilt_initialized": true,
+          "delivery_queue_peak": 3,
+          "stop_required": false
+        }
+      },
+      "moving_fault": {
+        "case": "localization_timeout",
+        "injection": {
+          "time_s": 19.565,
+          "position_m": [
+            5.707448616211941,
+            -0.49185410703982146,
+            0.648421229316326
+          ],
+          "speed_m_s": 0.5002430869090855
+        },
+        "reaction_sim_s": 0.33999999999999986,
+        "stopping_distance_m": 0.29726348406695247,
+        "stopping_budget_m": 0.550279579491071,
+        "blocks": 1,
+        "ros_archive_identical": true
+      }
+    },
+    "moving_camera_fault_20260909_v2": {
+      "passed": true,
+      "scope": "moving fault braking and valid tail archive; incomplete ROI",
+      "profile": "normal",
+      "gui_rviz": true,
+      "follow_camera": true,
+      "wheel_steering_range_rad": {
+        "fl": [
+          -0.31297913804677807,
+          0.007651073628100735
+        ],
+        "fr": [
+          -0.3129791380296384,
+          0.007637801581718012
+        ],
+        "rl": [
+          -0.31297913804866945,
+          0.005355718820529426
+        ],
+        "rr": [
+          -0.3129791380364206,
+          0.0053469806424260025
+        ]
+      },
+      "region_m": [
+        3.0,
+        2.0
+      ],
+      "track_spacing_m": 1.0,
+      "tracks": [
+        {
+          "track_id": 0,
+          "running_samples": 155,
+          "reference_error_max_m": 0.01573198557419276
+        },
+        {
+          "track_id": 1,
+          "running_samples": 0,
+          "reference_error_max_m": null
+        }
+      ],
+      "final": {
+        "time_s": 19.624000000000002,
+        "state": "FAULT",
+        "reason": "CAMERA_DISABLED_UNEXPECTEDLY",
+        "motion_state": "HOLD",
+        "step_index": 1,
+        "step_count": 5,
+        "capture_integrated": true,
+        "capture_active": false,
+        "command_body": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "motion_reason": "STOP_REQUEST",
+        "kind": "PASS",
+        "track_id": 0,
+        "position_m": [
+          5.834730294974053,
+          -0.4970831183897101,
+          0.6132810284130767
+        ],
+        "tracker_state": "RUNNING",
+        "profile_time_s": 2.5219999999999985,
+        "profile_duration_s": 12.171905103189978,
+        "terminal_trims": 0,
+        "reference_position_m": [
+          5.706269399239794,
+          -0.5044693678253723,
+          0.6263496724198923
+        ],
+        "reference_speed": 0.5,
+        "active_kind": "translate",
+        "along_reference_error_m": 0.000560730888048431,
+        "reference_position_error_m": 0.0065203189722883945,
+        "reference_heading_error_rad": 0.005489620441091525,
+        "goal_error_m": 4.700517771367305,
+        "goal_heading_error_rad": 0.005489620441091525,
+        "reference_progress": 1.1047499999999992,
+        "health": {
+          "state": "READY",
+          "measurement_age_s": {
+            "wheel": 0.017000000000003013,
+            "imu": 0.010000000000001563,
+            "gnss": 0.08000000000000185
+          },
+          "filter_age_s": {
+            "local": 0.008000000000002672,
+            "global": 0.008000000000002672
+          },
+          "tilt_initialized": true,
+          "delivery_queue_peak": 3,
+          "stop_required": false
+        }
+      },
+      "moving_fault": {
+        "case": "camera_disabled",
+        "injection": {
+          "time_s": 19.118000000000002,
+          "position_m": [
+            5.690342683094012,
+            -0.49319145569917255,
+            0.6484268963089487
+          ],
+          "speed_m_s": 0.4998286668248711
+        },
+        "reaction_sim_s": 0.006000000000000227,
+        "stopping_distance_m": 0.14163480612726523,
+        "stopping_budget_m": 0.5498029815261302,
+        "blocks": 1,
+        "ros_archive_identical": true
+      }
+    },
+    "heartbeat_pause_20260909": {
+      "passed": true,
+      "scope": "rectangle motion + OptiX raw capture + sparse fused labels; no correction/stitching",
+      "profile": "normal",
+      "gui_rviz": true,
+      "follow_camera": true,
+      "wheel_steering_range_rad": {
+        "fl": [
+          -0.31294233570870705,
+          3.13118676633568
+        ],
+        "fr": [
+          -0.31294233394027215,
+          1.5870647186522349
+        ],
+        "rl": [
+          -3.1626550170863617,
+          0.0031186407150691495
+        ],
+        "rr": [
+          -1.5599098481200357,
+          0.00311864071092675
+        ]
+      },
+      "region_m": [
+        3.0,
+        2.0
+      ],
+      "track_spacing_m": 1.0,
+      "tracks": [
+        {
+          "track_id": 0,
+          "running_samples": 817,
+          "reference_error_max_m": 0.01994335234233869
+        },
+        {
+          "track_id": 1,
+          "running_samples": 377,
+          "reference_error_max_m": 0.03479542385173358
+        }
+      ],
+      "final": {
+        "time_s": 69.087,
+        "state": "ACQUIRED",
+        "reason": "",
+        "motion_state": "HOLD",
+        "step_index": 5,
+        "step_count": 5,
+        "capture_integrated": true,
+        "capture_active": false,
+        "command_body": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "motion_reason": "STOP_REQUEST",
+        "position_m": [
+          6.891964604957257,
+          0.49103969554590127,
+          0.6671874134196739
+        ]
+      },
+      "pause_resume": {
+        "requested_time_s": 17.801000000000002,
+        "stopped_time_s": 18.822000000000003,
+        "resume_request_time_s": 21.841,
+        "crossing_blocks": [
+          {
+            "block_id": 0,
+            "rows": 4096,
+            "pause_gap_s": 3.697582970531574
+          }
+        ],
+        "no_partial_frame_during_pause": true
+      },
+      "capture": [
+        {
+          "track_id": 0,
+          "blocks": 3,
+          "rows": 9141,
+          "truth_along_extent_m": [
+            -0.2394135351479978,
+            3.1076481785220196
+          ],
+          "continuous_roi": true
+        },
+        {
+          "track_id": 1,
+          "blocks": 3,
+          "rows": 9052,
+          "truth_along_extent_m": [
+            -0.1993337571260838,
+            3.1159543704312327
+          ],
+          "continuous_roi": true
+        }
+      ]
+    }
+  },
+  "tests": "colcon: 239 tests, 0 errors, 0 failures, 0 skipped (includes current coverage work); heartbeat unit guards cover ordinary pause, unexpected disable, absent/replayed state and startup before ROS clock.",
+  "limits": [
+    "Reaction timestamps are simulation time. Camera disable acknowledgement drains archived rows synchronously; no claim of measured hardware or wall-clock response latency.",
+    "Startup D3D12 device removal/context failure was excluded and retried with the same default backend.",
+    "Fault experiments wait for HOLD and close acknowledgement; localization adapter is restored and FAULT remains latched."
+  ]
+}

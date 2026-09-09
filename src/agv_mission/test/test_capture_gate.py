@@ -55,3 +55,44 @@ def test_close_records_cancellation_reason_and_exception_latches_failure(tmp_pat
         g.request(True,0);n.client.future.set_exception(RuntimeError('transport failed'));g.poll()
         assert g.active is False and g.future is None and g.error.startswith('CAMERA_HANDSHAKE_FAILED')
     finally:g.close()
+
+
+def test_camera_heartbeat_distinguishes_pause_from_disabled_and_stale_data(tmp_path,monkeypatch):
+    import json
+    from agv_mission import capture
+    clock=[10.];monkeypatch.setattr(capture.time,'monotonic',lambda:clock[0])
+    n=Node();g=CaptureGate(n,tmp_path,True)
+    try:
+        g.request(True,0);acknowledge(g,n)
+        g.on_state(SimpleNamespace(data=json.dumps(dict(time_s=.99,enabled=False))))
+        g.poll();assert not g.error # Old disabled state predates enable acknowledgement.
+        clock[0]+=.1
+        g.on_state(SimpleNamespace(data=json.dumps(dict(time_s=1.01,enabled=True,sampling_active=True))))
+        g.poll();assert not g.error # No image needed while paused.
+        clock[0]+=.1
+        g.on_state(SimpleNamespace(data=json.dumps(dict(time_s=1.02,enabled=False))))
+        g.poll();assert g.error=='CAMERA_DISABLED_UNEXPECTEDLY'
+    finally:g.close()
+
+
+def test_missing_or_replayed_camera_heartbeat_times_out(tmp_path,monkeypatch):
+    import json
+    from agv_mission import capture
+    clock=[10.];monkeypatch.setattr(capture.time,'monotonic',lambda:clock[0])
+    n=Node();g=CaptureGate(n,tmp_path,True)
+    try:
+        g.request(True,0);acknowledge(g,n)
+        message=SimpleNamespace(data=json.dumps(dict(time_s=1.,enabled=True)))
+        g.on_state(message);clock[0]+=.6;g.on_state(message);g.poll()
+        assert g.error=='CAMERA_STATE_TIMEOUT'
+    finally:g.close()
+
+
+def test_state_before_first_ros_clock_is_not_a_camera_fault(tmp_path):
+    import json
+    n=Node();n.get_clock=lambda:SimpleNamespace(now=lambda:SimpleNamespace(nanoseconds=0))
+    g=CaptureGate(n,tmp_path,True)
+    try:
+        g.on_state(SimpleNamespace(data=json.dumps(dict(time_s=12.,enabled=False))))
+        assert not g.error and g.heartbeat is None
+    finally:g.close()

@@ -11,7 +11,7 @@ from rclpy.parameter import Parameter
 from rclpy.qos import qos_profile_sensor_data
 from nav_msgs.msg import Odometry
 from std_msgs.msg import String
-from std_srvs.srv import Trigger
+from std_srvs.srv import Trigger,SetBool
 from sensor_msgs.msg import Image,JointState
 from label_mission_capture import label
 from prepare_mission_camera import prepare
@@ -37,13 +37,19 @@ def main():
     parser.add_argument('--follow-camera',action=argparse.BooleanOptionalAction,default=True,
                         help='keep AGV in view in GUI while allowing wheel zoom')
     parser.add_argument('--scene',type=Path)
+    parser.add_argument('--request',type=Path,help='validate an existing rectangle request, including a generated rescan')
     parser.add_argument('--pause-once',action='store_true',help='pause early in first PASS, retain camera frame, then resume')
     parser.add_argument('--stop-after-pause',choices=['cancel','localization_timeout'],help='instead of resuming, validate partial-frame termination')
+    parser.add_argument('--moving-fault',choices=['localization_timeout','camera_disabled'])
     parser.add_argument('--length',type=float,default=3.);parser.add_argument('--width',type=float,default=2.)
     a=parser.parse_args();a.pause_once=a.pause_once or bool(a.stop_after_pause);a.output.mkdir(parents=True,exist_ok=False)
-    req=yaml.safe_load(Path('src/agv_mission/config/rectangle_demo.yaml').read_text())
-    req['road']['frame_id']='map';req['region'].update(length_m=a.length,width_m=a.width)
-    req['region']['start_xy_m']=[6.,-a.width/2];req['mission_id']='rectangle_execution_trial'
+    if a.moving_fault and (a.pause_once or not a.scene):parser.error('moving fault requires a scene and cannot combine with pause probes')
+    req=yaml.safe_load((a.request or Path('src/agv_mission/config/rectangle_demo.yaml')).read_text())
+    if a.request:
+        a.length=req['region']['length_m'];a.width=req['region']['width_m']
+    else:
+        req['road']['frame_id']='map';req['region'].update(length_m=a.length,width_m=a.width)
+        req['region']['start_xy_m']=[6.,-a.width/2];req['mission_id']='rectangle_execution_trial'
     path=a.output/'request.yaml';path.write_text(yaml.safe_dump(req))
     os.environ.update(ROS_DOMAIN_ID='98',GZ_PARTITION='agv_rectangle_'+str(os.getpid()))
     extra=[]
@@ -62,10 +68,13 @@ def main():
     pause_client=node.create_client(Trigger,'/mission/pause');resume_client=node.create_client(Trigger,'/mission/resume')
     cancel_client=node.create_client(Trigger,'/mission/cancel');suspended=None;stop_injected=False
     pause_future=None;resume_future=None;paused_at=None;image_count_at_pause=None;pause_report={}
+    camera_client=node.create_client(SetBool,'/linescan/set_enabled');moving_injection=None;camera_future=None
     def status(m):
         v=json.loads(m.data);latest.update(status=v);records.append(v)
     def actual(m):
         p=m.pose.pose.position;q=m.pose.pose.orientation
+        latest['truth_position']=[p.x,p.y,p.z];v=m.twist.twist
+        latest['truth_speed']=float(np.hypot(v.linear.x,v.linear.y))
         truth.append([m.header.stamp.sec+m.header.stamp.nanosec*1e-9,p.x,p.y,p.z,q.x,q.y,q.z,q.w])
     def image(m):images[m.header.stamp.sec*10**9+m.header.stamp.nanosec]=(hashlib.sha256(m.data).hexdigest(),m.width,m.height)
     def joints(m):
@@ -92,6 +101,16 @@ def main():
             assert time.monotonic()<deadline,'mission timeout'
             rclpy.spin_once(node,timeout_sec=.02)
             current=latest.get('status',{})
+            if a.moving_fault and moving_injection is None and current.get('kind')=='PASS' and current.get('track_id')==0 and current.get('tracker_state')=='RUNNING' and current.get('profile_time_s',0)>2.5:
+                assert latest.get('truth_speed',0)>.4,'fault must be injected while moving'
+                moving_injection=dict(time_s=current['time_s'],position_m=latest['truth_position'],speed_m_s=latest['truth_speed'])
+                if a.moving_fault=='localization_timeout':
+                    matches=[p for p in psutil.Process(sim.pid).children(recursive=True) if any(v.endswith('/measurement_adapter') for v in p.cmdline())]
+                    assert len(matches)==1
+                    suspended=matches[0];suspended.send_signal(signal.SIGSTOP)
+                else:
+                    assert camera_client.service_is_ready()
+                    camera_future=camera_client.call_async(SetBool.Request(data=False))
             if a.pause_once:
                 if pause_future is None and current.get('kind')=='PASS' and current.get('track_id')==0 and current.get('tracker_state')=='RUNNING' and current.get('profile_time_s',0)>1.2:
                     assert pause_client.service_is_ready()
@@ -156,7 +175,29 @@ def main():
             assert images.get(stamp)==(hashlib.sha256(pixels).hexdigest(),m['width'],m['rows'])
             result.update(passed=True,scope='paused partial frame terminated explicitly; incomplete ROI, no coverage success',
                 termination_probe=dict(case=a.stop_after_pause,tail_rows=m['rows'],sensor_end_reason=m['end_reason'],ros_archive_identical=True),pause_resume=pause_report)
-        if a.scene and result['passed'] and not a.stop_after_pause:
+        if a.moving_fault:
+            assert moving_injection is not None and end['state']=='FAULT' and end['motion_state']=='HOLD' and end['capture_active'] is False,end
+            expected='STALE_OR_UNREADY_LOCALIZATION' if a.moving_fault=='localization_timeout' else 'CAMERA_DISABLED_UNEXPECTEDLY'
+            assert end['reason']==expected,end
+            if camera_future:assert camera_future.done() and camera_future.result().success
+            first_fault=next(r for r in records if r['state']=='FAULT')
+            latency=first_fault['time_s']-moving_injection['time_s']
+            distance=float(np.linalg.norm(np.array(latest['truth_position'])-moving_injection['position_m']))
+            cfg=yaml.safe_load(Path('src/agv_mission/config/tracking.yaml').read_text())
+            platform=yaml.safe_load(Path('src/agv_description/config/platform.yaml').read_text())
+            reaction_budget=max(cfg['wall_timeout_s'],cfg['capture_state_timeout_s'])+.15
+            assert first_fault['command_body']==[0.,0.,0.] and 0<=latency<reaction_budget
+            budget=moving_injection['speed_m_s']*reaction_budget+moving_injection['speed_m_s']**2/(2*platform['drive_decel'])+.10
+            assert distance<budget and latest['truth_speed']<.025
+            from PIL import Image as PilImage
+            blocks=list((a.output/'raw').glob('*/block_*.json'));assert blocks
+            until=time.monotonic()+1
+            while time.monotonic()<until:rclpy.spin_once(node,timeout_sec=.02)
+            for path in blocks:
+                m=json.loads(path.read_text());pixels=np.asarray(PilImage.open(path.with_suffix('.pgm'))).tobytes()
+                assert images.get(round(m['last']['time_s']*1e9))==(hashlib.sha256(pixels).hexdigest(),m['width'],m['rows'])
+            result.update(passed=True,scope='moving fault braking and valid tail archive; incomplete ROI',moving_fault=dict(case=a.moving_fault,injection=moving_injection,reaction_sim_s=latency,stopping_distance_m=distance,stopping_budget_m=budget,blocks=len(blocks),ros_archive_identical=True))
+        if a.scene and result['passed'] and not a.stop_after_pause and not a.moving_fault:
             # Drain reliable metadata/image delivery after storage close acknowledgement.
             until=time.monotonic()+1
             while time.monotonic()<until:rclpy.spin_once(node,timeout_sec=.02)
@@ -209,7 +250,7 @@ def main():
             result.update(scope='rectangle motion + OptiX raw capture + sparse fused labels; no correction/stitching',capture=captured)
         (a.output/'results.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result))
         assert result['passed'],end
-        if not a.stop_after_pause:assert all(t['running_samples']>0 for t in passes),'missing pass execution'
+        if not a.stop_after_pause and not a.moving_fault:assert all(t['running_samples']>0 for t in passes),'missing pass execution'
     finally:
         if suspended:
             try:suspended.send_signal(signal.SIGCONT)

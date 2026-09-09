@@ -33,3 +33,6 @@ initial_ready_hold_s: 5.0
 pause_max_displacement_m: 0.20
 pause_max_rotation_rad: 0.10
 pause_stop_timeout_s: 10.0
+
+# Camera state is independent of image output cadence (including ordinary pause).
+capture_state_timeout_s: 0.5

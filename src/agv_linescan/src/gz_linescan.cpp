@@ -142,6 +142,7 @@ class GzLineScan final: public gz::sim::System,
     previewPub_=node_->create_publisher<sensor_msgs::msg::Image>("/linescan/image_preview",2);
     metaPub_=node_->create_publisher<std_msgs::msg::String>("/linescan/block_metadata",10);
     statusPub_=node_->create_publisher<std_msgs::msg::String>("/linescan/status",10);
+    statePub_=node_->create_publisher<std_msgs::msg::String>("/linescan/state",10);
     motionSub_=node_->create_subscription<std_msgs::msg::String>("/motion_state",10,
         [this](std_msgs::msg::String::ConstSharedPtr m) { motion_=m->data; });
     enableService_=node_->create_service<std_srvs::srv::SetBool>("/linescan/set_enabled",
@@ -214,6 +215,11 @@ class GzLineScan final: public gz::sim::System,
     if (backend_=="render") render_.UpdateFromECM(info,ecm);
     {std::lock_guard<std::mutex> lock(mutex_);HandleTerrainError();}
     executor_->spin_some();
+    if (Clock::now()-lastStatePublish_>=std::chrono::milliseconds(50)) {
+      Json state={{"time_s",now_},{"enabled",enabled_},{"sampling_active",active_}};
+      std_msgs::msg::String message;message.data=state.dump();statePub_->publish(message);
+      lastStatePublish_=Clock::now();
+    }
     if (info.paused) return;
     Job job; job.sceneTime=now_;
     if (model_) {
@@ -774,7 +780,8 @@ class GzLineScan final: public gz::sim::System,
   rclcpp::Node::SharedPtr node_;
   std::unique_ptr<rclcpp::executors::SingleThreadedExecutor> executor_;
   rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr imagePub_,previewPub_;
-  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr metaPub_,statusPub_;
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr metaPub_,statusPub_,statePub_;
+  Clock::time_point lastStatePublish_{};
   rclcpp::Subscription<std_msgs::msg::String>::SharedPtr motionSub_;
   rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr enableService_;
 };
