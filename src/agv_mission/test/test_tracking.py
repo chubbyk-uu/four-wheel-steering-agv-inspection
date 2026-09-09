@@ -114,11 +114,11 @@ def test_stale_filtered_terminal_error_does_not_create_zero_trim(offset):
     assert c.state=='COMPLETED'
 
 
-def test_stale_position_error_still_allows_actual_heading_trim():
+def test_actual_heading_trim_at_goal_position():
     from scipy.spatial.transform import Rotation
     c=tracker();c.state='STOPPING'
     r=Rotation.from_euler('z',-.06)
-    c.start_trim(np.array([4.,0.,.65]),r,np.array([.4,0.]),0.)
+    c.start_trim(np.array([4.,0.,.65]),r)
     assert c.kind=='rotate' and c.length==pytest.approx(.06)
     assert np.isfinite(c.axis).all()
 

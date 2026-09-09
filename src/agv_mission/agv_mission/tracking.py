@@ -74,7 +74,7 @@ class SegmentTracker:
         if self.state in ('FAULT','COMPLETED'):return
         self.state='FAULT';self.reason=reason;self.command=np.zeros(3)
 
-    def start_trim(self,p,r,position_error,heading_error):
+    def start_trim(self,p,r):
         # Stop before selecting a new correction axis. Every trim gets its own
         # rest-to-rest time profile, avoiding sub-deadband requests stuck in HOLD.
         self.outside_time=0.
@@ -145,7 +145,7 @@ class SegmentTracker:
                 self.settled=0.
                 self.outside_time=self.outside_time+dt if stopped else 0.
                 if self.outside_time>=self.cfg['terminal_dwell_s']:
-                    self.start_trim(p,r,self.terminal_filtered[:2],self.terminal_filtered[2])
+                    self.start_trim(p,r)
             self.diagnostic={'goal_error_m':float(np.linalg.norm(tangent_error)),
                              'goal_heading_error_rad':heading_error,
                              'filtered_terminal_error_m':float(np.linalg.norm(self.terminal_filtered[:2])) if self.terminal_filtered is not None else None}
