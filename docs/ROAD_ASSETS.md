@@ -44,4 +44,4 @@ python3 tools/benchmark_optix_stream.py \
   --start-x 2 --track-y 0 --rate 11200
 ```
 
-10 km/h、20 m、GUI/RViz整车另测：14块/54,605行、ROS与归档完全一致、零必需缓存缺失、最终HOLD；最大缓存等待0.050 ms。不过当前环境实时率约0.51，隔离构建修改前版本同条件约0.52，均未复现历史0.99。该联合实时性能异常尚未定位，不能把采集完整性passed解释为实时验收passed。详见[完整对照](../results/review_material_cache.json)。
+10 km/h、20 m、GUI/RViz整车另测：14块/54,605行、ROS与归档完全一致、零必需缓存缺失、最终HOLD；最大缓存等待0.050 ms。不过当前环境实时率约0.51，隔离构建修改前版本同条件约0.52，均未复现历史0.99。后续已定位并修复采集位姿插值的重复YAML解析，实时率恢复0.996，见[修复记录](issues/SCAN_STABILITY.md)。仍不能把采集完整性passed解释为实时验收passed。详见[完整对照](../results/review_material_cache.json)。

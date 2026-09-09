@@ -310,8 +310,12 @@ def evaluate(args):
             report['full_block_delivery_lines_per_wall_second']=(len(full_received)-1)*args.block_rows/(full_received[-1]-full_received[0]) if len(full_received)>1 else None
             report['full_acceptance_passed']=False
             report['notes']='OptiX shared static mesh plus thirteen robot links with per-exposure transforms and configured LED shadow samples; ROS images and PGM archive. Sampling rate excludes physics/ROS/archive. Not the independent durable-write throughput acceptance.'
+        report['realtime_target_met']=report['real_time_factor']>=.95
+        report['realtime_required']=args.require_realtime
+        report['passed']=report['passed'] and (not args.require_realtime or report['realtime_target_met'])
         (Path(args.archive)/'summary.json').write_text(json.dumps(report,indent=2)+'\n')
         print(json.dumps(report),flush=True)
+        assert report['passed'], 'required realtime factor >=0.95 was not met'
         if args.view_hold: run_for(args.view_hold,(0,0,0))
     finally:
         node.command((0,0,0)); node.destroy_node(); rclpy.shutdown()
@@ -323,6 +327,7 @@ def main():
     parser.add_argument('--camera-config',default='')
     parser.add_argument('--correction-profile',default='')
     parser.add_argument('--reference-target',action='store_true')
+    parser.add_argument('--require-realtime',action='store_true',help='fail capture acceptance when steady real-time factor is below 0.95')
     parser.add_argument('--gui',action='store_true')
     parser.add_argument('--rviz',action='store_true')
     parser.add_argument('--stop-capture-before-brake',action='store_true')
@@ -360,6 +365,7 @@ def main():
             if args.reference_target: command.append('--reference-target')
             if args.stop_capture_before_brake: command.append('--stop-capture-before-brake')
             if args.camera_config: command.extend(['--camera-config',args.camera_config])
+            if args.require_realtime: command.append('--require-realtime')
             if args.gui: command.append('--gui')
             if args.rviz: command.append('--rviz')
             if args.repair_missing_tile: command.extend(['--repair-missing-tile',*args.repair_missing_tile])

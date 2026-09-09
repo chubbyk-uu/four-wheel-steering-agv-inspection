@@ -107,6 +107,10 @@ class GzLineScan final: public gz::sim::System,
     rows_=sdf->Get<size_t>("block_rows",config_["block_rows"].as<size_t>()).first;
     config_["block_rows"]=rows_;
     exposure_=config_["exposure_s"].as<double>();
+    // Read immutable configuration once, not for every exposure/link SLERP.
+    maxSampleGap_=config_["max_sample_gap_s"].as<double>();
+    if(!std::isfinite(maxSampleGap_) || maxSampleGap_<=0)
+      throw std::runtime_error("invalid maximum pose sample gap");
     spacing_=config_["line_spacing_m"].as<double>();
     maxSpeed_=sdf->Get<double>("max_scan_speed",.25).first;
     if (!rows_ || exposure_<=0 || maxSpeed_<=0 || rows_>16384)
@@ -310,7 +314,7 @@ class GzLineScan final: public gz::sim::System,
     for (size_t i=1;i<history_.size();++i) {
       const auto &a=history_[i-1],&b=history_[i];
       if (t>=a.time && t<=b.time) {
-        if (b.time-a.time>config_["max_sample_gap_s"].as<double>()) throw std::runtime_error("pose_gap");
+        if (b.time-a.time>maxSampleGap_) throw std::runtime_error("pose_gap");
         return Interpolate(link==SIZE_MAX?a.pose:a.links.at(link),link==SIZE_MAX?b.pose:b.links.at(link),(t-a.time)/(b.time-a.time));
       }
     }
@@ -714,7 +718,7 @@ class GzLineScan final: public gz::sim::System,
   std::deque<Sample> history_;
   std::deque<Event> pending_;
   gz::math::Pose3d offset_;
-  double radius_=0,track_=0,wheelbase_=0,now_=0,exposure_=0,spacing_=0,maxSpeed_=0;
+  double radius_=0,track_=0,wheelbase_=0,now_=0,exposure_=0,spacing_=0,maxSpeed_=0,maxSampleGap_=0;
   double wheelSpreadAbsolute_=.01,wheelSpreadRelative_=0;
   bool enabled_=false,active_=false;
   std::string motion_,backend_,terrainPath_;

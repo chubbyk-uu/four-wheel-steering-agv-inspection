@@ -1,0 +1,261 @@
+{
+  "date": "2026-09-09",
+  "baseline_code": "7f82cce",
+  "change": "Cache immutable max_sample_gap_s at Configure instead of parsing YAML in every PoseAt call. Interpolation unchanged.",
+  "before": {
+    "capture_off": {
+      "bins": [
+        {
+          "x_range": [
+            2,
+            6
+          ],
+          "rtf": 1.0007311237220944
+        },
+        {
+          "x_range": [
+            6,
+            9
+          ],
+          "rtf": 0.999882224983929
+        },
+        {
+          "x_range": [
+            10,
+            15
+          ],
+          "rtf": 0.9998854861484758
+        },
+        {
+          "x_range": [
+            15,
+            20
+          ],
+          "rtf": 1.000120433603585
+        },
+        {
+          "x_range": [
+            20,
+            25
+          ],
+          "rtf": 1.000043376038471
+        },
+        {
+          "x_range": [
+            25,
+            28
+          ],
+          "rtf": 0.9998721616281236
+        }
+      ],
+      "capture": false,
+      "headless": false,
+      "final": "HOLD"
+    },
+    "capture_on_at_x9": {
+      "bins": [
+        {
+          "x_range": [
+            2,
+            6
+          ],
+          "rtf": 1.000627330413351
+        },
+        {
+          "x_range": [
+            6,
+            9
+          ],
+          "rtf": 1.0002185255211158
+        },
+        {
+          "x_range": [
+            10,
+            15
+          ],
+          "rtf": 0.5182042509951251
+        },
+        {
+          "x_range": [
+            15,
+            20
+          ],
+          "rtf": 0.5150997769480391
+        },
+        {
+          "x_range": [
+            20,
+            25
+          ],
+          "rtf": 0.5159524610956292
+        },
+        {
+          "x_range": [
+            25,
+            28
+          ],
+          "rtf": 0.5446920922840183
+        }
+      ],
+      "capture": true,
+      "headless": false,
+      "final": "HOLD"
+    }
+  },
+  "after_gui_20m": {
+    "passed": true,
+    "motion_evaluation": {
+      "scope": "ground-truth evaluation only, never command input; each pose uses its own timestamp",
+      "duration_s": 7.2,
+      "displacement_m": [
+        20.00000233993508,
+        1.1915668451933925e-10,
+        -5.964585281237333e-08
+      ],
+      "average_world_velocity_m_s": [
+        2.777778102768761,
+        1.6549539516574896e-11,
+        -8.284146223940741e-09
+      ]
+    },
+    "correction": {},
+    "corrected_received_blocks": 0,
+    "gazebo_gui": true,
+    "rviz": true,
+    "rviz_world_start": [
+      8.746137844426501,
+      2.4999999997423674,
+      0.6484269102504477
+    ],
+    "rviz_world_end": [
+      28.74613991324742,
+      2.499999999328278,
+      0.648426855670828
+    ],
+    "display_sync": {
+      "frames": 849,
+      "dropped_pending": 0,
+      "pending": 0,
+      "max_sim_age_s": 0.015000000000000001,
+      "mode": "same_stamp_interpolated_display_only"
+    },
+    "backend": "optix_shared_mesh_dynamic_robot",
+    "rows": [
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      1357
+    ],
+    "speed_m_s": 2.777777777777778,
+    "display_frames": 888,
+    "display_bad_stamps": 0,
+    "simulation_seconds": 7.200000000000001,
+    "wall_seconds": 7.226691435000248,
+    "real_time_factor": 0.9963065484059586,
+    "sampling_line_rate": 23427.698577252257,
+    "wheel_motion_diagnostics": {
+      "fl_wheel_link": {
+        "local_position_range_m": [
+          4.618527782440651e-14,
+          5.329070518200751e-15,
+          2.894316528667673e-06
+        ],
+        "max_z_step_m": 6.462247403860033e-11,
+        "z_max_m": 0.19999998235756028,
+        "z_min_m": 0.19999997911120937
+      },
+      "fr_wheel_link": {
+        "local_position_range_m": [
+          4.618527782440651e-14,
+          5.329070518200751e-15,
+          2.89431628597292e-06
+        ],
+        "max_z_step_m": 6.454337064809579e-11,
+        "z_max_m": 0.19999998235506733,
+        "z_min_m": 0.19999997911120843
+      },
+      "rl_wheel_link": {
+        "local_position_range_m": [
+          4.618527782440651e-14,
+          5.773159728050814e-15,
+          2.7521219539416997e-06
+        ],
+        "max_z_step_m": 6.359995863292056e-11,
+        "z_max_m": 0.19999998292111426,
+        "z_min_m": 0.19999997988140467
+      },
+      "rr_wheel_link": {
+        "local_position_range_m": [
+          4.263256414560601e-14,
+          5.329070518200751e-15,
+          2.7521178234124477e-06
+        ],
+        "max_z_step_m": 6.342665281877657e-11,
+        "z_max_m": 0.1999999830536517,
+        "z_min_m": 0.19999997988140505
+      }
+    },
+    "metrics": {
+      "lines": 54605,
+      "mapping_seconds": 0.0,
+      "physics_step_wall_interval_max_seconds": 0.00179339,
+      "physics_step_wall_interval_p99_upper_seconds": 0.0015,
+      "readback_seconds": 0.0,
+      "render_seconds": 2.3307880549999975,
+      "renders": 163815,
+      "sampling_batch_max_seconds": 0.014668448,
+      "scene_update_seconds": 0.0
+    },
+    "write_seconds": 0.069460568,
+    "publish_call_seconds": 0.042614356,
+    "received_blocks": 14,
+    "ros_all_blocks_byte_identical": true,
+    "nominal_encoder_line_rate_hz": 7585.185185185186,
+    "receive_interval_max_seconds": 0.546031738000238,
+    "final_motion_state": "HOLD",
+    "grid_geometry": [],
+    "occlusion_probe": false,
+    "tile_statistics": {
+      "batch_wait_seconds_max": 5.4397e-05,
+      "bytes_read": 2223251712,
+      "cache_slots": 32,
+      "cold_warm_seconds": 0.158997343,
+      "device_payload_bytes": 404232320,
+      "evictions": 152,
+      "load_seconds_max": 0.008694595,
+      "load_seconds_total": 1.397741358,
+      "read_seconds_max": 0.0026129919999999997,
+      "read_seconds_total": 0.3385297939999999,
+      "required_tile_misses_after_warm": 0,
+      "sha256_bytes": 2223251712,
+      "sha256_seconds_max": 0.005692915999999999,
+      "sha256_seconds_total": 0.9267362920000001,
+      "slot_pins": 0,
+      "tile_loads": 176,
+      "upload_seconds_max": 0.00142957,
+      "upload_seconds_total": 0.12602585500000005,
+      "verification_reuse_files": 0
+    },
+    "sampling_queue_high_water_lines": 129,
+    "sampling_queue_observed_wait_max_s": 0.016463146999740275,
+    "sampling_queue_high_water_jobs": 17,
+    "notes": "OptiX shared static mesh plus thirteen robot links with per-exposure transforms and configured LED shadow samples; ROS images and PGM archive. Sampling rate excludes physics/ROS/archive. Not the independent durable-write throughput acceptance.",
+    "full_block_delivery_lines_per_wall_second": 7578.792570725865,
+    "full_acceptance_passed": false,
+    "realtime_target_met": true,
+    "realtime_required": true
+  },
+  "limits": "20 m straight steady run, not long-distance or rectangle closed-loop acceptance. Historical ~0.99 used different LED/preview settings; exact historical environment difference not established. One earlier GUI startup crashed in EntityContextMenuPlugin before motion; excluded from timing.",
+  "method": "D3D12 GUI + RViz, current 550 kg model, 10 km/h, 20 m full-width textures shifted +10 m with flat run-up/braking aprons. No capture from x2 to9; gated capture from x9 to27.5 in path comparison. Final acceptance: spawn (2,2.5), warmup 4.28 s, capture 20 m, stop capture before braking; require RTF >=0.95.",
+  "test_result": "agv_linescan: 103 tests, 0 errors, 0 failures, 0 skipped; validator py_compile passed"
+}
