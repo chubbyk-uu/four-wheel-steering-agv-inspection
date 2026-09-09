@@ -64,7 +64,7 @@ def audit_capture(mission,navigation,output,platform,camera,uncertainty=.10):
     if source['frame_id']!='map' or source['tracks']!=checked['tracks'] or source['vehicle']!=checked['vehicle']:raise ValueError('source plan incompatible with current validated vehicle')
     nav=Navigation(navigation)
     intervals=json.loads((mission/'capture_intervals.json').read_text())
-    spans=[];issues=[];inputs=[];seen=set()
+    spans=[];issues=[];inputs=[];seen=set();scenes=set()
     for interval in intervals:
         if 'disabled_ack_time_s' not in interval:
             issues.append(dict(track_id=interval['track_id'],reason='capture close not acknowledged; interval excluded'));continue
@@ -99,6 +99,8 @@ def audit_capture(mission,navigation,output,platform,camera,uncertainty=.10):
                 tags=[tags[k] for k in sorted(tags)]
                 if any(not first['global_line']<=t['global_line']<=last['global_line'] for t in tags):raise ValueError('tag outside block')
                 if previous is None or raw['segment_id']!=previous['segment_id'] or first['global_line']!=previous['last']['global_line']+1:finish()
+                if raw.get('scene_contract'):
+                    scenes.add(hashlib.sha256(json.dumps(raw['scene_contract'],sort_keys=True,separators=(',',':')).encode()).hexdigest())
                 inputs.append(dict(track_id=track_id,block_id=raw['block_id'],image=im.name,image_sha256=hashlib.sha256(im.read_bytes()).hexdigest(),metadata_sha256=hashlib.sha256(path.read_bytes()).hexdigest()))
                 for tag in tags:
                     try:
@@ -114,7 +116,7 @@ def audit_capture(mission,navigation,output,platform,camera,uncertainty=.10):
             except (OSError,ValueError,KeyError) as exc:
                 finish();previous=None;issues.append(dict(track_id=track_id,block=path.name,reason=str(exc)))
         finish()
-    report=estimate(source,spans,uncertainty);report.update(issues=issues,inputs=inputs,navigation_calibration_id=nav.cal['calibration_id'],
+    report=estimate(source,spans,uncertainty);report.update(request=source['request'],scene_contract_sha256=sorted(scenes),optical_intrinsic_id=nav.cal['optical_intrinsic_id'],issues=issues,inputs=inputs,navigation_calibration_id=nav.cal['calibration_id'],
         provenance=dict(plan_sha256=hashlib.sha256((mission/'plan.json').read_bytes()).hexdigest(),navigation_sha256=nav.digest,
             navigation_calibration_sha256=hashlib.sha256((navigation/'calibration.json').read_bytes()).hexdigest()))
     candidates=rescan_requests(source,report,vehicle)

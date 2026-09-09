@@ -82,3 +82,44 @@ def rescan_requests(source,audit,vehicle):
             except ValueError as exc:entry.update(status='BLOCKED_GEOMETRY',reason=str(exc))
             result.append(entry)
     return result
+
+
+def combine(parent, children):
+    """Union conservative road rectangles; require explicit parent candidate association."""
+    result=deepcopy(parent)
+    if not parent.get('scene_contract_sha256') or len(parent['scene_contract_sha256'])!=1:
+        raise ValueError('one archived scene identity required for cross-session coverage')
+    rectangles=[]
+    def collect(report):
+        region=report['request']['region'];x=region['start_xy_m'][0];length=region['length_m']
+        for track in report['tracks']:
+            lo,hi=track['assigned_road_y_m']
+            for a,b in track['estimated_covered_along_m']:
+                rectangles.append((x+a,x+b,lo,hi) if track['direction']==1 else (x+length-b,x+length-a,lo,hi))
+    collect(parent);identities={parent['provenance']['navigation_sha256']}
+    candidates=[c['request'] for c in parent.get('rescan_candidates',[]) if c['status']=='PREVIEW_ONLY']
+    for child in children:
+        if child.get('request') not in candidates:raise ValueError('child is not a validated parent rescan candidate')
+        for key in ('scene_contract_sha256','optical_intrinsic_id'):
+            if child.get(key)!=parent.get(key):raise ValueError('incompatible '+key)
+        if child['uncertainty_m']<parent['uncertainty_m']:raise ValueError('child weakens uncertainty floor')
+        identity=child['provenance']['navigation_sha256']
+        if identity in identities:raise ValueError('duplicate navigation session')
+        identities.add(identity);collect(child)
+    region=parent['request']['region'];x=region['start_xy_m'][0];length=region['length_m']
+    for track in result['tracks']:
+        lo,hi=track['assigned_road_y_m'];edges=sorted({x,x+length,*[max(x,min(x+length,v)) for r in rectangles for v in r[:2]]})
+        covered=[]
+        for a,b in zip(edges,edges[1:]):
+            ys=merge([[r[2],r[3]] for r in rectangles if r[0]<=a+1e-9 and r[1]>=b-1e-9])
+            if any(c<=lo+1e-9 and d>=hi-1e-9 for c,d in ys):
+                covered.append([a-x,b-x] if track['direction']==1 else [x+length-b,x+length-a])
+        track['estimated_covered_along_m']=merge(covered)
+        track['unverified_along_m']=complement(covered,length)
+        # Original quality reasons remain evidence, not claims about all later sessions.
+        track['source_quality_flags']=track.pop('quality_flags',[])
+    result['status']='NEEDS_RESCAN' if any(t['unverified_along_m'] for t in result['tracks']) else 'ESTIMATED_COMPLETE'
+    result['merged_navigation_sha256']=sorted(identities)
+    result['rescan_candidates']=[]
+    result['scope']='Union of independently audited flat-road footprint rectangles; original quality reasons retained. No image stitching or pixel-level proof.'
+    return result

@@ -108,3 +108,18 @@ def test_uncertain_final_tag_preserves_a_valid_prefix():
     report=estimate(source,[dict(track_id=0,points=points)])
     assert report['tracks'][0]['estimated_covered_along_m'][0]==pytest.approx([0.,.9])
     assert report['tracks'][0]['unverified_along_m'][0]==pytest.approx([.9,3.])
+
+
+def test_cross_session_union_and_identity_guards():
+    from copy import deepcopy
+    from agv_mission.coverage import combine
+    p,c,r=config();v=Vehicle.from_configs(p,c);source=plan(r,v)
+    parent=estimate(source,[]);parent.update(request=r,scene_contract_sha256=['scene'],optical_intrinsic_id='lens',provenance={'navigation_sha256':'a'})
+    candidates=rescan_requests(source,parent,v);parent['rescan_candidates']=candidates
+    child=deepcopy(parent);child['request']=candidates[0]['request'];child['provenance']={'navigation_sha256':'b'}
+    child['tracks'][0]['estimated_covered_along_m']=[[0.,1.]]
+    assert combine(parent,[child])['status']=='ESTIMATED_COMPLETE'
+    child['scene_contract_sha256']=['other']
+    with pytest.raises(ValueError,match='incompatible'):combine(parent,[child])
+    child['scene_contract_sha256']=['scene'];child['provenance']={'navigation_sha256':'a'}
+    with pytest.raises(ValueError,match='duplicate'):combine(parent,[child])

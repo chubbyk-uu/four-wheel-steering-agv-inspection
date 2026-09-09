@@ -1,0 +1,52 @@
+{
+  "status": "NEEDS_RESCAN",
+  "tracks": [
+    {
+      "track_id": 0,
+      "direction": 1,
+      "assigned_road_y_m": [
+        -1.0,
+        0.0
+      ],
+      "estimated_covered_along_m": [
+        [
+          0.0,
+          3.0
+        ]
+      ],
+      "unverified_along_m": [],
+      "excluded_footprint_tags": 1,
+      "max_lateral_allowance_m": 0.286439837377903,
+      "source_quality_flags": [
+        "UNCERTAINTY_EXCEEDS_OVERLAP"
+      ]
+    },
+    {
+      "track_id": 1,
+      "direction": -1,
+      "assigned_road_y_m": [
+        0.0,
+        1.0
+      ],
+      "estimated_covered_along_m": [],
+      "unverified_along_m": [
+        [
+          0.0,
+          3.0
+        ]
+      ],
+      "excluded_footprint_tags": 0,
+      "max_lateral_allowance_m": null,
+      "source_quality_flags": [
+        "NO_CAPTURE_EVIDENCE"
+      ]
+    }
+  ],
+  "merged_navigation_sha256": [
+    "1e959719e6012497462066baff9297328920e6b4cb0be9e31d17bc2d3cdef525",
+    "361dc8627a5d73c7505601ee7b94d8fb6d29f2d4578488302b152091e46c55af"
+  ],
+  "tests": "8 coverage tests passed",
+  "covariance_finding": "Stationary-only gravity tilt updates; roll/pitch uncertainty grows during motion. No noise or covariance reduction applied.",
+  "remaining": "Second track has no capture evidence; no automatic rescan scheduling."
+}
