@@ -99,3 +99,35 @@ def test_forward_only_pass_faults_instead_of_reversing_after_overshoot():
     for _ in range(25):command=c.update([4.08,0,.65],[0,0,0,1],[0,0,0],'HOLD',.02)
     assert c.state=='FAULT' and c.reason=='FORWARD_ONLY_TERMINAL_OVERSHOOT'
     np.testing.assert_equal(command,np.zeros(3))
+
+
+@pytest.mark.parametrize('offset',[0.,1e-12])
+def test_stale_filtered_terminal_error_does_not_create_zero_trim(offset):
+    c=tracker();c.state='STOPPING';c.was_running=True;c.clock=c.profile.duration
+    c.terminal_filtered=np.array([.4,0.,0.])
+    c.outside_time=c.cfg['terminal_dwell_s']
+    with np.errstate(all='raise'):
+        command=c.update([4-offset,0,.65],[0,0,0,1],[0,0,0],'HOLD',.02)
+    assert c.trims==0 and c.state=='STOPPING'
+    assert np.isfinite(c.axis).all() and np.isfinite(command).all()
+    for _ in range(200):c.update([4,0,.65],[0,0,0,1],[0,0,0],'HOLD',.02)
+    assert c.state=='COMPLETED'
+
+
+def test_stale_position_error_still_allows_actual_heading_trim():
+    from scipy.spatial.transform import Rotation
+    c=tracker();c.state='STOPPING'
+    r=Rotation.from_euler('z',-.06)
+    c.start_trim(np.array([4.,0.,.65]),r,np.array([.4,0.]),0.)
+    assert c.kind=='rotate' and c.length==pytest.approx(.06)
+    assert np.isfinite(c.axis).all()
+
+
+def test_lateral_limit_follows_platform_configuration():
+    c=tracker();c.platform=dict(c.platform,max_lateral_speed=.03)
+    c.axis=np.array([0.,1.]);c.goal=c.start+np.array([0,4,0])
+    c.final_goal=c.goal.copy()
+    for _ in range(20):
+        command=c.update([0,0,.65],[0,0,0,1],[0,0,0],'DRIVE',.02)
+        assert abs(command[1])<=.03+1e-12
+    assert command[1]==pytest.approx(.03)

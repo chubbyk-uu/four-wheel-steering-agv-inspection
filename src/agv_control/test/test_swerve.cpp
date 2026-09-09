@@ -1,13 +1,14 @@
 #include "agv_control/swerve.hpp"
 #include <gtest/gtest.h>
+#include <yaml-cpp/yaml.h>
 using namespace agv;
 TEST(Kinematics, ReconstructAllModes){
- Controller c; Four zero{};
- for(Twist t: {Twist{1,0,0},Twist{0,1,0},Twist{.4,.3,0},Twist{0,0,.5},Twist{.2,.3,.2},Twist{-1,0,0}}){
+ Config cfg;Controller c(cfg); Four zero{};
+ for(Twist t: {Twist{1,0,0},Twist{0,1,0},Twist{.4,.3,0},Twist{0,0,.3},Twist{.2,.3,.2},Twist{-1,0,0}}){
   auto r=c.allocate(t,zero,zero);
   for(size_t i=0;i<4;++i){
-   EXPECT_NEAR(r.speed[i]*std::cos(r.angle[i]),t.x-t.yaw*(i%2==0?1:-1)*.55/2,1e-9);
-   EXPECT_NEAR(r.speed[i]*std::sin(r.angle[i]),t.y+t.yaw*(i<2?1:-1)*.65/2,1e-9);
+   EXPECT_NEAR(r.speed[i]*std::cos(r.angle[i]),t.x-t.yaw*(i%2==0?1:-1)*Config{}.track/2,1e-9);
+   EXPECT_NEAR(r.speed[i]*std::sin(r.angle[i]),t.y+t.yaw*(i<2?1:-1)*Config{}.wheelbase/2,1e-9);
   }
  }
 }
@@ -46,7 +47,7 @@ TEST(Transitions, SmallChangeContinuousReverseBrakes){
 TEST(Transitions, SteeringRateAndAcceleration){
  Controller c;Four a{},v{},old_rate{};Target r;
  for(int n=0;n<400;++n){r=c.update({0,.5,0},a,v,.01);
-  for(size_t i=0;i<4;++i){double rate=(r.angle[i]-a[i])/.01;EXPECT_LE(std::abs(rate),1.2+1e-8);EXPECT_LE(std::abs(rate-old_rate[i]),3.0*.01+1e-8);old_rate[i]=rate;}
+  for(size_t i=0;i<4;++i){double rate=(r.angle[i]-a[i])/.01;EXPECT_LE(std::abs(rate),Config{}.rate+1e-8);EXPECT_LE(std::abs(rate-old_rate[i]),Config{}.steer_accel*.01+1e-8);old_rate[i]=rate;}
   a=r.angle;v=r.speed;
  }
  EXPECT_EQ(c.mode(),Mode::Drive);
@@ -98,7 +99,7 @@ TEST(Transitions, DirectReverseNeverTurnsWheels){
   r=c.update({-.5,0,0},a,v,.01);
   for(double angle:r.angle)EXPECT_NEAR(angle,0,1e-12);
   if(std::abs(r.speed[0])<1e-9)stopped=true;
-  if(r.speed[0]<0)EXPECT_TRUE(stopped);
+  if(r.speed[0]<0){EXPECT_TRUE(stopped);}
   a=r.angle;v=r.speed;
  }
  EXPECT_EQ(c.mode(),Mode::Drive);EXPECT_LT(v[0],-.49);
@@ -116,7 +117,7 @@ TEST(Transitions, DiagonalReverseKeepsWheelAxes){
    r=c.update({-forward.x,-forward.y,0},a,v,.01);
    for(size_t i=0;i<4;++i)EXPECT_NEAR(r.angle[i],before[i],1e-8);
    if(Controller::max_abs(r.speed)<1e-9)zero_crossing=true;
-   if(r.speed[0]*v[0]<0)EXPECT_TRUE(zero_crossing);
+   if(r.speed[0]*v[0]<0){EXPECT_TRUE(zero_crossing);}
    a=r.angle;v=r.speed;
   }
   EXPECT_EQ(c.mode(),Mode::Drive);
@@ -141,7 +142,7 @@ TEST(Kinematics, AtanBranchCutIsNotMechanicalDiscontinuity){
 TEST(Kinematics, ZeroSpeedModuleHoldsThroughNoise){
  Controller c;Four a{.7,0,0,0};
  for(double noise:{-.001,-.00001,0.,.00001,.001}) {
-  auto r=c.allocate({.4*.55/2+noise,-.4*.65/2,.4},a,a);
+  auto r=c.allocate({.4*Config{}.track/2+noise,-.4*Config{}.wheelbase/2,.4},a,a);
   EXPECT_DOUBLE_EQ(r.angle[0],a[0]);EXPECT_DOUBLE_EQ(r.speed[0],0);
   EXPECT_GT(Controller::max_abs(r.speed),.1);
  }
@@ -157,10 +158,10 @@ TEST(Transitions, ContinuousHeadingSweepReconfiguresBeforeLimit){
     ++limit_stops;EXPECT_LT(Controller::max_abs(a),cfg.soft-cfg.limit_reserve);
    }
    for(size_t i=0;i<4;++i){
-    EXPECT_LE(std::abs(r.angle[i]-a[i]),1.2*.01+1e-9);
+    EXPECT_LE(std::abs(r.angle[i]-a[i]),cfg.rate*.01+1e-9);
     maximum_angle=std::max(maximum_angle,std::abs(r.angle[i]));
    }
-   if(c.mode()==Mode::Align)EXPECT_LT(Controller::max_abs(r.speed),.025);
+   if(c.mode()==Mode::Align){EXPECT_LT(Controller::max_abs(r.speed),.025);}
    old_mode=c.mode();a=r.angle;v=r.speed;
   }
   EXPECT_GE(limit_stops,3);EXPECT_LT(maximum_angle,cfg.soft-cfg.limit_reserve);
@@ -251,16 +252,17 @@ TEST(Kinematics, EightDegreeHardReserveAllowsShortestSpinRecoveryAt180){
  }
 }
 TEST(Transitions, OneWheelCrossesZeroWithoutStoppingWholeVehicle){
- Controller c;Four a{},v{};Target r;
- for(int n=0;n<500;++n){r=c.update({.16,-.13,.4},a,v,.01);a=r.angle;v=r.speed;}
+ Config cfg;Controller c(cfg);Four a{},v{};Target r;
+ const double yaw=.3, x=yaw*cfg.track/2+.05, y=-yaw*cfg.wheelbase/2;
+ for(int n=0;n<500;++n){r=c.update({x,y,yaw},a,v,.01);a=r.angle;v=r.speed;}
  ASSERT_EQ(c.mode(),Mode::Drive);
  for(int n=0;n<1000;++n){
-  r=c.update({.16-.0001*n,-.13,.4},a,v,.01);
+  r=c.update({x-.0001*n,y,yaw},a,v,.01);
   EXPECT_EQ(c.mode(),Mode::Drive);
   EXPECT_NEAR(r.angle[0],0,1e-7);
   a=r.angle;v=r.speed;
  }
- EXPECT_NEAR(v[0],-.0499,.001);EXPECT_NEAR(v[1],.1701,.001);
+ EXPECT_NEAR(v[0],-.0499,.001);EXPECT_NEAR(v[1],yaw*cfg.track-.0499,.001);
 }
 
 TEST(DriveLimits, SeparateAccelerationAndDecelerationBothSigns){
@@ -301,4 +303,19 @@ TEST(Alignment, BriefPassiveRollingKeepsDrivesZeroButSustainedMotionBrakes) {
  EXPECT_EQ(c.mode(),Mode::Brake);
  Controller significant(cfg);v.fill(0);significant.update({.1,0,0},a,v,.01);
  v.fill(.051);significant.update({.1,0,0},a,v,.01);EXPECT_EQ(significant.mode(),Mode::Brake);
+}
+
+TEST(Configuration, DefaultsMatchShippedPlatformAndPolicy) {
+ Config c;
+ auto platform=YAML::LoadFile(std::string(AGV_CONFIG_ROOT)+"/agv_description/config/platform.yaml");
+ auto policy=YAML::LoadFile(std::string(AGV_CONFIG_ROOT)+"/agv_bringup/config/motion.yaml")["swerve_controller"]["ros__parameters"];
+ for(auto pair: {std::pair<const char*,double>{"wheelbase",c.wheelbase},{"track",c.track},
+   {"wheel_radius",c.radius},{"steer_soft_limit",c.soft},{"steer_rate",c.rate},
+   {"steer_accel",c.steer_accel},{"max_speed",c.max_speed},{"max_yaw_rate",c.max_yaw},
+   {"drive_accel",c.accel},{"drive_decel",c.decel},{"max_lateral_speed",c.max_lateral_speed}}) {
+  EXPECT_NEAR(platform[pair.first].as<double>(),pair.second,1e-12)<<pair.first;
+ }
+ EXPECT_FALSE(policy["max_lateral_speed"]); // One shared limit for allocator and tracker.
+ EXPECT_NEAR(policy["steering_limit_reserve"].as<double>(),c.limit_reserve,1e-12);
+ EXPECT_NEAR(std::atan(c.wheelbase/c.track)*180/pi,54.1301764823,1e-6);
 }

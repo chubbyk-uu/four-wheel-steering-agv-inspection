@@ -48,6 +48,8 @@ class SegmentTracker:
         for key,value in config.items():
             if not isinstance(value,(int,float)) or not math.isfinite(value) or value<=0:
                 raise ValueError('invalid tracking parameter '+key)
+        if not math.isfinite(platform['max_lateral_speed']) or platform['max_lateral_speed']<=0:
+            raise ValueError('invalid lateral speed limit')
         self.kind=kind;self.cfg=config;self.platform=platform;self.forward_only=False
         self.length=float(np.linalg.norm(displacement)) if kind=='translate' else abs(float(angle))
         if self.length<1e-4 or (kind=='rotate' and abs(angle)>math.pi+1e-8):
@@ -76,6 +78,10 @@ class SegmentTracker:
         # Stop before selecting a new correction axis. Every trim gets its own
         # rest-to-rest time profile, avoiding sub-deadband requests stuck in HOLD.
         self.outside_time=0.
+        # Filtered error only requests reevaluation; choose the correction from
+        # the current pose, including when the filtered position error is stale.
+        position_error=self.final_tangent.inv().apply(self.final_goal-p)[:2]
+        heading_error=self.yaw_error(self.final_rotation,r)
         if np.linalg.norm(position_error)<=.8*self.cfg['position_tolerance_m'] and abs(heading_error)<=.8*self.cfg['heading_tolerance_rad']:
             return
         if self.trims>=self.cfg['max_terminal_trims']:
@@ -88,6 +94,8 @@ class SegmentTracker:
             if self.forward_only and delta[0]<-self.cfg['position_deadband_m']:
                 self.fault('FORWARD_ONLY_TERMINAL_OVERSHOOT');return
             self.length=float(np.linalg.norm(delta))
+            if not math.isfinite(self.length) or self.length<1e-8:
+                self.fault('DEGENERATE_TERMINAL_TRANSLATION');return
             self.kind='translate';self.axis=delta/self.length;self.goal=p+r.apply([*delta,0.]);self.goal_rotation=r
             self.speed=self.cfg['terminal_translation_speed_m_s'];self.accel=self.platform['drive_accel'];self.decel=self.platform['drive_decel']
         else:
@@ -117,7 +125,6 @@ class SegmentTracker:
             self.fault('SEGMENT_TIMEOUT');return self.command.copy()
         tangent_error=self.final_tangent.inv().apply(self.final_goal-p)[:2]
         heading_error=self.yaw_error(self.final_rotation,r)
-        near=np.linalg.norm(tangent_error)<=self.cfg['position_tolerance_m'] and abs(heading_error)<=self.cfg['heading_tolerance_rad']
         relative=self.rotation.inv()*r;matrix=relative.as_matrix();angle=math.atan2(matrix[1,0],matrix[0,0])
         self.unwrapped_angle+=wrap(angle-self.last_angle);self.last_angle=angle
         at_end=self.offset+self.profile.sample(self.clock)[0]>=self.length-1e-8
@@ -197,7 +204,7 @@ class SegmentTracker:
         body=r.inv().apply(self.rotation.apply([*linear,0.]))
         command=np.r_[body[:2],angular]
         # Coupled limits agree with the bottom-level allocator; final wheel limits remain there.
-        scale=max(1.,np.linalg.norm(command[:2])/self.platform['max_speed'],abs(command[2])/self.platform['max_yaw_rate'],abs(command[1])/1.)
+        scale=max(1.,np.linalg.norm(command[:2])/self.platform['max_speed'],abs(command[2])/self.platform['max_yaw_rate'],abs(command[1])/self.platform['max_lateral_speed'])
         self.command=command/scale
         self.diagnostic={'reference_speed':feedforward,'active_kind':self.kind,'along_reference_error_m':float(np.dot(e,self.axis)),'reference_position_error_m':float(np.linalg.norm(e)),
                          'reference_heading_error_rad':eyaw,'goal_error_m':float(np.linalg.norm(tangent_error)),

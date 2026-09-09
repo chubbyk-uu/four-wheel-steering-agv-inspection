@@ -12,6 +12,8 @@ steer_rate: 0.65
 steer_accel: 1.5
 max_speed: 2.777777777777778
 max_yaw_rate: 0.35
+# Shared by the wheel allocator and mission tracker.
+max_lateral_speed: 1.0
 drive_accel: 0.8
 drive_decel: 1.0
 base_height: 0.65

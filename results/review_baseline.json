@@ -1,0 +1,227 @@
+{
+  "date": "2026-09-09",
+  "baseline": "550 kg, 20 mm, 4096 / 1.5 m, 10 km/h",
+  "colcon_test_result": "198 tests, 0 errors, 0 failures, 0 skipped",
+  "rectangle": {
+    "passed": true,
+    "scope": "rectangle motion + OptiX raw capture + sparse fused labels; no correction/stitching",
+    "profile": "normal",
+    "gui_rviz": true,
+    "follow_camera": true,
+    "region_m": [
+      3.0,
+      2.0
+    ],
+    "track_spacing_m": 1.0,
+    "tracks": [
+      {
+        "track_id": 0,
+        "running_samples": 618,
+        "reference_error_max_m": 0.0211584506263345
+      },
+      {
+        "track_id": 1,
+        "running_samples": 384,
+        "reference_error_max_m": 0.03276473386231615
+      }
+    ],
+    "final": {
+      "time_s": 65.955,
+      "state": "ACQUIRED",
+      "reason": "",
+      "motion_state": "HOLD",
+      "step_index": 5,
+      "step_count": 5,
+      "capture_integrated": true,
+      "capture_active": false,
+      "command_body": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "motion_reason": "STOP_REQUEST",
+      "position_m": [
+        6.894060850519822,
+        0.501828495581029,
+        0.6212532982635314
+      ]
+    },
+    "capture": [
+      {
+        "track_id": 0,
+        "blocks": 3,
+        "rows": 9122,
+        "truth_along_extent_m": [
+          -0.23539477105946727,
+          3.104800716067645
+        ],
+        "continuous_roi": true
+      },
+      {
+        "track_id": 1,
+        "blocks": 4,
+        "rows": 9045,
+        "truth_along_extent_m": [
+          -0.20841190860344483,
+          3.106915645219612
+        ],
+        "continuous_roi": true
+      }
+    ]
+  },
+  "spin_recovery": {
+    "passed": true,
+    "cases": [
+      {
+        "case": "straight_spin",
+        "before_spin_deg": [
+          4.297189625015331e-18,
+          -1.1308193616016649e-17,
+          -8.836645487824656e-18,
+          -1.1304312495052497e-18
+        ],
+        "wheels": [
+          {
+            "before_deg": -54.13017648229471,
+            "after_deg": -0.0006764635903284247,
+            "travel_deg": 54.12950001870438,
+            "nearest_without_reserve_deg": 0.0,
+            "nearest_reserve_deg": 185.0,
+            "nearest_rejected_by_reserve": false
+          },
+          {
+            "before_deg": 54.13017648226318,
+            "after_deg": 0.0006764636331853415,
+            "travel_deg": 54.12950001863,
+            "nearest_without_reserve_deg": 0.0,
+            "nearest_reserve_deg": 185.0,
+            "nearest_rejected_by_reserve": false
+          },
+          {
+            "before_deg": 54.13017648226151,
+            "after_deg": 0.0006764634293675063,
+            "travel_deg": 54.12950001883214,
+            "nearest_without_reserve_deg": 0.0,
+            "nearest_reserve_deg": 185.0,
+            "nearest_rejected_by_reserve": false
+          },
+          {
+            "before_deg": -54.13017648229523,
+            "after_deg": -0.000676463332413718,
+            "travel_deg": 54.129500018962815,
+            "nearest_without_reserve_deg": 0.0,
+            "nearest_reserve_deg": 185.0,
+            "nearest_rejected_by_reserve": false
+          }
+        ],
+        "recovery_reasons": [
+          "STOP_REQUEST"
+        ]
+      },
+      {
+        "case": "left_shift_spin",
+        "before_spin_deg": [
+          89.99999971245806,
+          89.99999971246076,
+          89.99999971245725,
+          89.99999970930887
+        ],
+        "wheels": [
+          {
+            "before_deg": 125.86982351770675,
+            "after_deg": 179.99932353636422,
+            "travel_deg": 54.12950001865747,
+            "nearest_without_reserve_deg": 180.0,
+            "nearest_reserve_deg": 4.999999999999995,
+            "nearest_rejected_by_reserve": false
+          },
+          {
+            "before_deg": 54.13017648226302,
+            "after_deg": 0.0006764638323054799,
+            "travel_deg": 54.12950001843071,
+            "nearest_without_reserve_deg": 0.0,
+            "nearest_reserve_deg": 185.0,
+            "nearest_rejected_by_reserve": false
+          },
+          {
+            "before_deg": 54.13017648226164,
+            "after_deg": 0.0006764636789542616,
+            "travel_deg": 54.12950001858269,
+            "nearest_without_reserve_deg": 0.0,
+            "nearest_reserve_deg": 185.0,
+            "nearest_rejected_by_reserve": false
+          },
+          {
+            "before_deg": 125.86982351770567,
+            "after_deg": 179.99932353650246,
+            "travel_deg": 54.12950001879677,
+            "nearest_without_reserve_deg": 180.0,
+            "nearest_reserve_deg": 4.999999999999995,
+            "nearest_rejected_by_reserve": false
+          }
+        ],
+        "recovery_reasons": [
+          "STOP_REQUEST"
+        ]
+      },
+      {
+        "case": "right_shift_spin",
+        "before_spin_deg": [
+          90.0000002875806,
+          89.99999971245236,
+          89.99999971245838,
+          90.00000028758473
+        ],
+        "wheels": [
+          {
+            "before_deg": 125.86982351773746,
+            "after_deg": 179.99932353647063,
+            "travel_deg": 54.12950001873319,
+            "nearest_without_reserve_deg": 180.0,
+            "nearest_reserve_deg": 4.999999999999995,
+            "nearest_rejected_by_reserve": false
+          },
+          {
+            "before_deg": 54.13017648229425,
+            "after_deg": 0.0006764637400567924,
+            "travel_deg": 54.1295000185542,
+            "nearest_without_reserve_deg": 0.0,
+            "nearest_reserve_deg": 185.0,
+            "nearest_rejected_by_reserve": false
+          },
+          {
+            "before_deg": 54.13017648229587,
+            "after_deg": 0.0006764635240890115,
+            "travel_deg": 54.12950001877178,
+            "nearest_without_reserve_deg": 0.0,
+            "nearest_reserve_deg": 185.0,
+            "nearest_rejected_by_reserve": false
+          },
+          {
+            "before_deg": 125.86982351773737,
+            "after_deg": 179.99932353677386,
+            "travel_deg": 54.129500019036485,
+            "nearest_without_reserve_deg": 180.0,
+            "nearest_reserve_deg": 4.999999999999995,
+            "nearest_rejected_by_reserve": false
+          }
+        ],
+        "recovery_reasons": [
+          "STOP_REQUEST"
+        ]
+      }
+    ],
+    "final_motion_state": "HOLD",
+    "soft_limit_deg": 185.0,
+    "stationary_reserve_deg": 3.0000000000000004,
+    "hard_limit_deg": 190.0,
+    "total_hard_reserve_deg": 8.000000000000021,
+    "wheel_order": [
+      "fl",
+      "fr",
+      "rl",
+      "rr"
+    ]
+  },
+  "image_observation": "Four full raw blocks inspected at 512 px overview; markings continuous, no obvious missing-line band. Not a subpixel stability certificate."
+}

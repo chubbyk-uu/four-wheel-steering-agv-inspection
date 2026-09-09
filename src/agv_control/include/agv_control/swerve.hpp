@@ -11,8 +11,8 @@ constexpr double pi = 3.14159265358979323846;
 using Four = std::array<double, 4>;
 struct Twist { double x{}, y{}, yaw{}; };
 struct Config {
-  double wheelbase{0.65}, track{0.55}, radius{0.1}, soft{185*pi/180};
-  double rate{1.2}, steer_accel{3.0}, max_speed{10/3.6}, max_yaw{0.8}, accel{0.8}, decel{1.0};
+  double wheelbase{1.3}, track{0.94}, radius{0.2}, soft{185*pi/180};
+  double rate{0.65}, steer_accel{1.5}, max_speed{10/3.6}, max_yaw{0.35}, accel{0.8}, decel{1.0};
   double reorient{0.30}, aligned{0.035}, stopped{0.025}, hysteresis{0.08};
   double alignment_motion_confirm_s{0.06};
   double lateral_mismatch{0.12};
