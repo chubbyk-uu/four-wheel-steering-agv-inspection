@@ -1,6 +1,8 @@
 Panels:
   - Class: rviz_common/Displays
     Name: Displays
+  - Class: agv_rviz/MissionPanel
+    Name: 巡检任务
 Visualization Manager:
   Class: ""
   Displays:
@@ -25,6 +27,22 @@ Visualization Manager:
       Visual Enabled: true
       Collision Enabled: false
       Alpha: 1
+    - Class: rviz_default_plugins/MarkerArray
+      Name: Mission Preview
+      Enabled: true
+      Topic:
+        Value: /mission/preview/markers
+        Durability Policy: Transient Local
+        Reliability Policy: Reliable
+        Depth: 1
+    - Class: rviz_default_plugins/MarkerArray
+      Name: Coverage Audit
+      Enabled: true
+      Topic:
+        Value: /mission/coverage/markers
+        Durability Policy: Transient Local
+        Reliability Policy: Reliable
+        Depth: 1
     - Class: rviz_default_plugins/Image
       Name: Capture Preview
       Enabled: true
@@ -50,16 +68,16 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 4.2
+      Distance: 12.0
       Focal Point:
-        X: 0.2
+        X: 2.0
         Y: 0
         Z: 0
       Pitch: 0.65
       Yaw: 0.8
       Target Frame: base_link
 Window Geometry:
-  Width: 850
-  Height: 800
-  X: 1005
+  Width: 1550
+  Height: 980
+  X: 300
   Y: 0

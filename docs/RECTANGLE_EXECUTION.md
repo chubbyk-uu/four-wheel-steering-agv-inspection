@@ -13,7 +13,7 @@ ros2 run agv_mission execute_rectangle --ros-args \
 
 需先启动localization:=true的仿真；输出目录必须不存在。默认autostart=false，调用`/mission/start`（Trigger）开始，`/mission/cancel`取消并等待HOLD。取消不自动恢复；不同时运行其他cmd_vel发布者。每实例一项任务，归档plan.json、steps.json和execution.jsonl。
 
-当前尚无动态障碍、RViz任务面板和最高速区域闭环验收。采集联动独立验证，不能把此运动报告称为完成了矩形图像覆盖。
+当前尚无动态避障和最高速区域闭环验收；RViz任务面板见下节。采集联动独立验证，不能把此运动报告称为完成了矩形图像覆盖。
 
 后续已接可选capture模式，握手和归档语义见[矩形采集](RECTANGLE_CAPTURE.md)；本文件中的运动报告保留为独立基线。
 
@@ -49,3 +49,38 @@ ros2 service call /mission/cancel std_srvs/srv/Trigger '{}'
 补扫使用审计输出的`rescan_*.yaml`作为新的`request`，启动新的执行器与输出目录；先确认旧执行器已退出、车辆HOLD、定位与相机恢复健康，保持唯一cmd_vel发布者。FAULT不会因生成补扫请求而自动恢复。实际初始位姿仍经过执行器接近路径检查，候选规划通过不意味着任意停车位置都能直接接入。
 
 回归工具可用`tools/validate_rectangle_execution.py --gui --profile normal --scene ... --request .../rescan_000.yaml --output ...`复现补扫；它启动独立仿真实例，不代表故障进程原地无缝恢复。
+
+
+## RViz巡检任务面板
+
+完成OptiX配置并恢复当前20×10 m道路后，在仓库根目录启动：
+
+```bash
+source /opt/ros/jazzy/setup.bash
+source install/local_setup.bash
+ros2 launch agv_bringup inspection.launch.py
+# 普通Linux附加 gpu_backend:=native；WSL使用现有OptiX运行库包装环境。
+```
+
+此入口同时启动Gazebo、RViz、正常噪声定位、导航归档、线阵原图采集与任务后端；启动后车辆保持等待，不自动行驶。每次创建新会话目录；可用`session_dir:=local_data/my_inspection_01`指定尚不存在的目录，`scene_manifest:=...`指定已恢复道路。基础`sim.launch.py rviz:=true`仍可只看机器人，面板会显示后端未连接；完整采集操作使用`inspection.launch.py`。
+
+1. 在右侧“巡检任务”填写区域起点X/Y、长度、宽度、行距和速度，或“载入请求”读取YAML。长度固定沿道路方向，默认3×2 m、1 m行距、0.5 m/s。道路坐标注册及可行驶/成像边界来自请求文件，不让操作者随意旋转矩形。当前入口限速0.8 m/s，联合验证基线仍为0.5 m/s。
+2. “预览轨迹”校验包络、成像边界和转场空间，显示黄色区域、绿色扫描幅宽、蓝色底盘扫描线及粉色转场线。改参数后须重新预览。“保存请求”写新文件，拒绝覆盖已有文件。
+3. “准备任务”建立独立归档并确认相机关闭；定位连续READY、底盘HOLD满5秒后，“开始采集”可用。参数变化或其他速度发布者存在时拒绝开始。
+4. 运行中锁定参数、载入与补扫切换；“暂停”制动后保留未满帧，“继续采集”仍去原绝对终点。“取消并停车”等待HOLD与尾图归档；FAULT不可直接恢复，需检查原因后重新准备任务。
+5. 面板显示任务/底盘状态、当前道、相机开关、已归档张数与行数及任务步骤进度。左侧为原图缩略预览；步骤进度不冒充面积覆盖率。
+6. 结束后“审计本次采集”核对原图与融合标签。表格分别报告无采集证据、定位不确定度偏大或足迹偏离；地面绿色覆盖层表示估计已覆盖，橙色表示未确认。面板下方选择候选后“预览选中补扫”，再准备、开始，作为新任务执行。窗口较小时可滚动面板。
+7. “载入覆盖报告”选择父任务`coverage.json`，“合并补扫报告”选择补扫报告；检查场景、标定和候选身份后更新覆盖，汇总另存新JSON。仍有未确认范围时保留相关补扫候选，不自动行驶。
+
+每个会话目录内包含`camera.yaml`、`raw/`、`navigation/`和`tasks/`；每项任务独立保存请求、plan、状态日志、采集区间和审计。只有采集控制已关闭且底盘HOLD后才允许替换旧执行器；后端本身不发布速度，所有动作复用现有时间轨迹执行器与四驱四转状态机。关闭RViz窗口不等于取消任务，应使用取消按钮并确认停车。后端退出时停止命令发布，底层看门狗仍生效。
+
+面板默认停靠右侧，用户保存RViz配置后保留自定义布局。机器人仍使用同步`/visualization/tf`、Fixed Frame=base_link；规划/覆盖标记锁定在map，持续按最新显示变换更新，并重试启动阶段的TF缺失。此显示链路不替代控制使用的融合定位。
+
+
+实机窗口截图（裁去本机标题与路径，不是示意图）：
+
+![RViz巡检任务与原图预览](images/rviz_mission_panel.png)
+
+![覆盖未确认原因](images/rviz_coverage_table.png)
+
+2026-09-09最终GUI回归：两道3×2 m、0.5 m/s、正常噪声，6块/18,241行，暂停保留完整帧、ROS/归档逐字节一致、最终HOLD；再准备补扫候选并取消，也确认HOLD与相机关闭。一次先前试验在转场时定位滤波输出年龄达到0.129 s触发FAULT，未放宽门限，也不声称重跑成功已消除该偶发中断。详情见[验证报告](../results/rviz_mission_panel.json)。

@@ -1,0 +1,5 @@
+<library path="agv_mission_panel">
+  <class name="agv_rviz/MissionPanel" type="agv_rviz::MissionPanel" base_class_type="rviz_common::Panel">
+    <description>Rectangle inspection planning, capture controls and coverage audit.</description>
+  </class>
+</library>

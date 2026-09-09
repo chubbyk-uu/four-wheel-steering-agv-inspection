@@ -10,7 +10,7 @@
 - 线阵相机20 mm、4096像素/1.5 m，约0.366 mm/像素；编码器等距触发，默认4096行/块，Mono8原图与稀疏末行参考标签归档。
 - 矩形规划、三维RTK/IMU/轮里程计融合、梯形/三角形时间闭环和按轨采集联动已实现。当前矩形联合验证速度0.5 m/s，轨迹间距1 m，换道不后退。
 - OptiX共享几何、颜色＋法线和有界高清瓦片缓存已接入；当前20×10 m Concrete047A全宽道路已修正显示UV。普通启动默认网格，水泥道路需显式载入。
-- 暂停恢复/补扫、RViz任务面板、自主避障、完整条带拼接及TIFF仍待实现。新版独立11 kHz、10 km/h矩形闭环和100×10 m全宽长时验收仍待完成；旧模型性能不能替代新版验收。
+- 暂停恢复、显式补扫/覆盖汇总及RViz任务面板已接入；自主避障、完整条带拼接及TIFF仍待实现。新版独立11 kHz、10 km/h矩形闭环和100×10 m全宽长时验收仍待完成；旧模型性能不能替代新版验收。
 
 **接续工作先读[当前状态与下一步](docs/CURRENT_STATUS.md)，按任务查[文档索引](docs/README.md)。** 完整约束见[项目规范](PROJECT_SPEC.md)；历史实验已归档，重要问题及证据单独保留入口。
 
@@ -27,7 +27,7 @@ sudo apt install ros-jazzy-desktop ros-jazzy-ros-gz ros-jazzy-gz-ros2-control \
   ros-jazzy-robot-localization \
   python3-colcon-common-extensions python3-rosdep build-essential cmake git curl \
   python3-pytest python3-numpy python3-scipy python3-pil python3-yaml python3-psutil \
-  python3-matplotlib python3-opencv libopencv-contrib-dev libssl-dev
+  python3-matplotlib python3-opencv libopencv-contrib-dev libssl-dev qtbase5-dev
 # 仅首次初始化 rosdep 时执行；若已初始化则跳过：
 sudo rosdep init
 rosdep update
@@ -56,6 +56,9 @@ source install/local_setup.bash
 基础构建可以控制底盘、运行解析网格/慢速 Ogre2 参考采样，不承诺高行频性能。恢复不依赖其他机器人项目、个人目录或历史 /tmp 文件。
 
 ## 快速运行
+
+完整巡检界面：恢复道路资产并配置OptiX后，运行`ros2 launch agv_bringup inspection.launch.py`（原生Linux加`gpu_backend:=native`）。RViz右侧面板提供区域编辑、预览、采集控制、覆盖审计和补扫；默认等待操作，详见[面板使用说明](docs/RECTANGLE_EXECUTION.md#rviz巡检任务面板)。
+
 
 原生 Linux：
 

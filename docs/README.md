@@ -6,7 +6,7 @@
 |---|---|
 | 查车体、相机、雷达和安装参数 | [550 kg模型基线](LARGE_AGV_REBUILD.md) |
 | 规划下一步与确认尚未实现的功能 | [实施计划](MISSION_IMPLEMENTATION_PLAN.md) |
-| 载入矩形任务、执行闭环与采图 | [规划器](../src/agv_mission/README.md) → [任务执行](RECTANGLE_EXECUTION.md) → [采集与标签](RECTANGLE_CAPTURE.md) |
+| 使用RViz任务面板、载入区域和采图 | [规划器](../src/agv_mission/README.md) → [任务执行](RECTANGLE_EXECUTION.md) → [采集与标签](RECTANGLE_CAPTURE.md) |
 | 定位、噪声、延时与外参 | [定位包](../src/agv_localization/README.md)、[误差基线](LOCALIZATION_NOISE_BASELINE.md) |
 | GUI跟车和缩放 | [GUI操作](GUI_CAMERA.md) |
 | 恢复道路与处理旧贴图 | [道路资产](ROAD_ASSETS.md) |

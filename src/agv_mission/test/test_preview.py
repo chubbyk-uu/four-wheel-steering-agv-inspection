@@ -25,3 +25,14 @@ def test_preview_contract(request_data, vehicle):
         assert original.points == received.points
         assert original.ns == received.ns and original.id == received.id
         assert received.color.a == pytest.approx(original.color.a)  # ColorRGBA is float32.
+
+
+def test_coverage_reverse_track_uses_road_coordinates():
+    from agv_mission.preview import coverage_messages
+    from builtin_interfaces.msg import Time
+    report={'request':{'road':{'frame_id':'map','origin_xyz_m':[10.,20.,0.],'yaw_rad':0.},'region':{'start_xy_m':[6.,-1.],'length_m':3.}},'tracks':[{'direction':-1,'assigned_road_y_m':[0.,1.],'estimated_covered_along_m':[[0.,1.]],'unverified_along_m':[[1.,3.]]}]}
+    markers=coverage_messages(report,Time()).markers
+    assert markers[0].header.frame_id=='map'
+    assert markers[1].frame_locked
+    assert markers[1].pose.position.x==18.5 and markers[1].pose.position.y==20.5
+    assert markers[2].scale.x==2.

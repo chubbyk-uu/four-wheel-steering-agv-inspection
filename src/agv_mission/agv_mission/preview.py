@@ -11,6 +11,7 @@ def messages(plan, stamp):
     markers.markers.append(delete)
     path = Path()
     path.header.frame_id, path.header.stamp = plan['frame_id'], stamp
+    delete.header = path.header
 
     def line(namespace, xyz, color, width=.025, close=False):
         marker = Marker()
@@ -18,6 +19,7 @@ def messages(plan, stamp):
         marker.ns, marker.id = namespace, len(markers.markers)
         marker.type, marker.action = Marker.LINE_STRIP, Marker.ADD
         marker.pose.orientation.w = 1.0
+        marker.frame_locked = True
         marker.scale.x = width
         marker.color.r, marker.color.g, marker.color.b, marker.color.a = color
         vertices = xyz + xyz[:1] if close else xyz
@@ -76,3 +78,23 @@ def publish(plan):
         node.destroy_node()
         if rclpy.ok():
             rclpy.shutdown()
+
+
+def coverage_messages(report,stamp):
+    """Road-frame coverage rectangles, separate from motion and raw-image truth."""
+    from scipy.spatial.transform import Rotation
+    result=MarkerArray();road=report['request']['road'];region=report['request']['region']
+    rotation=Rotation.from_euler('z',road['yaw_rad']);quat=rotation.as_quat()
+    clear=Marker(action=Marker.DELETEALL);clear.header.frame_id=road['frame_id'];clear.header.stamp=stamp;result.markers.append(clear)
+    for track in report['tracks']:
+        lo,hi=track['assigned_road_y_m']
+        for key,color in (('estimated_covered_along_m',(0.,.8,.35,.20)),('unverified_along_m',(1.,.45,.05,.30))):
+            for a,b in track[key]:
+                along=(a+b)/2 if track['direction']==1 else region['length_m']-(a+b)/2
+                position=rotation.apply([region['start_xy_m'][0]+along,(lo+hi)/2,.04])+road['origin_xyz_m']
+                m=Marker();m.header=clear.header;m.ns=key;m.id=len(result.markers);m.type=Marker.CUBE;m.action=Marker.ADD;m.frame_locked=True
+                m.pose.position.x,m.pose.position.y,m.pose.position.z=map(float,position)
+                m.pose.orientation.x,m.pose.orientation.y,m.pose.orientation.z,m.pose.orientation.w=map(float,quat)
+                m.scale.x=b-a;m.scale.y=hi-lo;m.scale.z=.015
+                m.color.r,m.color.g,m.color.b,m.color.a=color;result.markers.append(m)
+    return result

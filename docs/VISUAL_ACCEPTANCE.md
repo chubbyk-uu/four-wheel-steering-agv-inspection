@@ -21,3 +21,6 @@
 
 
 运动故障回归使用`tools/validate_rectangle_execution.py --gui --profile normal --scene ... --moving-fault localization_timeout`或`camera_disabled`，记录故障时速度、零指令延时、真值停车距离、实际逐轮转角、尾图与HOLD；不得将仿真时间延时当作墙钟响应。普通暂停需同时复测，防止心跳误报。结束后用`tools/audit_mission_capture.py`检查归档并生成补扫预览；用验证器`--request`执行选定候选，独立审计新会话，不将局部补扫当作全区域完成。
+
+
+RViz面板改动后运行`tools/validate_operator_session.py --output 新目录 --inspect-seconds 25`，检查真实Gazebo/RViz联合流程、请求保存重载、越界拒绝、运行中锁定、暂停保留帧、审计与新任务取消；记录实际逐轮转角、ROS/原图哈希及最终HOLD。另需实际点击面板控件并观察状态改变，检查预览和覆盖标记显示正常、车辆移动时仍固定在道路坐标，而不是只检查ROS话题存在。启动时TF未就绪必须能恢复，不能留下红色预览状态。普通colcon包含Qt控件状态与后端护栏测试，不会自动启动完整GUI。WSLg下X11抓屏可能全黑，不能把黑色抓屏当作真实窗口；必要时从宿主窗口采集证据，公开图裁去本机标题/路径。

@@ -20,8 +20,8 @@ from .capture import CaptureGate
 
 
 class Executor(Node):
-    def __init__(self):
-        super().__init__('rectangle_executor')
+    def __init__(self, **node_kwargs):
+        super().__init__('rectangle_executor', **node_kwargs)
         share=Path(get_package_share_directory('agv_mission'))
         desc=Path(get_package_share_directory('agv_description'))/'config'
         self.platform=yaml.safe_load((desc/'platform.yaml').read_text())

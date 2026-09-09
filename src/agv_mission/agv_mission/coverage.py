@@ -96,8 +96,9 @@ def combine(parent, children):
             lo,hi=track['assigned_road_y_m']
             for a,b in track['estimated_covered_along_m']:
                 rectangles.append((x+a,x+b,lo,hi) if track['direction']==1 else (x+length-b,x+length-a,lo,hi))
-    collect(parent);identities={parent['provenance']['navigation_sha256']}
-    candidates=[c['request'] for c in parent.get('rescan_candidates',[]) if c['status']=='PREVIEW_ONLY']
+    collect(parent);identities=set(parent.get('merged_navigation_sha256',[parent['provenance']['navigation_sha256']]))
+    original_candidates=parent.get('original_rescan_candidates',parent.get('rescan_candidates',[]))
+    candidates=[c['request'] for c in original_candidates if c['status']=='PREVIEW_ONLY']
     for child in children:
         if child.get('request') not in candidates:raise ValueError('child is not a validated parent rescan candidate')
         for key in ('scene_contract_sha256','optical_intrinsic_id'):
@@ -117,9 +118,11 @@ def combine(parent, children):
         track['estimated_covered_along_m']=merge(covered)
         track['unverified_along_m']=complement(covered,length)
         # Original quality reasons remain evidence, not claims about all later sessions.
-        track['source_quality_flags']=track.pop('quality_flags',[])
+        track['source_quality_flags']=track.pop('quality_flags',track.get('source_quality_flags',[]))
     result['status']='NEEDS_RESCAN' if any(t['unverified_along_m'] for t in result['tracks']) else 'ESTIMATED_COMPLETE'
     result['merged_navigation_sha256']=sorted(identities)
-    result['rescan_candidates']=[]
+    result['original_rescan_candidates']=original_candidates
+    remaining={t['track_id']:t['unverified_along_m'] for t in result['tracks']}
+    result['rescan_candidates']=[c for c in original_candidates if any(max(a,c['source_along_m'][0])<min(b,c['source_along_m'][1]) for a,b in remaining[c['source_track_id']])]
     result['scope']='Union of independently audited flat-road footprint rectangles; original quality reasons retained. No image stitching or pixel-level proof.'
     return result

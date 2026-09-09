@@ -1,0 +1,117 @@
+{
+  "passed": true,
+  "gui_rviz": true,
+  "blocks": 6,
+  "rows": 18241,
+  "ros_archive_identical": true,
+  "pause_retains_frame": true,
+  "coverage_status": "NEEDS_RESCAN",
+  "coverage_tracks": [
+    {
+      "track_id": 0,
+      "direction": 1,
+      "assigned_road_y_m": [
+        -1.0,
+        0.0
+      ],
+      "estimated_covered_along_m": [
+        [
+          0.0,
+          3.0
+        ]
+      ],
+      "unverified_along_m": [],
+      "excluded_footprint_tags": 0,
+      "max_lateral_allowance_m": 0.15565032932281636,
+      "quality_flags": []
+    },
+    {
+      "track_id": 1,
+      "direction": -1,
+      "assigned_road_y_m": [
+        0.0,
+        1.0
+      ],
+      "estimated_covered_along_m": [],
+      "unverified_along_m": [
+        [
+          0.0,
+          3.0
+        ]
+      ],
+      "excluded_footprint_tags": 12,
+      "max_lateral_allowance_m": 0.32421902114429185,
+      "quality_flags": [
+        "UNCERTAINTY_EXCEEDS_OVERLAP"
+      ]
+    }
+  ],
+  "final_state": "ACQUIRED",
+  "final_motion": "HOLD",
+  "wheel_steering_range_rad": {
+    "fl": [
+      -1.6024965551923582,
+      0.008104009256088623
+    ],
+    "fr": [
+      -3.1679535653572644,
+      0.00810400924783502
+    ],
+    "rl": [
+      -0.3088867280210778,
+      1.5858209372121954
+    ],
+    "rr": [
+      -0.308990848968866,
+      3.137978800744191
+    ]
+  },
+  "new_task_cancel": {
+    "state": "CANCELED",
+    "motion_state": "HOLD",
+    "capture_active": false
+  },
+  "schema": "agv.validation.rviz_mission_panel.v1",
+  "date": "2026-09-09",
+  "scope": "Qt RViz panel, operator broker, real D3D12 Gazebo/RViz/OptiX and normal-noise two-track 3x2 m mission at 0.5 m/s",
+  "checks": [
+    "invalid geometry rejected",
+    "request saved and reloaded",
+    "running parameter replacement rejected",
+    "ordinary pause retains full frame",
+    "new rescan task prepared and canceled to HOLD",
+    "actual RViz Start button clicked in v3; Qt button state regression tests",
+    "TF startup retry and frame-locked preview visually checked in v4",
+    "coverage table distinguishes uncertainty from absent pixels"
+  ],
+  "failed_attempts": [
+    {
+      "case": "v1",
+      "reason": "broker used reserved rclpy Node.clients property; renamed and real-node construction test added"
+    },
+    {
+      "case": "v3",
+      "reason": "local/global EKF age reached 0.129 sim s during rotation; localization became NOT_READY and executor faulted; unchanged timeout thresholds",
+      "limit": "This remains a observed scheduling/feedback interruption, not claimed fixed by a successful repeat"
+    },
+    {
+      "case": "initial_preview",
+      "reason": "one-shot markers arrived before TF; static markers not frame-locked; periodic retry and frame locking now applied"
+    }
+  ],
+  "screenshot": "docs/images/rviz_mission_panel.png",
+  "screenshot_scope": "Cropped real GUI screenshot; excludes machine-local title/status paths. Table crop is separate.",
+  "limitations": [
+    "No dynamic obstacle avoidance or automatic rescan dispatch",
+    "Covariance can leave captured area unverified; no covariance reduction applied",
+    "0.5 m/s GUI mission test is not high-speed or 11 kHz acceptance"
+  ],
+  "tests": {
+    "command": "colcon test && colcon test-result --verbose",
+    "tests": 248,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0,
+    "qt_widget_checks": "controls, stale backend, edit locks and distinct coverage reasons"
+  }
+}

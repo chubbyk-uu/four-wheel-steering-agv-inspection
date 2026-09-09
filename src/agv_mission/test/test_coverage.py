@@ -123,3 +123,23 @@ def test_cross_session_union_and_identity_guards():
     with pytest.raises(ValueError,match='incompatible'):combine(parent,[child])
     child['scene_contract_sha256']=['scene'];child['provenance']={'navigation_sha256':'a'}
     with pytest.raises(ValueError,match='duplicate'):combine(parent,[child])
+
+
+def test_incremental_rescans_keep_remaining_candidates_and_reject_replays():
+    from copy import deepcopy
+    from agv_mission.coverage import combine
+    p,c,r=config();r['region'].update(start_xy_m=[6.,-1.],length_m=3.,width_m=2.)
+    vehicle=Vehicle.from_configs(p,c);source=plan(r,vehicle)
+    parent=estimate(source,[]);parent.update(request=r,scene_contract_sha256=['scene'],optical_intrinsic_id='lens',provenance={'navigation_sha256':'parent'})
+    parent['rescan_candidates']=rescan_requests(source,parent,vehicle)
+    children=[]
+    for i,candidate in enumerate(parent['rescan_candidates']):
+        request=candidate['request'];child=estimate(plan(request,vehicle),[])
+        child.update(request=request,scene_contract_sha256=['scene'],optical_intrinsic_id='lens',provenance={'navigation_sha256':str(i)})
+        child['tracks'][0]['estimated_covered_along_m']=[[0.,3.]];child['tracks'][0]['unverified_along_m']=[]
+        children.append(child)
+    first=combine(parent,children[:1]);assert len(first['rescan_candidates'])==1
+    assert first['rescan_candidates'][0]['source_track_id']==1
+    with pytest.raises(ValueError,match='duplicate'):combine(first,children[:1])
+    final=combine(first,children[1:]);assert final['status']=='ESTIMATED_COMPLETE' and not final['rescan_candidates']
+    assert len(final['merged_navigation_sha256'])==3

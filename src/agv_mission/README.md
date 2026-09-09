@@ -1,6 +1,6 @@
 # 矩形巡检规划与单段时间闭环
 
-当前已交付规划核心、预览、独立单段时间闭环、矩形执行和可选原图采集。规划预览不发运动指令；`track_segment`会通过底层控制器执行运动。矩形直线接入与采集门已接入，暂停恢复、异常补扫和任务面板按[实施计划](../../docs/MISSION_IMPLEMENTATION_PLAN.md)继续接入。
+当前已交付规划核心、预览、独立单段时间闭环、矩形执行和可选原图采集。规划预览不发运动指令；`track_segment`会通过底层控制器执行运动。矩形直线接入与采集门已接入，暂停恢复、覆盖审计、补扫请求与RViz任务面板已接入，使用[巡检入口](../../docs/RECTANGLE_EXECUTION.md#rviz巡检任务面板)。
 
 ## 快速运行
 
@@ -71,7 +71,7 @@ ros2 run agv_mission track_segment --ros-args \
 
 位移相对于启动时的融合姿态。横移用`[0.0, 1.0]`，后退用`[-2.0, 0.0]`；旋转改为`-p kind:=rotate -p angle_rad:=3.141592653589793 -p speed:=0.25`，此时speed单位rad/s。每个实例仅执行一段。默认不自动开始，可调用`/mission/start_segment`（std_srvs/srv/Trigger）；开始前须连续5秒定位READY且底层HOLD。取消调用`/mission/cancel_segment`，故障/取消后不自动恢复。
 
-参考位置由梯形/三角形速度曲线按仿真时间积分，速度前馈叠加融合位姿反馈；轮组BRAKE/ALIGN时参考暂停并重新定时。完成要求终点位姿、低速和HOLD同时满足。当前是平面单段验证，未接区域执行和采集门。配置、实测与限制见[时间闭环记录](../../docs/archive/integration/TRACKING_IMPLEMENTATION.md)。
+参考位置由梯形/三角形速度曲线按仿真时间积分，速度前馈叠加融合位姿反馈；轮组BRAKE/ALIGN时参考暂停并重新定时。完成要求终点位姿、低速和HOLD同时满足。此单段入口保留为独立验证；完整区域执行和采集门使用下述矩形入口。配置、实测与限制见[时间闭环记录](../../docs/archive/integration/TRACKING_IMPLEMENTATION.md)。
 
 完整矩形运动执行入口已接入，使用方法与限制见[矩形执行](../../docs/RECTANGLE_EXECUTION.md)；采集验收另行记录。
 
