@@ -21,14 +21,22 @@ class Trigger {
   void Reset() { valid_ = false; direction_ = 0; }
   std::vector<Event> Update(double time, double distance) {
     if (!std::isfinite(time) || !std::isfinite(distance)) throw std::runtime_error("nonfinite encoder");
-    if (!valid_) { time_=time; distance_=distance; valid_=true; return {}; }
+    if (!valid_) { time_=time; distance_=origin_=extreme_=distance; valid_=true; return {}; }
     if (time <= time_) throw std::runtime_error("encoder time reset");
     std::vector<Event> result;
     double delta=distance-distance_;
-    if (std::abs(delta)>1e-12) {
-      int direction=delta>0 ? 1 : -1;
-      if (direction_ && direction_!=direction) throw std::runtime_error("direction change");
-      if (!direction_) { direction_=direction; next_=distance_+direction*spacing_; }
+    if (!direction_ && std::abs(distance-origin_)>=spacing_-1e-12) {
+      direction_=distance>=origin_ ? 1 : -1;
+      next_=origin_+direction_*spacing_;
+    }
+    if (direction_) {
+      // Encoder sub-pulse backlash/jitter at rest must not reverse a scan.
+      // A full pitch of retreat is an actual unsupported reversal.
+      if (direction_*(extreme_-distance)>=spacing_) throw std::runtime_error("direction change");
+      if (direction_*(distance-extreme_)>0) extreme_=distance;
+    }
+    if (direction_ && direction_*delta>1e-12) {
+      int direction=direction_;
       while (direction*(distance-next_)>=-1e-12) {
         result.push_back({time_+(next_-distance_)/delta*(time-time_), next_, direction});
         next_+=direction*spacing_;
@@ -39,7 +47,7 @@ class Trigger {
     return result;
   }
  private:
-  double spacing_, time_=0, distance_=0, next_=0;
+  double spacing_, time_=0, distance_=0, next_=0, origin_=0, extreme_=0;
   int direction_=0;
   bool valid_=false;
 };

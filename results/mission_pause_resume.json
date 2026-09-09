@@ -1,0 +1,469 @@
+{
+  "date": "2026-09-09",
+  "scope": "Ordinary pause retains partial camera frame and encoder phase; same-instance explicit resume; cancellation/localization timeout terminate a partial frame. Not process-restart resume or autonomous rescan.",
+  "configuration": {
+    "profile": "normal",
+    "gui_rviz": true,
+    "region_m": [
+      3,
+      2
+    ],
+    "track_spacing_m": 1,
+    "scan_speed_m_s": 0.5,
+    "width": 4096,
+    "block_rows": 4096,
+    "ground_width_m": 1.5
+  },
+  "resume": {
+    "passed": true,
+    "scope": "rectangle motion + OptiX raw capture + sparse fused labels; no correction/stitching",
+    "profile": "normal",
+    "gui_rviz": true,
+    "follow_camera": true,
+    "wheel_steering_range_rad": {
+      "fl": [
+        -1.7146732888612928,
+        0.0058864584547417085
+      ],
+      "fr": [
+        -3.1694067106107875,
+        0.005886458450996777
+      ],
+      "rl": [
+        -3.168247106777682,
+        0.005886459616071378
+      ],
+      "rr": [
+        -1.5913542375692784,
+        0.005886459605110056
+      ]
+    },
+    "region_m": [
+      3.0,
+      2.0
+    ],
+    "track_spacing_m": 1.0,
+    "tracks": [
+      {
+        "track_id": 0,
+        "running_samples": 816,
+        "reference_error_max_m": 0.027805075610760708
+      },
+      {
+        "track_id": 1,
+        "running_samples": 376,
+        "reference_error_max_m": 0.030641065344812358
+      }
+    ],
+    "final": {
+      "time_s": 67.343,
+      "state": "ACQUIRED",
+      "reason": "",
+      "motion_state": "HOLD",
+      "step_index": 5,
+      "step_count": 5,
+      "capture_integrated": true,
+      "capture_active": false,
+      "command_body": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "motion_reason": "STOP_REQUEST",
+      "position_m": [
+        6.895588214537976,
+        0.49873302653274276,
+        0.6598555114959035
+      ]
+    },
+    "pause_resume": {
+      "requested_time_s": 15.737,
+      "stopped_time_s": 16.756,
+      "resume_request_time_s": 19.756,
+      "crossing_blocks": [
+        {
+          "block_id": 0,
+          "rows": 4096,
+          "pause_gap_s": 3.676478225115268
+        }
+      ],
+      "no_partial_frame_during_pause": true
+    },
+    "capture": [
+      {
+        "track_id": 0,
+        "blocks": 3,
+        "rows": 9193,
+        "truth_along_extent_m": [
+          -0.24847531438931103,
+          3.1175930420126363
+        ],
+        "continuous_roi": true
+      },
+      {
+        "track_id": 1,
+        "blocks": 3,
+        "rows": 9015,
+        "truth_along_extent_m": [
+          -0.1932798125172912,
+          3.1083934281803476
+        ],
+        "continuous_roi": true
+      }
+    ],
+    "close_reasons": [
+      "track_end",
+      "track_end"
+    ],
+    "pause_events": [
+      {
+        "event": "pause_requested",
+        "time_s": 15.739,
+        "step_index": 1,
+        "position_m": [
+          5.040971298178691,
+          -0.5019811254790906,
+          0.6797378581988556
+        ],
+        "orientation_xyzw": [
+          -0.00065235220482677,
+          0.0009099723631542744,
+          -0.0007168392958291831,
+          0.999999116263771
+        ],
+        "capture_active": true
+      },
+      {
+        "event": "stopped",
+        "time_s": 16.756,
+        "step_index": 1,
+        "position_m": [
+          5.180962978648671,
+          -0.5074116918071719,
+          0.6573585132680464
+        ],
+        "orientation_xyzw": [
+          -0.0007191928390466758,
+          -0.0003682705820754183,
+          -0.002751226607079685,
+          0.9999958889368471
+        ],
+        "capture_active": true
+      },
+      {
+        "event": "resumed",
+        "time_s": 19.756,
+        "step_index": 1,
+        "position_m": [
+          5.169749877519401,
+          -0.5046368712377045,
+          0.6513584724253595
+        ],
+        "orientation_xyzw": [
+          -0.00037326451097049383,
+          0.0005473917639353635,
+          -0.002671860845820683,
+          0.9999962110905631
+        ],
+        "capture_active": true
+      }
+    ],
+    "material_statistics": {
+      "batch_wait_seconds_max": 6.2668e-05,
+      "bytes_read": 1086361632,
+      "cache_slots": 32,
+      "cold_warm_seconds": 0.142089808,
+      "device_payload_bytes": 404232320,
+      "evictions": 62,
+      "explicit_prewarm_calls": 2,
+      "explicit_prewarm_seconds_total": 0.19940348700000002,
+      "load_seconds_max": 0.00819238,
+      "load_seconds_total": 0.5809397060000001,
+      "read_seconds_max": 0.0019937649999999998,
+      "read_seconds_total": 0.10821670499999997,
+      "required_tile_misses_after_warm": 0,
+      "sha256_bytes": 934776288,
+      "sha256_seconds_max": 0.00550136,
+      "sha256_seconds_total": 0.38481378800000005,
+      "slot_pins": 0,
+      "tile_loads": 86,
+      "upload_seconds_max": 0.004588971,
+      "upload_seconds_total": 0.08486306999999996,
+      "verification_reuse_files": 24
+    }
+  },
+  "cancel": {
+    "passed": true,
+    "scope": "paused partial frame terminated explicitly; incomplete ROI, no coverage success",
+    "profile": "normal",
+    "gui_rviz": true,
+    "follow_camera": true,
+    "region_m": [
+      3.0,
+      2.0
+    ],
+    "track_spacing_m": 1.0,
+    "tracks": [
+      {
+        "track_id": 0,
+        "running_samples": 265,
+        "reference_error_max_m": 0.028156595436400776
+      },
+      {
+        "track_id": 1,
+        "running_samples": 0,
+        "reference_error_max_m": null
+      }
+    ],
+    "final": {
+      "time_s": 19.875,
+      "state": "CANCELED",
+      "reason": "CANCELED",
+      "motion_state": "HOLD",
+      "step_index": 1,
+      "step_count": 5,
+      "capture_integrated": true,
+      "capture_active": false,
+      "command_body": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "motion_reason": "STOP_REQUEST",
+      "kind": "PASS",
+      "track_id": 0,
+      "position_m": [
+        5.177752517194467,
+        -0.5029788758596082,
+        0.6603776159297627
+      ],
+      "tracker_state": "RUNNING",
+      "profile_time_s": 1.200000000000001,
+      "profile_duration_s": 12.15891686089175,
+      "terminal_trims": 0,
+      "reference_position_m": [
+        5.0517987865422675,
+        -0.5084457218176494,
+        0.6525052826027357
+      ],
+      "reference_speed": 0.5,
+      "active_kind": "translate",
+      "along_reference_error_m": 0.007921269786981416,
+      "reference_position_error_m": 0.011430602777661059,
+      "reference_heading_error_rad": 0.0024558688633527503,
+      "goal_error_m": 5.362386032507754,
+      "goal_heading_error_rad": 0.0024558688633527503,
+      "reference_progress": 0.44375000000000053
+    },
+    "termination_probe": {
+      "case": "cancel",
+      "tail_rows": 1534,
+      "sensor_end_reason": "capture_toggle",
+      "ros_archive_identical": true
+    },
+    "pause_resume": {
+      "requested_time_s": 15.828000000000001,
+      "stopped_time_s": 16.834
+    },
+    "close_reasons": [
+      "CANCELED"
+    ],
+    "pause_events": [
+      {
+        "event": "pause_requested",
+        "time_s": 15.829,
+        "step_index": 1,
+        "position_m": [
+          5.043859819638053,
+          -0.5002286391505426,
+          0.6442663317706842
+        ],
+        "orientation_xyzw": [
+          -0.0007664024823121164,
+          0.0004187962405799154,
+          -0.002006583704483904,
+          0.9999976054265234
+        ],
+        "capture_active": true
+      },
+      {
+        "event": "stopped",
+        "time_s": 16.834,
+        "step_index": 1,
+        "position_m": [
+          5.185038866052277,
+          -0.5047439283946068,
+          0.6668226261949622
+        ],
+        "orientation_xyzw": [
+          -0.0008327020902088756,
+          -0.0003833600864165341,
+          -0.0026421091799828243,
+          0.999996089443031
+        ],
+        "capture_active": true
+      }
+    ]
+  },
+  "localization_timeout": {
+    "passed": true,
+    "scope": "paused partial frame terminated explicitly; incomplete ROI, no coverage success",
+    "profile": "normal",
+    "gui_rviz": true,
+    "follow_camera": true,
+    "region_m": [
+      3.0,
+      2.0
+    ],
+    "track_spacing_m": 1.0,
+    "tracks": [
+      {
+        "track_id": 0,
+        "running_samples": 333,
+        "reference_error_max_m": 0.022349107854604096
+      },
+      {
+        "track_id": 1,
+        "running_samples": 0,
+        "reference_error_max_m": null
+      }
+    ],
+    "final": {
+      "time_s": 20.708000000000002,
+      "state": "FAULT",
+      "reason": "STALE_OR_UNREADY_LOCALIZATION",
+      "motion_state": "HOLD",
+      "step_index": 1,
+      "step_count": 5,
+      "capture_integrated": true,
+      "capture_active": false,
+      "command_body": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "motion_reason": "STOP_REQUEST",
+      "kind": "PASS",
+      "track_id": 0,
+      "position_m": [
+        5.171148847357139,
+        -0.4949558269307468,
+        0.6285331984443552
+      ],
+      "tracker_state": "RUNNING",
+      "profile_time_s": 1.200000000000001,
+      "profile_duration_s": 12.188022449597893,
+      "terminal_trims": 0,
+      "reference_position_m": [
+        5.037277004205258,
+        -0.5088764143405939,
+        0.6989975595676239
+      ],
+      "reference_speed": 0.5,
+      "active_kind": "translate",
+      "along_reference_error_m": 0.017057974584993984,
+      "reference_position_error_m": 0.01756503354107167,
+      "reference_heading_error_rad": 0.003416217875113516,
+      "goal_error_m": 5.386070829134973,
+      "goal_heading_error_rad": 0.003416217875113516,
+      "reference_progress": 0.44375000000000053,
+      "health": {
+        "state": "READY",
+        "measurement_age_s": {
+          "wheel": 0.01600000000000179,
+          "imu": 0.010000000000001563,
+          "gnss": 0.08000000000000185
+        },
+        "filter_age_s": {
+          "local": 0.0070000000000014495,
+          "global": 0.0070000000000014495
+        },
+        "tilt_initialized": true,
+        "delivery_queue_peak": 4,
+        "stop_required": false
+      }
+    },
+    "termination_probe": {
+      "case": "localization_timeout",
+      "tail_rows": 1527,
+      "sensor_end_reason": "capture_toggle",
+      "ros_archive_identical": true
+    },
+    "pause_resume": {
+      "requested_time_s": 15.302000000000001,
+      "stopped_time_s": 16.348000000000003
+    },
+    "close_reasons": [
+      "STALE_OR_UNREADY_LOCALIZATION"
+    ],
+    "pause_events": [
+      {
+        "event": "pause_requested",
+        "time_s": 15.303,
+        "step_index": 1,
+        "position_m": [
+          5.020223128725072,
+          -0.5046985977053292,
+          0.7159225155197455
+        ],
+        "orientation_xyzw": [
+          -0.0007441369770854203,
+          -0.00029047809895410234,
+          -0.002611946009377299,
+          0.9999962698033814
+        ],
+        "capture_active": true
+      },
+      {
+        "event": "stopped",
+        "time_s": 16.348000000000003,
+        "step_index": 1,
+        "position_m": [
+          5.169804342938929,
+          -0.5020314753892173,
+          0.6200976642203183
+        ],
+        "orientation_xyzw": [
+          -0.0007832571996749514,
+          -0.0004028422215176342,
+          -0.0037642321947665464,
+          0.9999925273632236
+        ],
+        "capture_active": true
+      }
+    ]
+  },
+  "seam_evaluation": {
+    "block_id": 0,
+    "line_pair": [
+      1554,
+      1555
+    ],
+    "encoder_step_m": 0.0003662109375,
+    "ground_center_step_m": 0.0004096162859903609,
+    "row_mean_abs_difference_dn": 16.133544921875,
+    "nearby_row_difference_median_dn": 8.602783203125
+  },
+  "tests": "228 tests, 0 errors, 0 failures, 0 skipped; includes exact 2000 + 2096 pulse continuation and fractional pitch, short rest jitter, state guards, cross-pause fused labels and offline preservation.",
+  "failed_attempts": [
+    {
+      "case": "first integration",
+      "finding": "Empty HOLD marker was incorrectly sent to nonempty line queue; now uses ordered synchronous boundary without frame flush."
+    },
+    {
+      "case": "second lane startup",
+      "finding": "Stopped lane prewarm wrongly used the hot 50 ms material timeout; explicit per-enable prewarm now waits before movement and reports its duration separately."
+    },
+    {
+      "case": "initial wheel alignment",
+      "finding": "Arming before first DRIVE admitted tiny alignment movement and short fragments; initial start qualified by DRIVE, subsequent ordinary HOLD retains partial frame."
+    }
+  ],
+  "limits": [
+    "Real-time/high-speed throughput not asserted by these 0.5 m/s pause trials.",
+    "Normal flat road only; pulse continuity alone is not a no-slip spatial guarantee.",
+    "Seam ground-center evaluation uses GZ sensor-generation truth only for audit. Acceptance within 0.25 nominal line pitch; local adjacent-row difference check is a heuristic, not a texture-independent geometric proof.",
+    "Storage/GPU failures may prevent successful tail storage; no completion claim without acknowledgement.",
+    "Fault probe suspends only the owned localization adapter after PAUSED, then restores it and verifies FAULT stays latched; it is not a moving-fault stopping-distance test."
+  ]
+}

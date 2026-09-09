@@ -16,3 +16,5 @@
 配置一致只证明文件符合约定，实际渲染一致才证明约定在渲染器中成立；单一模块的检查不能代替端到端观察。报告应区分实际测量、历史结果和未验证范围，不能将观察验收留给用户完成。
 
 联合实时性能验收必须给`tools/validate_rendered_linescan.py`加`--require-realtime`，在GUI＋RViz＋采图条件下测量稳速段。实时率低于0.95时写出报告并失败；不带此选项仍可做慢速渲染诊断，但不能据其passed宣称实时通过。记录车速、距离、场景、预览及补光配置；10 km/h时约7.59 kHz，与独立11 kHz采样台架验收分开。
+
+暂停协议修改后，用`tools/validate_rectangle_execution.py --gui --profile normal --scene ... --pause-once`验证原图跨停车时间而不分帧、相邻行号/标签、无PASS后退及正常区域连续性。再分别用`--stop-after-pause cancel`和`--stop-after-pause localization_timeout`验证未满帧明确关闭，后者只挂起本次启动的定位适配进程并在验证/清理时恢复，不影响其他实例。故障恢复后仍应保持FAULT；测试的passed表示预期故障处理通过，不表示采集区域完成。

@@ -8,7 +8,7 @@ from std_srvs.srv import SetBool
 class CaptureGate:
     def __init__(self,node,output,enabled):
         self.node=node;self.enabled=enabled;self.active=None if enabled else False;self.future=None;self.target=False
-        self.track=None;self.intervals=[];self.error='';self.started_wall=0
+        self.track=None;self.intervals=[];self.error='';self.started_wall=0;self.close_reason='requested'
         self.client=node.create_client(SetBool,'/linescan/set_enabled') if enabled else None
         self.output=output
         self.events=(output/'capture_events.jsonl').open('x')
@@ -25,23 +25,27 @@ class CaptureGate:
         if value.get('reason','').startswith('terrain_sampling_failure') or value.get('reason') in ('pose_gap','pose_outside_history','time_reset'):
             self.error='CAMERA_'+value['reason']
     def block(self,msg):self.blocks.write(msg.data+'\n');self.blocks.flush()
-    def request(self,value,track=None):
+    def request(self,value,track=None,reason='requested'):
         if not self.enabled:return True
         if self.future is not None:return False
         if self.active==value:return True
         if not self.client.service_is_ready():self.error='CAMERA_SERVICE_UNAVAILABLE';return False
         self.target=value;self.started_wall=time.monotonic()
         if value:self.track=track
+        else:self.close_reason=reason
         self.future=self.client.call_async(SetBool.Request(data=value));return False
     def poll(self):
         if self.future is None:return
         if not self.future.done():
             if time.monotonic()-self.started_wall>10:self.error='CAMERA_HANDSHAKE_TIMEOUT'
             return
-        response=self.future.result();self.future=None
+        try:response=self.future.result()
+        except Exception as exc:
+            self.future=None;self.error='CAMERA_HANDSHAKE_FAILED: '+str(exc);return
+        self.future=None
         if not response.success:self.error='CAMERA_HANDSHAKE_FAILED: '+response.message;return
         self.active=self.target
         if self.active:self.intervals.append({'track_id':self.track,'enabled_ack_time_s':self.now(),'archive':response.message})
-        elif self.intervals:self.intervals[-1]['disabled_ack_time_s']=self.now()
+        elif self.intervals:self.intervals[-1].update(disabled_ack_time_s=self.now(),end_reason=self.close_reason)
         (self.output/'capture_intervals.json').write_text(json.dumps(self.intervals,indent=2)+'\n')
     def close(self):self.events.close();self.blocks.close()

@@ -28,3 +28,8 @@ terminal_translation_speed_m_s: 0.08
 terminal_rotation_speed_rad_s: 0.06
 max_terminal_trims: 3
 initial_ready_hold_s: 5.0
+
+# Resume is explicit; a moved vehicle must be replanned, not silently joined.
+pause_max_displacement_m: 0.20
+pause_max_rotation_rad: 0.10
+pause_stop_timeout_s: 10.0

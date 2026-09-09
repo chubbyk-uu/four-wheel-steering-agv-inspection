@@ -65,3 +65,27 @@ TEST(ScanMotion, ProjectedDistanceAndPureLateralMotion) {
   encoder.Reset();p.fill(0);angle.fill(M_PI/2);encoder.Update(p,angle);p.fill(1);
   EXPECT_NEAR(encoder.Update(p,angle),0,1e-12);
 }
+
+TEST(Trigger, PauseRetainsTwoThousandLinesAndFractionalPitch) {
+  const double pitch=1.5/4096;
+  Trigger trigger(pitch);trigger.Update(0,0);
+  auto first=trigger.Update(1,2000.25*pitch);
+  ASSERT_EQ(first.size(),2000u);
+  for(int t=2;t<=60;++t) EXPECT_TRUE(trigger.Update(t,2000.25*pitch).empty());
+  auto remaining=trigger.Update(61,4096*pitch);
+  ASSERT_EQ(remaining.size(),2096u);
+  EXPECT_NEAR(remaining.front().distance-first.back().distance,pitch,1e-12);
+  EXPECT_GT(remaining.front().time,60.);
+  EXPECT_NEAR(remaining.back().distance,1.5,1e-10);
+}
+TEST(Trigger, SubPulseRestJitterDoesNotChooseOrReverseScanDirection) {
+  Trigger trigger(.01);trigger.Update(0,0);
+  EXPECT_TRUE(trigger.Update(1,-.0001).empty());
+  auto first=trigger.Update(2,.025);ASSERT_EQ(first.size(),2u);
+  EXPECT_NEAR(first.front().distance,.01,1e-12);
+  EXPECT_TRUE(trigger.Update(3,.02499).empty());
+  EXPECT_TRUE(trigger.Update(4,.025).empty());
+  auto last=trigger.Update(5,.03);ASSERT_EQ(last.size(),1u);
+  EXPECT_NEAR(last.front().distance,.03,1e-12);
+  EXPECT_THROW(trigger.Update(6,.015),std::runtime_error);
+}

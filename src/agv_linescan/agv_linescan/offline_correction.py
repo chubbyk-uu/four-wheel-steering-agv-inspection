@@ -36,7 +36,7 @@ def process_session(source, profile, output):
             if first['time_s']<=previous['last']['time_s']:raise ValueError('nonmonotonic block timestamp')
             if m['segment_id']==previous['segment_id'] and first['global_line']!=previous['last']['global_line']+1:raise ValueError('line discontinuity within segment')
         tags=m['pose_tags']
-        if not 1<=len(tags)<=5 or any(not first['global_line']<=t['global_line']<=last['global_line'] for t in tags):raise ValueError('invalid sparse pose tags')
+        if not 1<=len(tags)<=m['rows'] or any(not first['global_line']<=t['global_line']<=last['global_line'] for t in tags):raise ValueError('invalid sparse pose tags')
         entries.append((path,m));previous=m
     output.mkdir(parents=True,exist_ok=False)
     (output/'calibration.json').write_bytes(profile.read_bytes())

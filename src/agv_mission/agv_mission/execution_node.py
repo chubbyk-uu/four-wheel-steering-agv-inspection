@@ -2,6 +2,7 @@
 import json
 import time
 from pathlib import Path
+from scipy.spatial.transform import Rotation
 import numpy as np
 import yaml
 import rclpy
@@ -13,7 +14,7 @@ from nav_msgs.msg import Odometry
 from std_msgs.msg import String
 from std_srvs.srv import Trigger
 from .planner import plan,Vehicle
-from .execution import compile_steps,segment_arguments,check_position
+from .execution import compile_steps,segment_arguments,check_position,scan_end_reached
 from .tracking import SegmentTracker
 from .capture import CaptureGate
 
@@ -39,6 +40,7 @@ class Executor(Node):
         self.odom=None;self.mode='';self.health={};self.arrivals={};self.last_command=[0.,0.,0.];self.motion_reason=''
         self.state='READY';self.reason='';self.ready_since=None;self.steps=[];self.index=0;self.core=None
         self.last_sim=None;self.last_clock=time.monotonic();self.step_attempts=0;self.stopped_since=None
+        self.pause_pose=None;self.pause_started=None;self.pause_events=[]
         self.cmd=self.create_publisher(TwistStamped,'/cmd_vel',10)
         self.status=self.create_publisher(String,'/mission/status',20)
         self.create_subscription(Odometry,'/odometry/global',self.on_odom,20)
@@ -47,6 +49,8 @@ class Executor(Node):
         self.create_subscription(String,'/localization/status',self.on_health,20)
         self.create_service(Trigger,'/mission/start',self.start)
         self.create_service(Trigger,'/mission/cancel',self.cancel)
+        self.create_service(Trigger,'/mission/pause',self.pause)
+        self.create_service(Trigger,'/mission/resume',self.resume)
         self.create_timer(.02,self.tick,clock=Clock(clock_type=ClockType.STEADY_TIME))
 
     def on_odom(self,m):self.odom=m;self.arrivals['odom']=time.monotonic()
@@ -67,15 +71,65 @@ class Executor(Node):
     def start(self,request,response):
         if self.state!='READY' or self.ready_since is None or time.monotonic()-self.ready_since<self.cfg['initial_ready_hold_s']:
             response.success=False;response.message='continuous READY localization and HOLD dwell required';return response
-        if not self.capture.request(False):
+        if not self.capture.request(False,reason='initial_disable'):
             response.success=False;response.message='waiting for camera disabled acknowledgement';return response
         try:self.steps=compile_steps(self.plan,*self.pose())
         except ValueError as exc:
             response.success=False;response.message=str(exc);return response
         (self.output/'steps.json').write_text(json.dumps(self.steps,indent=2)+'\n')
         self.state='RUNNING';response.success=True;response.message='started';return response
+    def pause_record(self,event):
+        p,q=self.pose()
+        self.pause_events.append(dict(event=event,time_s=self.get_clock().now().nanoseconds*1e-9,
+            step_index=self.index,position_m=p.tolist(),orientation_xyzw=q.tolist(),
+            capture_active=self.capture.active))
+        (self.output/'pause_events.json').write_text(json.dumps(self.pause_events,indent=2)+'\n')
+    def stopped(self):
+        if self.odom is None or self.mode!='HOLD':return False
+        v=self.odom.twist.twist
+        return np.hypot(v.linear.x,v.linear.y)<self.cfg['stopped_speed_m_s'] and abs(v.angular.z)<self.cfg['stopped_yaw_rate_rad_s']
+    def pause(self,request,response):
+        if self.state in ('PAUSING','PAUSED'):
+            response.success=True;response.message=self.state;return response
+        if self.state!='RUNNING':
+            response.success=False;response.message='only a running mission can pause';return response
+        self.state='PAUSING';self.pause_started=self.get_clock().now().nanoseconds*1e-9
+        self.stopped_since=None;self.pause_record('pause_requested');self.command([0,0,0])
+        response.success=True;response.message='braking; partial camera frame remains armed';return response
+    def resume(self,request,response):
+        now=self.get_clock().now().nanoseconds*1e-9
+        if self.state!='PAUSED' or not self.valid(now) or not self.stopped() or self.capture.error or self.capture.future is not None:
+            response.success=False;response.message='PAUSED, healthy feedback, HOLD and camera acknowledgement required';return response
+        p,q=self.pose()
+        try:
+            check_position(self.plan,p)
+            before_p,before_q=self.pause_pose
+            if np.linalg.norm(p-before_p)>self.cfg['pause_max_displacement_m'] or (Rotation.from_quat(before_q).inv()*Rotation.from_quat(q)).magnitude()>self.cfg['pause_max_rotation_rad']:
+                raise ValueError('vehicle moved while paused; cancel and replan')
+            if self.index<len(self.steps):
+                args=segment_arguments(self.steps[self.index],p,q)
+                if self.capture.active and args and args['kind']=='rotate':
+                    raise ValueError('scan heading changed; cannot rotate with a retained partial frame')
+        except ValueError as exc:
+            response.success=False;response.message=str(exc);return response
+        self.pause_record('resumed');self.core=None;self.step_attempts=0
+        self.state='RUNNING';self.stopped_since=None
+        response.success=True;response.message='continuing to original endpoint with a new rest-to-rest profile';return response
+    def pause_tick(self,now,valid,dt,wall):
+        self.command([0,0,0])
+        if not valid:self.fault('STALE_OR_UNREADY_LOCALIZATION');return
+        if wall-self.last_clock>self.cfg['wall_timeout_s']:self.fault('SIM_CLOCK_STALLED');return
+        if dt<0 or dt>.1:self.fault('INVALID_CONTROL_TIMESTEP');return
+        if self.state=='PAUSED':return
+        if now-self.pause_started>self.cfg['pause_stop_timeout_s']:
+            self.fault('PAUSE_STOP_TIMEOUT');return
+        if self.stopped() and self.capture.future is None:
+            if self.stopped_since is None:self.stopped_since=now
+            if now-self.stopped_since>=self.cfg['settle_time_s']:
+                self.pause_pose=self.pose();self.state='PAUSED';self.pause_record('stopped')
+        else:self.stopped_since=None
     def cancel(self,request,response):
-        if self.state not in ('COMPLETED','ACQUIRED','FAULT'):self.state='CANCELING';self.reason='CANCELED'
+        if self.state not in ('COMPLETED','ACQUIRED','FAULT','CANCELED'):self.state='CANCELING';self.reason='CANCELED'
         self.command([0,0,0]);response.success=True;response.message='braking requested';return response
     def fault(self,reason):
         if self.state not in ('COMPLETED','ACQUIRED','FAULT'):
@@ -93,6 +147,8 @@ class Executor(Node):
                 if self.ready_since is None:self.ready_since=wall
                 if self.auto and wall-self.ready_since>=self.cfg['initial_ready_hold_s']:self.start(None,Trigger.Response())
             else:self.ready_since=None
+        elif self.state in ('PAUSING','PAUSED'):
+            self.pause_tick(now,valid,dt,wall)
         elif self.state=='RUNNING':
             if not valid:self.fault('STALE_OR_UNREADY_LOCALIZATION')
             elif wall-self.last_clock>self.cfg['wall_timeout_s']:self.fault('SIM_CLOCK_STALLED')
@@ -100,7 +156,7 @@ class Executor(Node):
             elif dt>0:self.run_step(dt)
         else:
             self.command([0,0,0])
-            self.capture.request(False)
+            self.capture.request(False,reason=self.reason or self.state.lower())
             if self.state=='CANCELING' and self.mode=='HOLD' and self.capture.active is False and self.capture.future is None:self.state='CANCELED'
         record={'time_s':now,'state':self.state,'reason':self.reason,'motion_state':self.mode,
                 'step_index':self.index,'step_count':len(self.steps),'capture_integrated':self.capture.enabled,'capture_active':self.capture.active,'command_body':self.last_command,'motion_reason':self.motion_reason}
@@ -117,7 +173,7 @@ class Executor(Node):
         except ValueError as exc:self.fault(str(exc));return
         if self.index>=len(self.steps):
             self.command([0,0,0])
-            if self.capture.request(False) and self.capture.future is None:
+            if self.capture.request(False,reason='mission_end') and self.capture.future is None:
                 self.state='ACQUIRED' if self.capture.enabled else 'COMPLETED'
             return
         step=self.steps[self.index]
@@ -126,10 +182,13 @@ class Executor(Node):
         if self.core is None:
             self.command([0,0,0])
             if self.mode!='HOLD':return
-            args=segment_arguments(step,p,q)
+            try:args=segment_arguments(step,p,q)
+            except ValueError as exc:self.fault(str(exc));return
             if args is None:
+                if not self.capture.request(False,reason='step_end'):return
                 self.index+=1;self.step_attempts=0;return
-            if step['kind']=='PASS' and args['kind']=='translate' and not self.capture.request(True,step['track_id']):return
+            if step['kind']=='PASS' and args['kind']=='translate' and not scan_end_reached(self.plan,self.camera,step,p,q):
+                if not self.capture.request(True,step['track_id']):return
             self.step_attempts+=1
             if self.step_attempts>5:self.fault('STEP_NOT_CONVERGED');return
             self.active_kind=args['kind']
@@ -139,13 +198,8 @@ class Executor(Node):
         cmd=self.core.update(p,q,[v.linear.x,v.linear.y,v.angular.z],self.mode,dt)
         self.command(cmd)
         if step['kind']=='PASS':
-            from scipy.spatial.transform import Rotation
-            track=self.plan['tracks'][step['track_id']]
-            start=np.array(track['scan_start_xyz_m']);finish=np.array(track['scan_end_xyz_m'])
-            axis=(finish-start)/np.linalg.norm(finish-start)
-            scan_center=p+Rotation.from_quat(q).apply([self.camera['camera_x_m'],0.,0.])
-            if (scan_center-start)@axis>=np.linalg.norm(finish-start)+.10 or self.core.state=='STOPPING':
-                self.capture.request(False)
+            if scan_end_reached(self.plan,self.camera,step,p,q) or self.core.state=='STOPPING':
+                self.capture.request(False,reason='track_end')
         if self.core.state=='FAULT':self.fault(self.core.reason)
         elif self.core.state=='COMPLETED':
             # A time-profile translation has reached its endpoint within the tracker
@@ -154,7 +208,8 @@ class Executor(Node):
                 self.index+=1;self.step_attempts=0
             self.core=None
     def destroy_node(self):
-        self.command([0,0,0]);self.capture.close();self.log.close();return super().destroy_node()
+        if rclpy.ok():self.command([0,0,0])
+        self.capture.close();self.log.close();return super().destroy_node()
 
 
 def main():

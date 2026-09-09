@@ -13,7 +13,7 @@ ros2 run agv_mission execute_rectangle --ros-args \
 
 需先启动localization:=true的仿真；输出目录必须不存在。默认autostart=false，调用`/mission/start`（Trigger）开始，`/mission/cancel`取消并等待HOLD。取消不自动恢复；不同时运行其他cmd_vel发布者。每实例一项任务，归档plan.json、steps.json和execution.jsonl。
 
-当前尚无暂停/恢复、动态障碍、RViz任务面板和最高速区域闭环验收。采集联动独立验证，不能把此运动报告称为完成了矩形图像覆盖。
+当前尚无动态障碍、RViz任务面板和最高速区域闭环验收。采集联动独立验证，不能把此运动报告称为完成了矩形图像覆盖。
 
 后续已接可选capture模式，握手和归档语义见[矩形采集](RECTANGLE_CAPTURE.md)；本文件中的运动报告保留为独立基线。
 
@@ -29,3 +29,18 @@ ros2 run agv_mission execute_rectangle --ros-args \
 以下14步结果早于前向换道修订；当前四道为11步，现行表现见扫描稳定性记录。
 
 零噪声3×2 m两轨和带GUI＋RViz、正常噪声的8×4 m四轨均全部完成并停在HOLD。四轨共14个任务步骤，正常噪声各PASS参考/融合位置误差峰值约6.2–7.9 cm。它不是独立真值定位精度，也不是采集覆盖证明。聚合结果见[运动验收](../results/stage3_rectangle_execution.json)。
+
+
+## 暂停与恢复
+
+运行中调用`/mission/pause`（Trigger），进入PAUSING并持续发零速度，由底层按既定减速度制动；融合反馈有效、底层HOLD、速度低于阈值且停稳0.5 s后进入PAUSED。初始对轮结束前尚未开始采样；已有采集段暂停时保持相机启用，不关闭未满帧、不清零编码器触发余量。
+
+调用`/mission/resume`显式恢复：当前位置到原计划绝对终点重新生成静止到静止的梯形/三角形时间曲线，不追赶暂停前的旧时间表，不重新跑整道；若已越过本道扫描终点，恢复只走剩余驶出段，不重新开启采集。仅在健康反馈、HOLD、相机握手完成时接受；停止后位置变化超过0.20 m、姿态变化超过0.10 rad、PASS终点已在后方，或保留图块的扫描段需要原地转向时拒绝，保留暂停状态并要求取消/重规划。这些是恢复护栏，不是亚毫米覆盖认证。
+
+暂停期间定位过期或时钟停滞仍锁存FAULT，健康恢复不自动续跑。取消/故障走关闭采集的独立路径；取消等HOLD和相机关闭确认后成为CANCELED，故障保持FAULT。暂停记录位于`pause_events.json`，关闭原因归入`capture_intervals.json`。每实例仍只执行一项任务；不支持重启进程后自动续接内存中的未满帧。
+
+```bash
+ros2 service call /mission/pause std_srvs/srv/Trigger '{}'
+ros2 service call /mission/resume std_srvs/srv/Trigger '{}'
+ros2 service call /mission/cancel std_srvs/srv/Trigger '{}'
+```

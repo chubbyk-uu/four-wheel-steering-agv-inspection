@@ -157,7 +157,7 @@ OptixScene::OptixScene(const std::vector<float>& rays,const std::string& scene,c
 }
 OptixScene::~OptixScene()=default;
 const std::vector<std::string>& OptixScene::Links()const{return impl_->links;}
-GridBatch OptixScene::Sample(const std::vector<GridExposure>& poses,const std::vector<LinkTransform>& transforms,uint64_t first){
+GridBatch OptixScene::Sample(const std::vector<GridExposure>& poses,const std::vector<LinkTransform>& transforms,uint64_t first,bool prewarm){
  auto& s=*impl_;size_t n=poses.size();if(!n||n>s.capacity||transforms.size()!=n*3*s.links.size()||first>UINT64_MAX-(n-1))throw std::invalid_argument("invalid OptiX sampling batch");
  for(const auto& p:poses)for(const auto& sample:p.samples)for(size_t j=0;j<3;++j)
   if(!std::isfinite(sample.origin[j])||!std::isfinite(sample.across[j])||!std::isfinite(sample.down[j]))throw std::invalid_argument("nonfinite camera pose");
@@ -174,7 +174,7 @@ GridBatch OptixScene::Sample(const std::vector<GridExposure>& poses,const std::v
   if(std::abs(det-1)>1e-4)throw std::invalid_argument("link pose is not rigid: improper rotation");
  }
  struct Release{MaterialCache* cache;~Release(){if(cache)cache->End();}} release{s.cache.get()};
- if(s.cache)s.cache->Begin(poses,s.stream);
+ if(s.cache)s.cache->Begin(poses,s.stream,prewarm);
  s.params.first=first;
  CU(cudaMemcpyAsync((void*)s.params.poses,poses.data(),n*sizeof(GridExposure),cudaMemcpyHostToDevice,s.stream));
  CU(cudaMemcpyAsync((void*)s.params.transforms,transforms.data(),transforms.size()*sizeof(LinkTransform),cudaMemcpyHostToDevice,s.stream));

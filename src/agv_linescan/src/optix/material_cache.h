@@ -9,7 +9,7 @@ class MaterialCache {
   MaterialCache(const nlohmann::json&,const std::filesystem::path&,const std::vector<float>&);
   ~MaterialCache();
   void Bind(ScanParams&);
-  void Begin(const std::vector<GridExposure>&,cudaStream_t);
+  void Begin(const std::vector<GridExposure>&,cudaStream_t,bool prewarm=false);
   void End() noexcept;
   std::string Statistics() const;
   size_t Bytes() const;

@@ -190,11 +190,12 @@ TEST_F(OptixTest, StreamedMaterialSeamsEvictionReverseAndCorruption){
  for(float x:{.2f,.399f,.4f,.401f,.8f,1.2f,1.4f,1.2f,.8f,.4f,.2f}){
   for(auto& p:poses[0].samples){p.origin[0]=x;p.origin[1]=.2f;}
   float reflectance=(32+8*(x/.1f-.5f))/255.f;
-  EXPECT_NEAR(gpu->Sample(poses,{away,away,away},33).pixels[0],
+  EXPECT_NEAR(gpu->Sample(poses,{away,away,away},33,x==1.4f).pixels[0],
    SensorCode(sensor,MeanElectrons(sensor,reflectance,0,41,0,0),33,0),1);
   EXPECT_EQ(Json::parse(gpu->MaterialStatistics())["slot_pins"],0);
  }
  auto stats=Json::parse(gpu->MaterialStatistics());EXPECT_GT(stats["evictions"].get<int>(),0);EXPECT_EQ(stats["cache_slots"],2);
+ EXPECT_EQ(stats["explicit_prewarm_calls"],1);
  // First tile is resident; corrupt a future tile and require it after recreation.
  gpu.reset();std::ofstream(dir/"tile3.raw",std::ios::binary)<<"bad";
  gpu=std::make_unique<OptixScene>(std::vector<float>{0},(dir/"scene.json").string(),(dir/"robot.json").string(),AGV_TEST_OPTIX_PTX,16,sensor);

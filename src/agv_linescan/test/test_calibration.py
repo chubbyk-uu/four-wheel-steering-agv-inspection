@@ -197,3 +197,17 @@ def test_offline_rejects_incomplete_or_discontinuous_session(tmp_path,fault):
         m['first']['global_line']+=1;m['last']['global_line']+=1;path.write_text(json.dumps(m))
     with pytest.raises(ValueError):process_session(source,profile,tmp_path/'corrected')
     assert not (tmp_path/'corrected').exists()
+
+
+def test_offline_preserves_extra_sparse_tags_across_pause(tmp_path):
+    import json
+    from agv_linescan.offline_correction import process_session
+    source,profile=offline_fixture(tmp_path)
+    path=source/'block_000000.json';m=json.loads(path.read_text())
+    m['pose_tags']=[dict(global_line=i,time_s=i*.001+(3 if i>=8 else 0)) for i in (0,4,7,8,9,12,16)]
+    m['last']['time_s']+=3;path.write_text(json.dumps(m))
+    next_path=source/'block_000001.json';n=json.loads(next_path.read_text())
+    n['first']['time_s']+=3;n['last']['time_s']+=3;next_path.write_text(json.dumps(n))
+    process_session(source,profile,tmp_path/'corrected')
+    corrected=json.loads((tmp_path/'corrected'/path.name).read_text())
+    assert corrected['pose_tags']==m['pose_tags'] and corrected['rows']==17

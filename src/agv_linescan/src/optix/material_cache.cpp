@@ -23,7 +23,7 @@ struct MaterialCache::Impl {
  float rmin=0,rmax=0;std::vector<int> wanted,pinned;
  mutable std::mutex mutex;std::condition_variable changed,wake;std::thread worker;
  bool stop=false,warmed=false;std::exception_ptr error;
- size_t loads=0,bytes=0,misses=0,evictions=0;double maxLoad=0,totalLoad=0,maxWait=0,warmSeconds=0;
+ size_t loads=0,bytes=0,misses=0,evictions=0;double maxLoad=0,totalLoad=0,maxWait=0,warmSeconds=0,prewarmSeconds=0;size_t prewarmCalls=0;
  VerifiedTileReader reader;
  size_t hashBytes=0,verificationHits=0;
  double readTotal=0,readMax=0,hashTotal=0,hashMax=0,uploadTotal=0,uploadMax=0;
@@ -110,7 +110,7 @@ MaterialCache::MaterialCache(const Json& m,const std::filesystem::path& root,con
 }
 MaterialCache::~MaterialCache()=default;
 void MaterialCache::Bind(ScanParams& p){auto& s=*impl_;p.tileMap=s.deviceMap;p.materialTiles=s.deviceTiles;p.tilesX=s.nx;p.tilesY=s.ny;p.tileCore=s.core;p.tileGutter=s.gutter;p.tileTexel=s.texel;p.textureOriginX=s.ox;p.textureOriginY=s.oy;p.textureSpanX=s.nx*s.size;p.textureSpanY=s.ny*s.size;}
-void MaterialCache::Begin(const std::vector<GridExposure>& poses,cudaStream_t stream){
+void MaterialCache::Begin(const std::vector<GridExposure>& poses,cudaStream_t stream,bool prewarm){
  auto& s=*impl_;s.sampling=stream;auto b=s.Bounds(poses);auto required=s.Keys(b);
  if(required.empty()||required.size()>s.slots.size())throw std::runtime_error("material footprint outside domain or exceeds slot budget");
  double dx=poses.back().samples[1].origin[0]-poses.front().samples[1].origin[0],dy=poses.back().samples[1].origin[1]-poses.front().samples[1].origin[1];
@@ -121,12 +121,14 @@ void MaterialCache::Begin(const std::vector<GridExposure>& poses,cudaStream_t st
  std::vector<int> want=required;for(int k:extras)if(want.size()<s.slots.size()&&std::find(want.begin(),want.end(),k)==want.end())want.push_back(k);
  auto start=Clock::now();std::vector<int> mapping(s.nx*s.ny,-1);
  {std::unique_lock<std::mutex> lock(s.mutex);if(s.error)std::rethrow_exception(s.error);s.wanted=want;s.wake.notify_one();
-  bool cold=!s.warmed;if(!cold&&!s.Ready(required))++s.misses;
-  const auto& waitFor=cold?want:required;
-  if(!s.changed.wait_for(lock,std::chrono::duration<double>(cold?10:s.waitTimeout),[&]{return s.error||s.Ready(waitFor);}))throw std::runtime_error("material prefetch timeout");
+  bool cold=!s.warmed;bool preparing=cold||prewarm;if(!preparing&&!s.Ready(required))++s.misses;
+  const auto& waitFor=preparing?want:required;
+  if(!s.changed.wait_for(lock,std::chrono::duration<double>(preparing?10:s.waitTimeout),[&]{return s.error||s.Ready(waitFor);}))throw std::runtime_error("material prefetch timeout");
   if(s.error)std::rethrow_exception(s.error);
   for(int key:required){int slot=s.Find(key);++s.slots[slot].pins;s.pinned.push_back(slot);mapping[key]=slot;}
-  double wait=Seconds(Clock::now()-start);if(cold)s.warmSeconds=wait;else s.maxWait=std::max(s.maxWait,wait);s.warmed=true;
+  double wait=Seconds(Clock::now()-start);if(cold)s.warmSeconds=wait;
+  if(prewarm){s.prewarmSeconds+=wait;++s.prewarmCalls;}
+  if(!preparing)s.maxWait=std::max(s.maxWait,wait);s.warmed=true;
  }
  Check(cudaMemcpyAsync(s.deviceMap,mapping.data(),mapping.size()*sizeof(int),cudaMemcpyHostToDevice,stream));
  // Pageable upload may stage synchronously; complete before the temporary mapping disappears.
@@ -134,5 +136,5 @@ void MaterialCache::Begin(const std::vector<GridExposure>& poses,cudaStream_t st
 }
 void MaterialCache::End()noexcept{auto& s=*impl_;if(s.sampling)cudaStreamSynchronize(s.sampling);{std::lock_guard<std::mutex> lock(s.mutex);for(int i:s.pinned)--s.slots[i].pins;s.pinned.clear();}s.wake.notify_one();}
 size_t MaterialCache::Bytes()const{const auto& s=*impl_;return s.slots.size()*(size_t(s.stride)*s.stride*3+sizeof(MaterialTile))+size_t(s.nx)*s.ny*sizeof(int);}
-std::string MaterialCache::Statistics()const{auto& s=*impl_;std::lock_guard<std::mutex> lock(s.mutex);return Json{{"cache_slots",s.slots.size()},{"tile_loads",s.loads},{"evictions",s.evictions},{"required_tile_misses_after_warm",s.misses},{"bytes_read",s.bytes},{"load_seconds_max",s.maxLoad},{"load_seconds_total",s.totalLoad},{"read_seconds_total",s.readTotal},{"read_seconds_max",s.readMax},{"sha256_bytes",s.hashBytes},{"verification_reuse_files",s.verificationHits},{"sha256_seconds_total",s.hashTotal},{"sha256_seconds_max",s.hashMax},{"upload_seconds_total",s.uploadTotal},{"upload_seconds_max",s.uploadMax},{"batch_wait_seconds_max",s.maxWait},{"cold_warm_seconds",s.warmSeconds},{"device_payload_bytes",Bytes()},{"slot_pins",s.pinned.size()}}.dump();}
+std::string MaterialCache::Statistics()const{auto& s=*impl_;std::lock_guard<std::mutex> lock(s.mutex);return Json{{"cache_slots",s.slots.size()},{"tile_loads",s.loads},{"evictions",s.evictions},{"required_tile_misses_after_warm",s.misses},{"bytes_read",s.bytes},{"load_seconds_max",s.maxLoad},{"load_seconds_total",s.totalLoad},{"read_seconds_total",s.readTotal},{"read_seconds_max",s.readMax},{"sha256_bytes",s.hashBytes},{"verification_reuse_files",s.verificationHits},{"sha256_seconds_total",s.hashTotal},{"sha256_seconds_max",s.hashMax},{"upload_seconds_total",s.uploadTotal},{"upload_seconds_max",s.uploadMax},{"batch_wait_seconds_max",s.maxWait},{"cold_warm_seconds",s.warmSeconds},{"explicit_prewarm_calls",s.prewarmCalls},{"explicit_prewarm_seconds_total",s.prewarmSeconds},{"device_payload_bytes",Bytes()},{"slot_pins",s.pinned.size()}}.dump();}
 }

@@ -34,3 +34,18 @@ def test_labels_reject_pose_extrapolation(tmp_path):
     mission,nav=fixture(tmp_path)
     rows=(nav/'navigation.jsonl').read_text().splitlines();(nav/'navigation.jsonl').write_text('\n'.join(rows[:2]))
     with pytest.raises(ValueError,match='bracket'):module.label(mission,nav)
+
+
+def test_cross_pause_tags_use_actual_exposure_times_not_uniform_block_time(tmp_path):
+    mission,nav=fixture(tmp_path)
+    intervals=json.loads((mission/'capture_intervals.json').read_text());intervals[0]['disabled_ack_time_s']=3.1
+    write(mission/'capture_intervals.json',intervals)
+    path=Path(intervals[0]['archive'])/'block_000000.json';m=json.loads(path.read_text())
+    m['last']['time_s']=3.03;m['pose_tags'][-1]['time_s']=3.03;write(path,m)
+    values=[json.loads(v) for v in (nav/'navigation.jsonl').read_text().splitlines()]
+    for t in (3.02,3.04):
+        values.append(dict(values[-1],time_s=t,position_m=[t-3,0,1]))
+    (nav/'navigation.jsonl').write_text('\n'.join(json.dumps(v) for v in values))
+    b=module.label(mission,nav)['blocks'][0]
+    assert [t['time_s'] for t in b['pose_tags']]==[.01,.02,3.03]
+    assert b['pose_tags'][-1]['camera_position_map_m']==pytest.approx([1.03,0,1])

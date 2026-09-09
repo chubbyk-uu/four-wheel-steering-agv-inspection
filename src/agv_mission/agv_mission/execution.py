@@ -43,6 +43,17 @@ def segment_arguments(step,position,quaternion):
     if abs(yaw)>.025:
         return dict(kind='rotate',displacement=[0.,0.],angle=yaw,speed=.25)
     delta=r.inv().apply(goal-p)[:2]
+    if step['kind']=='PASS' and delta[0]<-.035:
+        raise PlanningError('PASS endpoint behind vehicle; no reverse recovery')
     if np.linalg.norm(delta)>.035 and step['kind']!='ROTATE_180':
         return dict(kind='translate',displacement=delta,angle=0.,speed=step['speed'])
     return None
+
+
+def scan_end_reached(plan,camera,step,position,quaternion):
+    """Do not reopen capture when resuming in an already passed runout zone."""
+    track=plan['tracks'][step['track_id']]
+    start=np.array(track['scan_start_xyz_m']);finish=np.array(track['scan_end_xyz_m'])
+    axis=(finish-start)/np.linalg.norm(finish-start)
+    center=np.asarray(position)+Rotation.from_quat(quaternion).apply([camera['camera_x_m'],0.,0.])
+    return (center-start)@axis>=np.linalg.norm(finish-start)+.10

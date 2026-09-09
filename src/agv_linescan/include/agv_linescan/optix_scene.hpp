@@ -17,7 +17,7 @@ class OptixScene {
   size_t AllocatedDeviceBytes() const;
   std::string MaterialStatistics() const;
   GridBatch Sample(const std::vector<GridExposure>& poses,
-                   const std::vector<LinkTransform>& transforms,uint64_t firstGlobalLine);
+                   const std::vector<LinkTransform>& transforms,uint64_t firstGlobalLine,bool prewarm=false);
  private:
   struct Impl;std::unique_ptr<Impl> impl_;
 };

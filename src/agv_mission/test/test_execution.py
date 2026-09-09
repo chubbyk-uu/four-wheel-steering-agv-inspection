@@ -36,3 +36,11 @@ def test_rotates_to_planned_heading_before_translation():
     assert args['kind']=='rotate' and abs(args['angle'])==pytest.approx(np.pi)
     args=segment_arguments(step,[3,0,.65],[0,0,0,1])
     assert args['kind']=='translate'
+
+
+def test_capture_stays_closed_when_resuming_in_runout_in_both_directions():
+    from agv_mission.execution import scan_end_reached
+    p=fixture();steps=compile_steps(p,[3,0,.65],[0,0,0,1])
+    for step in (s for s in steps if s['kind']=='PASS'):
+        assert not scan_end_reached(p,{'camera_x_m':1.15},step,step['start']['position'],step['start']['orientation_xyzw'])
+        assert scan_end_reached(p,{'camera_x_m':1.15},step,step['end']['position'],step['end']['orientation_xyzw'])

@@ -44,3 +44,14 @@ def test_failed_handshake_does_not_claim_active_capture(tmp_path):
         n.client.future.set_result(SimpleNamespace(success=False,message='missing terrain'));g.poll()
         assert g.error.startswith('CAMERA_HANDSHAKE_FAILED') and g.active is None
     finally:g.close()
+
+
+def test_close_records_cancellation_reason_and_exception_latches_failure(tmp_path):
+    n=Node();g=CaptureGate(n,tmp_path,True)
+    try:
+        g.request(True,0);acknowledge(g,n)
+        g.request(False,reason='CANCELED');acknowledge(g,n)
+        assert g.intervals[-1]['end_reason']=='CANCELED'
+        g.request(True,0);n.client.future.set_exception(RuntimeError('transport failed'));g.poll()
+        assert g.active is False and g.future is None and g.error.startswith('CAMERA_HANDSHAKE_FAILED')
+    finally:g.close()

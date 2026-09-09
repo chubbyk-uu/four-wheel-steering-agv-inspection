@@ -26,7 +26,7 @@ sudo apt install ros-jazzy-desktop ros-jazzy-ros-gz ros-jazzy-gz-ros2-control \
   ros-jazzy-forward-command-controller ros-jazzy-joint-state-broadcaster \
   ros-jazzy-robot-localization \
   python3-colcon-common-extensions python3-rosdep build-essential cmake git curl \
-  python3-pytest python3-numpy python3-scipy python3-pil python3-yaml \
+  python3-pytest python3-numpy python3-scipy python3-pil python3-yaml python3-psutil \
   python3-matplotlib python3-opencv libopencv-contrib-dev libssl-dev
 # 仅首次初始化 rosdep 时执行；若已初始化则跳过：
 sudo rosdep init

@@ -49,7 +49,7 @@ double Seconds(Clock::duration d) { return std::chrono::duration<double>(d).coun
 struct WheelMotion {bool valid=false;double zMin=0,zMax=0,lastZ=0,maxStep=0;gz::math::Vector3d localMin,localMax;};
 struct Sample { double time; gz::math::Pose3d pose; std::vector<gz::math::Pose3d> links; };
 struct Line { Event event; std::array<gz::math::Pose3d,3> exposure; gz::math::Pose3d midpoint; uint64_t sequence=0; std::array<std::vector<gz::math::Pose3d>,3> links; };
-struct Job { std::vector<Line> lines; std::string endReason; double sceneTime=0; bool warm=false; };
+struct Job { std::vector<Line> lines; std::string endReason; double sceneTime=0; bool warm=false; bool holdBoundary=false; };
 
 class GzLineScan final: public gz::sim::System,
                        public gz::sim::ISystemConfigure,
@@ -274,7 +274,10 @@ class GzLineScan final: public gz::sim::System,
         {"max_abs_steer_rad",maxSteer},{"encoder_yaw_estimate_rad_s",(speeds[1]+speeds[3]-speeds[0]-speeds[2])/(2*track_)},
         {"speed_limit_m_s",maxSpeed_},{"wheel_spread_limit_m_s",spreadLimit},
         {"steer_limit_rad",config_["max_steer_rad"].as<double>()},{"yaw_limit_rad_s",config_["max_yaw_rate_rad_s"].as<double>()}};
-      if (enabled_ && (motion_=="DRIVE" || (config_["projected_encoder"].as<bool>(false) && motion_=="BRAKE")) && valid) {
+      // Start a pass only after initial wheel alignment. Once started, the
+      // armed camera keeps its partial frame and encoder phase in HOLD/ALIGN.
+      if (enabled_ && (motion_=="DRIVE" || (active_ &&
+          (motion_=="BRAKE" || motion_=="HOLD" || motion_=="ALIGN"))) && valid) {
         try {
           auto events=trigger_->Update(now_,distance);
           pending_.insert(pending_.end(),events.begin(),events.end());
@@ -291,6 +294,9 @@ class GzLineScan final: public gz::sim::System,
             line.sequence=nextCaptureLine_++;
             job.lines.push_back(line);
           }
+          if (motion_=="HOLD" && !holding_ && pending_.empty()) {
+            job.holdBoundary=true; holding_=true;
+          } else if (motion_!="HOLD") holding_=false;
         } catch (const std::exception &error) {
           job.endReason=error.what(); Reset(job.endReason);
         }
@@ -301,8 +307,8 @@ class GzLineScan final: public gz::sim::System,
     }
     // ECM changes are already buffered. No need to wake GL / update the
     // rendering graph on physics steps with no exposure or segment boundary.
-    if (!job.lines.empty() || !job.endReason.empty()) {
-      if(AsyncBackend() && job.endReason.empty()) QueueCuda(std::move(job));
+    if (!job.lines.empty() || !job.endReason.empty() || job.holdBoundary) {
+      if(AsyncBackend() && job.endReason.empty() && !job.holdBoundary) QueueCuda(std::move(job));
       else Dispatch(std::move(job));
     }
   }
@@ -326,7 +332,7 @@ class GzLineScan final: public gz::sim::System,
     if(reason=="unsupported_scan_motion")event["motion_condition"]=scanMotion_;
     std::ofstream(output_/"events.jsonl",std::ios::app)<<event.dump()<<'\n';
     std_msgs::msg::String message; message.data=event.dump(); statusPub_->publish(message);
-    pending_.clear(); trigger_->Reset(); active_=false;
+    pending_.clear(); trigger_->Reset(); active_=false; holding_=false;
   }
 
   bool HandleTerrainError() {
@@ -452,6 +458,7 @@ class GzLineScan final: public gz::sim::System,
           for (double p:accumulated) pixels.push_back(static_cast<uint8_t>(std::clamp(std::lround(p),0L,255L)));
           AddLine(pixels.data(),line,job.sceneTime);
         }
+        if (job.holdBoundary) MarkHoldBoundary();
         if (!job.endReason.empty()) { Flush(job.endReason); ++segment_; }
         { std::lock_guard<std::mutex> lock(mutex_); busy_=false; }
         done_.notify_one();
@@ -525,7 +532,7 @@ class GzLineScan final: public gz::sim::System,
               transforms.push_back(m);
             }
           }
-          result=optix->Sample(poses,transforms,warm?0:lines.front().sequence);
+          result=optix->Sample(poses,transforms,warm?0:lines.front().sequence,warm);
           tileStatistics_=Json::parse(optix->MaterialStatistics());
           if(warm){lines.clear();sceneTimes.clear();return;}
         } else
@@ -552,9 +559,10 @@ class GzLineScan final: public gz::sim::System,
         }
         for (const auto &line:job.lines) {
           lines.push_back(line); sceneTimes.push_back(job.sceneTime);
-          if (lines.size()==batchRows_) sample();
+          if (lines.size()==batchRows_ || buffer_.size()/optics_->width+lines.size()==rows_) sample();
         }
         if(job.warm) sample(true);
+        if(job.holdBoundary) {sample(); MarkHoldBoundary();}
         if (!job.endReason.empty()) {sample(); Flush(job.endReason); ++segment_;}
         if(synchronous) {{std::lock_guard<std::mutex> lock(mutex_);busy_=false;} done_.notify_one();}
       }
@@ -578,13 +586,23 @@ class GzLineScan final: public gz::sim::System,
       {"scene_snapshot_time_s",sceneTime}};
   }
 
+  void MarkHoldBoundary() {
+    // Sparse tags on both sides prevent interpolation across stopped time.
+    if (!buffer_.empty()) {
+      auto tag=Tag(lastLine_,lastSceneTime_);
+      if (tags_.back()["global_line"]!=tag["global_line"]) tags_.push_back(std::move(tag));
+    }
+    tagAfterHold_=true;
+  }
+
   void AddLine(const uint8_t *pixels,const Line &line,double sceneTime) {
     const size_t row=buffer_.size()/optics_->width;
-    if (row%std::max(size_t(1),rows_/4)==0) {
+    if (row%std::max(size_t(1),rows_/4)==0 || tagAfterHold_) {
       auto tag=Tag(line,sceneTime);
       if (!row) first_=tag;
       tags_.push_back(std::move(tag));
     }
+    tagAfterHold_=false;
     lastLine_=line; lastSceneTime_=sceneTime;
     buffer_.insert(buffer_.end(),pixels,pixels+optics_->width);
     ++globalLine_;
@@ -720,7 +738,7 @@ class GzLineScan final: public gz::sim::System,
   gz::math::Pose3d offset_;
   double radius_=0,track_=0,wheelbase_=0,now_=0,exposure_=0,spacing_=0,maxSpeed_=0,maxSampleGap_=0;
   double wheelSpreadAbsolute_=.01,wheelSpreadRelative_=0;
-  bool enabled_=false,active_=false;
+  bool enabled_=false,active_=false,holding_=false,tagAfterHold_=false;
   std::string motion_,backend_,terrainPath_;
   Json tileStatistics_,sceneContract_,robotContract_,scanMotion_;
   std::vector<WheelMotion> wheelMotion_;

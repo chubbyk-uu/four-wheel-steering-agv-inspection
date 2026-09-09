@@ -197,7 +197,7 @@ def evaluate(args):
             assert b['first']['global_line']==a['last']['global_line']+1
             assert abs(abs(b['first']['encoder_distance_m']-a['last']['encoder_distance_m'])-spacing)<1e-8
         for b in blocks:
-            assert len(b['pose_tags']) <= 5
+            assert 1 <= len(b['pose_tags']) <= b['rows']
             if args.rviz: assert b.get('preview_subscribers',0)>=1, 'RViz preview subscriber disappeared'
             if args.backend != 'render':
                 assert b['invalid_pixels'] == 0
