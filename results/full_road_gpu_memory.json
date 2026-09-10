@@ -1,0 +1,345 @@
+{
+  "date": "2026-09-10",
+  "scope": "100 m Concrete047A scene; whole-device VRAM includes desktop/driver, not per-process attribution",
+  "desktop_baseline_mib": 899,
+  "stationary_profiles_before": {
+    "server": {
+      "case": "server",
+      "stationary": true,
+      "samples_mib": [
+        3679,
+        3679,
+        3679,
+        3679,
+        3679,
+        3679,
+        3679,
+        3679,
+        3679,
+        3679
+      ],
+      "median_mib": 3679.0,
+      "sim_time": 37.1,
+      "wall_s": 60.48781643700204
+    },
+    "optix": {
+      "case": "optix",
+      "stationary": true,
+      "samples_mib": [
+        6107,
+        6107,
+        6107,
+        6107,
+        6107,
+        6107,
+        6107,
+        6107,
+        6107,
+        6107
+      ],
+      "median_mib": 6107.0,
+      "sim_time": 29.86,
+      "wall_s": 60.242509393003274
+    },
+    "gui_optix": {
+      "case": "gui_optix",
+      "stationary": true,
+      "samples_mib": [
+        9404,
+        9404,
+        9404,
+        9404,
+        9404,
+        9404,
+        9404,
+        9404,
+        9404,
+        9404
+      ],
+      "median_mib": 9404.0,
+      "sim_time": 30.26,
+      "wall_s": 60.293492935998074
+    },
+    "full": {
+      "case": "full",
+      "stationary": true,
+      "samples_mib": [
+        9672,
+        9672,
+        9672,
+        9672,
+        9672,
+        9672,
+        9672,
+        9672,
+        9672,
+        9672
+      ],
+      "median_mib": 9672.0,
+      "sim_time": 24.72,
+      "wall_s": 60.30824224599928
+    }
+  },
+  "stationary_sampling": "Fresh processes, wait >=50 wall seconds and >=10 sim seconds; ten 1 s samples. No commanded movement.",
+  "geometry_quality": "Same triangles, vertices, materials, exposure and lamp samples; default GZ OBJ loader unchanged.",
+  "changes": [
+    "Release OptiX build scratch after stream synchronization",
+    "Compact immutable local GASes and release the old buffers after compaction completes; retain input vertices for hit normals",
+    "Expose geometry allocation statistics; preserve exception ownership"
+  ],
+  "costs": [
+    "Additional construction-time compaction pass and temporary second GAS allocation; no per-frame compaction",
+    "Static/local mesh assumption: future deforming geometry must explicitly rebuild its acceleration structure"
+  ],
+  "tests": {
+    "colcon_total": 281,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0
+  },
+  "limits": [
+    "No claim of full-width mission acceptance",
+    "Further large savings would require changing GZ geometry residency/loading; not included",
+    "OptiX explicit byte totals exclude CUDA array padding, driver/context and GZ/RViz"
+  ],
+  "references": [
+    "https://github.com/NVIDIA/optix-sdk/blob/main/SDK/sutil/Scene.cpp"
+  ],
+  "fixture": {
+    "allocated_device_bytes": 1686402316,
+    "geometry_memory": {
+      "build_scratch_released_bytes": 110659584,
+      "gas_original_bytes": 477860352,
+      "gas_retained_bytes": 141653632,
+      "gas_saved_bytes": 336206720
+    },
+    "effective_lines_per_wall_second": 11199.928232443383,
+    "batch_seconds_max": 0.014425569,
+    "streamed_raw_capture_11khz_passed": true,
+    "previous_allocated_device_bytes": 2132517516,
+    "saved_allocated_device_bytes": 446115200,
+    "byte_identical_blocks": 144
+  },
+  "stationary_full_after": {
+    "case": "full",
+    "stationary": true,
+    "samples_mib": [
+      9248,
+      9248,
+      9248,
+      9249,
+      9249,
+      9249,
+      9249,
+      9249,
+      9249,
+      9249
+    ],
+    "median_mib": 9249.0,
+    "sim_time": 24.9,
+    "wall_s": 60.318390469001315
+  },
+  "stationary_full_saved_mib": 423.0,
+  "failed_gui_attempt": {
+    "stage": "SHIFT after first 100 m PASS",
+    "reason": "STALE_OR_UNREADY_LOCALIZATION",
+    "final_motion": "HOLD",
+    "captured_blocks": 69,
+    "partial_steady_rtf": 0.9988172149429503,
+    "max_navigation_stamp_gap_s": 0.020000000000010232,
+    "causality": "Unresolved. No VRAM OOM or sampler error observed; localization/control thresholds unchanged.",
+    "diagnostics": "Validator now retains last 512 localization-health messages in ignored session output."
+  },
+  "gui_repeat": {
+    "first_odometry_wall_s": 34.21378593500049,
+    "steady_rtf": 0.9992359369484883,
+    "steady_min_speed_m_s": 1.8,
+    "steady_wall_s": 100.45675529499567,
+    "passed": true,
+    "capture_passed": true,
+    "gui_rviz": true,
+    "blocks": 138,
+    "rows": 560719,
+    "ros_archive_identical": true,
+    "pause_retains_frame": true,
+    "requested_speed_m_s": 2.0,
+    "region_m": [
+      100.0,
+      2.0
+    ],
+    "discarded_tail_rows": [],
+    "actual_peak_speed_m_s": 2.134493084712544,
+    "observed_rtf": 0.9986680352257528,
+    "road_display": {
+      "frame": "world",
+      "inspection_bounds": [
+        0,
+        100,
+        -5,
+        5
+      ],
+      "bounds": [
+        -8.0,
+        108.0,
+        -6.5,
+        6.5
+      ],
+      "optical_bounds": [
+        -9.216000000000001,
+        109.05600000000001,
+        -7.68,
+        7.68
+      ],
+      "triangles": 96,
+      "texture_pixels": 32311296,
+      "rgba_mipmap_budget_bytes": 172326912
+    },
+    "coverage_status": "NEEDS_RESCAN",
+    "coverage_tracks": [
+      {
+        "track_id": 0,
+        "direction": 1,
+        "assigned_road_y_m": [
+          -5.0,
+          -4.0
+        ],
+        "estimated_covered_along_m": [
+          [
+            2.4866504782709584,
+            19.441325519024563
+          ],
+          [
+            20.406356079619016,
+            26.195787457988818
+          ],
+          [
+            27.162734369721303,
+            27.691737798284308
+          ],
+          [
+            28.663048320405743,
+            31.817683488295653
+          ],
+          [
+            32.786443406712664,
+            33.31787301484892
+          ],
+          [
+            36.16227048459389,
+            38.57465630950856
+          ],
+          [
+            39.53934904325572,
+            39.69553062727351
+          ],
+          [
+            40.6639655138514,
+            41.565215038888915
+          ],
+          [
+            54.92256121725817,
+            55.45738861655295
+          ]
+        ],
+        "unverified_along_m": [
+          [
+            0.0,
+            2.4866504782709584
+          ],
+          [
+            19.441325519024563,
+            20.406356079619016
+          ],
+          [
+            26.195787457988818,
+            27.162734369721303
+          ],
+          [
+            27.691737798284308,
+            28.663048320405743
+          ],
+          [
+            31.817683488295653,
+            32.786443406712664
+          ],
+          [
+            33.31787301484892,
+            36.16227048459389
+          ],
+          [
+            38.57465630950856,
+            39.53934904325572
+          ],
+          [
+            39.69553062727351,
+            40.6639655138514
+          ],
+          [
+            41.565215038888915,
+            54.92256121725817
+          ],
+          [
+            55.45738861655295,
+            100.0
+          ]
+        ],
+        "excluded_footprint_tags": 212,
+        "max_lateral_allowance_m": 0.3110135565082649,
+        "quality_flags": [
+          "UNCERTAINTY_EXCEEDS_OVERLAP"
+        ]
+      },
+      {
+        "track_id": 1,
+        "direction": -1,
+        "assigned_road_y_m": [
+          -4.0,
+          -3.0
+        ],
+        "estimated_covered_along_m": [],
+        "unverified_along_m": [
+          [
+            0.0,
+            100.0
+          ]
+        ],
+        "excluded_footprint_tags": 343,
+        "max_lateral_allowance_m": 0.37677801245555964,
+        "quality_flags": [
+          "UNCERTAINTY_EXCEEDS_OVERLAP"
+        ]
+      }
+    ],
+    "final_state": "ACQUIRED",
+    "final_motion": "HOLD",
+    "wheel_steering_range_rad": {
+      "fl": [
+        -1.797361862138862,
+        1.455440143171008
+      ],
+      "fr": [
+        -3.155532456867264,
+        1.5026503493621104
+      ],
+      "rl": [
+        -3.155532456870575,
+        1.4622972205762117
+      ],
+      "rr": [
+        -1.5985353297182052,
+        1.507044691728479
+      ]
+    },
+    "resources": {
+      "interval_s": 2.0,
+      "samples": 121,
+      "errors": [],
+      "scope": "Owned Linux process tree RSS (shared pages may repeat) and PSS; GPU usage is whole device, includes desktop; sampled peaks only",
+      "peak_tree_rss_bytes": 14083096576,
+      "peak_tree_pss_bytes": 13246440448,
+      "peak_device_used_bytes": 9762242560
+    },
+    "retained_health_records": 512
+  },
+  "visual_observation": "Actual RViz window during first run: road, robot, full square preview and 4096 x 4096 label present; private window capture kept only in ignored output."
+}

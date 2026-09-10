@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Exercise the RViz broker with real GUI, localization, wheels and OptiX archives."""
 import argparse,hashlib,json,os,subprocess,time,uuid
+from collections import deque
 from pathlib import Path
 import numpy as np
 import rclpy
@@ -27,6 +28,8 @@ def main():
     log=(a.output/'simulation.log').open('w');sim=subprocess.Popen(['ros2','launch','agv_bringup','inspection.launch.py','session_dir:='+str(session.resolve()),'spawn_x:='+str(a.spawn_x),'scene_manifest:='+str(a.scene.resolve())],stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
     resources=ResourceMonitor(sim.pid,a.output/'resources.jsonl')
     rclpy.init();n=Node('operator_evaluator');latest={};images={};joints=[];states=[];actual=[]
+    health_history=deque(maxlen=512)
+    n.create_subscription(String,'/localization/status',lambda m:health_history.append(dict(observed_sim_time=actual[-1][1] if actual else None,health=json.loads(m.data))),20)
     def status(m):
         latest.clear();latest.update(json.loads(m.data));states.append(latest.get('status',{}))
         (a.output/'latest.json').write_text(m.data)
@@ -123,6 +126,7 @@ def main():
         result['passed']=True
         (a.output/'results.json').write_text(json.dumps(result,indent=2)+'\n')
     finally:
+        (a.output/'localization_health.json').write_text(json.dumps(list(health_history),indent=2)+'\n')
         np.save(a.output/'wheel_steering.npy',np.array(joints))
         np.save(a.output/'actual_motion.npy',np.array(actual))
         # On unexpected failures explicitly request cancellation and observe HOLD before teardown.

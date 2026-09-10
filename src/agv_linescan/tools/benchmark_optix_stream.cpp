@@ -164,6 +164,7 @@ int main(int argc,char **argv) {
       {"note","Static unobstructed grid only; no GZ physics, material or LED radiometry. Optional separate-process ROS receive/ack included. Pacing excluded from active rate; filesystem and device caching still apply."}};
     report["tiles"]=nlohmann::json::parse(gpu.MaterialStatistics());
     report["allocated_device_bytes"]=gpu.AllocatedDeviceBytes();
+    report["geometry_memory"]=nlohmann::json::parse(gpu.GeometryMemoryStatistics());
     report["cold_gpu_warmup_seconds"]=coldWarm;
     report["fixture_path"]={{"start_x_m",startX},{"end_x_m",endX},{"track_y_m",trackY},{"pass_blocks",passBlocks}};
     report["note"]="Shared road geometry, streamed color+normal, roughness 0.60, 16 LED shadow rays per exposure, sensor noise, readback, raw image fsync and separate ROS byte verification. Body/LED fixture, no wheel dynamics or GZ physics; instant direction reversal at fixture path endpoints. No warmup excluded at reversal. No correction or stitching in this benchmark. OS file cache may be warm.";

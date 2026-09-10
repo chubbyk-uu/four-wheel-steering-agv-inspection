@@ -15,10 +15,16 @@ struct OptixScene::Impl {
  OptixProgramGroup groups[4]={};OptixShaderBindingTable sbt={};cudaStream_t stream=nullptr;
  std::vector<cudaArray_t> textureArrays;std::vector<cudaTextureObject_t> textureObjects;
  std::vector<CUdeviceptr> allocations;std::vector<std::string> links;size_t allocatedBytes=0;
+ size_t scratchReleasedBytes=0,gasOriginalBytes=0,gasRetainedBytes=0;
  std::unique_ptr<MaterialCache> cache;
  ScanParams params={};CUdeviceptr dp=0;size_t capacity=0;
  unsigned char* host=nullptr;unsigned* invalidHost=nullptr;
  CUdeviceptr alloc(size_t n,const void* data=nullptr){CUdeviceptr p=0;CU(cudaMalloc((void**)&p,n));allocations.push_back(p);allocatedBytes+=n;if(data)CU(cudaMemcpy((void*)p,data,n,cudaMemcpyHostToDevice));return p;}
+ void release(CUdeviceptr pointer,size_t bytes){
+  auto it=std::find(allocations.begin(),allocations.end(),pointer);
+  if(it==allocations.end()||bytes>allocatedBytes)throw std::logic_error("unowned GPU buffer release");
+  CU(cudaFree((void*)pointer));allocations.erase(it);allocatedBytes-=bytes;
+ }
  ~Impl(){
   if(stream)cudaStreamSynchronize(stream);
   cache.reset();
@@ -56,14 +62,30 @@ struct OptixScene::Impl {
   result.reflectance=(float*)alloc(reflectance.size()*sizeof(float),reflectance.data());
   unsigned flags=OPTIX_GEOMETRY_FLAG_DISABLE_ANYHIT;OptixBuildInput input={};input.type=OPTIX_BUILD_INPUT_TYPE_TRIANGLES;
   input.triangleArray.vertexFormat=OPTIX_VERTEX_FORMAT_FLOAT3;input.triangleArray.numVertices=vertices.size();input.triangleArray.vertexBuffers=&dv;input.triangleArray.flags=&flags;input.triangleArray.numSbtRecords=1;
-  OptixAccelBuildOptions ab={};ab.buildFlags=OPTIX_BUILD_FLAG_PREFER_FAST_TRACE;ab.operation=OPTIX_BUILD_OPERATION_BUILD;OptixAccelBufferSizes sizes;
+  OptixAccelBuildOptions ab={};ab.buildFlags=OPTIX_BUILD_FLAG_PREFER_FAST_TRACE|OPTIX_BUILD_FLAG_ALLOW_COMPACTION;ab.operation=OPTIX_BUILD_OPERATION_BUILD;OptixAccelBufferSizes sizes;
   OX(optixAccelComputeMemoryUsage(context,&ab,&input,1,&sizes));CUdeviceptr scratch=alloc(sizes.tempSizeInBytes),gas=alloc(sizes.outputSizeInBytes);
-  OX(optixAccelBuild(context,stream,&ab,&input,1,scratch,sizes.tempSizeInBytes,gas,sizes.outputSizeInBytes,&result.handle,nullptr,0));CU(cudaStreamSynchronize(stream));
-  // Scratch is owned until construction completes / destruction; no dangling handle on exceptions.
+  auto property=alloc(sizeof(uint64_t));
+  OptixAccelEmitDesc emit={};emit.type=OPTIX_PROPERTY_TYPE_COMPACTED_SIZE;emit.result=property;
+  OX(optixAccelBuild(context,stream,&ab,&input,1,scratch,sizes.tempSizeInBytes,gas,sizes.outputSizeInBytes,&result.handle,&emit,1));
+  CU(cudaStreamSynchronize(stream));
+  // All local meshes are immutable. Pose changes transform rays, not these GASes.
+  // Keep exception ownership, but release build-only storage before compaction.
+  release(scratch,sizes.tempSizeInBytes);scratchReleasedBytes+=sizes.tempSizeInBytes;
+  uint64_t compacted=0;CU(cudaMemcpy(&compacted,(void*)property,sizeof(compacted),cudaMemcpyDeviceToHost));
+  release(property,sizeof(uint64_t));gasOriginalBytes+=sizes.outputSizeInBytes;
+  if(compacted&&compacted<sizes.outputSizeInBytes){
+   auto compactGas=alloc(compacted);OptixTraversableHandle handle=0;
+   OX(optixAccelCompact(context,stream,result.handle,compactGas,compacted,&handle));
+   CU(cudaStreamSynchronize(stream));
+   release(gas,sizes.outputSizeInBytes);result.handle=handle;gasRetainedBytes+=compacted;
+  }else gasRetainedBytes+=sizes.outputSizeInBytes;
   return result;
  }
 };
 size_t OptixScene::AllocatedDeviceBytes() const { return impl_->allocatedBytes+(impl_->cache?impl_->cache->Bytes():0); }
+std::string OptixScene::GeometryMemoryStatistics()const{return nlohmann::json({
+ {"build_scratch_released_bytes",impl_->scratchReleasedBytes},{"gas_original_bytes",impl_->gasOriginalBytes},
+ {"gas_retained_bytes",impl_->gasRetainedBytes},{"gas_saved_bytes",impl_->gasOriginalBytes-impl_->gasRetainedBytes}}).dump();}
 std::string OptixScene::MaterialStatistics()const{return impl_->cache?impl_->cache->Statistics():"null";}
 OptixScene::OptixScene(const std::vector<float>& rays,const std::string& scene,const std::string& robot,
                       const std::string& ptxPath,size_t capacity,Radiometry sensor,unsigned lampSamples):impl_(std::make_unique<Impl>()){

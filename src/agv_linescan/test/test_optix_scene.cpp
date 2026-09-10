@@ -233,3 +233,15 @@ TEST_F(OptixTest, ConfiguredFallbackLampMatchesExplicitEmitters) {
   previous=fallback;
  }
 }
+
+TEST_F(OptixTest, BuildStorageIsReleasedAndCompactedGeometryRemainsUsable){
+ auto memory=Json::parse(gpu->GeometryMemoryStatistics());
+ EXPECT_GT(memory["build_scratch_released_bytes"].get<size_t>(),0u);
+ EXPECT_GT(memory["gas_retained_bytes"].get<size_t>(),0u);
+ EXPECT_LE(memory["gas_retained_bytes"].get<size_t>(),memory["gas_original_bytes"].get<size_t>());
+ // Repeated reads after build/compaction must retain both geometry and its normals.
+ const auto before=gpu->AllocatedDeviceBytes();
+ auto first=gpu->Sample(poses,{away,away,away},100).pixels;
+ for(int i=0;i<8;++i)EXPECT_EQ(gpu->Sample(poses,{away,away,away},100).pixels,first);
+ EXPECT_EQ(gpu->AllocatedDeviceBytes(),before);
+}
