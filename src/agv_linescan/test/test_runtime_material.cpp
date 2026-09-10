@@ -5,6 +5,8 @@
 #include <iomanip>
 #include <sstream>
 #include <unistd.h>
+#include <atomic>
+#include <thread>
 using Json=nlohmann::json;
 class RecipeTest:public testing::Test{
  protected:
@@ -35,3 +37,24 @@ TEST_F(RecipeTest,RejectsMissingAlphaCoverage){std::vector<unsigned char> zero(6
 TEST_F(RecipeTest,RejectsCacheGridMismatch){agv_linescan::RuntimeMaterial material(root/"recipe.json");Json grid={{"tiles_x",1},{"tiles_y",1},{"core_pixels",4},{"gutter_pixels",1},{"texel_m",.25},{"origin_xy_m",{1.,1.}}};
  EXPECT_NO_THROW(material.CheckLayout(grid));grid["origin_xy_m"]={0.,1.};
  EXPECT_THROW(material.CheckLayout(grid),std::runtime_error);}
+TEST_F(RecipeTest,ReleasesScratchGuardAfterFailedBake){agv_linescan::RuntimeMaterial material(root/"recipe.json");
+ std::vector<unsigned char> expected(108),after(108);material.BakeHost(0,0,expected.data());
+ // A throwing bake must not leave the single-caller flag latched; otherwise the
+ // material cache would reject every later tile after one transient failure.
+ EXPECT_THROW(material.BakeHost(1,0,after.data()),std::runtime_error);
+ EXPECT_NO_THROW(material.BakeHost(0,0,after.data()));EXPECT_EQ(after,expected);}
+TEST_F(RecipeTest,ConcurrentBakeIsRejectedNeverCorrupted){agv_linescan::RuntimeMaterial material(root/"recipe.json");
+ std::vector<unsigned char> expected(108);material.BakeHost(0,0,expected.data());
+ // Invariant test: every concurrent outcome is either the exact tile or the
+ // single-caller rejection. It never asserts on thread interleaving.
+ std::atomic<int> rejected{0},wrong{0},unexpected{0},ready{0};
+ auto worker=[&]{++ready;while(ready.load()<2){}
+  std::vector<unsigned char> local(108);
+  for(int i=0;i<400;++i){
+   try{material.BakeHost(0,0,local.data());if(local!=expected)++wrong;}
+   catch(const std::runtime_error& e){
+    if(std::string(e.what())=="runtime recipe scratch buffers are single-caller")++rejected;else ++unexpected;}}};
+ std::thread a(worker),b(worker);a.join();b.join();
+ EXPECT_EQ(wrong.load(),0);EXPECT_EQ(unexpected.load(),0);
+ RecordProperty("concurrent_rejections",rejected.load());
+ std::vector<unsigned char> final(108);EXPECT_NO_THROW(material.BakeHost(0,0,final.data()));EXPECT_EQ(final,expected);}

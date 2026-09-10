@@ -1,6 +1,7 @@
 #include "runtime_material.h"
 #include "verified_tile_file.h"
 #include <nlohmann/json.hpp>
+#include <atomic>
 #include <fstream>
 #include <vector>
 #include <cmath>
@@ -64,6 +65,19 @@ __global__ void Generate(Inputs in,const double* coordinates,const int* ids,int 
 struct RuntimeMaterial::Impl {
  Inputs inputs={};Json hashes;VerifiedTileReader reader;std::vector<void*> buffers;size_t bytes=0;int core,gutter,stride,nx,ny;double ox,oy,texel,qx,qy,gsd;
  std::vector<int4> patches;double* coordinates=nullptr;int* ids=nullptr;unsigned char* output=nullptr;unsigned* invalid=nullptr;
+ // One scratch set per instance: the material cache bakes from a single loader
+ // thread. Reject concurrent entry instead of locking, so parallel baking must
+ // add per-thread buffers rather than silently serialize or corrupt a tile.
+ std::atomic<bool> busy{false};
+ struct Guard {
+  std::atomic<bool>& flag;
+  explicit Guard(std::atomic<bool>& f):flag(f){
+   bool expected=false;
+   if(!flag.compare_exchange_strong(expected,true))
+    throw std::runtime_error("runtime recipe scratch buffers are single-caller");
+  }
+  ~Guard(){flag.store(false);}
+ };
  ~Impl(){for(void* p:buffers)cudaFree(p);}
  void* Allocate(size_t n,const void* src=nullptr){void* ptr=nullptr;Check(cudaMalloc(&ptr,n));buffers.push_back(ptr);bytes+=n;if(src)Check(cudaMemcpy(ptr,src,n,cudaMemcpyHostToDevice));return ptr;}
  void* Load(const std::filesystem::path& root,const Json& e,size_t n){
@@ -106,9 +120,9 @@ void RuntimeMaterial::CheckLayout(const Json& m)const{auto& s=*impl_;
 }
 RuntimeMaterial::~RuntimeMaterial()=default;
 size_t RuntimeMaterial::Bytes()const{return impl_->bytes;}
-void RuntimeMaterial::Bake(int ix,int iy,cudaArray_t color,cudaArray_t normal,cudaStream_t stream){auto& s=*impl_;s.GenerateTile(ix,iy,stream);size_t plane=size_t(s.stride)*s.stride;
+void RuntimeMaterial::Bake(int ix,int iy,cudaArray_t color,cudaArray_t normal,cudaStream_t stream){auto& s=*impl_;Impl::Guard guard(s.busy);s.GenerateTile(ix,iy,stream);size_t plane=size_t(s.stride)*s.stride;
  Check(cudaMemcpy2DToArrayAsync(color,0,0,s.output,s.stride,s.stride,s.stride,cudaMemcpyDeviceToDevice,stream));Check(cudaMemcpy2DToArrayAsync(normal,0,0,s.output+plane,s.stride*2,s.stride*2,s.stride,cudaMemcpyDeviceToDevice,stream));Check(cudaStreamSynchronize(stream));}
-void RuntimeMaterial::BakeHost(int ix,int iy,unsigned char* data){auto& s=*impl_;s.GenerateTile(ix,iy,nullptr);Check(cudaMemcpy(data,s.output,size_t(s.stride)*s.stride*3,cudaMemcpyDeviceToHost));}
+void RuntimeMaterial::BakeHost(int ix,int iy,unsigned char* data){auto& s=*impl_;Impl::Guard guard(s.busy);s.GenerateTile(ix,iy,nullptr);Check(cudaMemcpy(data,s.output,size_t(s.stride)*s.stride*3,cudaMemcpyDeviceToHost));}
 }
 namespace {thread_local std::string error;}
 extern "C" const char* recipe_error(){return error.c_str();}
