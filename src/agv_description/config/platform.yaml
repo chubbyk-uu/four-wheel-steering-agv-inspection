@@ -20,7 +20,9 @@ drive_decel: 1.0
 trajectory_decel: 0.8
 base_height: 0.65
 body_top_height: 1.1
-drive_effort: 150.0
+# Provisional peak actuator/holding torque, not a measured continuous motor rating.
+# 150 Nm allowed passive rolling during loaded steering; 300 Nm holds in the flat-road probe.
+drive_effort: 300.0
 steer_effort: 180.0
 suspension_stiffness: 65000.0
 suspension_damping: 2800.0

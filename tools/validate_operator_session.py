@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Exercise the RViz broker with real GUI, localization, wheels and OptiX archives."""
-import argparse,hashlib,json,os,subprocess,time,uuid
+import argparse,hashlib,json,os,subprocess,time,uuid,signal
+import psutil
 from collections import deque
 from pathlib import Path
 import numpy as np
@@ -22,6 +23,8 @@ def main():
     p.add_argument('--start-x',type=float,default=6.);p.add_argument('--start-y',type=float);p.add_argument('--spawn-x',type=float,default=3.)
     p.add_argument('--scene',type=Path,default=Path('assets/road/runtime_fullwidth_20m_v1/manifest.json'));p.add_argument('--startup-timeout',type=float,default=300.);p.add_argument('--run-timeout',type=float,default=400.)
     p.add_argument('--fault-probe',action='store_true');p.add_argument('--no-pause',action='store_true');p.add_argument('--short-tail-probe',action='store_true');p.add_argument('--no-cancel-probe',action='store_true')
+    p.add_argument('--broker-stall',action='store_true',help='freeze only the GUI broker for 0.6 seconds during capture')
+    p.add_argument('--executor-exit-probe',action='store_true',help='kill only the owned mission worker during a second task')
     a=p.parse_args();process_start=time.monotonic()
     if a.short_tail_probe:a.no_pause=True;a.no_cancel_probe=True
     a.output.mkdir(parents=True,exist_ok=False);session=a.output/'session'
@@ -74,6 +77,13 @@ def main():
         until=time.monotonic()+a.inspect_seconds
         while time.monotonic()<until and latest['status']['state']=='READY':rclpy.spin_once(n,timeout_sec=.02)
         if latest['status']['state']=='READY':send('start')
+        if a.broker_stall:
+            wait(lambda:latest.get('status',{}).get('kind')=='PASS' and latest['status'].get('profile_time_s',0)>2.5,180)
+            brokers=[p for p in psutil.Process(sim.pid).children(recursive=True) if any(Path(x).name=='mission_operator' for x in p.cmdline())]
+            assert len(brokers)==1,[(p.pid,p.cmdline()) for p in brokers]
+            try:
+                brokers[0].send_signal(signal.SIGSTOP);time.sleep(.6)
+            finally:brokers[0].send_signal(signal.SIGCONT)
         if not a.no_pause:
             wait(lambda:latest.get('status',{}).get('kind')=='PASS' and latest['status'].get('profile_time_s',0)>2.5,180)
             send('preview',expected=False,fields={'length':4.})
@@ -109,6 +119,14 @@ def main():
             coverage_status=latest['coverage']['status'],coverage_tracks=latest['coverage']['tracks'],final_state=latest['status']['state'],final_motion=latest['status']['motion_state'],
             wheel_steering_range_rad={k:[float(np.min(np.array(joints)[:,i+1])),float(np.max(np.array(joints)[:,i+1]))] for i,k in enumerate(('fl','fr','rl','rr'))})
         result['late_static_display_received']=retained
+        if a.broker_stall:
+            records=[json.loads(v) for v in next(session.glob('tasks/*/mission/execution.jsonl')).read_text().splitlines()]
+            # A newly spawned node initially has ROS time zero until its first /clock.
+            gaps=[r['time_s']-l['time_s'] for l,r in zip(records,records[1:]) if l['state']==r['state']=='RUNNING']
+            assert gaps
+            max_gap=float(max(gaps))
+            assert max_gap<.1,max_gap
+            result['broker_stall']={'duration_wall_s':.6,'control_max_step_s':max_gap,'continued_without_fault':True}
         (a.output/'results.json').write_text(json.dumps(result,indent=2)+'\n');np.save(a.output/'wheel_steering.npy',np.array(joints));print(json.dumps(result),flush=True)
         (a.output/'finished_for_ui').touch();delay(a.inspect_seconds)
         if a.no_cancel_probe:return
@@ -118,7 +136,15 @@ def main():
         send('prepare');wait(lambda:latest['status'].get('ready_to_start'));send('start')
         wait(lambda:latest['status'].get('profile_time_s',0)>.7 or latest['status']['state']=='FAULT')
         assert latest['status']['state']!='FAULT',latest['status']
-        if a.fault_probe:
+        if a.executor_exit_probe:
+            wait(lambda:latest['status'].get('kind')=='PASS' and latest['status'].get('capture_active') and latest['status'].get('profile_time_s',0)>1.,180)
+            workers=[p for p in psutil.Process(sim.pid).children(recursive=True) if 'from agv_mission.execution_node import main; main()' in p.cmdline()]
+            assert len(workers)==1,[p.pid for p in workers]
+            workers[0].kill()
+            wait(lambda:latest['status']['state']=='FAULT' and latest.get('editable'))
+            assert latest['status']['reason']=='EXECUTOR_PROCESS_EXITED'
+            result['executor_exit']={'state':'FAULT','motion_state':latest['status']['motion_state'],'capture_active':latest['status']['capture_active']}
+        elif a.fault_probe:
             wait(lambda:latest['status'].get('kind')=='PASS' and latest['status'].get('capture_active') and latest['status'].get('profile_time_s',0)>1.,180)
             fault_pub=n.create_publisher(String,'/linescan/status',10)
             wait(lambda:fault_pub.get_subscription_count()>0)

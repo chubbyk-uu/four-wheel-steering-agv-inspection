@@ -49,6 +49,7 @@ def archive(tmp_path):
     mission=tmp_path/'mission';nav=tmp_path/'nav';raw=tmp_path/'raw'
     for p in (mission,nav,raw):p.mkdir()
     (mission/'plan.json').write_text(json.dumps(source))
+    (mission/'execution.jsonl').write_text('\n'.join(json.dumps(dict(time_s=float(t),kind='PASS',capture_active=True,motion_state='DRIVE',motion_reason='NONE',track_id=0)) for t in np.arange(0,4.001,.02))+'\n')
     (mission/'capture_intervals.json').write_text(json.dumps([dict(track_id=0,archive=str(raw),enabled_ack_time_s=0.,disabled_ack_time_s=4.)]))
     height=camera['nominal_width_m']*camera['focal_length_m']/(camera['width']*camera['pixel_pitch_m'])
     cal=dict(calibration_id='nav',optical_intrinsic_id=camera['calibration_id'],estimated_frames=[dict(frame_id='camera_optical_calibrated',translation_m=[camera['camera_x_m'],0,height-.65],orientation_xyzw=Rotation.from_euler('xyz',[np.pi,0,np.pi/2]).as_quat().tolist())])
@@ -69,6 +70,38 @@ def test_real_archive_uses_fused_pose_and_preserves_source(tmp_path):
     assert report['status']=='ESTIMATED_COMPLETE' and not report['issues'] and not report['rescan_candidates']
     assert before==(raw/'block_000000.pgm').read_bytes()
     with pytest.raises(FileExistsError):audit_capture(mission,nav,tmp_path/'audit',p,c)
+
+
+def test_steering_during_capture_keeps_pixels_but_requires_rescan(tmp_path):
+    mission,nav,raw,p,c=archive(tmp_path);before=(raw/'block_000000.pgm').read_bytes()
+    row=dict(time_s=1.,kind='PASS',capture_active=True,motion_state='ALIGN',motion_reason='LIMIT_RECONFIGURE',track_id=0)
+    records=[json.loads(v) for v in (mission/'execution.jsonl').read_text().splitlines()]+[row]
+    (mission/'execution.jsonl').write_text('\n'.join(json.dumps(v) for v in sorted(records,key=lambda r:r['time_s'])))
+    report=audit_capture(mission,nav,tmp_path/'quality',p,c)
+    assert report['status']=='NEEDS_RESCAN' and report['rescan_candidates']
+    assert any('STEERING_DURING_CAPTURE' in issue['reason'] for issue in report['issues'])
+    assert report['inputs'][0]['motion_quality_excluded'] and report['motion_quality_windows']
+    assert before==(raw/'block_000000.pgm').read_bytes()
+
+
+def test_ordinary_pause_and_non_capture_turn_do_not_reject_image(tmp_path):
+    mission,nav,raw,p,c=archive(tmp_path)
+    rows=[dict(time_s=1.,kind='PASS',capture_active=True,motion_state='HOLD',motion_reason='STOP_REQUEST',track_id=0),
+          dict(time_s=2.,kind='PASS',capture_active=True,motion_state='ALIGN',motion_reason='STOP_REQUEST',track_id=0),
+          dict(time_s=3.5,kind='ROTATE_180',capture_active=False,motion_state='ALIGN',motion_reason='LARGE_STEER_CHANGE',track_id=0)]
+    records=[json.loads(v) for v in (mission/'execution.jsonl').read_text().splitlines()]+rows
+    (mission/'execution.jsonl').write_text('\n'.join(json.dumps(v) for v in sorted(records,key=lambda r:r['time_s'])))
+    report=audit_capture(mission,nav,tmp_path/'pause_quality',p,c)
+    assert report['status']=='ESTIMATED_COMPLETE' and not report['motion_quality_windows']
+
+
+def test_truncated_execution_trace_cannot_certify_motion_quality(tmp_path):
+    mission,nav,raw,p,c=archive(tmp_path)
+    lines=(mission/'execution.jsonl').read_text().splitlines()
+    (mission/'execution.jsonl').write_text(lines[0]+'\n')
+    report=audit_capture(mission,nav,tmp_path/'missing_motion',p,c)
+    assert report['status']=='NEEDS_RESCAN' and report['inputs'][0]['motion_quality_excluded']
+    assert any('EXECUTION_TRACE_INCOMPLETE' in x['reason'] for x in report['issues'])
 
 
 def test_missing_pixels_and_navigation_gap_do_not_bridge_coverage(tmp_path):

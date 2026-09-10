@@ -87,7 +87,7 @@ def main():
     node.create_subscription(JointState,'/joint_states',joints,qos_profile_sensor_data)
     node.create_subscription(Image,'/linescan/image_raw',image,2)
     node.create_subscription(String,'/localization/status',lambda m:latest.update(health=json.loads(m.data)),20)
-    node.create_subscription(String,'/mission/status',status,100)
+    node.create_subscription(String,'/mission/status',status,qos_profile_sensor_data)
     node.create_subscription(Odometry,'/ground_truth/odom',actual,100)
     try:
         deadline=time.monotonic()+80

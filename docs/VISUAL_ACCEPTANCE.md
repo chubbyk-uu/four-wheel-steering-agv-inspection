@@ -50,3 +50,5 @@ RViz面板改动后运行`tools/validate_operator_session.py --output 新目录 
 2026-09-10显存优化：释放建树暂存和压紧GAS，144张固定轨迹原图与之前逐字节相同；281项测试通过。实际RViz窗口检查机器人、道路、4096²预览正常。第一轮GUI在SHIFT发生定位健康保护停车，保留失败记录；同参数复跑138张/560719行完整、稳态RTF0.99924、最终HOLD、整卡采样峰值9.092 GiB，ROS/原图一致、逐轮记录保留。未修改GZ几何/鼠标交互，不重复宣称交互专项通过。见[显存报告](../results/full_road_gpu_memory.json)。
 
 2026-09-10长轨停车专项：新增`tools/validate_scan_limit_recovery.py --output 新目录 --scene assets/road/runtime_fullwidth_100m_v1/manifest.json`，实际根据±180°轮角分支触发LIMIT_RECONFIGURE，并要求采集中发生、同一完整图跨过恢复、行号连续和最终停车。实际查看跨恢复原图发现约23行窄纹理带，因此仅通过触发/归档语义检查，**未通过对轮图像质量验收**。生产100 m两道另两次完成（一次普通暂停、一次不主动暂停）；定位中断保护停车通过。此轮宿主锁屏，未完成GZ/RViz窗口肉眼验收；晚连接静态Marker订阅检查不能代替显示观察。详见[问题](issues/SCAN_STABILITY.md)及[报告](../results/long_run_stop_investigation.json)。
+
+后续进程隔离/保持修复：原始跨对轮图实际查看，300 N·m暂定峰值下不再出现被动滚动窄带，但相机位姿变化仍需质量排除和补扫。`validate_operator_session.py --broker-stall`会在真实PASS中仅暂停面板进程0.6 s；本次100 m两道采集与普通暂停均通过，运行中控制间隔最大22 ms。加`--executor-exit-probe`会在第二个任务运动中强杀工作进程，要求FAULT/HOLD和关闭确认；已通过。新进程READY首次收到/clock不计入RUNNING控制间隔。10 km/h短程归档/停车也通过。窗口人工/鼠标交互未重新验收，不能把工具的gui_rviz字段解释为截图观察已通过。详见[报告](../results/control_isolation_capture_quality.json)。

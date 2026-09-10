@@ -9,9 +9,7 @@ import yaml
 import rclpy
 from rclpy.node import Node
 from rclpy.clock import Clock,ClockType
-from rclpy.parameter import Parameter
-from rclpy.executors import SingleThreadedExecutor
-from rclpy.qos import QoSProfile,DurabilityPolicy
+from rclpy.qos import QoSProfile,DurabilityPolicy,qos_profile_sensor_data
 from ament_index_python.packages import get_package_share_directory
 from std_msgs.msg import String
 from std_srvs.srv import Trigger
@@ -20,7 +18,8 @@ from visualization_msgs.msg import MarkerArray
 from builtin_interfaces.msg import Time
 from .planner import plan,Vehicle
 from .preview import messages,coverage_messages
-from .execution_node import Executor
+from .execution_process import ExecutionProcess
+from .callback_trace import TracedExecutor
 from .capture_audit import audit_capture
 from .coverage import combine
 from .road_display import road_messages
@@ -62,7 +61,7 @@ class Operator(Node):
         if self.road:self.request=bind_request(self.request,self.road)
         self.pool=ThreadPoolExecutor(max_workers=1);self.ids=set();self.mode='';self.mode_wall=0.
         self.create_subscription(String,'/motion_state',self.motion,10)
-        self.create_subscription(String,'/mission/status',lambda m:setattr(self,'last',json.loads(m.data)),20)
+        self.create_subscription(String,'/mission/status',self.execution_status,qos_profile_sensor_data)
         self.create_subscription(String,'/mission/operator/request',self.receive,10)
         qos=QoSProfile(depth=1,durability=DurabilityPolicy.TRANSIENT_LOCAL)
         self.pub=self.create_publisher(String,'/mission/operator/state',qos)
@@ -83,13 +82,18 @@ class Operator(Node):
         value=json.loads(msg.data);key=value['last']['time_s']
         self.last_image={k:value[k] for k in ('width','rows','end_reason')}
         if key not in self.block_keys:self.block_keys.add(key);self.captured_rows+=value['rows']
+    def execution_status(self,msg):
+        value=json.loads(msg.data)
+        if self.child and self.child.receive(value):self.last=value
     def motion(self,m):self.mode=m.data;self.mode_wall=time.monotonic()
     def stopped(self):return self.mode=='HOLD' and time.monotonic()-self.mode_wall<.5
     def editable(self):
-        return self.child is None or (self.child.state in TERMINAL|{'READY'} and self.stopped() and self.child.capture.active is False and self.child.capture.future is None)
+        return self.child is None or (self.child.state in TERMINAL|{'READY'} and self.stopped() and self.child.capture.active is False and not getattr(self.child.capture,'pending',False) and self.child.capture.future is None)
     def release(self):
         if self.child:
-            self.executor.remove_node(self.child);self.child.destroy_node();self.child=None;self.last={}
+            if hasattr(self.executor,'trace'):
+                (self.child.output.parent/'broker_callback_trace.json').write_text(json.dumps(self.executor.trace.snapshot(),indent=2)+'\n')
+            self.child.destroy_node();self.child=None;self.last={}
     def receive(self,msg):
         try:
             command=json.loads(msg.data);identity=command['id'];action=command['action']
@@ -125,8 +129,8 @@ class Operator(Node):
                     if not (self.navigation/'navigation.jsonl').is_file():raise ValueError('未配置有效导航归档目录；请用巡检启动入口')
                     folder=self.root/(time.strftime('%Y%m%d_%H%M%S')+'_'+uuid.uuid4().hex[:6]);folder.mkdir(parents=True)
                     request_path=folder/'request.yaml';request_path.write_text(yaml.safe_dump(candidate))
-                    self.child=Executor(parameter_overrides=[Parameter('use_sim_time',value=self.get_parameter('use_sim_time').value),Parameter('request',value=str(request_path)),Parameter('output_dir',value=str(folder/'mission')),Parameter('capture',value=True)])
-                    self.last_image=None;self.block_keys=set();self.captured_rows=0;self.coverage=None;self.executor.add_node(self.child);self.message='任务已准备；定位连续就绪后可开始'
+                    self.child=ExecutionProcess(self,request_path,folder/'mission',self.get_parameter('use_sim_time').value)
+                    self.last_image=None;self.block_keys=set();self.captured_rows=0;self.coverage=None;self.message='任务已准备；定位连续就绪后可开始'
             elif action=='audit':
                 if not self.child or self.child.state not in TERMINAL:raise ValueError('请等待本任务结束或取消后再审计')
                 directory=self.child.output;output=directory.parent/('audit_'+uuid.uuid4().hex[:6])
@@ -163,8 +167,8 @@ class Operator(Node):
         finally:
             duration=time.monotonic()-start
             self.callback_stats={'last_tick_wall_s':duration,'max_tick_wall_s':max(duration,self.callback_stats.get('max_tick_wall_s',0.))}
-            if self.child:self.child.operator_callback_stats=self.callback_stats.copy()
     def tick(self):
+        if self.child:self.child.poll()
         if self.child and self.child.state=='RUNNING' and self.count_publishers('/cmd_vel')!=1:
             self.child.fault('COMPETING_COMMAND_PUBLISHER')
         if self.pending and not self.pending.done() and time.monotonic()-self.pending_wall>3.:
@@ -187,11 +191,13 @@ class Operator(Node):
         status=dict(self.last)
         status.update(captured_blocks=len(self.block_keys),captured_rows=self.captured_rows,last_image=self.last_image)
         if self.child:
-            if self.child.state=='READY' and self.child.capture.active is None and self.child.capture.future is None and self.child.capture.client.service_is_ready():
-                self.child.capture.request(False,reason='operator_prepare')
             status['state']=self.child.state
             status['reason']=self.child.reason
-            status['ready_to_start']=self.child.state=='READY' and self.child.ready_since is not None and time.monotonic()-self.child.ready_since>=self.child.cfg['initial_ready_hold_s']
+            status['ready_to_start']=self.child.state=='READY' and self.child.snapshot.get('ready_to_start',False)
+            if self.child.failure:
+                status.update(motion_state=self.mode,capture_active=self.child.capture.active,
+                    capture_pending=getattr(self.child.capture,'pending',False) or self.child.capture.future is not None,capture_close_failed=self.child.capture.close_failed,
+                    capture_sensor_enabled=False if self.child.capture.active is False else None)
         else:status={'state':'IDLE'}
         self.pub.publish(String(data=json.dumps(dict(max_requested_speed_m_s=self.platform['max_speed'],response_id=self.response_id,request=self.request,preview_valid=self.preview is not None,editable=self.editable(),busy=bool(self.pending or self.job),ok=self.ok,message=self.message,status=status,coverage=self.coverage))))
     def close(self):
@@ -199,7 +205,7 @@ class Operator(Node):
 
 
 def main():
-    rclpy.init();executor=SingleThreadedExecutor();node=Operator(executor);executor.add_node(node)
+    rclpy.init();executor=TracedExecutor();node=Operator(executor);executor.add_node(node)
     try:executor.spin()
     except KeyboardInterrupt:pass
     finally:

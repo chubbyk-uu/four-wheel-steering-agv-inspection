@@ -8,6 +8,7 @@ import yaml
 import rclpy
 from rclpy.node import Node
 from rclpy.clock import Clock, ClockType
+from rclpy.qos import qos_profile_sensor_data
 from ament_index_python.packages import get_package_share_directory
 from geometry_msgs.msg import TwistStamped
 from nav_msgs.msg import Odometry
@@ -17,6 +18,7 @@ from .planner import plan,Vehicle
 from .execution import compile_steps,segment_arguments,check_position,scan_end_reached
 from .tracking import SegmentTracker
 from .capture import CaptureGate
+from .callback_trace import TracedExecutor
 
 
 class Executor(Node):
@@ -33,6 +35,7 @@ class Executor(Node):
         self.output=Path(self.declare_parameter('output_dir','').value)
         if str(self.output)=='.':raise ValueError('explicit new output_dir required')
         self.output.mkdir(parents=True,exist_ok=False)
+        self.execution_id=self.output.parent.name
         (self.output/'plan.json').write_text(json.dumps(self.plan,indent=2)+'\n')
         self.log=(self.output/'execution.jsonl').open('x')
         self.auto=self.declare_parameter('autostart',False).value
@@ -42,11 +45,14 @@ class Executor(Node):
         self.last_sim=None;self.last_clock=time.monotonic();self.step_attempts=0;self.stopped_since=None
         self.pause_pose=None;self.pause_started=None;self.pause_events=[]
         self.cmd=self.create_publisher(TwistStamped,'/cmd_vel',10)
-        self.status=self.create_publisher(String,'/mission/status',20)
+        # Telemetry is periodically refreshed and fully archived locally. A slow
+        # display must not back-pressure the control loop through reliable DDS.
+        self.status=self.create_publisher(String,'/mission/status',qos_profile_sensor_data)
         self.create_subscription(Odometry,'/odometry/global',self.on_odom,20)
         self.create_subscription(String,'/motion_state',self.on_mode,20)
         self.create_subscription(String,'/motion_transition_reason',lambda m:setattr(self,'motion_reason',m.data),20)
         self.create_subscription(String,'/localization/status',self.on_health,20)
+        self.create_subscription(String,'/mission/external_fault',self.external_fault,10)
         self.create_service(Trigger,'/mission/start',self.start)
         self.create_service(Trigger,'/mission/cancel',self.cancel)
         self.create_service(Trigger,'/mission/pause',self.pause)
@@ -135,6 +141,12 @@ class Executor(Node):
         if self.state not in ('COMPLETED','ACQUIRED','FAULT'):
             self.state='FAULT';self.reason=reason
         self.command([0,0,0])
+    def external_fault(self,msg):
+        try:
+            value=json.loads(msg.data)
+            if value.get('execution_id')==self.execution_id and value.get('reason') in ('COMPETING_COMMAND_PUBLISHER','OPERATOR_SERVICE_TIMEOUT'):
+                self.fault(value['reason'])
+        except (ValueError,TypeError):pass
     def tick(self):
         now=self.get_clock().now().nanoseconds*1e-9;wall=time.monotonic()
         dt=0 if self.last_sim is None else now-self.last_sim;self.last_sim=now
@@ -143,6 +155,8 @@ class Executor(Node):
         self.capture.poll()
         if self.capture.error:self.fault(self.capture.error)
         if self.state=='READY':
+            if self.capture.enabled and self.capture.active is None and self.capture.future is None:
+                if self.capture.client.service_is_ready():self.capture.request(False,reason='prepare')
             if valid and self.mode=='HOLD':
                 if self.ready_since is None:self.ready_since=wall
                 if self.auto and wall-self.ready_since>=self.cfg['initial_ready_hold_s']:self.start(None,Trigger.Response())
@@ -150,7 +164,8 @@ class Executor(Node):
         elif self.state in ('PAUSING','PAUSED'):
             self.pause_tick(now,valid,dt,wall)
         elif self.state=='RUNNING':
-            if dt<0 or dt>.1:self.fault('INVALID_CONTROL_TIMESTEP')
+            if self.count_publishers('/cmd_vel')!=1:self.fault('COMPETING_COMMAND_PUBLISHER')
+            elif dt<0 or dt>.1:self.fault('INVALID_CONTROL_TIMESTEP')
             elif not valid:self.fault('STALE_OR_UNREADY_LOCALIZATION')
             elif wall-self.last_clock>self.cfg['wall_timeout_s']:self.fault('SIM_CLOCK_STALLED')
             elif dt>0:self.run_step(dt)
@@ -160,6 +175,8 @@ class Executor(Node):
             if self.state=='CANCELING' and self.mode=='HOLD' and self.capture.active is False and self.capture.future is None:self.state='CANCELED'
         record={'time_s':now,'state':self.state,'reason':self.reason,'motion_state':self.mode,
                 'step_index':self.index,'step_count':len(self.steps),'capture_integrated':self.capture.enabled,'capture_active':self.capture.active,'capture_sensor_enabled':self.capture.heartbeat.get('enabled') if self.capture.heartbeat else None,'capture_close_failed':self.capture.close_failed,'command_body':self.last_command,'motion_reason':self.motion_reason}
+        record.update(execution_id=self.execution_id,capture_pending=self.capture.future is not None,
+            ready_to_start=self.state=='READY' and self.ready_since is not None and wall-self.ready_since>=self.cfg['initial_ready_hold_s'])
         if self.steps and self.index<len(self.steps):record.update(kind=self.steps[self.index]['kind'],track_id=self.steps[self.index]['track_id'])
         if self.odom is not None:record['position_m']=self.pose()[0].tolist()
         if self.core:record.update(tracker_state=self.core.state,profile_time_s=self.core.clock,
@@ -171,6 +188,8 @@ class Executor(Node):
             record['odom_age_s']=now-(self.odom.header.stamp.sec+self.odom.header.stamp.nanosec*1e-9) if self.odom else None
             record['control_dt_s']=dt
             record['operator_callbacks']=getattr(self,'operator_callback_stats',{})
+            executor=getattr(self,'executor',None)
+            if hasattr(executor,'trace'):record['callback_trace']=executor.trace.snapshot()
         self.log.write(json.dumps(record)+'\n');self.log.flush();self.status.publish(String(data=json.dumps(record)))
     def run_step(self,dt):
         p,q=self.pose()
@@ -218,9 +237,19 @@ class Executor(Node):
 
 
 def main():
-    rclpy.init();node=Executor()
-    try:rclpy.spin(node)
+    from rclpy.signals import SignalHandlerOptions
+    rclpy.init(signal_handler_options=SignalHandlerOptions.NO);node=Executor();executor=TracedExecutor();executor.add_node(node)
+    try:executor.spin()
     except KeyboardInterrupt:pass
     finally:
+        import signal
+        # The launch supervisor and owning broker may both send SIGINT.
+        signal.signal(signal.SIGINT,signal.SIG_IGN)
+        if rclpy.ok():
+            node.cancel(None,Trigger.Response());deadline=time.monotonic()+8
+            while time.monotonic()<deadline and not(node.mode=='HOLD' and node.capture.active is False and node.capture.future is None):
+                executor.spin_once(timeout_sec=.02)
+        (node.output/'callback_trace.json').write_text(json.dumps(executor.trace.snapshot(),indent=2)+'\n')
         node.destroy_node()
+        executor.shutdown()
         if rclpy.ok():rclpy.shutdown()

@@ -1,0 +1,96 @@
+{
+  "scope": "Control-process isolation, provisional holding torque and auditable capture-quality exclusion; not full-area acceptance",
+  "tests": {
+    "total": 294,
+    "errors": 0,
+    "failures": 0
+  },
+  "runs": {
+    "scan_limit_drive_probe": {
+      "passed": true,
+      "blocks": 3,
+      "rows": 12288,
+      "max_encoder_retrace_m": 0.006305629078644959,
+      "retrace_episodes": 2,
+      "image_quality_accepted": false,
+      "final_motion": "HOLD"
+    },
+    "scan_limit_brake_probe": {
+      "passed": true,
+      "blocks": 4,
+      "rows": 13928,
+      "max_encoder_retrace_m": 3.895550548804749e-12,
+      "retrace_episodes": 0,
+      "image_quality_accepted": false,
+      "final_motion": "HOLD"
+    },
+    "process_isolation_final_gui": {
+      "passed": true,
+      "blocks": 138,
+      "rows": 560840,
+      "final_motion": "HOLD",
+      "steady_rtf": 0.9988092407617248,
+      "requested_speed_m_s": 2.0,
+      "actual_peak_speed_m_s": 2.1182180741346457,
+      "pause_retains_frame": true,
+      "ros_archive_identical": true,
+      "broker_stall": {
+        "duration_wall_s": 0.6,
+        "control_max_step_s": 0.02199999999999136,
+        "continued_without_fault": true
+      },
+      "executor_exit": {
+        "state": "FAULT",
+        "motion_state": "HOLD",
+        "capture_active": false
+      },
+      "coverage_status": "NEEDS_RESCAN"
+    },
+    "holding_10kmh_gui": {
+      "passed": true,
+      "blocks": 7,
+      "rows": 27587,
+      "final_motion": "HOLD",
+      "steady_rtf": 0.9949485062369908,
+      "requested_speed_m_s": 2.777777777777778,
+      "actual_peak_speed_m_s": 2.7952335066899123,
+      "pause_retains_frame": null,
+      "ros_archive_identical": true,
+      "coverage_status": "ESTIMATED_COMPLETE"
+    }
+  },
+  "holding_comparison": {
+    "old_limit_Nm": 150,
+    "new_provisional_peak_limit_Nm": 300,
+    "zero_drive_command_during_unwind": true,
+    "old_peak_wheel_rad_s": 0.14826713,
+    "new_peak_wheel_rad_s": 7.60122571e-10,
+    "not_measured_motor_rating": true,
+    "camera_pose_discontinuity_still_requires_quality_exclusion": true
+  },
+  "control_isolation": {
+    "separate_process": true,
+    "status_qos": "BEST_EFFORT; control services unchanged",
+    "historical_259ms_exact_call_identified": false,
+    "forced_broker_stall_s": 0.6,
+    "old_ready_clock_jump_test_failure_s": 9.001,
+    "ready_clock_jump_excluded_from_running_metric": true,
+    "duplicate_sigint_cleanup_fixed": true,
+    "normal_worker_callback_trace_saved": true
+  },
+  "motion_quality": {
+    "raw_pixels_deleted_or_rewritten": false,
+    "whole_intersecting_blocks_excluded": true,
+    "transition_time_padding_s": 0.05,
+    "ordinary_pause_and_closed_camera_turn_regression_passed": true,
+    "missing_execution_trace_fails_closed": true,
+    "rescan_requests_generated": true
+  },
+  "visual_scope": "Raw recovery image inspected: passive-rolling stripe suppressed, steering pose discontinuity not certified. GUI/RViz participated; no renewed host-window/mouse visual acceptance.",
+  "remaining": [
+    "100x10 m full-width repeated coverage and rescan acceptance",
+    "Real motor/brake rating must replace provisional simulation torque",
+    "Steering-affected frames require rescan; no claim of geometrically seamless capture during reconfiguration",
+    "Original historical 259 ms blocking call not uniquely recoverable from available timing evidence"
+  ]
+}

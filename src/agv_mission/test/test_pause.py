@@ -22,6 +22,7 @@ class Harness:
         self.healthy=True;self.reason='';self.core=object();self.step_attempts=3
     def get_clock(self):return NS(now=lambda:NS(nanoseconds=round(self.now*1e9)))
     def valid(self,now):return self.healthy
+    def count_publishers(self,topic):return 1
     def pose(self):return self.p.copy(),self.q.copy()
     def pause_record(self,event):self.events.append(event)
     def command(self,v):self.cmd=v
@@ -80,9 +81,10 @@ def test_callback_gap_is_distinguished_from_localization_timeout():
                                 (.02,False,'STALE_OR_UNREADY_LOCALIZATION')):
         h=Harness();h.last_sim=h.now-dt;h.healthy=healthy
         h.core=None;h.steps=[];h.health={'state':'READY'};h.arrivals={}
+        h.execution_id='test';h.ready_since=None
         h.last_command=[.5,0,0];h.motion_reason='';h.log=io.StringIO()
         h.odom.header=NS(stamp=NS(sec=0,nanosec=900000000))
-        h.capture=NS(error='',poll=lambda:None,enabled=True,active=True,
+        h.capture=NS(error='',poll=lambda:None,enabled=True,active=True,future=None,
                      heartbeat={},close_failed=False)
         h.status=NS(publish=lambda message:None)
         Executor.tick(h)

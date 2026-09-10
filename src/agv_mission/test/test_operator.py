@@ -83,3 +83,25 @@ def test_static_preview_is_not_rebuilt_by_runtime_ticks(monkeypatch):
         for _ in range(12):node.tick()
     finally:
         node.close();executor.shutdown();rclpy.try_shutdown()
+
+
+def test_process_status_cannot_cross_task_instance():
+    from agv_mission.execution_process import ExecutionProcess
+    child=ExecutionProcess.__new__(ExecutionProcess);child.execution_id='new';child.snapshot={};child.failure=''
+    child.capture=NS(active=None,pending=False,future=None)
+    assert not child.receive(dict(execution_id='old',state='READY',capture_active=False,capture_pending=False))
+    assert child.state=='STARTING'
+    assert child.receive(dict(execution_id='new',state='READY',capture_active=False,capture_pending=True))
+    assert child.state=='READY' and child.capture.active is False and child.capture.pending and child.capture.future is None
+
+
+def test_dead_executor_camera_close_failure_is_latched():
+    from agv_mission.execution_process import ExecutionProcess
+    child=ExecutionProcess.__new__(ExecutionProcess);child.failure='';child.process=NS(poll=lambda:1)
+    child.capture=NS(active=True,future=None,close_failed=False);calls=[]
+    def request(value):
+        calls.append(value);return NS(done=lambda:True,result=lambda:NS(success=False))
+    child.close_client=NS(service_is_ready=lambda:True,call_async=request)
+    child.poll();child.poll();child.poll()
+    assert child.state=='FAULT' and child.capture.close_failed and child.capture.active is None
+    assert len(calls)==1

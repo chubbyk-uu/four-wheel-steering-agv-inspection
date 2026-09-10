@@ -4,7 +4,7 @@ import argparse,json,math,os,subprocess,time
 from pathlib import Path
 import numpy as np
 import rclpy
-from std_msgs.msg import String
+from std_msgs.msg import String,Float64MultiArray
 from sensor_msgs.msg import JointState
 from std_srvs.srv import SetBool
 from validate_motion import Evaluator
@@ -13,11 +13,12 @@ from process_resources import ResourceMonitor
 
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--output',type=Path,required=True);p.add_argument('--scene',type=Path,required=True);a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--output',type=Path,required=True);p.add_argument('--scene',type=Path,required=True);p.add_argument('--platform',type=Path);a=p.parse_args()
     a.output.mkdir(parents=True,exist_ok=False)
     os.environ.update(ROS_DOMAIN_ID=str(100+os.getpid()%70),GZ_PARTITION='scan_limit_'+str(os.getpid()))
-    log=(a.output/'simulation.log').open('w');sim=subprocess.Popen(['ros2','launch','agv_bringup','inspection.launch.py','session_dir:='+str((a.output/'session').resolve()),'scene_manifest:='+str(a.scene.resolve()),'spawn_x:=20'],stdout=log,stderr=log,start_new_session=True)
-    monitor=ResourceMonitor(sim.pid,a.output/'resources.jsonl');rclpy.init();node=Evaluator();events=[];reasons=[];samples=[]
+    log=(a.output/'simulation.log').open('w');sim=subprocess.Popen(['ros2','launch','agv_bringup','inspection.launch.py','session_dir:='+str((a.output/'session').resolve()),'scene_manifest:='+str(a.scene.resolve()),'spawn_x:=20']+(['platform:='+str(a.platform.resolve())] if a.platform else []),stdout=log,stderr=log,start_new_session=True)
+    monitor=ResourceMonitor(sim.pid,a.output/'resources.jsonl');rclpy.init();node=Evaluator();events=[];reasons=[];samples=[];commands=[]
+    node.create_subscription(Float64MultiArray,'/drive_controller/commands',lambda m:commands.append([node.get_clock().now().nanoseconds*1e-9,*m.data]),100)
     node.create_subscription(String,'/linescan/status',lambda m:events.append(json.loads(m.data)),100)
     node.create_subscription(String,'/motion_transition_reason',lambda m:reasons.append([node.get_clock().now().nanoseconds*1e-9,m.data]),20)
     def joints(m):
@@ -78,6 +79,7 @@ def main():
     finally:
         try:settle((0,0,0))
         finally:
+            np.save(a.output/'drive_commands.npy',np.asarray(commands))
             np.save(a.output/'joints.npy',np.asarray(samples));(a.output/'reasons.json').write_text(json.dumps(reasons));(a.output/'events.json').write_text(json.dumps(events))
             monitor.close();node.destroy_node();rclpy.try_shutdown();stop_tree(sim,known_children=list(monitor.owned.values()));log.close()
 

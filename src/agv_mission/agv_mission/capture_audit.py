@@ -8,6 +8,7 @@ from PIL import Image
 from scipy.spatial.transform import Rotation,Slerp
 from .coverage import estimate,rescan_requests
 from .planner import plan as make_plan,Vehicle
+from .capture_quality import reconfiguration_windows,affected
 
 
 class Navigation:
@@ -64,6 +65,10 @@ def audit_capture(mission,navigation,output,platform,camera,uncertainty=.10):
     if source['frame_id']!='map' or source['tracks']!=checked['tracks'] or source['vehicle']!=checked['vehicle']:raise ValueError('source plan incompatible with current validated vehicle')
     nav=Navigation(navigation)
     intervals=json.loads((mission/'capture_intervals.json').read_text())
+    execution=(mission/'execution.jsonl').read_bytes()
+    records=[json.loads(line) for line in execution.splitlines()]
+    if not records:raise ValueError('missing execution quality evidence')
+    quality_windows=reconfiguration_windows(records)
     spans=[];issues=[];inputs=[];seen=set();scenes=set()
     for interval in intervals:
         if 'disabled_ack_time_s' not in interval:
@@ -107,6 +112,12 @@ def audit_capture(mission,navigation,output,platform,camera,uncertainty=.10):
                 if raw.get('scene_contract'):
                     scenes.add(hashlib.sha256(json.dumps(raw['scene_contract'],sort_keys=True,separators=(',',':')).encode()).hexdigest())
                 inputs.append(dict(track_id=track_id,block_id=raw['block_id'],image=im.name,image_sha256=hashlib.sha256(im.read_bytes()).hexdigest(),metadata_sha256=hashlib.sha256(path.read_bytes()).hexdigest()))
+                inputs[-1]['motion_quality_excluded']=affected(quality_windows,track_id,first['time_s'],last['time_s'])
+                if inputs[-1]['motion_quality_excluded']:
+                    raise ValueError('STEERING_DURING_CAPTURE: raw block retained; excluded from verified coverage')
+                if records[0]['time_s']>first['time_s'] or records[-1]['time_s']<last['time_s']:
+                    inputs[-1]['motion_quality_excluded']=True
+                    raise ValueError('EXECUTION_TRACE_INCOMPLETE: raw block retained; motion quality unknown')
                 for tag in tags:
                     try:
                         point=nav.footprint(tag,camera,source,uncertainty)
@@ -124,6 +135,8 @@ def audit_capture(mission,navigation,output,platform,camera,uncertainty=.10):
     report=estimate(source,spans,uncertainty);report.update(request=source['request'],scene_contract_sha256=sorted(scenes),optical_intrinsic_id=nav.cal['optical_intrinsic_id'],issues=issues,inputs=inputs,navigation_calibration_id=nav.cal['calibration_id'],
         provenance=dict(plan_sha256=hashlib.sha256((mission/'plan.json').read_bytes()).hexdigest(),navigation_sha256=nav.digest,
             navigation_calibration_sha256=hashlib.sha256((navigation/'calibration.json').read_bytes()).hexdigest()))
+    report['motion_quality_windows']=quality_windows
+    report['provenance']['execution_sha256']=hashlib.sha256(execution).hexdigest()
     candidates=rescan_requests(source,report,vehicle)
     report['rescan_candidates']=[{k:v for k,v in c.items() if k!='plan'} for c in candidates]
     report['assumptions']=['current validated flat-road model','minimum total footprint allowance, enlarged by propagated 3-sigma marginal EKF uncertainty; unknown systematic errors are not certified','continuous valid sensor segment between sparse tags; cannot prove arbitrary unobserved motion']
