@@ -15,10 +15,12 @@ inline double WheelSpeedSpreadLimit(double meanSpeed,double absolute,double rela
 struct Event { double time, distance; int direction; };
 class Trigger {
  public:
-  explicit Trigger(double spacing): spacing_(spacing) {
+  explicit Trigger(double spacing,bool positionMode=false): spacing_(spacing),positionMode_(positionMode) {
     if (!(spacing > 0)) throw std::invalid_argument("invalid line spacing");
   }
-  void Reset() { valid_ = false; direction_ = 0; }
+  void Reset() { valid_ = false; direction_ = 0; maxRetrace_=0; retraceEpisodes_=0; retracing_=false; }
+  double MaxRetrace() const {return maxRetrace_;}
+  size_t RetraceEpisodes() const {return retraceEpisodes_;}
   std::vector<Event> Update(double time, double distance) {
     if (!std::isfinite(time) || !std::isfinite(distance)) throw std::runtime_error("nonfinite encoder");
     if (!valid_) { time_=time; distance_=origin_=extreme_=distance; valid_=true; return {}; }
@@ -30,9 +32,13 @@ class Trigger {
       next_=origin_+direction_*spacing_;
     }
     if (direction_) {
-      // Encoder sub-pulse backlash/jitter at rest must not reverse a scan.
-      // A full pitch of retreat is an actual unsupported reversal.
-      if (direction_*(extreme_-distance)>=spacing_) throw std::runtime_error("direction change");
+      // PositionUp/Down semantics: count signed displacement during retrace,
+      // but emit only at new positions beyond the original next-line frontier.
+      const double retrace=std::max(0.,direction_*(extreme_-distance));
+      maxRetrace_=std::max(maxRetrace_,retrace);
+      if(retrace>=spacing_ && !retracing_){++retraceEpisodes_;retracing_=true;}
+      if(retrace<=1e-12)retracing_=false;
+      if (!positionMode_ && retrace>=spacing_) throw std::runtime_error("direction change");
       if (direction_*(distance-extreme_)>0) extreme_=distance;
     }
     if (direction_ && direction_*delta>1e-12) {
@@ -49,7 +55,8 @@ class Trigger {
  private:
   double spacing_, time_=0, distance_=0, next_=0, origin_=0, extreme_=0;
   int direction_=0;
-  bool valid_=false;
+  bool valid_=false,positionMode_=false,retracing_=false;
+  double maxRetrace_=0;size_t retraceEpisodes_=0;
 };
 
 inline double Polynomial(const std::vector<double> &c, double x) {

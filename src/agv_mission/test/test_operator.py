@@ -71,3 +71,15 @@ def test_loaded_scene_rejects_forged_bounds_and_wrong_registration():
     with pytest.raises(ValueError,match='region'):check_request_scene(wrong,road)
     small=scene_bounds(dict(transform='identity_world_baked',frame='world',inspection_bounds_xy_m=[0,20,-5,5],optical_valid_bounds_xy_m=[-1.024,21.504,-6.144,6.144]))
     with pytest.raises(ValueError,match='exceed'):check_request_scene(request,small)
+
+
+def test_static_preview_is_not_rebuilt_by_runtime_ticks(monkeypatch):
+    import rclpy
+    from rclpy.executors import SingleThreadedExecutor
+    rclpy.init();executor=SingleThreadedExecutor();node=Operator(executor)
+    try:
+        node.preview={'sent_already':True}
+        monkeypatch.setattr(node,'show_preview',lambda: (_ for _ in ()).throw(AssertionError('runtime static preview rebuild')))
+        for _ in range(12):node.tick()
+    finally:
+        node.close();executor.shutdown();rclpy.try_shutdown()

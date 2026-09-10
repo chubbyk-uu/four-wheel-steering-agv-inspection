@@ -157,3 +157,16 @@ def test_residual_pulse_before_long_pause_gets_true_adjacent_time_anchors(config
     assert tags[3]['time_s']==.039 and tags[4]['time_s']==3.5
     assert meta['rows']==8 and len(out)==1
     assert np.array_equal(pixels[:,0],np.arange(8))
+
+@pytest.mark.parametrize('direction',[1,-1])
+def test_position_encoder_retreat_resumes_same_4096_line_frame(config,direction):
+    pitch=config['line_spacing_m'];tr=Trigger(pitch,'position');tr.update(0,0)
+    first=tr.update(1,direction*2000.25*pitch)
+    assert len(first)==2000
+    assert not tr.update(2,direction*1980.25*pitch)
+    assert not tr.update(3,direction*1999.9*pitch)
+    assert not tr.update(4,direction*2000.25*pitch)
+    last=tr.update(5,direction*4096*pitch)
+    assert len(last)==2096 and last[0][0]>4
+    np.testing.assert_allclose(np.diff([e[1] for e in first+last]),direction*pitch,atol=1e-12)
+    assert tr.max_retrace==pytest.approx(20*pitch)

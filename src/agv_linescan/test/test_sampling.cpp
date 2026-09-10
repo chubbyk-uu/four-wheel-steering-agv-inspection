@@ -89,3 +89,19 @@ TEST(Trigger, SubPulseRestJitterDoesNotChooseOrReverseScanDirection) {
   EXPECT_NEAR(last.front().distance,.03,1e-12);
   EXPECT_THROW(trigger.Update(6,.015),std::runtime_error);
 }
+TEST(Trigger, PositionModeRetraceDoesNotDuplicateOrClosePartialImage) {
+  const double pitch=1.5/4096;
+  for(double sign:{1.,-1.}) {
+    Trigger trigger(pitch,true);trigger.Update(0,0);
+    auto first=trigger.Update(1,sign*2000.25*pitch);ASSERT_EQ(first.size(),2000u);
+    EXPECT_TRUE(trigger.Update(2,sign*1980.25*pitch).empty());
+    EXPECT_TRUE(trigger.Update(3,sign*1999.9*pitch).empty());
+    EXPECT_TRUE(trigger.Update(4,sign*2000.25*pitch).empty());
+    auto last=trigger.Update(5,sign*4096*pitch);ASSERT_EQ(last.size(),2096u);
+    EXPECT_NEAR(last.front().distance-first.back().distance,sign*pitch,1e-12);
+    EXPECT_GT(last.front().time,4.);
+    EXPECT_NEAR(trigger.MaxRetrace(),20*pitch,1e-12);
+    EXPECT_EQ(trigger.RetraceEpisodes(),1u);
+    trigger.Reset();EXPECT_EQ(trigger.RetraceEpisodes(),0u);
+  }
+}

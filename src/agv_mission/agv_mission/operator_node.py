@@ -52,7 +52,7 @@ class Operator(Node):
         self.request=yaml.safe_load((share/'config/rectangle_demo.yaml').read_text());self.request['road']['frame_id']='map'
         self.request['region'].update(start_xy_m=[6.,-1.],length_m=3.,width_m=2.)
         self.request['coverage_error_m']=.1;self.request['mission_id']='inspection'
-        self.last_preview_wall=0.;self.response_id='';self.preview=None;self.coverage=None;self.message='请设置区域并预览轨迹';self.ok=True
+        self.response_id='';self.preview=None;self.coverage=None;self.message='请设置区域并预览轨迹';self.ok=True
         self.last_image=None;self.block_keys=set();self.captured_rows=0;self.coverage_sent=None
         self.create_subscription(String,'/linescan/block_metadata',self.on_block,20)
         self.root=Path(self.declare_parameter('output_root','local_data/operator').value)
@@ -71,7 +71,12 @@ class Operator(Node):
         self.path_pub=self.create_publisher(NavPath,'/mission/preview/base_path',qos)
         self.marker_pub=self.create_publisher(MarkerArray,'/mission/preview/markers',qos)
         self.control_clients={k:self.create_client(Trigger,'/mission/'+k) for k in ('start','pause','resume','cancel')}
-        self.create_timer(.1,self.tick,clock=Clock(clock_type=ClockType.STEADY_TIME))
+        # Static displays use transient-local QoS; late RViz subscribers receive
+        # the retained sample. Do not rebuild/publish the full road/plan in the
+        # same runtime callback loop as the controller.
+        if self.road:self.road_pub.publish(road_messages(self.road))
+        self.callback_stats={}
+        self.create_timer(.1,self.timed_tick,clock=Clock(clock_type=ClockType.STEADY_TIME))
 
     def on_block(self,msg):
         if not self.child:return
@@ -152,12 +157,14 @@ class Operator(Node):
         self.marker_pub.publish(MarkerArray(markers=[clear]));path=NavPath();path.header.frame_id='map';self.path_pub.publish(path)
     def show_preview(self):
         path,markers=messages(self.preview,Time());self.path_pub.publish(path);self.marker_pub.publish(markers)
+    def timed_tick(self):
+        start=time.monotonic()
+        try:self.tick()
+        finally:
+            duration=time.monotonic()-start
+            self.callback_stats={'last_tick_wall_s':duration,'max_tick_wall_s':max(duration,self.callback_stats.get('max_tick_wall_s',0.))}
+            if self.child:self.child.operator_callback_stats=self.callback_stats.copy()
     def tick(self):
-        if time.monotonic()-self.last_preview_wall>1.:
-            if self.road:self.road_pub.publish(road_messages(self.road))
-            if self.preview:self.show_preview()
-            if self.coverage:self.coverage_pub.publish(coverage_messages(self.coverage,Time()))
-            self.last_preview_wall=time.monotonic()
         if self.child and self.child.state=='RUNNING' and self.count_publishers('/cmd_vel')!=1:
             self.child.fault('COMPETING_COMMAND_PUBLISHER')
         if self.pending and not self.pending.done() and time.monotonic()-self.pending_wall>3.:
@@ -183,6 +190,7 @@ class Operator(Node):
             if self.child.state=='READY' and self.child.capture.active is None and self.child.capture.future is None and self.child.capture.client.service_is_ready():
                 self.child.capture.request(False,reason='operator_prepare')
             status['state']=self.child.state
+            status['reason']=self.child.reason
             status['ready_to_start']=self.child.state=='READY' and self.child.ready_since is not None and time.monotonic()-self.child.ready_since>=self.child.cfg['initial_ready_hold_s']
         else:status={'state':'IDLE'}
         self.pub.publish(String(data=json.dumps(dict(max_requested_speed_m_s=self.platform['max_speed'],response_id=self.response_id,request=self.request,preview_valid=self.preview is not None,editable=self.editable(),busy=bool(self.pending or self.job),ok=self.ok,message=self.message,status=status,coverage=self.coverage))))

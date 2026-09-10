@@ -10,6 +10,7 @@ from rclpy.qos import QoSProfile,DurabilityPolicy,qos_profile_sensor_data
 from std_msgs.msg import String
 from sensor_msgs.msg import Image,JointState
 from nav_msgs.msg import Odometry
+from visualization_msgs.msg import MarkerArray
 from PIL import Image as PilImage
 from validate_rectangle_execution import stop_tree
 from process_resources import ResourceMonitor
@@ -63,6 +64,11 @@ def main():
         send('preview')
         wait(lambda:any(x.get('motion_state')=='HOLD' for x in states) or len(joints)>800,a.startup_timeout)
         send('prepare');wait(lambda:latest.get('status',{}).get('ready_to_start'))
+        # Join after publication, as an RViz display enabled later would do.
+        retained={}
+        for key,topic in (('road','/mission/road/markers'),('plan','/mission/preview/markers')):
+            n.create_subscription(MarkerArray,topic,lambda m,k=key:retained.update({k:len(m.markers)}),QoSProfile(depth=1,durability=DurabilityPolicy.TRANSIENT_LOCAL))
+        wait(lambda:retained.get('road',0)>0 and retained.get('plan',0)>0,10)
         mission_start_time=latest['status']['time_s']
         (a.output/'ready_for_ui').touch()
         until=time.monotonic()+a.inspect_seconds
@@ -102,6 +108,7 @@ def main():
             observed_rtf=(actual[-1][1]-actual[0][1])/(actual[-1][0]-actual[0][0]),road_display=json.loads((session/"rviz_road.json").read_text()),
             coverage_status=latest['coverage']['status'],coverage_tracks=latest['coverage']['tracks'],final_state=latest['status']['state'],final_motion=latest['status']['motion_state'],
             wheel_steering_range_rad={k:[float(np.min(np.array(joints)[:,i+1])),float(np.max(np.array(joints)[:,i+1]))] for i,k in enumerate(('fl','fr','rl','rr'))})
+        result['late_static_display_received']=retained
         (a.output/'results.json').write_text(json.dumps(result,indent=2)+'\n');np.save(a.output/'wheel_steering.npy',np.array(joints));print(json.dumps(result),flush=True)
         (a.output/'finished_for_ui').touch();delay(a.inspect_seconds)
         if a.no_cancel_probe:return

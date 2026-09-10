@@ -101,42 +101,40 @@ class Camera:
 
 
 class Trigger:
-    """Signed cumulative encoder distance. Each new segment starts a fresh phase."""
-    def __init__(self, spacing):
-        self.spacing = spacing
-        self.previous = None
-        self.next_distance = None
-        self.direction = 0
+    """Signed encoder frontier; optional industrial PositionUp/Down retrace suppression."""
+    def __init__(self, spacing, mode='strict'):
+        if not math.isfinite(spacing) or spacing<=0 or mode not in ('strict','position'):
+            raise ValueError('invalid encoder configuration')
+        self.spacing=spacing;self.mode=mode;self.reset()
 
     def reset(self):
-        self.previous = self.next_distance = None
-        self.direction = 0
+        self.previous=None;self.next_distance=None;self.direction=0
+        self.origin=self.extreme=0.;self.max_retrace=0.
 
     def update(self, time_s, distance):
         if not math.isfinite(time_s) or not math.isfinite(distance):
             raise ValueError('nonfinite encoder sample')
         if self.previous is None:
-            self.previous = (time_s, distance)
-            return []
-        t0, d0 = self.previous
-        if time_s <= t0:
-            raise ValueError('encoder time must increase')
-        delta = distance-d0
-        self.previous = (time_s, distance)
-        if abs(delta) < 1e-12:
-            return []
-        direction = 1 if delta > 0 else -1
-        if self.direction and direction != self.direction:
-            raise ValueError('direction change requires a new segment')
-        if not self.direction:
-            self.direction = direction
-            self.next_distance = d0+direction*self.spacing
-        count = max(0, math.floor((direction*(distance-self.next_distance)+1e-12)/self.spacing)+1)
-        events = []
-        for _ in range(count):
-            d = self.next_distance
-            events.append((t0+(d-d0)/delta*(time_s-t0), d))
-            self.next_distance += direction*self.spacing
+            self.previous=(time_s,distance);self.origin=self.extreme=distance;return []
+        t0,d0=self.previous
+        if time_s<=t0:raise ValueError('encoder time must increase')
+        delta=distance-d0
+        if not self.direction and abs(distance-self.origin)>=self.spacing-1e-12:
+            self.direction=1 if distance>=self.origin else -1
+            self.next_distance=self.origin+self.direction*self.spacing
+        if self.direction:
+            retrace=max(0.,self.direction*(self.extreme-distance))
+            self.max_retrace=max(self.max_retrace,retrace)
+            if self.mode=='strict' and retrace>=self.spacing:
+                raise ValueError('direction change requires a new segment')
+            if self.direction*(distance-self.extreme)>0:self.extreme=distance
+        events=[]
+        if self.direction and self.direction*delta>1e-12:
+            while self.direction*(distance-self.next_distance)>=-1e-12:
+                d=self.next_distance;events.append((t0+(d-d0)/delta*(time_s-t0),d))
+                self.next_distance+=self.direction*self.spacing
+                if len(events)>10000:raise ValueError('excessive triggers per step')
+        self.previous=(time_s,distance)
         return events
 
 

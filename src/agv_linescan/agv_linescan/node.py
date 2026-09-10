@@ -47,7 +47,7 @@ class LineScanNode(Node):
         self.blocks = Blocks(self.camera, self.emit, self.record_event)
         self.writer = ThreadPoolExecutor(max_workers=1, thread_name_prefix='linescan_archive')
         self.writes = deque()
-        self.trigger = Trigger(self.camera.spacing)
+        self.trigger = Trigger(self.camera.spacing,self.c.get("encoder_output_mode","strict"))
         self.poses = deque(maxlen=300)
         self.pending = deque()
         self.enabled = False

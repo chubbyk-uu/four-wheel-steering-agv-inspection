@@ -150,9 +150,9 @@ class Executor(Node):
         elif self.state in ('PAUSING','PAUSED'):
             self.pause_tick(now,valid,dt,wall)
         elif self.state=='RUNNING':
-            if not valid:self.fault('STALE_OR_UNREADY_LOCALIZATION')
+            if dt<0 or dt>.1:self.fault('INVALID_CONTROL_TIMESTEP')
+            elif not valid:self.fault('STALE_OR_UNREADY_LOCALIZATION')
             elif wall-self.last_clock>self.cfg['wall_timeout_s']:self.fault('SIM_CLOCK_STALLED')
-            elif dt<0 or dt>.1:self.fault('INVALID_CONTROL_TIMESTEP')
             elif dt>0:self.run_step(dt)
         else:
             self.command([0,0,0])
@@ -165,7 +165,12 @@ class Executor(Node):
         if self.core:record.update(tracker_state=self.core.state,profile_time_s=self.core.clock,
             profile_duration_s=self.core.profile.duration,terminal_trims=self.core.trims,
             reference_position_m=self.core.reference.tolist(),**self.core.diagnostic)
-        if self.state=='FAULT':record['health']=self.health
+        if self.state=='FAULT':
+            record['health']=self.health
+            record['feedback_wall_age_s']={k:time.monotonic()-v for k,v in self.arrivals.items()}
+            record['odom_age_s']=now-(self.odom.header.stamp.sec+self.odom.header.stamp.nanosec*1e-9) if self.odom else None
+            record['control_dt_s']=dt
+            record['operator_callbacks']=getattr(self,'operator_callback_stats',{})
         self.log.write(json.dumps(record)+'\n');self.log.flush();self.status.publish(String(data=json.dumps(record)))
     def run_step(self,dt):
         p,q=self.pose()

@@ -1,0 +1,116 @@
+{
+  "scope": "First long-run stop investigation; not full-area acceptance",
+  "tests": {
+    "total": 286,
+    "failed": 0
+  },
+  "limit_recovery": {
+    "passed": true,
+    "final_motion": "HOLD",
+    "limit_reconfiguration": true,
+    "blocks": 3,
+    "rows": 12288,
+    "continuous_segment": true,
+    "max_encoder_retrace_m": 0.005632619795664429,
+    "retrace_episodes": 2,
+    "scope": "Scripted stamped body commands, physical steering/drive and OptiX; not a production mission or full-area coverage",
+    "max_actual_steering_deg": 182.0339370040926,
+    "final_drive_rad_s": [
+      2.066779195431922e-14,
+      3.504535715310097e-14,
+      -3.4731954115583934e-14,
+      -2.0373201518560698e-14
+    ],
+    "image_quality_accepted": false,
+    "observed_band": {
+      "local_rows_inclusive": [
+        2829,
+        2851
+      ],
+      "global_tag_span": [
+        6925,
+        6947
+      ],
+      "encoder_travel_m": 0.008056640625,
+      "camera_position_change_norm_m": 0.0009681256015948873,
+      "duration_s": 0.9581783721280281,
+      "interpretation": "Encoder frontier continuity is correct; steering-period image geometry is not accepted."
+    }
+  },
+  "production_gui_run": {
+    "passed": true,
+    "blocks": 138,
+    "rows": 560923,
+    "requested_speed_m_s": 2.0,
+    "region_m": [
+      100.0,
+      2.0
+    ],
+    "steady_rtf": 0.9993027631317974,
+    "first_odometry_wall_s": 34.347722164002334,
+    "ros_archive_identical": true,
+    "pause_retains_frame": true,
+    "coverage_status": "NEEDS_RESCAN",
+    "final_state": "ACQUIRED",
+    "final_motion": "HOLD",
+    "late_static_display_received": {
+      "road": 4,
+      "plan": 15
+    }
+  },
+  "control_max_step_s": 0.040000000000020464,
+  "control_p99_step_s": 0.021000000000015007,
+  "gui_visual_check": "Host locked; no current window acceptance. Saved raw recovery image inspected.",
+  "localization_stop_root_cause_closed": false,
+  "remaining": [
+    "Source of prior 259 ms callback gap is not conclusively isolated",
+    "Steering-reconfiguration image band requires quality handling",
+    "100x10 m repeated coverage remains outstanding"
+  ],
+  "localization_fault_injection": {
+    "passed": true,
+    "case": "localization_timeout",
+    "injection": {
+      "time_s": 18.504,
+      "position_m": [
+        5.701466513167069,
+        -0.4963587131101275,
+        0.648420369303675
+      ],
+      "speed_m_s": 0.5000523348636855
+    },
+    "reaction_sim_s": 0.35999999999999943,
+    "stopping_distance_m": 0.30716334298236586,
+    "stopping_budget_m": 0.5500601864627074,
+    "blocks": 1,
+    "ros_archive_identical": true,
+    "final_state": "FAULT",
+    "final_reason": "STALE_OR_UNREADY_LOCALIZATION",
+    "final_motion": "HOLD",
+    "capture_active": false
+  },
+  "production_gui_repeat": {
+    "passed": true,
+    "blocks": 138,
+    "rows": 560783,
+    "requested_speed_m_s": 2.0,
+    "region_m": [
+      100.0,
+      2.0
+    ],
+    "steady_rtf": 0.9994741071899242,
+    "first_odometry_wall_s": 34.5300911359991,
+    "ros_archive_identical": true,
+    "pause_retains_frame": null,
+    "coverage_status": "NEEDS_RESCAN",
+    "final_state": "ACQUIRED",
+    "final_motion": "HOLD",
+    "late_static_display_received": {
+      "road": 4,
+      "plan": 15
+    },
+    "fault_records": 0
+  },
+  "repeat_control_max_step_s": 0.027999999999991587,
+  "repeat_control_p99_step_s": 0.021000000000000796
+}

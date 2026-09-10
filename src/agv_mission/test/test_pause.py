@@ -70,3 +70,24 @@ def test_stop_timeout_and_sim_clock_stall_are_faults():
     assert h.reason=='PAUSE_STOP_TIMEOUT'
     h=Harness();park(h);h.pause_tick(2,True,0,2)
     assert h.reason=='SIM_CLOCK_STALLED'
+
+
+def test_callback_gap_is_distinguished_from_localization_timeout():
+    import io,json
+    import pytest
+    for dt,healthy,expected in ((.259,False,'INVALID_CONTROL_TIMESTEP'),
+                                (.259,True,'INVALID_CONTROL_TIMESTEP'),
+                                (.02,False,'STALE_OR_UNREADY_LOCALIZATION')):
+        h=Harness();h.last_sim=h.now-dt;h.healthy=healthy
+        h.core=None;h.steps=[];h.health={'state':'READY'};h.arrivals={}
+        h.last_command=[.5,0,0];h.motion_reason='';h.log=io.StringIO()
+        h.odom.header=NS(stamp=NS(sec=0,nanosec=900000000))
+        h.capture=NS(error='',poll=lambda:None,enabled=True,active=True,
+                     heartbeat={},close_failed=False)
+        h.status=NS(publish=lambda message:None)
+        Executor.tick(h)
+        assert h.state=='FAULT' and h.reason==expected and h.cmd==[0,0,0]
+        record=json.loads(h.log.getvalue())
+        assert record['control_dt_s']==pytest.approx(dt)
+        assert record['health']['state']=='READY'
+        assert record['odom_age_s']==pytest.approx(.1)

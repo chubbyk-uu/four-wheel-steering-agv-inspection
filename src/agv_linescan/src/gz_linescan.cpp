@@ -124,7 +124,9 @@ class GzLineScan final: public gz::sim::System,
         config_["render_width"].as<size_t>(10240), config_["pixel_pitch_m"].as<double>(),
         config_["focal_length_m"].as<double>(),config_["nominal_width_m"].as<double>(),
         config_["ray_polynomial"].as<std::vector<double>>());
-    trigger_=std::make_unique<Trigger>(spacing_);
+    const auto encoderMode=config_["encoder_output_mode"].as<std::string>("strict");
+    if(encoderMode!="strict" && encoderMode!="position")throw std::runtime_error("invalid encoder output mode");
+    trigger_=std::make_unique<Trigger>(spacing_,encoderMode=="position");
     offset_=gz::math::Pose3d(config_["camera_x_m"].as<double>(),0,
         optics_->height-config_["base_nominal_height_m"].as<double>(),0,0,0);
     output_=std::filesystem::path(sdf->Get<std::string>("output_dir")) /
@@ -340,7 +342,10 @@ class GzLineScan final: public gz::sim::System,
 
   void Reset(const std::string &reason) {
     Json event={{"reason",reason},{"simulation_time_s",now_},{"discarded_pending_lines",pending_.size()}};
-    if(reason=="unsupported_scan_motion")event["motion_condition"]=scanMotion_;
+    if(reason=="unsupported_scan_motion" || reason=="direction change")event["motion_condition"]=scanMotion_;
+    event["encoder_output_mode"]=config_["encoder_output_mode"].as<std::string>("strict");
+    event["encoder_max_retrace_m"]=trigger_->MaxRetrace();
+    event["encoder_retrace_episodes"]=trigger_->RetraceEpisodes();
     std::ofstream(output_/"events.jsonl",std::ios::app)<<event.dump()<<'\n';
     std_msgs::msg::String message; message.data=event.dump(); statusPub_->publish(message);
     pending_.clear(); trigger_->Reset(); active_=false; holding_=false;
