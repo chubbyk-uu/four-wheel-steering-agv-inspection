@@ -54,3 +54,20 @@ def test_inspection_gate_uses_physical_wheel_limit_not_nominal_pass_speed():
     assert result['max_scan_speed_m_s']>.8+.12
     assert result['width']==4096 and result['block_rows']==4096
     assert result['focal_length_m']==camera['focal_length_m']
+
+
+def test_loaded_scene_rejects_forged_bounds_and_wrong_registration():
+    import pytest
+    from agv_mission.scene_bounds import scene_bounds,bind_request,check_request_scene
+    base=yaml.safe_load((Path(__file__).resolve().parents[1]/'config/rectangle_demo.yaml').read_text());base['road']['frame_id']='map'
+    road=scene_bounds(dict(transform='identity_world_baked',frame='world',inspection_bounds_xy_m=[0,100,-5,5],drivable_bounds_xy_m=[-8,108,-6.5,6.5],optical_valid_bounds_xy_m=[-9,109,-8,8]))
+    request=bind_request(base,road);check_request_scene(request,road)
+    assert base['drivable_bounds_xy_m']==[0,20,-5,5]
+    wrong=deepcopy(request);wrong['drivable_bounds_xy_m']=[-100,200,-20,20]
+    with pytest.raises(ValueError,match='exceed'):check_request_scene(wrong,road)
+    wrong=deepcopy(request);wrong['road']['origin_xyz_m']=[1,0,0]
+    with pytest.raises(ValueError,match='registration'):check_request_scene(wrong,road)
+    wrong=deepcopy(request);wrong['region']['length_m']=100
+    with pytest.raises(ValueError,match='region'):check_request_scene(wrong,road)
+    small=scene_bounds(dict(transform='identity_world_baked',frame='world',inspection_bounds_xy_m=[0,20,-5,5],optical_valid_bounds_xy_m=[-1.024,21.504,-6.144,6.144]))
+    with pytest.raises(ValueError,match='exceed'):check_request_scene(request,small)

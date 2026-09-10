@@ -1,0 +1,254 @@
+{
+  "date": "2026-09-10",
+  "scope": "20 m Concrete047A experimental runtime material recipe; not 100 m full-area acceptance",
+  "pixel_comparison": {
+    "tiles": 1056,
+    "all_color_normal_bytes_exact": true,
+    "bake_readback_p50_s": 0.0031764069990458665,
+    "bake_readback_p95_s": 0.0035594995001702046,
+    "bake_readback_max_s": 0.009370583999043447,
+    "source_init_s": 0.6503649579990451,
+    "device_source_and_scratch_bytes": 642026516
+  },
+  "storage": {
+    "recipe_payload_bytes": 629323008,
+    "compact_scene_logical_bytes": 921315786,
+    "reference_high_resolution_texels_bytes": 13339510272,
+    "includes": "Compact scene includes source payloads, geometry, display maps and manifest; excludes capture images. Local unchanged files hard linked."
+  },
+  "paired_stream": {
+    "reference": {
+      "active_pipeline_lines_per_second": 22025.399111905397,
+      "allocated_device_bytes": 582587760,
+      "backend": "optix_streamed_material_fixture",
+      "batch_p99_seconds": 0.013448288,
+      "batch_rows": 256,
+      "batch_seconds_max": 0.016655025,
+      "block_receive_interval_seconds_max": 0.45733567699999966,
+      "blocks": 96,
+      "boundary_batch_seconds_max": 0.015085644,
+      "boundary_batches": 289,
+      "cold_gpu_warmup_seconds": 0.358778968,
+      "continuous_delay_budget": {
+        "batch_seconds": 0.022857142857142857,
+        "block_interval_seconds": 0.5485714285714286,
+        "excludes_explicit_lane_start_warmup": false
+      },
+      "device": "OptiX GPU",
+      "effective_lines_per_wall_second": 11199.931090209138,
+      "exposure_samples": 3,
+      "file_fsync": true,
+      "fixture_path": {
+        "end_x_m": 17.0,
+        "pass_blocks": 10,
+        "start_x_m": 2.0,
+        "track_y_m": 0.0
+      },
+      "full_acceptance_passed": false,
+      "generation_readback_assembly_seconds": 13.200969261000003,
+      "invalid_pixels": 0,
+      "lines": 393216,
+      "note": "Shared road geometry, streamed color+normal, roughness 0.60, 16 LED shadow rays per exposure, sensor noise, readback, raw image fsync and separate ROS byte verification. Body/LED fixture, no wheel dynamics or GZ physics; instant direction reversal at fixture path endpoints. No warmup excluded at reversal. No correction or stitching in this benchmark. OS file cache may be warm.",
+      "ros_acknowledged_blocks": 96,
+      "ros_delivery_included": true,
+      "ros_publish_receive_ack_seconds": 3.138583991,
+      "rows_per_block": 4096,
+      "target_lines_per_second": 11200.0,
+      "tiles": {
+        "batch_wait_seconds_max": 5.2584e-05,
+        "bytes_read": 15310119744,
+        "cache_slots": 32,
+        "cold_warm_seconds": 0.327420182,
+        "device_payload_bytes": 404232320,
+        "evictions": 1188,
+        "explicit_prewarm_calls": 0,
+        "explicit_prewarm_seconds_total": 0.0,
+        "generation_seconds_max": 0.0,
+        "generation_seconds_max_after_warm": 0.0,
+        "generation_seconds_total": 0.0,
+        "load_seconds_max": 0.022323196,
+        "load_seconds_total": 6.471503149000006,
+        "read_seconds_max": 0.016056426,
+        "read_seconds_total": 2.3128327360000007,
+        "required_tile_misses_after_warm": 0,
+        "runtime_recipe": false,
+        "sha256_bytes": 1869552576,
+        "sha256_seconds_max": 0.005402184,
+        "sha256_seconds_total": 0.7714778160000003,
+        "slot_pins": 0,
+        "tile_loads": 1212,
+        "upload_seconds_max": 0.007119106,
+        "upload_seconds_total": 3.368070013000004,
+        "verification_reuse_files": 2128
+      },
+      "wall_seconds": 35.108787441,
+      "width": 4096,
+      "write_seconds": 1.4960479760000003,
+      "streamed_raw_capture_11khz_passed": true
+    },
+    "runtime_recipe": {
+      "active_pipeline_lines_per_second": 21527.82267242344,
+      "allocated_device_bytes": 1224614276,
+      "backend": "optix_streamed_material_fixture",
+      "batch_p99_seconds": 0.013400147,
+      "batch_rows": 256,
+      "batch_seconds_max": 0.015357112,
+      "block_receive_interval_seconds_max": 0.46829268800000534,
+      "blocks": 96,
+      "boundary_batch_seconds_max": 0.015357112,
+      "boundary_batches": 289,
+      "cold_gpu_warmup_seconds": 0.061795848,
+      "continuous_delay_budget": {
+        "batch_seconds": 0.022857142857142857,
+        "block_interval_seconds": 0.5485714285714286,
+        "excludes_explicit_lane_start_warmup": false
+      },
+      "device": "OptiX GPU",
+      "effective_lines_per_wall_second": 11199.496238720738,
+      "exposure_samples": 3,
+      "file_fsync": true,
+      "fixture_path": {
+        "end_x_m": 17.0,
+        "pass_blocks": 10,
+        "start_x_m": 2.0,
+        "track_y_m": 0.0
+      },
+      "full_acceptance_passed": false,
+      "generation_readback_assembly_seconds": 13.565750533999996,
+      "invalid_pixels": 0,
+      "lines": 393216,
+      "note": "Shared road geometry, streamed color+normal, roughness 0.60, 16 LED shadow rays per exposure, sensor noise, readback, raw image fsync and separate ROS byte verification. Body/LED fixture, no wheel dynamics or GZ physics; instant direction reversal at fixture path endpoints. No warmup excluded at reversal. No correction or stitching in this benchmark. OS file cache may be warm.",
+      "ros_acknowledged_blocks": 96,
+      "ros_delivery_included": true,
+      "ros_publish_receive_ack_seconds": 2.9611312009999993,
+      "rows_per_block": 4096,
+      "target_lines_per_second": 11200.0,
+      "tiles": {
+        "batch_wait_seconds_max": 4.6367e-05,
+        "bytes_read": 0,
+        "cache_slots": 32,
+        "cold_warm_seconds": 0.032796943,
+        "device_payload_bytes": 1046258836,
+        "evictions": 1186,
+        "explicit_prewarm_calls": 0,
+        "explicit_prewarm_seconds_total": 0.0,
+        "generation_seconds_max": 0.00912816,
+        "generation_seconds_max_after_warm": 0.00912816,
+        "generation_seconds_total": 4.939625584,
+        "load_seconds_max": 0.009129877,
+        "load_seconds_total": 4.941049354000006,
+        "read_seconds_max": 0.0,
+        "read_seconds_total": 0.0,
+        "required_tile_misses_after_warm": 0,
+        "runtime_recipe": true,
+        "sha256_bytes": 0,
+        "sha256_seconds_max": 0.0,
+        "sha256_seconds_total": 0.0,
+        "slot_pins": 0,
+        "tile_loads": 1210,
+        "upload_seconds_max": 0.009129699,
+        "upload_seconds_total": 4.940872085000004,
+        "verification_reuse_files": 0
+      },
+      "wall_seconds": 35.110150637,
+      "width": 4096,
+      "write_seconds": 1.7225718769999998,
+      "streamed_raw_capture_11khz_passed": true
+    },
+    "all_96_pgm_bytes_identical": true
+  },
+  "gui": {
+    "passed": true,
+    "capture_passed": true,
+    "gui_rviz": true,
+    "blocks": 6,
+    "rows": 19718,
+    "ros_archive_identical": true,
+    "pause_retains_frame": true,
+    "requested_speed_m_s": 0.8,
+    "region_m": [
+      3.0,
+      2.0
+    ],
+    "discarded_tail_rows": [],
+    "actual_peak_speed_m_s": 0.8438338502008742,
+    "observed_rtf": 0.9982652887802809,
+    "coverage_status": "ESTIMATED_COMPLETE",
+    "coverage_tracks": [
+      {
+        "track_id": 0,
+        "direction": 1,
+        "assigned_road_y_m": [
+          1.5,
+          2.5
+        ],
+        "estimated_covered_along_m": [
+          [
+            0.0,
+            3.0
+          ]
+        ],
+        "unverified_along_m": [],
+        "excluded_footprint_tags": 0,
+        "max_lateral_allowance_m": 0.18176356703009727,
+        "quality_flags": []
+      },
+      {
+        "track_id": 1,
+        "direction": -1,
+        "assigned_road_y_m": [
+          2.5,
+          3.5
+        ],
+        "estimated_covered_along_m": [
+          [
+            0.0,
+            3.0
+          ]
+        ],
+        "unverified_along_m": [],
+        "excluded_footprint_tags": 0,
+        "max_lateral_allowance_m": 0.17472244511523333,
+        "quality_flags": []
+      }
+    ],
+    "final_state": "ACQUIRED",
+    "final_motion": "HOLD",
+    "wheel_steering_range_rad": {
+      "fl": [
+        -3.1611008024582885,
+        0.014087029101575202
+      ],
+      "fr": [
+        -3.1404558596235956,
+        2.3171347596806776e-19
+      ],
+      "rl": [
+        -3.1611008024589027,
+        5.180702470479934e-21
+      ],
+      "rr": [
+        -1.5848879498806936,
+        0.014088806797931896
+      ]
+    }
+  },
+  "resources": {
+    "interval_s": 2.0,
+    "samples": 77,
+    "errors": [
+      "NoSuchProcess: process PID not found (pid=7862)"
+    ],
+    "scope": "Owned Linux process tree RSS (shared pages may repeat) and PSS; GPU usage is whole device, includes desktop; sampled peaks only",
+    "peak_tree_rss_bytes": 5713944576,
+    "peak_tree_pss_bytes": 4878120960,
+    "peak_device_used_bytes": 4456448000
+  },
+  "limitations": [
+    "GPU and host resource values are 2-second sampled peaks, not absolute maxima",
+    "Resource monitor recorded launch-process disappearance during cleanup; parent-exit handling subsequently fixed and smoke tested",
+    "Observed actual RViz window: textured road, double yellow lines, white edges, coherent robot and expected partial-frame preview; no new GZ screenshot captured",
+    "100 m compact generation, long-run full coverage and repeated fault acceptance remain pending",
+    "Cold initial JIT observed 155.8 ms in first integrated run; warm steady-state timing reported separately"
+  ]
+}

@@ -34,3 +34,6 @@ RViz面板改动后运行`tools/validate_operator_session.py --output 新目录 
 面板实际观察需包含同源路面、双黄线、白边线、青色道路边界及移动时坐标固定；小窗口是缩略图，原图尺寸另外显示。保存的满帧必须4096×4096，尾图至少1000行，ROS像素与PGM逐字节核对。验证器另保存逐轮转角与真值速度/时钟供诊断。
 
 同一工具加`--fault-probe`时，正常采集后另开新任务，在运动中注入`unsupported_scan_motion`状态事件，要求FAULT、HOLD、采集关闭；它验证任务层保护，不伪称真实渲染器故障。测试主流程通过但后续探针未完成时，结果`passed`保持false。
+
+
+2026-09-10按需材质试片：以`--scene local_data/runtime_recipe_scene/manifest.json --start-x 11 --start-y 1.5 --spawn-x 9.5 --length 3 --width 2 --speed .8 --no-cancel-probe`运行上述GUI验证器，包含暂停恢复。实际查看RViz窗口，确认路面、双黄线/白边线、边界和机器人显示；运行中显示4096×1670尾图，宽矩形预览符合实际行数。6张19718行原图与ROS一致，最终HOLD。GZ参与联合运行但本次未取得独立GZ窗口截图，未重新验收鼠标交互或全部动态部件抖动；几何/显示贴图未修改。完整20 m材质与旧高清1056块逐字节相同，96张独立OptiX采图亦逐字节相同，见[报告](../results/runtime_material_recipe_probe.json)。此项不代替100 m、10 km/h或重复异常验收。

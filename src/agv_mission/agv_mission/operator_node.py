@@ -24,6 +24,7 @@ from .execution_node import Executor
 from .capture_audit import audit_capture
 from .coverage import combine
 from .road_display import road_messages
+from .scene_bounds import bind_request,check_request_scene
 
 TERMINAL={'ACQUIRED','COMPLETED','CANCELED','FAULT'}
 
@@ -58,6 +59,7 @@ class Operator(Node):
         self.navigation=Path(self.declare_parameter('navigation_dir','').value)
         road_path=self.declare_parameter('road_display','').value
         self.road=json.loads(Path(road_path).read_text()) if road_path else None
+        if self.road:self.request=bind_request(self.request,self.road)
         self.pool=ThreadPoolExecutor(max_workers=1);self.ids=set();self.mode='';self.mode_wall=0.
         self.create_subscription(String,'/motion_state',self.motion,10)
         self.create_subscription(String,'/mission/status',lambda m:setattr(self,'last',json.loads(m.data)),20)
@@ -99,11 +101,11 @@ class Operator(Node):
                 self.pending=client.call_async(Trigger.Request());self.pending_wall=time.monotonic();self.message='正在处理：'+action;return
             if not self.editable():raise ValueError('运行中不能更换任务；请先取消并等待停车和归档')
             if action=='load':
-                candidate=yaml.safe_load(Path(command['path']).read_text());plan(candidate,self.vehicle)
+                candidate=yaml.safe_load(Path(command['path']).read_text());plan(candidate,self.vehicle);check_request_scene(candidate,self.road)
                 if candidate['road']['frame_id']!='map':raise ValueError('执行任务必须使用map坐标系')
                 self.release();self.request=candidate;self.preview=None;self.clear_preview();self.message='已载入，请预览轨迹'
             elif action in ('preview','save','prepare'):
-                candidate=edited_request(self.request,command.get('fields',{}));preview=plan(candidate,self.vehicle)
+                candidate=edited_request(self.request,command.get('fields',{}));preview=plan(candidate,self.vehicle);check_request_scene(candidate,self.road)
                 if action=='save':
                     with Path(command['path']).open('x') as f:yaml.safe_dump(candidate,f,sort_keys=False,allow_unicode=True)
                     self.message='请求已保存'
@@ -139,7 +141,8 @@ class Operator(Node):
                 if not self.coverage:raise ValueError('先运行或载入覆盖审计')
                 candidates=self.coverage.get('rescan_candidates',[]);index=int(command['index'])
                 if index<0 or index>=len(candidates) or candidates[index]['status']!='PREVIEW_ONLY':raise ValueError('该补扫请求不可执行')
-                self.release();self.request=deepcopy(candidates[index]['request']);self.preview=plan(self.request,self.vehicle);self.show_preview();self.message='补扫已预览；准备后作为新任务执行'
+                candidate=deepcopy(candidates[index]['request']);preview=plan(candidate,self.vehicle);check_request_scene(candidate,self.road)
+                self.release();self.request=candidate;self.preview=preview;self.show_preview();self.message='补扫已预览；准备后作为新任务执行'
             else:raise ValueError('unknown action')
             self.ok=True
         except Exception as exc:self.ok=False;self.message=str(exc)

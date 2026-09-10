@@ -191,6 +191,17 @@ def validate(manifest):
                         raise ValueError('tiled material file contract mismatch')
             if len(seen)!=nx*ny:raise ValueError('missing material tile entry')
             # Content hashes are checked in the loader before each tile becomes GPU-ready.
+        elif material['schema']=='agv.ground_material.recipe.v1':
+            entry=material['recipe'];file=root/entry['file']
+            if file.parent.resolve()!=root or digest(file)!=entry['sha256']:raise ValueError('runtime recipe integrity mismatch')
+            recipe=json.loads(file.read_text())
+            if recipe['schema']!='agv.material.recipe.probe.v1':raise ValueError('unsupported runtime recipe')
+            for a,b in [('tiles_x','nx'),('tiles_y','ny'),('core_pixels','core'),('gutter_pixels','gutter'),('texel_m','texel')]:
+                if material[a]!=recipe[b]:raise ValueError('runtime recipe grid mismatch')
+            if material['origin_xy_m']!=[recipe['ox'],recipe['oy']]:raise ValueError('runtime recipe origin mismatch')
+            for name,h in recipe['payload_sha256'].items():
+                payload=root/name
+                if payload.parent.resolve()!=root or digest(payload)!=h:raise ValueError('runtime recipe payload integrity mismatch')
         else:raise ValueError('unsupported ground material')
         for model in models:
             asset=assets[model.get('name')]

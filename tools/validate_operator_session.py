@@ -11,18 +11,21 @@ from sensor_msgs.msg import Image,JointState
 from nav_msgs.msg import Odometry
 from PIL import Image as PilImage
 from validate_rectangle_execution import stop_tree
+from process_resources import ResourceMonitor
 
 
 def main():
     p=argparse.ArgumentParser();p.add_argument('--output',type=Path,required=True);p.add_argument('--inspect-seconds',type=float,default=0)
     p.add_argument('--speed',type=float,default=.5);p.add_argument('--length',type=float,default=3.);p.add_argument('--width',type=float,default=2.)
-    p.add_argument('--start-x',type=float,default=6.);p.add_argument('--spawn-x',type=float,default=3.)
+    p.add_argument('--start-x',type=float,default=6.);p.add_argument('--start-y',type=float);p.add_argument('--spawn-x',type=float,default=3.)
+    p.add_argument('--scene',type=Path,default=Path('assets/road/baked_fullwidth_20m_v1/manifest.json'));p.add_argument('--startup-timeout',type=float,default=300.);p.add_argument('--run-timeout',type=float,default=400.)
     p.add_argument('--fault-probe',action='store_true');p.add_argument('--no-pause',action='store_true');p.add_argument('--short-tail-probe',action='store_true');p.add_argument('--no-cancel-probe',action='store_true')
     a=p.parse_args()
     if a.short_tail_probe:a.no_pause=True;a.no_cancel_probe=True
     a.output.mkdir(parents=True,exist_ok=False);session=a.output/'session'
     os.environ.update(ROS_DOMAIN_ID=str(100+os.getpid()%80),GZ_PARTITION='agv_operator_'+str(os.getpid()))
-    log=(a.output/'simulation.log').open('w');sim=subprocess.Popen(['ros2','launch','agv_bringup','inspection.launch.py','session_dir:='+str(session.resolve()),'spawn_x:='+str(a.spawn_x)],stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
+    log=(a.output/'simulation.log').open('w');sim=subprocess.Popen(['ros2','launch','agv_bringup','inspection.launch.py','session_dir:='+str(session.resolve()),'spawn_x:='+str(a.spawn_x),'scene_manifest:='+str(a.scene.resolve())],stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
+    resources=ResourceMonitor(sim.pid,a.output/'resources.jsonl')
     rclpy.init();n=Node('operator_evaluator');latest={};images={};joints=[];states=[];actual=[]
     def status(m):
         latest.clear();latest.update(json.loads(m.data));states.append(latest.get('status',{}))
@@ -49,9 +52,9 @@ def main():
         wait(lambda:latest.get('response_id')==identity and not latest.get('busy'))
         assert latest['ok']==expected,latest['message']
     try:
-        wait(lambda:latest.get('editable') and pub.get_subscription_count()>0)
+        wait(lambda:latest.get('editable') and pub.get_subscription_count()>0,a.startup_timeout)
         send('preview',expected=False,fields={'length':100.})
-        send('preview',fields={'length':a.length,'width':a.width,'start_x':a.start_x,'start_y':-a.width/2,'speed':a.speed})
+        send('preview',fields={'length':a.length,'width':a.width,'start_x':a.start_x,'start_y':-a.width/2 if a.start_y is None else a.start_y,'speed':a.speed})
         send('save',path=str((a.output/'saved_request.yaml').resolve()))
         send('load',path=str((a.output/'saved_request.yaml').resolve()))
         send('preview')
@@ -67,7 +70,7 @@ def main():
             send('preview',expected=False,fields={'length':4.})
             send('pause');wait(lambda:latest['status']['state']=='PAUSED');before=len(images);delay(3);assert len(images)==before
             send('resume')
-        wait(lambda:latest['status']['state'] in ('ACQUIRED','FAULT'),400)
+        wait(lambda:latest['status']['state'] in ('ACQUIRED','FAULT'),a.run_timeout)
         assert latest['status']['state']=='ACQUIRED',latest['status']
         wait(lambda:latest.get('editable'));send('audit');assert latest.get('coverage')
         delay(2);blocks=sorted(session.glob('raw/*/block_*.json'))
@@ -125,5 +128,5 @@ def main():
             until=time.monotonic()+12
             while time.monotonic()<until and latest.get('status',{}).get('motion_state')!='HOLD':rclpy.spin_once(n,timeout_sec=.02)
             (a.output/'cleanup_stop.json').write_text(json.dumps(latest.get('status',{})))
-        n.destroy_node();rclpy.try_shutdown();stop_tree(sim);log.close()
+        n.destroy_node();rclpy.try_shutdown();stop_tree(sim);resources.close();log.close()
 if __name__=='__main__':main()

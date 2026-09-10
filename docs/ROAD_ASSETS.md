@@ -61,3 +61,32 @@ python3 tools/check_full_road.py assets/road/baked_fullwidth_100m_v1/manifest.js
 100×10 m仍是采集区；实体缓冲区扩展至116×13 m，高清光学域再大一圈。缓冲区同样烘焙颜色/法线；它没有延长采集ROI，也不允许规划器把所有光学裙边当成可行驶范围。`--workers`限定1～4，各线程写独立图块、共享只读材质布局，像素结果不随并行数改变。最长显示分区约5×7.68 m，GZ保持约4 mm显示图，RViz单块最长边1024像素。默认不更换已有20 m巡检入口。
 
 进度写在生成目录`bake_progress.json`，完整成功后才产生通过共享场景验证的manifest。中断后只可在代码、源图和recipe一致时使用`--reuse-tiles`；新旧烘焙器哈希不匹配时使用新目录，不绕过校验。高清文件采用临时文件完成后重命名，结束时逐邻块检查颜色及法线gutter完全一致。独立检查工具再次核对全部原始瓦片哈希、分区覆盖、显示尺寸及显式碰撞代理。
+
+
+## 实验性按需GPU材质（2026-09-10）
+
+20 m对照试片已验证，默认入口暂不切换。无需新增SDK；现有CUDA/OptiX构建会包含`agv_runtime_material`。需要先按上文恢复可对照的20 m资产和Concrete047A源图，然后运行：
+
+```bash
+python3 tools/create_recipe_scene.py \
+  --scene assets/road/baked_fullwidth_20m_v1/manifest.json \
+  --output local_data/runtime_recipe_scene
+ros2 launch agv_bringup sim.launch.py rviz:=true \
+  scene_manifest:=local_data/runtime_recipe_scene/manifest.json spawn_x:=6
+```
+
+工具复用原几何/显示资产并导出源材质配方；输出目录必须不存在，当前使用本地硬链接，因此输出与参考资产须在同一文件系统。逻辑场景文件完整，不依赖原目录的高清瓦片；运行期间不得改写共享源文件。移到其他机器时应复制全部输出文件。`local_data`、源图和生成资产不提交Git。
+
+独立全瓦片复现（先建立输出目录供编译，配方由上面的场景生成工具提供）：
+
+```bash
+mkdir -p local_data/recipe_check
+nvcc -shared -Xcompiler=-fPIC --fmad=false -O3 -std=c++17 -arch=sm_75 \
+  src/agv_linescan/src/optix/runtime_material.cu -lcrypto \
+  -o local_data/recipe_check/libruntime_material.so
+python3 tools/probe_runtime_material.py \
+  --output local_data/recipe_compare \
+  --library local_data/recipe_check/libruntime_material.so --all --repeats 1
+```
+
+比较工具会另导出一份配方，检查所有颜色/法线字节，差异非零即失败。当前配方特化于既有Concrete047A、标线与AI裂缝规则，并非通用材质编辑器；更改底材/标线/裂缝算法后必须重新导出并复核像素。浮点融合关闭以复现CPU参考量化，不宜自行开启fast-math。完整性能、资源边界及下一步见[试片结果](FULL_ROAD_ACCEPTANCE.md#gpu按需材质试片结果2026-09-10)。

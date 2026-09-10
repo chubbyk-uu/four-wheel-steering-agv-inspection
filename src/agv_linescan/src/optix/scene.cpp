@@ -77,7 +77,7 @@ OptixScene::OptixScene(const std::vector<float>& rays,const std::string& scene,c
  auto vertices=LoadScene(scene);auto manifest=ReadJson(scene);std::vector<float> reflectance;
  if(manifest.contains("ground_material")){
   const auto& m=manifest.at("ground_material");
-  if(m.at("schema")=="agv.ground_material.tiles.v1"){
+  if(m.at("schema")=="agv.ground_material.tiles.v1"||m.at("schema")=="agv.ground_material.recipe.v1"){
    s.params.roughness=m.value("roughness",.60f);
    if(!std::isfinite(s.params.roughness)||s.params.roughness<.1f||s.params.roughness>1)throw std::runtime_error("invalid roughness");
    size_t offset=0;
