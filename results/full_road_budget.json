@@ -1,0 +1,108 @@
+{
+  "schema": "agv.full_road_budget.v1",
+  "status": "ESTIMATE_NOT_RUNTIME_ACCEPTANCE",
+  "road": {
+    "inspection_bounds_xy_m": [
+      0.0,
+      100.0,
+      -5.0,
+      5.0
+    ],
+    "drivable_bounds_xy_m": [
+      -8.0,
+      108.0,
+      -6.5,
+      6.5
+    ],
+    "optical_valid_bounds_xy_m": [
+      -9.216000000000001,
+      109.05600000000001,
+      -7.68,
+      7.68
+    ],
+    "tiles_x": 231,
+    "tiles_y": 30,
+    "core": 2048,
+    "gutter": 2,
+    "texel_m": 0.00025,
+    "texture_bytes": 87540536160
+  },
+  "non_acquisition_end_buffer_m": 8.0,
+  "non_acquisition_side_buffer_m": 1.5,
+  "nominal_swept_bounds_xy_m": [
+    -7.572530864197532,
+    107.57253086419753,
+    -6.0,
+    6.0
+  ],
+  "tracking_allowance_m": 0.1,
+  "construction_slack_m": 0.25,
+  "track_count": 10,
+  "track_centers_y_m": [
+    -4.5,
+    -3.5,
+    -2.5,
+    -1.5,
+    -0.5,
+    0.5,
+    1.5,
+    2.5,
+    3.5,
+    4.5
+  ],
+  "speed_m_s": 2.777777777777778,
+  "trigger_hz": 7585.185185185186,
+  "lead_m": 4.922530864197531,
+  "turn_runout_m": 7.222530864197531,
+  "first_entry_pose": {
+    "position": [
+      -6.072530864197532,
+      -4.5,
+      0.65
+    ],
+    "orientation_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ]
+  },
+  "total_base_translation_m": 1128.1506172839506,
+  "raw_output_bytes_per_run_budget": 11768942592,
+  "raw_output_basis": "10 passes, lead + ROI + gate end + 0.20m/track slack; no rescan, ROS bag or TIFF",
+  "disk": {
+    "texture_bytes": 87540536160,
+    "source_geometry_display_temporary_allowance_bytes": 16106127360,
+    "three_runs_plus_one_full_rescan_bytes": 47075770368,
+    "total_new_bytes_budget": 150722433888,
+    "note": "Existing assets/captures excluded; no raw duplicate ROS bag; retain additional free space"
+  },
+  "gpu": {
+    "texture_cache_bytes": 404227584,
+    "gz_color_normal_rgba_mip_estimate_bytes": 1211105280,
+    "rviz_rgba_mip_upper_bound_bytes": 268435456,
+    "static_geometry_bvh_scratch_allowance_bytes": 2147483648,
+    "camera_output_queue_robot_allowance_bytes": 536870912,
+    "driver_windows_gui_allowance_bytes": 3221225472,
+    "total_operating_ceiling_bytes": 10737418240,
+    "note": "Texture-cache bytes exact; other categories estimates/ceilings, not measured. OptiX currently retains GAS build scratch."
+  },
+  "host": {
+    "bake_rss_ceiling_bytes": 12884901888,
+    "runtime_rss_ceiling_bytes": 21474836480,
+    "note": "Resident process memory, not OS reclaimable file cache; monitor actual peaks; bake and simulation separately"
+  },
+  "geometry": {
+    "reference_20m_triangles": 1522958,
+    "estimated_100m_triangles": 8000000,
+    "note": "Linear extrapolation plus apron; actual generated counts and BVH allocation required"
+  },
+  "acceptance_pending": [
+    "asset hashes and shared gutters",
+    "actual GZ/RViz road alignment",
+    "GPU/host memory and cache under long motion",
+    "100x10 coverage and rescan",
+    "repeated runs and fault matrix",
+    "independent 11 kHz"
+  ]
+}

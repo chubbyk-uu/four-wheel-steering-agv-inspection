@@ -1,0 +1,32 @@
+schema: agv.rectangle.request.v1
+mission_id: full_road_100x10
+road:
+  frame_id: map
+  origin_xyz_m:
+  - 0.0
+  - 0.0
+  - 0.0
+  yaw_rad: 0.0
+  surface: flat
+region:
+  start_xy_m:
+  - 0.0
+  - -5.0
+  length_m: 100.0
+  width_m: 10.0
+track_spacing_m: 1.0
+scan_speed_m_s: 2.777777777777778
+coverage_error_m: 0.1
+drivable_bounds_xy_m:
+- -8.0
+- 108.0
+- -6.5
+- 6.5
+optical_bounds_xy_m:
+- -9.216000000000001
+- 109.05600000000001
+- -7.68
+- 7.68
+longitudinal_margin_m: 0.1
+vehicle_sweep_radius_m: 1.5
+sample_step_m: 0.1
