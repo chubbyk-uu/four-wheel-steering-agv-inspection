@@ -45,3 +45,19 @@ python3 tools/benchmark_optix_stream.py \
 ```
 
 10 km/h、20 m、GUI/RViz整车另测：14块/54,605行、ROS与归档完全一致、零必需缓存缺失、最终HOLD；最大缓存等待0.050 ms。不过当前环境实时率约0.51，隔离构建修改前版本同条件约0.52，均未复现历史0.99。后续已定位并修复采集位姿插值的重复YAML解析，实时率恢复0.996，见[修复记录](issues/SCAN_STABILITY.md)。仍不能把采集完整性passed解释为实时验收passed。详见[完整对照](../results/review_material_cache.json)。
+
+## 100×10 m完整采集区（生成接入中，2026-09-10）
+
+空间/资源依据见[全区域预算](FULL_ROAD_ACCEPTANCE.md)。用户提出磁盘成本后，全量烘焙已停止；下面命令保留作未压缩基准，不是当前推荐继续执行的步骤。先验证该文档中的材质复用/按需生成方案；20 m快速回归资产保留：
+
+```bash
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python3 tools/generate_streaming_road.py \
+  --output assets/road/baked_fullwidth_100m_v1 --length 100 --full-width \
+  --end-buffer 8 --side-buffer 1.5 --workers 4
+python3 tools/check_full_road.py assets/road/baked_fullwidth_100m_v1/manifest.json \
+  --output results/full_road_asset_integrity.json
+```
+
+100×10 m仍是采集区；实体缓冲区扩展至116×13 m，高清光学域再大一圈。缓冲区同样烘焙颜色/法线；它没有延长采集ROI，也不允许规划器把所有光学裙边当成可行驶范围。`--workers`限定1～4，各线程写独立图块、共享只读材质布局，像素结果不随并行数改变。最长显示分区约5×7.68 m，GZ保持约4 mm显示图，RViz单块最长边1024像素。默认不更换已有20 m巡检入口。
+
+进度写在生成目录`bake_progress.json`，完整成功后才产生通过共享场景验证的manifest。中断后只可在代码、源图和recipe一致时使用`--reuse-tiles`；新旧烘焙器哈希不匹配时使用新目录，不绕过校验。高清文件采用临时文件完成后重命名，结束时逐邻块检查颜色及法线gutter完全一致。独立检查工具再次核对全部原始瓦片哈希、分区覆盖、显示尺寸及显式碰撞代理。

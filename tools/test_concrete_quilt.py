@@ -58,3 +58,13 @@ def test_pbr_rejects_mismatched_source_resolution():
     q=make()
     with pytest.raises(ValueError,match='source dimensions'):
         q.sample([0],[0],source=q.source[::2])
+
+
+def test_shifted_origin_preserves_texture_and_covers_negative_apron():
+    original=make();shifted=make();shifted.origin=(original.origin[0]-9.216,original.origin[1])
+    xs=np.linspace(0,2,50);ys=np.linspace(-1,1,50)
+    np.testing.assert_allclose(original.sample(xs,ys),shifted.sample(xs-9.216,ys),atol=1e-7)
+    q=ConcreteQuilt(original.source,original.lut,2,2,.2,source_width=2.1,seed=17,
+                   guide_side=64,patch=40,overlap=12,candidates=8,feather=1,origin_x=-9.216)
+    assert q.origin==pytest.approx((-9.416,-1.2))
+    np.testing.assert_allclose(original.sample(xs,ys),q.sample(xs-9.216,ys),atol=1e-7)

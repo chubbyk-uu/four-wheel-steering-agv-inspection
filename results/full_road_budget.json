@@ -69,12 +69,13 @@
   },
   "total_base_translation_m": 1128.1506172839506,
   "raw_output_bytes_per_run_budget": 11768942592,
+  "metadata_navigation_bytes_per_run_budget": 3523215360,
   "raw_output_basis": "10 passes, lead + ROI + gate end + 0.20m/track slack; no rescan, ROS bag or TIFF",
   "disk": {
     "texture_bytes": 87540536160,
     "source_geometry_display_temporary_allowance_bytes": 16106127360,
-    "three_runs_plus_one_full_rescan_bytes": 47075770368,
-    "total_new_bytes_budget": 150722433888,
+    "three_runs_plus_one_full_rescan_bytes": 61168631808,
+    "total_new_bytes_budget": 164815295328,
     "note": "Existing assets/captures excluded; no raw duplicate ROS bag; retain additional free space"
   },
   "gpu": {

@@ -28,9 +28,10 @@ python3 -m pytest tools/test_full_road_budget.py -q
 |---|---|---|
 | 高清纹理 | 6930块，87.54 GB | 0.25 mm/纹素，R8颜色＋RG8法线，含真实邻域gutter |
 | 一次全区原图 | 约11.77 GB | Mono8，包括加速区/关门余量，不含补扫或重复ROS bag |
-| 三次采集＋一次全量补扫 | 约47.08 GB | 为反复验收留空间，并非补扫必然这么多 |
+| 元数据与导航 | 每次约3.52 GB预留 | 当前每张图重复携带完整场景清单，不能只预算像素 |
+| 三次采集＋一次全量补扫 | 约61.17 GB | 为反复验收留空间，并非补扫必然这么多 |
 | 源图/几何/显示图/临时文件 | 15 GiB预留 | 超过后重估，不静默超预算 |
-| 新增磁盘合计 | 约150.72 GB | 不含已有资产；保留额外空闲空间 |
+| 新增磁盘合计 | 约164.82 GB | 不含已有资产；保留额外空闲空间 |
 | 高清GPU纹理缓存 | 385.5 MiB | 32槽，大小不随路长增长；不是总显存 |
 | GZ颜色＋法线显示图 | 约1.21 GB | 4 mm显示采样、两张RGBA及mipmap的估计，不是实测 |
 | RViz显示图 | ≤256 MiB | 每显示分区最长边1024，RGBA+mipmap保守上界 |
@@ -43,3 +44,40 @@ python3 -m pytest tools/test_full_road_budget.py -q
 本次环境检查空闲磁盘约886 GB、可用内存约30 GiB，GPU总显存约16 GB，静态预算允许继续。容量足够不等于跨块延迟、实时率或采集可靠性通过。预算数据见[JSON](../results/full_road_budget.json)，请求见[100×10任务](../src/agv_mission/config/rectangle_100x10.yaml)。
 
 现有20 m纹理继续用于快速回归。新场景使用独立目录，源材质/AI分叉裂缝不重绘。需要同时接入场景边界与RViz缓冲区显示，防止面板沿用20 m示例边界。完整阶段门槛仍以[实施计划第6节](MISSION_IMPLEMENTATION_PLAN.md#6-10010-m全区域采集与稳定性验收)为准；预算验证不是采集验收。
+
+## 存储路线复核（2026-09-10，用户提出磁盘成本问题）
+
+165 GB是未压缩道路＋多次验收档案＋临时余量的预算，不是最低需求。当前全量烘焙已停止，已完成的约2940/6930块保留在本地，不删除可恢复数据；未产生完整场景manifest，不可作为可运行100 m场景。格式/材质方案完成小样验证前，不继续扩充这个未压缩基准。
+
+公开的成熟实现可参考：
+
+- [GDAL GeoTIFF](https://gdal.org/en/stable/drivers/raster/gtiff.html)支持分块、BigTIFF、Zstd和横向差分预测；[COG](https://gdal.org/en/stable/drivers/raster/cog.html)进一步组织分块/概览以便范围读取。容器本身不会减少像素总量；概览还增加存储，不能简单换扩展名就宣称降到几GB。
+- [Unreal虚拟纹理缓存池](https://dev.epicgames.com/documentation/en-us/unreal-engine/virtual-texture-memory-pools-in-unreal-engine)使用固定物理页池；当前32槽流送已经采用类似的有界驻留思路，但全部高清瓦片仍预存在磁盘。
+- [Runtime Virtual Texturing](https://dev.epicgames.com/documentation/en-us/unreal-engine/runtime-virtual-texturing-in-unreal-engine)可在运行时由GPU按需生成纹素。这是本项目下一步小样可借鉴的架构，并非Gazebo现成插件，也不要求迁移引擎。
+- [Microsoft BC格式说明](https://learn.microsoft.com/en-us/windows/uwp/graphics-concepts/texture-block-compression)与[NVIDIA CUDA支持](https://developer.nvidia.com/blog/revealing-new-features-in-the-cuda-11-5-toolkit/)表明BC4/BC5能用于GPU纹理。当前R8＋RG8共24 bit/texel，BC4＋BC5为12 bit/texel，理论只减半而非套用RGBA的4～8倍数字。它是有损路线，0.8 mm裂缝宽度/对比度、法线与条光响应未验证，不作为默认。
+- [nvCOMP](https://developer.nvidia.com/nvcomp)提供GPU无损压缩/解压，可进一步测试解压卸载，但会与OptiX分享GPU资源，不能仅凭厂商吞吐直接承诺11 kHz。
+
+### 本机抽样结果
+
+`tools/benchmark_tile_compression.py`从现有20 m资产固定种子随机选24个完整颜色＋法线瓦片；所有解码逐字节相同。暂停烘焙后做CPU内存测试，包含分配/复制，不含磁盘、GPU上传、预取与排队。每瓦片的三个重复解码取最慢值，再统计百分位；不是生产加载p99。
+
+| 方法 | 存储占原始比例 | 87.54 GB道路外推 | 颜色＋法线整块解码P95 |
+|---|---:|---:|---:|
+| LZ4 | 99.1% | 86.8 GB | 4.54 ms |
+| Zstd level 1 | 81.8% | 71.6 GB | 13.18 ms |
+| Zstd level 3 | 81.8% | 71.6 GB | 12.23 ms |
+| 横向差分＋Zstd level 1 | 69.9% | 61.2 GB | 19.91 ms |
+
+这些是样本外推，非100 m完整压缩结果。混凝土颜色/法线的细碎变化限制通用无损压缩收益；差分预测没有丢精度，但当前Python重建实现还增加延迟。现有50 ms热等待不能靠单块平均时间证明安全，至少需多块同时缺失、预取和11 kHz长时回归。见[道路压缩抽样](../results/full_road_compression_probe.json)。
+
+另测9张现有原始Mono8图（含独立故障探针尾图），Zstd level 3后约保留85.0%体积、逐字节恢复；不是能省数倍的证据，也未包含采集队列/fsync实时测试。见[原图抽样](../results/raw_archive_compression_probe.json)。
+
+### 建议的下一项验证
+
+优先做小区域“源材质＋确定性布局＋按需GPU烘焙”的试片：保存Concrete047A源图、现有拼接布局和alpha、标线参数、既有AI裂缝及实例位置、沟槽几何；接近相机时生成高清瓦片进入有界缓存，而非每条扫描射线重新运行整套材质合成。GZ低清显示与OptiX高清缓存仍来自同一布局/几何；裂缝不改成程序画线，也不降低0.25 mm纹素精度。
+
+现有源颜色＋法线PNG约0.5 GB，100 m布局＋alpha仅约17.6 MB；20 m精细OBJ约203 MB、显示PNG约88.9 MB。由此推断复用素材后，道路本体有望到几GB量级（不含采集原图），但最终GPU缓存、裂缝场、实例化/几何、预热和生成速度均未验证，不能宣布已达成。CPU当前烘焙速度不能满足动态需求，必须测试GPU生成或受预算限制的提前缓存；优先保证确定性和稳定加载。
+
+同时做元数据去重：每会话保留一份完整场景清单，图帧引用摘要；保留归档校验和跨会话身份，不重复塞入几千块瓦片描述。对比回归需保留报告/哈希/代表帧，是否清除重复全量采集档案另按数据保留需求执行，不在本轮自动删除原图。
+
+先验收小样像素一致性、裂缝/板缝/标线与法线、跨块接缝、冷启动和反向预取、内存预算及11 kHz，再决定完整100 m资源格式。完整区域稳定采集门槛不变，不提前进入拼接。

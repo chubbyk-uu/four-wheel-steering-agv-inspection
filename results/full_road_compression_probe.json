@@ -1,0 +1,182 @@
+{
+  "scope": "Warm CPU in-memory compression/decompression; complete color+normal tile, allocation/copies included; no disk/GPU/prefetch timing",
+  "sample_count": 24,
+  "sampled_tiles_xy": [
+    [
+      19,
+      3
+    ],
+    [
+      0,
+      10
+    ],
+    [
+      33,
+      17
+    ],
+    [
+      7,
+      1
+    ],
+    [
+      21,
+      8
+    ],
+    [
+      18,
+      1
+    ],
+    [
+      39,
+      9
+    ],
+    [
+      14,
+      0
+    ],
+    [
+      24,
+      3
+    ],
+    [
+      31,
+      21
+    ],
+    [
+      39,
+      2
+    ],
+    [
+      34,
+      17
+    ],
+    [
+      5,
+      20
+    ],
+    [
+      42,
+      10
+    ],
+    [
+      4,
+      10
+    ],
+    [
+      16,
+      20
+    ],
+    [
+      26,
+      20
+    ],
+    [
+      20,
+      15
+    ],
+    [
+      11,
+      8
+    ],
+    [
+      29,
+      16
+    ],
+    [
+      21,
+      3
+    ],
+    [
+      20,
+      21
+    ],
+    [
+      35,
+      10
+    ],
+    [
+      0,
+      7
+    ]
+  ],
+  "seed": 20260910,
+  "all_decoded_bytes_identical": true,
+  "methods": {
+    "lz4": {
+      "stored_fraction": 0.991242867120452,
+      "compression_ratio": 1.0088344977502712,
+      "estimated_87_54GB_road_gb": 86.7739320525,
+      "encode_tile_ms_mean": 6.809113249971688,
+      "decode_tile_ms_median": 1.5557800001033684,
+      "decode_tile_ms_p95": 4.536911200045779,
+      "decode_tile_ms_max": 7.282793000058518,
+      "channels": {
+        "color": {
+          "raw_bytes": 101056896,
+          "compressed_bytes": 98595581
+        },
+        "normal": {
+          "raw_bytes": 202113792,
+          "compressed_bytes": 201920201
+        }
+      }
+    },
+    "zstd1": {
+      "stored_fraction": 0.8183725565183927,
+      "compression_ratio": 1.2219373585232454,
+      "estimated_87_54GB_road_gb": 71.64077237625,
+      "encode_tile_ms_mean": 14.298345166679383,
+      "decode_tile_ms_median": 12.470749000044634,
+      "decode_tile_ms_p95": 13.181659249914901,
+      "decode_tile_ms_max": 13.316472000042268,
+      "channels": {
+        "color": {
+          "raw_bytes": 101056896,
+          "compressed_bytes": 82478836
+        },
+        "normal": {
+          "raw_bytes": 202113792,
+          "compressed_bytes": 165627735
+        }
+      }
+    },
+    "zstd3": {
+      "stored_fraction": 0.8177578730830337,
+      "compression_ratio": 1.2228558512434666,
+      "estimated_87_54GB_road_gb": 71.58696265875,
+      "encode_tile_ms_mean": 17.895189124961536,
+      "decode_tile_ms_median": 10.626455499959775,
+      "decode_tile_ms_p95": 12.23319940024794,
+      "decode_tile_ms_max": 12.938215999838576,
+      "channels": {
+        "color": {
+          "raw_bytes": 101056896,
+          "compressed_bytes": 82338742
+        },
+        "normal": {
+          "raw_bytes": 202113792,
+          "compressed_bytes": 165581475
+        }
+      }
+    },
+    "delta_zstd1": {
+      "stored_fraction": 0.6992360257466579,
+      "compression_ratio": 1.4301322631827793,
+      "estimated_87_54GB_road_gb": 61.211496596249994,
+      "encode_tile_ms_mean": 17.54261666666442,
+      "decode_tile_ms_median": 19.538390499974412,
+      "decode_tile_ms_p95": 19.90496024999402,
+      "decode_tile_ms_max": 19.975245999830804,
+      "channels": {
+        "color": {
+          "raw_bytes": 101056896,
+          "compressed_bytes": 70638791
+        },
+        "normal": {
+          "raw_bytes": 202113792,
+          "compressed_bytes": 141349076
+        }
+      }
+    }
+  }
+}

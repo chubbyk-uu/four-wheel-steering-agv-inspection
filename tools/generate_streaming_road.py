@@ -8,6 +8,8 @@ from PIL import Image
 from concrete_quilt import ConcreteQuilt
 from bake_concrete_road import LUT,sha,srgb
 from road_markings import paint,metadata
+from road_layout import layout,display_regions
+from streaming_tiles import bake_tiles
 from generate_textured_scene import road_geometry
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'src/agv_linescan'))
@@ -37,18 +39,26 @@ def clip_partition(vertices, faces, lo, hi):
  return vv,indices.reshape(-1,3)
 
 def main():
- p=argparse.ArgumentParser();p.add_argument('--output',required=True);p.add_argument('--length',type=int,default=100);p.add_argument('--full-width',action='store_true',help='Whole 10m road plus optical margins, branched cracks and bounded collision proxies');p.add_argument('--reuse-tiles',action='store_true',help='Reassemble local interrupted bake; recheck existing tile sizes and gutters');a=p.parse_args()
+ p=argparse.ArgumentParser();p.add_argument('--output',required=True);p.add_argument('--length',type=int,default=100);p.add_argument('--full-width',action='store_true',help='Whole 10m road plus optical margins, branched cracks and bounded collision proxies');p.add_argument('--reuse-tiles',action='store_true',help='Reassemble local interrupted bake; recheck existing tile sizes and gutters');p.add_argument('--end-buffer',type=float,default=0.);p.add_argument('--side-buffer',type=float,default=0.);p.add_argument('--workers',type=int,default=1,choices=range(1,5));a=p.parse_args()
  if a.length<20 or a.length>200 or a.length%10:raise ValueError('length must be 20..200 m, multiple of 10')
+ if (a.end_buffer or a.side_buffer) and not a.full_width:raise ValueError('physical buffers require --full-width')
+ bounds=layout(a.length,a.end_buffer,a.side_buffer)
  out=Path(a.output).resolve();out.mkdir(parents=True,exist_ok=a.reuse_tiles);start=time.monotonic()
  source=ROOT/'assets/road/source';color=np.array(Image.open(source/'Concrete047A_8K-PNG_Color.png').convert('RGB'));normal=np.array(Image.open(source/'Concrete047A_8K-PNG_NormalGL.png').convert('RGB'))
- q=ConcreteQuilt(color,LUT,a.length,10,1.6 if a.full_width else .6,source_width=2.1)
+ buffered=a.full_width and (a.end_buffer or a.side_buffer)
+ if buffered:
+  bx0,bx1,by0,by1=bounds['optical_valid_bounds_xy_m']
+  q=ConcreteQuilt(color,LUT,bx1-bx0,by1-by0,.01,source_width=2.1,origin_x=bx0)
+ else:q=ConcreteQuilt(color,LUT,a.length,10,1.6 if a.full_width else .6,source_width=2.1)
  from fullwidth_road import Features,collision_mesh
  features=Features(a.length) if a.full_width else None
  core,gutter,texel=2048,2,.00025;stride=core+2*gutter
- nx=math.ceil((a.length+2.048 if a.full_width else a.length)/(core*texel));ny=24 if a.full_width else 3
- ox=-1.024 if a.full_width else 0;oy=-ny*core*texel/2
+ nx=bounds['tiles_x'] if a.full_width else math.ceil(a.length/(core*texel));ny=bounds['tiles_y'] if a.full_width else 3
+ ox=bounds['optical_valid_bounds_xy_m'][0] if a.full_width else 0;oy=-ny*core*texel/2
  xmax=ox+nx*core*texel
  recipe=dict(length_m=a.length,source_scale_m=2.1,texel_m=.00025,core=2048,gutter=2,tiles_y=ny,full_width=a.full_width,origin_xy_m=[ox,oy],
+  end_buffer_m=a.end_buffer,side_buffer_m=a.side_buffer,
+  tile_code_sha256=sha(ROOT/'tools/streaming_tiles.py'),layout_code_sha256=sha(ROOT/'tools/road_layout.py'),
   color_sha256=sha(source/'Concrete047A_8K-PNG_Color.png'),normal_sha256=sha(source/'Concrete047A_8K-PNG_NormalGL.png'),
   baker_sha256=sha(Path(__file__)),quilt_code_sha256=sha(ROOT/'tools/concrete_quilt.py'),marking_code_sha256=sha(ROOT/'tools/road_markings.py'),
   features_code_sha256=sha(ROOT/'tools/fullwidth_road.py'),crack_code_sha256=sha(ROOT/'tools/branch_crack_fixture.py'),
@@ -64,40 +74,15 @@ def main():
    outside=(xs<0)|(xs>a.length);rgb[:,outside]=before[:,outside];mark[:,outside]=False
   n=q.sample(xs,ys,source=normal,lut=lin)*2-1;n/=np.linalg.norm(n,axis=2)[:,:,None];n[:,:,1]*=-1;n[mark,:2]*=.25;n/=np.linalg.norm(n,axis=2)[:,:,None]
   return features.apply(rgb,n,xs,ys) if features else (rgb,n)
- tiles=[]
- worst=0
- for ix in range(nx):
-  xs=ox+(ix*core+np.arange(-gutter,core+gutter)+.5)*texel
-  for iy in range(ny):
-   ys=oy+(iy*core+np.arange(-gutter,core+gutter)+.5)*texel
-   cached=a.reuse_tiles and all((out/f'{kind}_{ix}_{iy}.raw').is_file() and (out/f'{kind}_{ix}_{iy}.raw').stat().st_size==stride*stride*channels for kind,channels in [('color',1),('normal',2)])
-   rgb,n=sample(xs,ys) if not cached else (None,None)
-   if not cached:mono=np.uint8(np.clip((rgb@np.array([.2126,.7152,.0722],np.float32))*255+.5,0,255));norm=np.uint8(np.clip((n[:,:,:2]*.5+.5)*255+.5,0,255))
-   if cached:
-    mono=np.fromfile(out/f'color_{ix}_{iy}.raw',dtype='uint8').reshape(stride,stride)
-    norm=np.fromfile(out/f'normal_{ix}_{iy}.raw',dtype='uint8').reshape(stride,stride,2)
-   entry=dict(ix=ix,iy=iy)
-   for kind,data in [('color',mono),('normal',norm)]:
-    name=f'{kind}_{ix}_{iy}.raw'
-    if not cached:data.tofile(out/name)
-    entry[kind]=dict(file=name,sha256=sha(out/name))
-    # Check both channels' genuine neighborhood gutters against already stored neighbors.
-    shape=(stride,stride) if kind=='color' else (stride,stride,2)
-    for dx,dy in ((-1,0),(0,-1)):
-     if ix+dx<0 or iy+dy<0:continue
-     old=np.memmap(out/f'{kind}_{ix+dx}_{iy+dy}.raw',dtype='uint8',mode='r',shape=shape)
-     left,right=(old[:,core:core+2*gutter],data[:,:2*gutter]) if dx else (old[core:core+2*gutter],data[:2*gutter])
-     delta=int(np.max(np.abs(left.astype(np.int16)-right.astype(np.int16))));worst=max(worst,delta)
-     if delta:raise ValueError(f'Nonidentical material gutter {kind} {ix} {iy}: {delta}')
-   tiles.append(entry)
+ tiles,worst=bake_tiles(sample,out,nx,ny,ox,oy,core,gutter,texel,a.reuse_tiles,a.workers)
+ (out/'bake_progress.json').write_text(json.dumps(dict(stage='geometry_and_display',tiles=len(tiles))))
  if not features:v,faces,stats=road_geometry(a.length)
  else:stats=dict(template=features.field['stats'],instances=features.instances)
  tree=ET.parse(ROOT/'src/agv_bringup/worlds/flat.sdf');world=tree.getroot().find('world')
  for model in list(world.findall('model')):world.remove(model)
  assets=[];display_files={};total_triangles=0
  if features:
-  cuts=[ox]+list(range(5,a.length,5))+[xmax]
-  regions=[(lo,hi,by,ey) for lo,hi in zip(cuts[:-1],cuts[1:]) for by,ey in ((oy,0),(0,-oy))]
+  regions=display_regions(a.length,[ox,xmax,oy,-oy]) if buffered else [(lo,hi,by,ey) for lo,hi in zip(([ox]+list(range(5,a.length,5))), (list(range(5,a.length,5))+[xmax])) for by,ey in ((oy,0),(0,-oy))]
  else:regions=[(i*10,i*10+10,-5,5) for i in range(a.length//10)]
  for i,(x0,x1,y0,y1) in enumerate(regions):
   vv,ff=features.geometry(x0,x1,y0,y1) if features else clip_partition(v,faces,x0,x1)
@@ -125,7 +110,8 @@ def main():
  rgb,_=sample((np.arange(a.length*20)+.5)*.05,-5+(np.arange(200)+.5)*.05)
  Image.fromarray(srgb(rgb)[::-1]).save(out/'overview.png');tree.write(out/'world.sdf',encoding='unicode')
  material=dict(schema='agv.ground_material.tiles.v1',tiles_x=nx,tiles_y=ny,core_pixels=core,gutter_pixels=gutter,texel_m=texel,origin_xy_m=[ox,oy],height_bounds_m=[-.003001,.000001],roughness=.60,cache_slots=32,prefetch_ahead_m=1.5,prefetch_behind_m=.5,required_wait_timeout_s=.05,tiles=tiles)
- manifest=dict(schema='agv.shared.static_scene.v1',units='m',frame='world',transform='identity_world_baked',profile='streaming_fullwidth_road' if features else 'streaming_road_corridor',length_m=a.length,width_m=10,assets=assets,world='world.sdf',world_sha256=sha(out/'world.sdf'),display_materials=display_files,ground_material=material,lane_markings=metadata(10),optical_valid_bounds_xy_m=[ox,xmax,oy,-oy],inspection_bounds_xy_m=[0,a.length,-5,5],slab_size_m=[5,5],joint_width_m=.008,joint_depth_m=.003,crack=stats,display_texel_m=.004,source_scale_m=2.1,source_scale_basis='project mapping; not supplier measurement',max_gutter_delta=worst,elapsed_seconds=time.monotonic()-start)
+ manifest=dict(schema='agv.shared.static_scene.v1',units='m',frame='world',transform='identity_world_baked',profile='streaming_fullwidth_road' if features else 'streaming_road_corridor',length_m=a.length,width_m=10,assets=assets,world='world.sdf',world_sha256=sha(out/'world.sdf'),display_materials=display_files,ground_material=material,lane_markings=metadata(10),optical_valid_bounds_xy_m=[ox,xmax,oy,-oy],inspection_bounds_xy_m=[0,a.length,-5,5],drivable_bounds_xy_m=bounds['drivable_bounds_xy_m'],non_acquisition_buffers_m=dict(end=a.end_buffer,side=a.side_buffer),slab_size_m=[5,5],joint_width_m=.008,joint_depth_m=.003,crack=stats,display_texel_m=.004,source_scale_m=2.1,source_scale_basis='project mapping; not supplier measurement',max_gutter_delta=worst,elapsed_seconds=time.monotonic()-start)
  (out/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n');validate(out/'manifest.json')
+ (out/'bake_progress.json').write_text(json.dumps(dict(stage='complete',tiles=len(tiles),seconds=time.monotonic()-start)))
  print(json.dumps(dict(length_m=a.length,tiles=len(tiles),triangles=total_triangles,max_gutter_delta=worst,texture_bytes=len(tiles)*stride*stride*3,seconds=time.monotonic()-start)))
 if __name__=='__main__':main()

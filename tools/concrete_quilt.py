@@ -26,12 +26,12 @@ def minimum_cut(error):
 
 class ConcreteQuilt:
     def __init__(self,source,lut,length,width,margin,source_width=2.1,seed=20260908,
-                 guide_side=512,patch=320,overlap=96,candidates=32,feather=3):
+                 guide_side=512,patch=320,overlap=96,candidates=32,feather=3,origin_x=0.):
         if not 0<overlap<patch<=guide_side or source_width<=0:
             raise ValueError('invalid quilting geometry')
         self.source=source;self.lut=lut;self.source_width=source_width
         self.guide_side=guide_side;self.patch=patch;self.overlap=overlap;self.seed=seed
-        self.origin=(-margin,-width/2-margin)
+        self.origin=(origin_x-margin,-width/2-margin)
         self.gsd=source_width/guide_side
         guide=cv2.resize(source,(guide_side,guide_side),interpolation=cv2.INTER_AREA)
         gray=lut[guide]@np.array([.2126,.7152,.0722],np.float32)

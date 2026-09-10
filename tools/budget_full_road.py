@@ -43,6 +43,10 @@ def budget():
     # for controller error or a substitute for measured trigger counts.
     captured=preview['track_count']*(100+preview['lead_distance_m']+.1+.2)
     raw=math.ceil(captured/pitch)*camera['width']
+    blocks=math.ceil(raw/(camera['width']*camera['block_rows']))+preview['track_count']
+    # Current metadata embeds the entire scene contract in EVERY image.
+    # Reserve 4MiB/block plus 512MiB navigation/diagnostics per long session.
+    metadata=blocks*4*2**20+512*2**20
     regions=display_regions(100,road['optical_valid_bounds_xy_m'])
     pixels=sum(round((x1-x0)/.004)*round((y1-y0)/.004) for x0,x1,y0,y1 in regions)
     cache=32*(2048+4)**2*3
@@ -53,9 +57,9 @@ def budget():
         speed_m_s=request['scan_speed_m_s'],trigger_hz=request['scan_speed_m_s']/pitch,
         lead_m=preview['lead_distance_m'],turn_runout_m=preview['turn_runout_distance_m'],
         first_entry_pose=preview['tracks'][0]['base_entry_pose'],total_base_translation_m=preview['total_base_translation_m'],
-        raw_output_bytes_per_run_budget=raw,raw_output_basis='10 passes, lead + ROI + gate end + 0.20m/track slack; no rescan, ROS bag or TIFF',
+        raw_output_bytes_per_run_budget=raw,metadata_navigation_bytes_per_run_budget=metadata,raw_output_basis='10 passes, lead + ROI + gate end + 0.20m/track slack; no rescan, ROS bag or TIFF',
         disk=dict(texture_bytes=road['texture_bytes'],source_geometry_display_temporary_allowance_bytes=15*2**30,
-                  three_runs_plus_one_full_rescan_bytes=4*raw,total_new_bytes_budget=road['texture_bytes']+15*2**30+4*raw,
+                  three_runs_plus_one_full_rescan_bytes=4*(raw+metadata),total_new_bytes_budget=road['texture_bytes']+15*2**30+4*(raw+metadata),
                   note='Existing assets/captures excluded; no raw duplicate ROS bag; retain additional free space'),
         gpu=dict(texture_cache_bytes=cache,gz_color_normal_rgba_mip_estimate_bytes=math.ceil(pixels*8*4/3),
                  rviz_rgba_mip_upper_bound_bytes=len(regions)*1024**2*4*4//3,

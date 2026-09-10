@@ -1,0 +1,20 @@
+{
+  "scope": "Nine short-run raw Mono8 frames including the separate fault probe; no production archive change",
+  "files": [
+    "block_000000.pgm",
+    "block_000001.pgm",
+    "block_000002.pgm",
+    "block_000003.pgm",
+    "block_000004.pgm",
+    "block_000005.pgm",
+    "block_000006.pgm",
+    "block_000007.pgm",
+    "block_000008.pgm"
+  ],
+  "raw_bytes": 129966080,
+  "compressed_bytes": 110534959,
+  "stored_fraction": 0.8504908280683698,
+  "encode_frame_ms_mean": 26.556151333327055,
+  "all_decoded_bytes_identical": true,
+  "sample_count": 9
+}
