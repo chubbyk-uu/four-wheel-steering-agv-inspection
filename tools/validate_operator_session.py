@@ -20,7 +20,7 @@ def main():
     p.add_argument('--start-x',type=float,default=6.);p.add_argument('--start-y',type=float);p.add_argument('--spawn-x',type=float,default=3.)
     p.add_argument('--scene',type=Path,default=Path('assets/road/runtime_fullwidth_20m_v1/manifest.json'));p.add_argument('--startup-timeout',type=float,default=300.);p.add_argument('--run-timeout',type=float,default=400.)
     p.add_argument('--fault-probe',action='store_true');p.add_argument('--no-pause',action='store_true');p.add_argument('--short-tail-probe',action='store_true');p.add_argument('--no-cancel-probe',action='store_true')
-    a=p.parse_args()
+    a=p.parse_args();process_start=time.monotonic()
     if a.short_tail_probe:a.no_pause=True;a.no_cancel_probe=True
     a.output.mkdir(parents=True,exist_ok=False);session=a.output/'session'
     os.environ.update(ROS_DOMAIN_ID=str(100+os.getpid()%80),GZ_PARTITION='agv_operator_'+str(os.getpid()))
@@ -92,7 +92,10 @@ def main():
                 if r['global_line']==l['global_line']+1 and r['time_s']-l['time_s']>2:assert m['rows']==4096;crossing=True
         if not a.no_pause:assert crossing,'missing retained full frame across pause'
         assert all(s['command_body'][0]>=-1e-9 for s in states if s.get('kind')=='PASS')
-        result=dict(passed=a.no_cancel_probe,capture_passed=True,gui_rviz=True,blocks=len(blocks),rows=rows,ros_archive_identical=True,pause_retains_frame=crossing if not a.no_pause else None,requested_speed_m_s=a.speed,region_m=[a.length,a.width],discarded_tail_rows=[e["rows"] for e in discarded],actual_peak_speed_m_s=max(x[2] for x in actual if x[1]>=mission_start_time),
+        motion=np.asarray(actual);intervals=np.diff(motion,axis=0)
+        steady=(motion[1:,2]>=.9*a.speed)&(motion[:-1,2]>=.9*a.speed)
+        steady_rtf=float(intervals[steady,1].sum()/intervals[steady,0].sum()) if np.any(steady) else None
+        result=dict(first_odometry_wall_s=actual[0][0]-process_start,steady_rtf=steady_rtf,steady_min_speed_m_s=.9*a.speed,steady_wall_s=float(intervals[steady,0].sum()),passed=a.no_cancel_probe,capture_passed=True,gui_rviz=True,blocks=len(blocks),rows=rows,ros_archive_identical=True,pause_retains_frame=crossing if not a.no_pause else None,requested_speed_m_s=a.speed,region_m=[a.length,a.width],discarded_tail_rows=[e["rows"] for e in discarded],actual_peak_speed_m_s=max(x[2] for x in actual if x[1]>=mission_start_time),
             observed_rtf=(actual[-1][1]-actual[0][1])/(actual[-1][0]-actual[0][0]),road_display=json.loads((session/"rviz_road.json").read_text()),
             coverage_status=latest['coverage']['status'],coverage_tracks=latest['coverage']['tracks'],final_state=latest['status']['state'],final_motion=latest['status']['motion_state'],
             wheel_steering_range_rad={k:[float(np.min(np.array(joints)[:,i+1])),float(np.max(np.array(joints)[:,i+1]))] for i,k in enumerate(('fl','fr','rl','rr'))})

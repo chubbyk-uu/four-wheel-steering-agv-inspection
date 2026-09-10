@@ -5,17 +5,8 @@ import numpy as np
 
 
 def mesh_arrays(path):
-    vertices=[];faces=[]
-    for line in Path(path).read_text().splitlines():
-        p=line.split()
-        if not p: continue
-        if p[0]=='v': vertices.append([float(x) for x in p[1:4]])
-        if p[0]=='f':
-            if len(p)!=4: raise ValueError('collision proxy requires triangular surface')
-            faces.append([int(x.split('/')[0])-1 for x in p[1:]])
-    v=np.asarray(vertices,dtype=float);f=np.asarray(faces,dtype=int)
-    if v.ndim!=2 or v.shape[1]!=3 or not np.isfinite(v).all() or f.ndim!=2 or f.shape[1]!=3 or f.min()<0 or f.max()>=len(v):
-        raise ValueError('invalid collision proxy mesh')
+    from .obj_arrays import read_obj
+    v,f,_=read_obj(path)
     return v,f
 
 
@@ -37,14 +28,14 @@ def shallow_rectangle(v,f,z,limit):
     return lo,hi,fraction
 
 
-def validate_proxy(root,asset):
+def validate_proxy(root,asset,arrays=None):
     proxy=asset['collision_proxy']
     if proxy.get('method')!='shallow_horizontal_rectangle_v1':
         raise ValueError('unknown collision proxy policy')
     path=(root/proxy['mesh']).resolve()
     if path.parent!=root or hashlib.sha256(path.read_bytes()).hexdigest()!=proxy['sha256']:
         raise ValueError('collision proxy checksum mismatch')
-    v,f=mesh_arrays(root/asset['mesh'])
+    v,f=mesh_arrays(root/asset['mesh']) if arrays is None else arrays
     z=proxy['plane_z_m'];limit=proxy['max_surface_deviation_m']
     lo,hi,_=shallow_rectangle(v,f,z,limit)
     pv,pf=mesh_arrays(path)

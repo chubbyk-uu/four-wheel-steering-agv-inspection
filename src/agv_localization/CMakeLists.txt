@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.16)
 project(agv_localization)
+# Keep explicit Debug/multi-config builds available; normal simulation needs optimization.
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Build type" FORCE)
+endif()
 find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_python REQUIRED)
 ament_python_install_package(${PROJECT_NAME})

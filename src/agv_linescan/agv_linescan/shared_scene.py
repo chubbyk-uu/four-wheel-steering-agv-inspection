@@ -6,6 +6,7 @@ import xml.etree.ElementTree as ET
 import numpy as np
 from PIL import Image
 from .collision_proxy import validate_proxy
+from .obj_arrays import read_obj
 
 
 def digest(path):
@@ -148,6 +149,18 @@ def generate(directory, base_world, length=100., width=10., profile="flat", marg
     return manifest
 
 
+def validate_display_uv(asset,manifest,vertices,uv):
+    projection=asset.get('display_uv_projection',manifest.get('display_uv_projection'))
+    origin=np.asarray(projection['origin_xy_m']);span=np.asarray(projection['span_xy_m'])
+    if origin.shape!=(2,) or span.shape!=(2,) or not np.isfinite(origin).all() or not np.isfinite(span).all() or not np.all(span>0):
+        raise ValueError('invalid display UV projection')
+    expected_uv=(vertices[:,:2]-origin)/span
+    direction=projection.get('v_direction','increasing_world_y')
+    if direction=='decreasing_world_y':expected_uv[:,1]=1-expected_uv[:,1]
+    elif direction!='increasing_world_y':raise ValueError('unknown display V direction')
+    if len(uv)!=len(vertices) or not np.allclose(uv,expected_uv,rtol=0,atol=1e-8):
+        raise ValueError('display mesh UV/world-coordinate mismatch')
+
 def validate(manifest):
     path=Path(manifest).resolve();m=json.loads(path.read_text());root=path.parent
     if m['schema']!='agv.shared.static_scene.v1' or m['frame']!='world' or m['units']!='m' or m['transform']!='identity_world_baked':
@@ -168,7 +181,10 @@ def validate(manifest):
         for pose in model.iter('pose'):
             if any(float(x)!=0 for x in pose.text.split()):raise ValueError('unexpected scene transform')
         link=model.find('link');asset=assets[model.get('name')]
-        collision_path=validate_proxy(root,asset) if 'collision_proxy' in asset else (root/asset['mesh']).resolve()
+        if 'collision_proxy' in asset or ('ground_material' in m and asset.get('material')=='ground'):
+            mesh_data=read_obj(root/asset['mesh'],with_uv='ground_material' in m and asset.get('material')=='ground')
+            if 'ground_material' in m and asset.get('material')=='ground':validate_display_uv(asset,m,mesh_data[0],mesh_data[2])
+        collision_path=validate_proxy(root,asset,mesh_data[:2]) if 'collision_proxy' in asset else (root/asset['mesh']).resolve()
         for kind in ('visual','collision'):
             items=link.findall(kind)
             if len(items)!=1:raise ValueError('geometry count mismatch')
@@ -224,22 +240,4 @@ def validate(manifest):
                 file=Path(pbr.findtext(tag,''))
                 if file.parent.resolve()!=root or file.name not in m['display_materials']:
                     raise ValueError('GZ material must reference checked shared display assets')
-            projection=asset.get('display_uv_projection',m.get('display_uv_projection'))
-            origin=np.asarray(projection['origin_xy_m']);span=np.asarray(projection['span_xy_m'])
-            if origin.shape!=(2,) or span.shape!=(2,) or not np.isfinite(origin).all() or not np.isfinite(span).all() or not np.all(span>0):
-                raise ValueError('invalid display UV projection')
-            vertices=[];uv=[]
-            for line in (root/asset['mesh']).read_text().splitlines():
-                parts=line.split()
-                if parts and parts[0]=='v':vertices.append([float(v) for v in parts[1:3]])
-                if parts and parts[0]=='vt':uv.append([float(v) for v in parts[1:3]])
-                if parts and parts[0]=='f':
-                    if any(len(t.split('/'))<2 or t.split('/')[0]!=t.split('/')[1] for t in parts[1:]):
-                        raise ValueError('display mesh face UV indices mismatch')
-            expected_uv=(np.asarray(vertices)-origin)/span
-            direction=projection.get('v_direction','increasing_world_y')
-            if direction=='decreasing_world_y':expected_uv[:,1]=1-expected_uv[:,1]
-            elif direction!='increasing_world_y':raise ValueError('unknown display V direction')
-            if len(uv)!=len(vertices) or not np.allclose(uv,expected_uv,rtol=0,atol=1e-8):
-                raise ValueError('display mesh UV/world-coordinate mismatch')
     return m

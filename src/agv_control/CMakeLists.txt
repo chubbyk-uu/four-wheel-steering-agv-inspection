@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.16)
 project(agv_control)
+# Keep explicit Debug/multi-config builds available; normal simulation needs optimization.
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Build type" FORCE)
+endif()
 set(CMAKE_CXX_STANDARD 17)
 add_compile_options(-Wall -Wextra -Wpedantic)
 find_package(ament_cmake REQUIRED)

@@ -55,6 +55,8 @@ colcon build --symlink-install --cmake-args -DAGV_ENABLE_CUDA=OFF
 source install/local_setup.bash
 ```
 
+默认采用`RelWithDebInfo`优化构建（保留调试符号）；显式`-DCMAKE_BUILD_TYPE=Debug`仍可用于调试，但不能拿未优化构建做实时率验收。场景校验使用随包编译的pybind11解析器，构建依赖由上述rosdep命令安装，仍保留Python后备实现。
+
 基础构建可以控制底盘、运行解析网格/慢速 Ogre2 参考采样，不承诺高行频性能。恢复不依赖其他机器人项目、个人目录或历史 /tmp 文件。
 
 ## 快速运行

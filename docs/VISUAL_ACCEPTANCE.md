@@ -40,3 +40,8 @@ RViz面板改动后运行`tools/validate_operator_session.py --output 新目录 
 
 
 2026-09-10完整100 m场景上的两道2 m/s测试：`validate_operator_session.py --scene assets/road/runtime_fullwidth_100m_v1/manifest.json --start-x 0 --start-y -5 --spawn-x -3 --length 100 --width 2 --speed 2 --run-timeout 400 --no-cancel-probe`，包含普通暂停。实际宿主窗口查看GZ远端换道时的车辆和路面、RViz运动中完整方形预览及边界。138张560813行，最终HOLD；整体RTF0.9725、速度≥1.8 m/s的连续样本RTF0.9510。窗口截图含本机标题，仅保存在忽略目录；公开报告见[长轨迹结果](../results/full_road_compact_gui.json)。覆盖仍需补扫，不能称全区域验收通过。原控制器5秒激活超时在大场景初始化时失败，修复并重跑；首次里程计仍等待约105秒，不能把静态加载黑屏计为实际显示通过。
+
+
+2026-09-10优化构建＋原生场景解析复测同一100×2 m场景：实际GZ/RViz窗口核对道路标线、车体、边界及方形满帧预览；记录逐轮转角，暂停/恢复、横移/掉头、两道终点和最终HOLD由联合验证器检查。首轮138张/560864行、稳态RTF0.9988；固定轨迹144张与优化前逐字节一致。记录见[性能报告](../results/full_road_performance.json)。未修改GUI交互，未重做滚轮/拖动专项；该两道测试不代替全宽重复验收。
+
+同配置第二轮启动34.41秒、稳态RTF0.9992，138张/560860行完整、最终HOLD；本轮复用上述实际窗口观察，未再次执行鼠标交互专项。两轮原图/ROS及逐轮记录均保留于忽略目录。
