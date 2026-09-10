@@ -37,7 +37,7 @@
 python3 tools/prepare_mission_camera.py --output /tmp/agv_mission_camera.yaml
 ros2 launch agv_bringup sim.launch.py localization:=true rviz:=true \
   linescan:=true linescan_backend:=optix \
-  scene_manifest:="$PWD/assets/road/baked_fullwidth_20m_v1/manifest.json" \
+  scene_manifest:="$PWD/assets/road/runtime_fullwidth_20m_v1/manifest.json" \
   camera_config:=/tmp/agv_mission_camera.yaml scan_speed_limit:=2.797777777777778 \
   spawn_x:=3 capture_dir:=/tmp/agv_mission_raw \
   localization_output_dir:=/tmp/agv_mission_navigation

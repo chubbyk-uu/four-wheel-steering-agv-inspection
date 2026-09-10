@@ -27,7 +27,7 @@
 source /opt/ros/jazzy/setup.bash
 source install/local_setup.bash
 ros2 launch agv_bringup sim.launch.py \
-  scene_manifest:=assets/road/baked_fullwidth_20m_v1/manifest.json spawn_x:=2
+  scene_manifest:=assets/road/runtime_fullwidth_20m_v1/manifest.json spawn_x:=2
 ```
 
 此命令默认启用锁定跟车和滚轮缩放，暂不启用线阵采集。交互回归可在GUI加载完成后执行（会模拟鼠标输入并以0.5 m/s短距离行驶，结束停车）：

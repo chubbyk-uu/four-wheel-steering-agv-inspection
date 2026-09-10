@@ -216,3 +216,15 @@ def test_probe_generator_uses_checked_proxy_for_collision(tmp_path):
     assert optical.read_bytes()==original and proxy['triangles']==2
     vertices[0,2]=-.02
     with pytest.raises(ValueError):collision_mesh(tmp_path,'deep',vertices,faces)
+
+
+def test_spawn_uses_drivable_apron_and_full_vehicle_envelope():
+    from agv_linescan.shared_scene import validate_spawn_position
+    scene=dict(length_m=100,width_m=10,inspection_bounds_xy_m=[0,100,-5,5],drivable_bounds_xy_m=[-8,108,-6.5,6.5])
+    validate_spawn_position(scene,-3,0)
+    validate_spawn_position(scene,105,-4.5)
+    for x,y in [(-7,0),(107,0),(50,6),(float('nan'),0)]:
+        with pytest.raises(ValueError):validate_spawn_position(scene,x,y)
+    scene.pop('drivable_bounds_xy_m')
+    with pytest.raises(ValueError):validate_spawn_position(scene,-3,0)
+    validate_spawn_position(scene,3,0)

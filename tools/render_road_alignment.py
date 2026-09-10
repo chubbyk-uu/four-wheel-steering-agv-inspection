@@ -16,7 +16,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import Image as RosImage
-from validate_tracking import stop
+from validate_rectangle_execution import stop_tree as stop
 
 
 def main():

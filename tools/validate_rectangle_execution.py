@@ -18,11 +18,14 @@ from prepare_mission_camera import prepare
 from validate_tracking import stop
 
 
-def stop_tree(process):
+def stop_tree(process,known_children=()):
     # Gazebo launch may leave server/GUI children after its own exit.
-    try:parent=psutil.Process(process.pid)
-    except psutil.NoSuchProcess:return
-    owned=[parent,*parent.children(recursive=True)]
+    owned={p.pid:p for p in known_children}
+    try:
+        parent=psutil.Process(process.pid)
+        owned.update({p.pid:p for p in [parent,*parent.children(recursive=True)]})
+    except psutil.NoSuchProcess:pass
+    owned=list(owned.values())
     for sig,timeout in ((signal.SIGINT,8),(signal.SIGTERM,4),(signal.SIGKILL,2)):
         for p in owned:
             try:p.send_signal(sig)

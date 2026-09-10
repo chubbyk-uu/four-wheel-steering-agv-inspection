@@ -36,7 +36,7 @@ def setup(context):
 def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument('session_dir',default_value='local_data/inspection_'+time.strftime('%Y%m%d_%H%M%S')+'_'+uuid.uuid4().hex[:6]),
-        DeclareLaunchArgument('scene_manifest',default_value='assets/road/baked_fullwidth_20m_v1/manifest.json'),
+        DeclareLaunchArgument('scene_manifest',default_value='assets/road/runtime_fullwidth_20m_v1/manifest.json'),
         DeclareLaunchArgument('gpu_backend',default_value='d3d12',choices=['d3d12','native']),
         DeclareLaunchArgument('spawn_x',default_value='3'),
         DeclareLaunchArgument('headless',default_value='false'),OpaqueFunction(function=setup)])

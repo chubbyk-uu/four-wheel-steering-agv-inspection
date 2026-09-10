@@ -9,7 +9,7 @@ import psutil
 
 class ResourceMonitor:
     def __init__(self,pid,output,interval=2.):
-        self.pid=pid;self.output=Path(output);self.interval=interval;self.stop=threading.Event();self.samples=[];self.errors=[]
+        self.pid=pid;self.output=Path(output);self.interval=interval;self.stop=threading.Event();self.samples=[];self.errors=[];self.owned={}
         self.thread=threading.Thread(target=self.run,daemon=True);self.thread.start()
 
     def run(self):
@@ -21,6 +21,7 @@ class ResourceMonitor:
                         parent=psutil.Process(self.pid);processes=[parent]+parent.children(recursive=True)
                     except psutil.NoSuchProcess:
                         break  # Normal end of the owned launch process.
+                    self.owned.update({p.pid:p for p in processes})
                     rss=0;pss=0
                     for process in processes:
                         try:

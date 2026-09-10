@@ -18,7 +18,7 @@ def main():
     p=argparse.ArgumentParser();p.add_argument('--output',type=Path,required=True);p.add_argument('--inspect-seconds',type=float,default=0)
     p.add_argument('--speed',type=float,default=.5);p.add_argument('--length',type=float,default=3.);p.add_argument('--width',type=float,default=2.)
     p.add_argument('--start-x',type=float,default=6.);p.add_argument('--start-y',type=float);p.add_argument('--spawn-x',type=float,default=3.)
-    p.add_argument('--scene',type=Path,default=Path('assets/road/baked_fullwidth_20m_v1/manifest.json'));p.add_argument('--startup-timeout',type=float,default=300.);p.add_argument('--run-timeout',type=float,default=400.)
+    p.add_argument('--scene',type=Path,default=Path('assets/road/runtime_fullwidth_20m_v1/manifest.json'));p.add_argument('--startup-timeout',type=float,default=300.);p.add_argument('--run-timeout',type=float,default=400.)
     p.add_argument('--fault-probe',action='store_true');p.add_argument('--no-pause',action='store_true');p.add_argument('--short-tail-probe',action='store_true');p.add_argument('--no-cancel-probe',action='store_true')
     a=p.parse_args()
     if a.short_tail_probe:a.no_pause=True;a.no_cancel_probe=True
@@ -58,7 +58,7 @@ def main():
         send('save',path=str((a.output/'saved_request.yaml').resolve()))
         send('load',path=str((a.output/'saved_request.yaml').resolve()))
         send('preview')
-        wait(lambda:any(x.get('motion_state')=='HOLD' for x in states) or len(joints)>800)
+        wait(lambda:any(x.get('motion_state')=='HOLD' for x in states) or len(joints)>800,a.startup_timeout)
         send('prepare');wait(lambda:latest.get('status',{}).get('ready_to_start'))
         mission_start_time=latest['status']['time_s']
         (a.output/'ready_for_ui').touch()
@@ -128,5 +128,5 @@ def main():
             until=time.monotonic()+12
             while time.monotonic()<until and latest.get('status',{}).get('motion_state')!='HOLD':rclpy.spin_once(n,timeout_sec=.02)
             (a.output/'cleanup_stop.json').write_text(json.dumps(latest.get('status',{})))
-        n.destroy_node();rclpy.try_shutdown();stop_tree(sim);resources.close();log.close()
+        n.destroy_node();rclpy.try_shutdown();resources.close();stop_tree(sim,known_children=list(resources.owned.values()));log.close()
 if __name__=='__main__':main()

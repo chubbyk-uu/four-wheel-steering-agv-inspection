@@ -1,0 +1,30 @@
+{
+  "date": "2026-09-10",
+  "deleted": [
+    {
+      "path": "assets/road/baked_fullwidth_20m_v1",
+      "logical_bytes": 13634841344,
+      "files": 2499
+    },
+    {
+      "path": "assets/road/baked_fullwidth_100m_v1",
+      "logical_bytes": 37156033190,
+      "files": 8076
+    },
+    {
+      "path": "local_data/speed_demo_scene",
+      "logical_bytes": 13632453563,
+      "files": 2150,
+      "reason": "Retired 42 m temporary speed-demo apron; same high-resolution tiles held by hard links; replaced by proper 100 m road aprons"
+    }
+  ],
+  "observed_freed_bytes": 50740727808,
+  "retained": [
+    "Concrete047A original source images",
+    "AI crack originals",
+    "compact 20 m and 100 m scenes, quilting layouts and reference hashes",
+    "raw capture evidence and test reports",
+    "Retired speed-demo scene manifest/world and historical reports"
+  ],
+  "reason": "Compact scenes independently validated with old directories absent; 100 m GUI capture passed. Coverage uncertainty remains a mission issue, not a dependency on expanded texture tiles."
+}

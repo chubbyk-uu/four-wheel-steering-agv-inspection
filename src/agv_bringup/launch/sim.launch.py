@@ -34,13 +34,13 @@ def setup(context):
     world_path = str(bringup / 'worlds/flat.sdf')
     shared_manifest = LaunchConfiguration('scene_manifest').perform(context)
     if shared_manifest:
-        from agv_linescan.shared_scene import validate
+        from agv_linescan.shared_scene import validate, validate_spawn_position
         manifest_path = Path(shared_manifest).resolve()
         shared = validate(manifest_path)
         world_path = str(manifest_path.parent / shared['world'])
         spawn_x = float(LaunchConfiguration('spawn_x').perform(context))
-        if not .5 <= spawn_x <= shared['length_m']-.5:
-            raise ValueError('shared scene requires spawn_x inside the terrain; use spawn_x:=2')
+        spawn_y = float(LaunchConfiguration('spawn_y').perform(context))
+        validate_spawn_position(shared, spawn_x, spawn_y)
         if linescan and backend not in ('render', 'optix'):
             raise ValueError('shared 3D scene supports render or optix only; planar samplers cannot represent this geometry')
     if linescan and backend == 'optix' and not shared_manifest:
@@ -104,7 +104,8 @@ def setup(context):
                       parameters=[config, behavior, {'use_sim_time': True}], output='screen')
     spawner = Node(package='controller_manager', executable='spawner', arguments=[
         'joint_state_broadcaster', 'steering_controller', 'drive_controller',
-        '--controller-manager-timeout', '60'])
+        '--controller-manager-timeout', '180', '--switch-timeout', '120',
+        '--service-call-timeout', '150'])
     def check_spawn(event, context):
         if event.returncode != 0:
             return [EmitEvent(event=Shutdown(reason='Controller activation failed'))]

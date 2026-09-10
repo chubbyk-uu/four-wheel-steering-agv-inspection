@@ -37,3 +37,6 @@ RViz面板改动后运行`tools/validate_operator_session.py --output 新目录 
 
 
 2026-09-10按需材质试片：以`--scene local_data/runtime_recipe_scene/manifest.json --start-x 11 --start-y 1.5 --spawn-x 9.5 --length 3 --width 2 --speed .8 --no-cancel-probe`运行上述GUI验证器，包含暂停恢复。实际查看RViz窗口，确认路面、双黄线/白边线、边界和机器人显示；运行中显示4096×1670尾图，宽矩形预览符合实际行数。6张19718行原图与ROS一致，最终HOLD。GZ参与联合运行但本次未取得独立GZ窗口截图，未重新验收鼠标交互或全部动态部件抖动；几何/显示贴图未修改。完整20 m材质与旧高清1056块逐字节相同，96张独立OptiX采图亦逐字节相同，见[报告](../results/runtime_material_recipe_probe.json)。此项不代替100 m、10 km/h或重复异常验收。
+
+
+2026-09-10完整100 m场景上的两道2 m/s测试：`validate_operator_session.py --scene assets/road/runtime_fullwidth_100m_v1/manifest.json --start-x 0 --start-y -5 --spawn-x -3 --length 100 --width 2 --speed 2 --run-timeout 400 --no-cancel-probe`，包含普通暂停。实际宿主窗口查看GZ远端换道时的车辆和路面、RViz运动中完整方形预览及边界。138张560813行，最终HOLD；整体RTF0.9725、速度≥1.8 m/s的连续样本RTF0.9510。窗口截图含本机标题，仅保存在忽略目录；公开报告见[长轨迹结果](../results/full_road_compact_gui.json)。覆盖仍需补扫，不能称全区域验收通过。原控制器5秒激活超时在大场景初始化时失败，修复并重跑；首次里程计仍等待约105秒，不能把静态加载黑屏计为实际显示通过。

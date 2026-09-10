@@ -1,0 +1,18 @@
+{
+  "passed": true,
+  "yellow_centers_world_y_m": [
+    0.1514874361328033,
+    -0.14660074464464837
+  ],
+  "meters_per_pixel": 0.009773382976309891,
+  "expected_yellow_centers_m": [
+    -0.15,
+    0.15
+  ],
+  "camera_world_xyz_m": [
+    7.5,
+    0,
+    10
+  ],
+  "cleanup_passed": true
+}

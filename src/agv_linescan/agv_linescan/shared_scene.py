@@ -12,6 +12,17 @@ def digest(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
+def validate_spawn_position(scene, x, y, radius=1.5):
+    """Keep the audited large-AGV envelope on the declared drivable surface."""
+    bounds=scene.get('drivable_bounds_xy_m',scene.get('inspection_bounds_xy_m',
+        [0.,scene['length_m'],-scene['width_m']/2,scene['width_m']/2]))
+    if len(bounds)!=4 or not np.isfinite([x,y,radius,*bounds]).all() or radius<=0:
+        raise ValueError('invalid shared-scene spawn bounds')
+    x0,x1,y0,y1=bounds
+    if not (x0+radius<=x<=x1-radius and y0+radius<=y<=y1-radius):
+        raise ValueError('spawn vehicle envelope leaves the declared drivable terrain')
+
+
 def calibration_scene(directory, base_world, phase=None):
     """Coplanar segmented diffuse board, same mesh/material values for GZ and RT.
 

@@ -7,14 +7,14 @@
 ```bash
 python3 tools/fetch_ambient_concrete.py
 python3 tools/generate_streaming_road.py \
-  --output assets/road/baked_fullwidth_20m_v1 --length 20 --full-width
+  --output assets/road/runtime_fullwidth_20m_v1 --length 20 --full-width --runtime-material
 ros2 launch agv_bringup sim.launch.py rviz:=true \
-  scene_manifest:=assets/road/baked_fullwidth_20m_v1/manifest.json spawn_x:=6
+  scene_manifest:=assets/road/runtime_fullwidth_20m_v1/manifest.json spawn_x:=6
 ```
 
 下载代理按本机配置显式传给下载工具。输出目录必须不存在；已有可用资产不需要重新生成。OptiX采图还需[对应运行环境](OPTIX_SETUP.md)；任务采集命令见[采集指南](RECTANGLE_CAPTURE.md)。
 
-高清包含边界余量，范围x=[−1.024,21.504]、y=[−6.144,6.144] m。0.25 mm/纹素，共1056块颜色R8＋法线RG8，未压缩纹素约13.34 GB，另需源图、几何、临时数据和采图空间。32槽纹素负载约385.5 MiB，不含BVH、输出、驱动和GUI；不能将其当作进程总显存。
+高清包含边界余量，范围x=[−1.024,21.504]、y=[−6.144,6.144] m。0.25 mm/纹素，逻辑上1056块颜色R8＋法线RG8。现行紧凑版保存源素材与布局，由GPU按需生成高清瓦片，不再预存约13.34 GB展开纹素。20 m场景约0.93 GB（含保留的布局/对照清单），仍另需采图空间。32槽纹素约385.5 MiB，配方源素材/工作缓冲另约642 MB；两者均不含BVH、输出、驱动和GUI。
 
 GZ约4 mm/纹素显示地图，OptiX按交点从高清瓦片采样，两者使用相同世界坐标。旧资产曾有显示UV镜像：
 
@@ -65,7 +65,7 @@ python3 tools/check_full_road.py assets/road/baked_fullwidth_100m_v1/manifest.js
 
 ## 实验性按需GPU材质（2026-09-10）
 
-20 m对照试片已验证，默认入口暂不切换。无需新增SDK；现有CUDA/OptiX构建会包含`agv_runtime_material`。需要先按上文恢复可对照的20 m资产和Concrete047A源图，然后运行：
+20 m对照试片已验证，巡检默认入口已切换到正式资产目录的紧凑版。下面的转换命令用于已有旧烘焙场景；新恢复请优先用本文开头的`--runtime-material`直接生成，无须先展开旧高清瓦片。无需新增SDK；现有CUDA/OptiX构建会包含`agv_runtime_material`。要重做逐字节对照，可显式去掉`--runtime-material`并输出到`assets/road/baked_fullwidth_20m_v1`恢复旧瓦片基准，再运行：
 
 ```bash
 python3 tools/create_recipe_scene.py \
@@ -90,3 +90,29 @@ python3 tools/probe_runtime_material.py \
 ```
 
 比较工具会另导出一份配方，检查所有颜色/法线字节，差异非零即失败。当前配方特化于既有Concrete047A、标线与AI裂缝规则，并非通用材质编辑器；更改底材/标线/裂缝算法后必须重新导出并复核像素。浮点融合关闭以复现CPU参考量化，不宜自行开启fast-math。完整性能、资源边界及下一步见[试片结果](FULL_ROAD_ACCEPTANCE.md#gpu按需材质试片结果2026-09-10)。
+
+
+## 直接生成100 m紧凑场景
+
+```bash
+python3 tools/generate_streaming_road.py \
+  --output assets/road/runtime_fullwidth_100m_v1 --length 100 --full-width \
+  --end-buffer 8 --side-buffer 1.5 --runtime-material
+python3 tools/check_full_road.py assets/road/runtime_fullwidth_100m_v1/manifest.json \
+  --output local_data/compact100_asset_check.json
+ros2 launch agv_bringup inspection.launch.py \
+  scene_manifest:=assets/road/runtime_fullwidth_100m_v1/manifest.json
+```
+
+`--runtime-material`只支持全宽道路和新输出目录，不与旧瓦片续烘焙混用。100×10 m为ROI，可行驶区为x=[−8,108]、y=[−6.5,6.5] m；高清域更大。首轮完整资产2.45 GB、约3分30秒生成、生成RSS峰值3.48 GB；逻辑高清6930块，但磁盘不保存展开瓦片。48个显示分区、7712280个视觉/OptiX三角形、96个碰撞代理三角形。静态检查不能代替运动或图像验收。
+
+要复核GPU与CPU原配方，先按前文编译独立库，再运行：
+
+```bash
+OPENBLAS_NUM_THREADS=1 python3 tools/check_runtime_recipe.py \
+  assets/road/runtime_fullwidth_100m_v1/manifest.json \
+  --library local_data/recipe_check/libruntime_material.so \
+  --output local_data/compact100_pixel_check.json
+```
+
+它只临时生成代表瓦片，不将整条道路展开。当前首尾/外侧缓冲区、黄白标线、两种翻转裂缝的所有对比字节一致。旧`baked_*`目录不是紧凑版运行依赖；旧压缩/全瓦片对照工具仍需要显式恢复旧基准，不能把配方目录冒充旧瓦片目录。
