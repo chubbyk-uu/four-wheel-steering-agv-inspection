@@ -1,0 +1,124 @@
+{
+  "passed": true,
+  "scope": "Selected full-resolution CPU/GPU tile comparisons including gutters, source pixels, markings and flipped AI crack fields",
+  "tiles": [
+    {
+      "tile": [
+        0,
+        0
+      ],
+      "max_dn": 0,
+      "different_bytes": 0,
+      "seconds": 0.8046420819991909
+    },
+    {
+      "tile": [
+        0,
+        29
+      ],
+      "max_dn": 0,
+      "different_bytes": 0,
+      "seconds": 0.8833977309986949
+    },
+    {
+      "tile": [
+        2,
+        2
+      ],
+      "max_dn": 0,
+      "different_bytes": 0,
+      "seconds": 1.0852460300011444
+    },
+    {
+      "tile": [
+        18,
+        15
+      ],
+      "max_dn": 0,
+      "different_bytes": 0,
+      "seconds": 0.9704756700011785
+    },
+    {
+      "tile": [
+        22,
+        19
+      ],
+      "max_dn": 0,
+      "different_bytes": 0,
+      "seconds": 1.3342850600001839
+    },
+    {
+      "tile": [
+        42,
+        10
+      ],
+      "max_dn": 0,
+      "different_bytes": 0,
+      "seconds": 1.2930568709998624
+    },
+    {
+      "tile": [
+        115,
+        23
+      ],
+      "max_dn": 0,
+      "different_bytes": 0,
+      "seconds": 1.0699628139991546
+    },
+    {
+      "tile": [
+        120,
+        10
+      ],
+      "max_dn": 0,
+      "different_bytes": 0,
+      "seconds": 1.451456054001028
+    },
+    {
+      "tile": [
+        198,
+        19
+      ],
+      "max_dn": 0,
+      "different_bytes": 0,
+      "seconds": 1.3299637639993307
+    },
+    {
+      "tile": [
+        213,
+        15
+      ],
+      "max_dn": 0,
+      "different_bytes": 0,
+      "seconds": 0.9792792770003871
+    },
+    {
+      "tile": [
+        228,
+        27
+      ],
+      "max_dn": 0,
+      "different_bytes": 0,
+      "seconds": 1.0782216410007095
+    },
+    {
+      "tile": [
+        230,
+        0
+      ],
+      "max_dn": 0,
+      "different_bytes": 0,
+      "seconds": 0.851502449999316
+    },
+    {
+      "tile": [
+        230,
+        29
+      ],
+      "max_dn": 0,
+      "different_bytes": 0,
+      "seconds": 1.0030779849985265
+    }
+  ],
+  "device_bytes": 830779460
+}

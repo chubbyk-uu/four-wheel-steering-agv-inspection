@@ -8,8 +8,8 @@ from bake_concrete_road import LUT
 from fullwidth_road import Features
 
 
-def export(scene_path,out):
-    out.mkdir(parents=True,exist_ok=False);scene=json.loads(scene_path.read_text());m=scene['ground_material']
+def export(scene_path,out,*,existing_directory=False):
+    out.mkdir(parents=True,exist_ok=existing_directory);scene=json.loads(scene_path.read_text());m=scene['ground_material']
     q=json.loads((scene_path.parent/'quilt/layout.json').read_text());source=Path(__file__).resolve().parents[1]/'assets/road/source'
     color=np.asarray(Image.open(source/'Concrete047A_8K-PNG_Color.png').convert('RGB'))
     normal=np.asarray(Image.open(source/'Concrete047A_8K-PNG_NormalGL.png').convert('RGB'))

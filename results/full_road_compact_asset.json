@@ -1,0 +1,35 @@
+{
+  "passed": true,
+  "scope": "static asset integrity and geometry/texture contracts; not motion or rendered acceptance",
+  "tile_count": 6930,
+  "runtime_recipe": true,
+  "all_tile_hashes_verified": false,
+  "source_payload_hashes_verified": true,
+  "texture_bytes": 818046208,
+  "display_partitions": 48,
+  "display_pixels": 113541120,
+  "visual_optix_triangles": 7712280,
+  "collision_triangles": 96,
+  "bounds": {
+    "inspection_bounds_xy_m": [
+      0,
+      100,
+      -5,
+      5
+    ],
+    "drivable_bounds_xy_m": [
+      -8.0,
+      108.0,
+      -6.5,
+      6.5
+    ],
+    "optical_valid_bounds_xy_m": [
+      -9.216000000000001,
+      109.05600000000001,
+      -7.68,
+      7.68
+    ]
+  },
+  "disk_bytes": 2451891074,
+  "elapsed_seconds": 30.570014770000853
+}

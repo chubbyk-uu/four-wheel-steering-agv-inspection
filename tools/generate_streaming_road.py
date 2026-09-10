@@ -39,7 +39,8 @@ def clip_partition(vertices, faces, lo, hi):
  return vv,indices.reshape(-1,3)
 
 def main():
- p=argparse.ArgumentParser();p.add_argument('--output',required=True);p.add_argument('--length',type=int,default=100);p.add_argument('--full-width',action='store_true',help='Whole 10m road plus optical margins, branched cracks and bounded collision proxies');p.add_argument('--reuse-tiles',action='store_true',help='Reassemble local interrupted bake; recheck existing tile sizes and gutters');p.add_argument('--end-buffer',type=float,default=0.);p.add_argument('--side-buffer',type=float,default=0.);p.add_argument('--workers',type=int,default=1,choices=range(1,5));a=p.parse_args()
+ p=argparse.ArgumentParser();p.add_argument('--output',required=True);p.add_argument('--length',type=int,default=100);p.add_argument('--full-width',action='store_true',help='Whole 10m road plus optical margins, branched cracks and bounded collision proxies');p.add_argument('--runtime-material',action='store_true',help='Store immutable source recipe, generate high-resolution tiles on GPU at runtime');p.add_argument('--reuse-tiles',action='store_true',help='Reassemble local interrupted bake; recheck existing tile sizes and gutters');p.add_argument('--end-buffer',type=float,default=0.);p.add_argument('--side-buffer',type=float,default=0.);p.add_argument('--workers',type=int,default=1,choices=range(1,5));a=p.parse_args()
+ if a.runtime_material and (not a.full_width or a.reuse_tiles):raise ValueError('--runtime-material requires --full-width and a new output directory')
  if a.length<20 or a.length>200 or a.length%10:raise ValueError('length must be 20..200 m, multiple of 10')
  if (a.end_buffer or a.side_buffer) and not a.full_width:raise ValueError('physical buffers require --full-width')
  bounds=layout(a.length,a.end_buffer,a.side_buffer)
@@ -74,7 +75,7 @@ def main():
    outside=(xs<0)|(xs>a.length);rgb[:,outside]=before[:,outside];mark[:,outside]=False
   n=q.sample(xs,ys,source=normal,lut=lin)*2-1;n/=np.linalg.norm(n,axis=2)[:,:,None];n[:,:,1]*=-1;n[mark,:2]*=.25;n/=np.linalg.norm(n,axis=2)[:,:,None]
   return features.apply(rgb,n,xs,ys) if features else (rgb,n)
- tiles,worst=bake_tiles(sample,out,nx,ny,ox,oy,core,gutter,texel,a.reuse_tiles,a.workers)
+ tiles,worst=([],None) if a.runtime_material else bake_tiles(sample,out,nx,ny,ox,oy,core,gutter,texel,a.reuse_tiles,a.workers)
  (out/'bake_progress.json').write_text(json.dumps(dict(stage='geometry_and_display',tiles=len(tiles))))
  if not features:v,faces,stats=road_geometry(a.length)
  else:stats=dict(template=features.field['stats'],instances=features.instances)
@@ -111,7 +112,15 @@ def main():
  Image.fromarray(srgb(rgb)[::-1]).save(out/'overview.png');tree.write(out/'world.sdf',encoding='unicode')
  material=dict(schema='agv.ground_material.tiles.v1',tiles_x=nx,tiles_y=ny,core_pixels=core,gutter_pixels=gutter,texel_m=texel,origin_xy_m=[ox,oy],height_bounds_m=[-.003001,.000001],roughness=.60,cache_slots=32,prefetch_ahead_m=1.5,prefetch_behind_m=.5,required_wait_timeout_s=.05,tiles=tiles)
  manifest=dict(schema='agv.shared.static_scene.v1',units='m',frame='world',transform='identity_world_baked',profile='streaming_fullwidth_road' if features else 'streaming_road_corridor',length_m=a.length,width_m=10,assets=assets,world='world.sdf',world_sha256=sha(out/'world.sdf'),display_materials=display_files,ground_material=material,lane_markings=metadata(10),optical_valid_bounds_xy_m=[ox,xmax,oy,-oy],inspection_bounds_xy_m=[0,a.length,-5,5],drivable_bounds_xy_m=bounds['drivable_bounds_xy_m'],non_acquisition_buffers_m=dict(end=a.end_buffer,side=a.side_buffer),slab_size_m=[5,5],joint_width_m=.008,joint_depth_m=.003,crack=stats,display_texel_m=.004,source_scale_m=2.1,source_scale_basis='project mapping; not supplier measurement',max_gutter_delta=worst,elapsed_seconds=time.monotonic()-start)
- (out/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n');validate(out/'manifest.json')
+ (out/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
+ if a.runtime_material:
+  from probe_runtime_material import export
+  export(out/'manifest.json',out,existing_directory=True)
+  material.pop('tiles');material['schema']='agv.ground_material.recipe.v1'
+  material['recipe']=dict(file='recipe.json',sha256=sha(out/'recipe.json'))
+  manifest['profile']='runtime_recipe_fullwidth_road'
+  (out/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
+ validate(out/'manifest.json')
  (out/'bake_progress.json').write_text(json.dumps(dict(stage='complete',tiles=len(tiles),seconds=time.monotonic()-start)))
  print(json.dumps(dict(length_m=a.length,tiles=len(tiles),triangles=total_triangles,max_gutter_delta=worst,texture_bytes=len(tiles)*stride*stride*3,seconds=time.monotonic()-start)))
 if __name__=='__main__':main()

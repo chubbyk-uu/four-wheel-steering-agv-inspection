@@ -8,6 +8,7 @@ assets/road/source/*.png
 assets/road/source/*.jpg
 assets/road/source/*.part
 assets/road/baked_*/
+assets/road/runtime_*/
 assets/road/source/*.zip
 
 # Machine-local instructions, credentials and diagnostic process dumps.

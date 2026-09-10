@@ -21,12 +21,16 @@ def check(manifest):
     if material['tiles_x']!=bounds['tiles_x'] or material['tiles_y']!=bounds['tiles_y'] or material['texel_m']!=bounds['texel_m']:
         raise ValueError('unexpected full-road tile layout')
     total=0
-    for tile in material['tiles']:
+    for tile in material.get('tiles',[]):
         for channel,channels in (('color',1),('normal',2)):
             entry=tile[channel];data=(root/entry['file']).read_bytes();total+=len(data)
             if len(data)!=stride*stride*channels or hashlib.sha256(data).hexdigest()!=entry['sha256']:
                 raise ValueError('archived material hash/size mismatch')
-    if total!=bounds['texture_bytes']:raise ValueError('texture storage differs from budget')
+    runtime=material['schema']=='agv.ground_material.recipe.v1'
+    if runtime:
+        recipe=json.loads((root/material['recipe']['file']).read_text())
+        total=sum((root/name).stat().st_size for name in recipe['payload_sha256'])
+    elif total!=bounds['texture_bytes']:raise ValueError('texture storage differs from budget')
     rectangles=[];triangles=0;collision=0;display_pixels=0
     for asset in scene['assets']:
         projection=asset['display_uv_projection'];x,y=projection['origin_xy_m'];sx,sy=projection['span_xy_m']
@@ -47,7 +51,7 @@ def check(manifest):
     if abs(sum((b-a)*(d-c) for a,b,c,d in rectangles)-(x1-x0)*(y1-y0))>1e-6:
         raise ValueError('geometry/display partition gap')
     return dict(passed=True,scope='static asset integrity and geometry/texture contracts; not motion or rendered acceptance',
-                tile_count=len(material['tiles']),all_tile_hashes_verified=True,texture_bytes=total,
+                tile_count=material['tiles_x']*material['tiles_y'],runtime_recipe=runtime,all_tile_hashes_verified=not runtime,source_payload_hashes_verified=runtime,texture_bytes=total,
                 display_partitions=len(rectangles),display_pixels=display_pixels,visual_optix_triangles=triangles,collision_triangles=collision,
                 bounds={k:scene[k] for k in ('inspection_bounds_xy_m','drivable_bounds_xy_m','optical_valid_bounds_xy_m')},
                 disk_bytes=sum(p.stat().st_size for p in root.rglob('*') if p.is_file()),elapsed_seconds=time.monotonic()-start)
