@@ -1,0 +1,118 @@
+{
+ "after": {
+  "limit_reconfigurations": 0,
+  "max_abs_steer_deg": 133.48,
+  "max_abs_steer_deg_before": 179.39,
+  "run": "local_data/overshoot_fix",
+  "terminals": {
+   "0": {
+    "max_goal_error_m": 0.0275,
+    "terminal_trims": 0
+   },
+   "1": {
+    "max_goal_error_m": 0.0145,
+    "terminal_trims": 0
+   },
+   "2": {
+    "max_goal_error_m": 0.0149,
+    "terminal_trims": 0
+   },
+   "3": {
+    "max_goal_error_m": 0.0104,
+    "terminal_trims": 0
+   },
+   "4": {
+    "max_goal_error_m": 0.0126,
+    "terminal_trims": 0
+   },
+   "5": {
+    "max_goal_error_m": 0.0332,
+    "terminal_trims": 0
+   },
+   "6": {
+    "max_goal_error_m": 0.0211,
+    "terminal_trims": 0
+   },
+   "7": {
+    "max_goal_error_m": 0.0104,
+    "terminal_trims": 0
+   },
+   "8": {
+    "max_goal_error_m": 0.0152,
+    "terminal_trims": 0
+   },
+   "9": {
+    "max_goal_error_m": 0.0101,
+    "terminal_trims": 0
+   }
+  }
+ },
+ "before": {
+  "completed_run": "local_data/stall_probe_a",
+  "failed_run": "local_data/stall_fix_v2",
+  "failure": "FORWARD_ONLY_TERMINAL_OVERSHOOT at 0.0665 m",
+  "terminals": {
+   "0": {
+    "max_goal_error_m": 0.0428,
+    "terminal_trims": 0
+   },
+   "1": {
+    "max_goal_error_m": 0.0449,
+    "terminal_trims": 0
+   }
+  }
+ },
+ "cause_actuation_delay": {
+  "lead_vs_reference_speed": {
+   "ref_speed_0.1_0.3": {
+    "max_lead_m": 0.0257,
+    "median_lead_m": 0.007,
+    "n": 24
+   },
+   "ref_speed_0.3_0.6": {
+    "max_lead_m": 0.0191,
+    "median_lead_m": -0.0007,
+    "n": 38
+   },
+   "ref_speed_0.6_0.9": {
+    "max_lead_m": 0.0112,
+    "median_lead_m": -0.0135,
+    "n": 38
+   },
+   "ref_speed_0.9_1.1": {
+    "max_lead_m": 0.0216,
+    "median_lead_m": -0.0025,
+    "n": 5167
+   }
+  },
+  "note": "actual speed ran 0.03-0.06 m/s above command through the braking ramp; a pure delay tau integrates to scan speed times tau, 1 m/s and 40 ms giving 40 mm",
+  "run": "local_data/stall_probe_a",
+  "track": 0
+ },
+ "cause_steering_branch": {
+  "margin_deg": 5.0,
+  "note": "a reversed track was driven with the wheels at 180 deg; heading feedback spent the 5 deg margin and latched a 180 deg reconfiguration 15 mm from the end of the pass, during which the chassis coasted 50 mm past the goal",
+  "parked_angle_deg": 180.0,
+  "run": "local_data/stall_fix_v2",
+  "soft_limit_deg": 185.0,
+  "tracker_cross_request_deg": 11.31
+ },
+ "closed_loop_model": {
+  "delay_ticks": [
+   1,
+   2,
+   3,
+   4
+  ],
+  "overshoot_m": [
+   0.001,
+   0.0047,
+   0.0083,
+   0.0126
+  ],
+  "overshoot_m_without_cap_at_2_ticks": 0.0205,
+  "tick_s": 0.02
+ },
+ "schema": "agv.pass_terminal_overshoot.v1",
+ "tolerance_m": 0.05
+}

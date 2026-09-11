@@ -19,7 +19,9 @@
 
 ## 重要问题保留入口
 
-- [转向恢复直行、8°机械余量](issues/STEERING_SPIN_RECOVERY.md)：保留旧126°动作的原因和新配置实测。
+- [转向恢复直行、8°机械余量](issues/STEERING_SPIN_RECOVERY.md)：保留旧126°动作的原因、8°配置实测，以及静止起步另加20°段余量的取舍。
+- [控制回路停顿](issues/CONTROL_LOOP_STALL.md)：全系统I/O停顿击穿实时回路的三层根因、把自身停摆误报成定位失效的判据缺陷，以及WSLg图形上下文偶发失败的现状。
+- [扫描道终点过冲](issues/PASS_TERMINAL_OVERSHOOT.md)：执行延迟与舵轮限位分支两个成因、停止距离钳制与段余量，以及尚未定位的尾段覆盖缺口。
 - [路面UV镜像](issues/ROAD_DISPLAY_ALIGNMENT.md)：错误公式、实际渲染证据、迁移和回归。
 - [扫描摆动、后退调整、预览与条光](issues/SCAN_STABILITY.md)：保留调参前后原图和定位误差对照。
 - [沟槽碰撞简化](issues/COLLISION_PROXY.md)：视觉/碰撞边界、成本与不适用工况。

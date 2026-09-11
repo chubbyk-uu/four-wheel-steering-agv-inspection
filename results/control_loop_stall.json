@@ -1,0 +1,113 @@
+{
+ "after": {
+  "control_stalls": 0,
+  "control_tick_phase_peaks_s": {
+   "capture_poll": 0.000164,
+   "control": 0.003534,
+   "feedback_check": 0.000305,
+   "graph_query": 0.000795,
+   "log_write": 0.000512,
+   "status_publish": 0.000209
+  },
+  "mission_seconds": 1378.644,
+  "run": "local_data/overshoot_fix",
+  "ticks": 69003
+ },
+ "located_stall": {
+  "note": "telemetry publish held the 50 Hz tick for 0.328 s with 0.2 ms of CPU, one voluntary wait, no preemption and no page fault",
+  "phase_breakdown": {
+   "control_dt_s": 0.016000000000000014,
+   "feedback_wall_age_s": {
+    "health": 0.022439016999669548,
+    "mode": 0.012994884999898204,
+    "odom": 0.006696594999993977
+   },
+   "gap_before_s": 0.020091,
+   "kind": "tick",
+   "major_faults": 0,
+   "phases": {
+    "capture_poll": 1e-06,
+    "control": 1e-06,
+    "feedback_check": 2.7e-05,
+    "log_flush": 1.7e-05,
+    "log_write": 3.9e-05,
+    "status_publish": 0.328041
+   },
+   "preemptions": 0,
+   "state": "READY",
+   "thread_cpu_s": 0.000205,
+   "valid": true,
+   "waits": 1,
+   "wall_s": 0.328128
+  },
+  "run": "local_data/stall_probe_full"
+ },
+ "relocated_stall": {
+  "note": "with the publish moved off the thread the same stall reappeared in the log flush, proving the cause was not the call but the filesystem",
+  "phase_breakdown": {
+   "control_dt_s": 0.01999999999998181,
+   "feedback_wall_age_s": {
+    "health": 0.05119207000007009,
+    "mode": 0.005233746000158135,
+    "odom": 0.006691818999570387
+   },
+   "gap_before_s": 0.019355,
+   "kind": "tick",
+   "major_faults": 0,
+   "phases": {
+    "capture_poll": 2e-06,
+    "control": 0.00051,
+    "feedback_check": 2.3e-05,
+    "graph_query": 4.9e-05,
+    "log_flush": 0.348801,
+    "log_write": 4.1e-05,
+    "status_publish": 4.5e-05
+   },
+   "preemptions": 0,
+   "state": "RUNNING",
+   "thread_cpu_s": 0.000711,
+   "valid": true,
+   "waits": 1,
+   "wall_s": 0.349474
+  },
+  "run": "local_data/stall_fix_full"
+ },
+ "schema": "agv.control_loop_stall.v1",
+ "symptom": {
+  "control_dt_s": 0.0,
+  "fault_time_s": 191.80300000000003,
+  "feedback_wall_age_s": {
+   "health": 0.4316621230000237,
+   "mode": 0.38751036600024236,
+   "odom": 0.38038575399968977
+  },
+  "localization_health": {
+   "delivery_queue_peak": 4,
+   "filter_age_s": {
+    "global": 0.008000000000009777,
+    "local": 0.008000000000009777
+   },
+   "measurement_age_s": {
+    "gnss": 0.12999999999999545,
+    "imu": 0.009999999999990905,
+    "wheel": 0.009999999999990905
+   },
+   "motion_tilt_rejects": 855,
+   "motion_tilt_updates": 1464,
+   "state": "READY",
+   "stop_required": false,
+   "tilt_initialized": true
+  },
+  "note": "health READY with every measurement age below 0.13 s; the ages that failed were measured by the blocked thread itself",
+  "odom_age_s": 0.0010000000000331966,
+  "reason": "STALE_OR_UNREADY_LOCALIZATION",
+  "run": "local_data/full_area_1ms"
+ },
+ "system_cause": {
+  "io_full_us": 104416,
+  "io_some_us": 148875,
+  "note": "system-wide I/O stall; the linescan archive writes 16 MiB per block to a WSL2 virtual disk at about 6.5 MB/s",
+  "sampler_own_interval_s": 0.344903,
+  "source": "/proc/pressure/io sampled at 20 Hz"
+ }
+}
