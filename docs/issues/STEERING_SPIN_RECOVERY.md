@@ -90,7 +90,90 @@ python3 tools/validate_spin_recovery.py --output /tmp/steering-spin-recovery.jso
 机械上这不增加成本：行程同为380°，线缆绕转能力不变，只是把硬限位相对"直行零位"装得不对称。要注意
 的是零位不再位于行程中点，实车的回零/索引与装配基准需要相应改动。
 
-软件改动范围：`Config::soft`目前是单个标量，在范围过滤、段余量、代价余量项、`limit_approach`提前
-制动和输出钳位共5处使用，需改成上下限一对；连带`platform.yaml`的`steer_soft_limit`/`steer_hard_limit`、
-URDF的`±steer_hard_limit`、`motion.yaml`与C++回归。`steering_segment_margin`仍应保留——任何摆放都
-一定有某个方向的某个表示贴着限位，段余量是保证分配器不去选它的机制，只是改摆放之后它几乎不会生效。
+## 2026-09-11：已改为 −280°/+100°，四轮一致
+
+硬限位由±190°改为`[−280°, +100°]`，软限位相应为`[−275°, +95°]`。**行程仍是380°，8°总机械余量
+不变**（两侧各5°硬-软＋3°动态预留），`steering_segment_margin`＝20°保留不动。
+
+### 四轮用同一对限位，不做左右镜像
+
+曾考虑左侧轮`[−280,+100]`、右侧轮`[+100,−280]`镜像摆放，实测数据否掉了这个方案：
+
+- **原地旋转是按对角配对的**，不是左右。实测fl=−54.13°、fr=+54.13°、rl=+54.13°、rr=−54.13°，
+  同号的是fl/rr与fr/rl两条对角线。左右镜像和旋转的对称轴不重合，只会把"谁余量大"换个人——四轮里
+  永远还是两个40.87°、两个149.13°，净收益为零。按对角镜像倒是能让正转四轮都拿149.13°，但反转时
+  角度整体变号，四轮全掉到40.87°，两个旋转方向都要用，等于拿一个换另一个。
+- **横移要求四轮同角**。实测`left_shift_spin`/`right_shift_spin`四轮都是同一个角度。统一限位下四轮
+  一致落在−90°（余量185°），正好消掉修复前`fl/fr +90、rl/rr −90`那种前后劈叉；左右镜像则会强迫
+  左轮−90°、右轮+90°，等于把刚消掉的劈叉换个方向装回来，两侧驱动符号还长期相反。
+- 保证余量是**每个轮子各自**的性质（`W ≥ 180°+2m`），`[−280,+100]`已经打满上界`m=100°`，镜像不可能
+  再提高，只能改变坏表示落在哪个方向。
+- 代价是实车转向模块变成有手性的零件，四角互换性没了——这是4WIDS布局最值钱的一条。
+
+结论：对称性靠"角度模180°周期＋段余量筛选"在软件里拿，不靠把机械限位装成手性的。
+
+### 软件改动
+
+`Config::soft`单标量拆成`soft_lower`/`soft_upper`一对，并加了三个派生量：`span()`、
+`margin(a)=min(soft_upper−a, a−soft_lower)`、`recentre_margin()=span()/2−90°−hysteresis`。原来5处
+用法按此改写：
+
+| 位置 | 原 | 现 |
+|---|---|---|
+| 范围过滤 | `a < −soft \|\| a > soft` | `a < soft_lower \|\| a > soft_upper` |
+| 静止段余量 | `soft−\|a\| < segment_margin` | `margin(a) < segment_margin` |
+| 代价余量项 | `soft−\|a\|` | `margin(a)` |
+| `limit_approach`提前制动 | "离零向外"且`soft−max(\|angle\|,\|out\|) ≤ reserve` | 按运动**符号**取该侧余量：正向看`soft_upper−max(angle,out)`，负向看`min(angle,out)−soft_lower` |
+| 输出钳位 | `clamp(·, min(−soft,out), max(soft,out))` | `clamp(·, min(soft_lower,out), max(soft_upper,out))` |
+
+`limit_approach`这一处是唯一语义变了的：限位对零位不再对称，"离零向外"不再等于"朝限位去"，判据改成
+运动方向的符号加该方向上的剩余行程。`reconfigure`分支原来的`|a| ≤ 90°+hysteresis`等价于
+"余量≥`soft−90°−hysteresis`"，直接改写成`margin(a) ≥ recentre_margin()`；因为它比保证余量
+`(span−180°)/2`恰好小一个hysteresis，任何方向都一定还留得下合法分支。
+
+`validate()`同时简化了：对称限位需要的几条端点检查被一条关系式取代——
+
+> 每个方向都存在余量≥m的分支，当且仅当`span ≥ 180° + 2m`
+
+它已经蕴含横移±90°落点合法，不必再单独检查。另加"零位必须在行程内"（`soft_lower<0<soft_upper`）。
+
+参数名相应改为`steer_hard_lower`/`steer_hard_upper`/`steer_soft_lower`/`steer_soft_upper`，
+URDF的`<limit>`与`ros2_control`位置命令区间同步。
+
+### 实测
+
+`validate_spin_recovery.py`在无头仿真复测三类情况（[结果](../../results/steering_spin_recovery_asymmetric.json)）：
+
+| 用例 | 旋转结束轮角 | 恢复直行落点 | 各轮转角 |
+|---|---|---|---|
+| 直行→旋转 | −54.13/54.13/54.13/−54.13 | 四轮0° | 均54.13° |
+| 左横移→旋转 | −54.13/−125.87/−125.87/−54.13 | 0°/−180°/−180°/0° | 均54.13° |
+| 右横移→旋转 | 同上 | 同上 | 均54.13° |
+
+三类全部54.13°，**126°回中消失**；落点余量一律95°，全程只有`STOP_REQUEST`，无`LIMIT_RECONFIGURE`。
+对照旧±190°：8°余量版本两轮停在179.999°（余量5°），20°段余量版本则被迫走125.87°回0°。左右横移落点
+现在同为−90°，不再前后劈叉。
+
+整车任务复测用7道×13 m、1.0 m/s（过冲当初暴露的速度），6次`ROTATE_180`转场，GUI＋RViz＋OptiX
+（[结果](../../results/steering_asymmetric_limit_mission.json)）：ACQUIRED/HOLD，20/20步全部完成，
+321 s，稳态RTF 0.9986，63块258,048行，原图与ROS一致，暂停保帧与取消探针均通过。全程
+**0次`LIMIT_RECONFIGURE`**、0次控制停顿、0次终点过冲中止。
+
+33,618个舵角采样的驻留角只有四个值：−125.9°、−54.1°、0°、−180°，正是不对称摆放预测的落点。各轮区间
+fl −96.34..76.27°、fr −184.28..71.75°、rl −184.28..70.68°、rr −92.36..78.99°。**最小余量16.01°**出现
+在转场瞬态的+78.99°（段余量只管静止起步，行驶不受限；动态预留是3°，此处仍有5倍余量）。38.03%的采样
+绝对角超过100°——在新摆放下这些恰好是高余量的一侧，同一个−184.28°在旧±185°摆放里只剩0.71°。
+
+覆盖判定仍是`NEEDS_RESCAN`：每道末端约0.26–0.31 m未验证，第6道另有`[0, 0.941]`。横向余量0.138–0.149 m，
+远在0.25 m预算内，与本次限位改动无关，是此前已记录的尾段覆盖问题（见[终点过冲](PASS_TERMINAL_OVERSHOOT.md)），
+本轮不处理。
+
+C++回归按新几何重写：`MechanicalLimitsAndReverse`、`ExplicitLimitReconfigurationSelectsInterior`
+（新增横移+90°必须被recentre筛掉的断言）、`AtanBranchCutIsNotMechanicalDiscontinuity`、
+`ContinuousHeadingSweepReconfiguresBeforeLimit`（改为跟踪最小余量）、
+`StationaryShortestChoiceMustLeaveSegmentMargin`、
+`SpinRecoveryLongTravelIsRequiredOnlyByStationaryLimitReserve`→`SpinRecoveryNeedsNoLongUnwindUnderAsymmetricLimits`（改为断言三段都是54.13°）、
+`StoppedVehicleDoesNotStartASegmentBesideTheSteeringLimit`（坏分支改为横移+90°）、
+`DefaultsMatchShippedPlatformAndPolicy`（新增span关系、两个直行分支余量、两侧8°机械余量、380°行程）。
+新增`RejectSteeringLimitsThatCannotCoverEveryDirection`，同时断言现行摆放是同行程下保证余量的最优解。329项自动测试通过。
+

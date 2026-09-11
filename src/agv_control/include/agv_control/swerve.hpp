@@ -11,19 +11,37 @@ constexpr double pi = 3.14159265358979323846;
 using Four = std::array<double, 4>;
 struct Twist { double x{}, y{}, yaw{}; };
 struct Config {
-  double wheelbase{1.3}, track{0.94}, radius{0.2}, soft{185*pi/180};
+  double wheelbase{1.3}, track{0.94}, radius{0.2};
+  // The steering limits are asymmetric about straight ahead. A wheel direction is
+  // periodic modulo pi, so the span alone fixes the guaranteed margin -- every
+  // direction has a branch with margin m iff span >= pi + 2m -- while where the
+  // span sits decides which direction is left owning the near-limit branch.
+  // [-275, 95] deg keeps both straight-ahead branches at 95 deg and leaves the
+  // poor branch on lateral +pi/2, which is only held during a transfer.
+  double soft_lower{-275*pi/180}, soft_upper{95*pi/180};
   double rate{0.65}, steer_accel{1.5}, max_speed{10/3.6}, max_yaw{0.35}, accel{0.8}, decel{1.0};
   double reorient{0.30}, aligned{0.035}, stopped{0.025}, hysteresis{0.08};
   double alignment_motion_confirm_s{0.06};
   double lateral_mismatch{0.12};
   double max_lateral_speed{1.0};
   double limit_reserve{3*pi/180}, segment_margin{20*pi/180}, wheel_deadband{0.005};
+  double span() const {return soft_upper-soft_lower;}
+  double margin(double a) const {return std::min(soft_upper-a,a-soft_lower);}
+  // Margin a branch must keep once a latched limit approach forces recentring.
+  // This is the old |a| <= pi/2+hysteresis test restated as a margin, and being
+  // hysteresis below the guaranteed margin (span-pi)/2 it always leaves a branch.
+  double recentre_margin() const {return span()/2-pi/2-hysteresis;}
   void validate() const {
-    for (double v : {wheelbase,track,radius,soft,rate,steer_accel,max_speed,max_yaw,accel,decel,reorient,aligned,stopped,hysteresis,lateral_mismatch,max_lateral_speed,limit_reserve,segment_margin,wheel_deadband,alignment_motion_confirm_s})
+    for (double v : {wheelbase,track,radius,rate,steer_accel,max_speed,max_yaw,accel,decel,reorient,aligned,stopped,hysteresis,lateral_mismatch,max_lateral_speed,limit_reserve,segment_margin,wheel_deadband,alignment_motion_confirm_s})
       if (!std::isfinite(v) || v <= 0) throw std::invalid_argument("invalid controller parameter");
-    // A lateral endpoint is pi/2, so the margin must still leave that legal.
-    if (alignment_motion_confirm_s > .1 || soft < pi/2 || aligned >= reorient || limit_reserve >= soft-pi/2
-        || segment_margin <= limit_reserve || segment_margin >= soft-pi/2 || wheel_deadband>=stopped)
+    // Straight ahead is the mechanical zero and must stay directly commandable.
+    if (!std::isfinite(soft_lower) || !std::isfinite(soft_upper) || soft_lower >= 0 || soft_upper <= 0)
+      throw std::invalid_argument("invalid steering limits");
+    // The span relation subsumes the per-endpoint checks a symmetric limit needed:
+    // it already guarantees a legal lateral +-pi/2 branch outside the margin.
+    if (alignment_motion_confirm_s > .1 || aligned >= reorient
+        || span() < pi+2*segment_margin || segment_margin <= limit_reserve
+        || recentre_margin() <= limit_reserve || wheel_deadband>=stopped)
       throw std::invalid_argument("invalid steering thresholds");
   }
 };
@@ -61,17 +79,17 @@ class Controller {
       double best=1e100;
       for (int k=-3;k<=3;++k) {
         const double a=base+k*pi;
-        if (a < -c_.soft || a > c_.soft) continue;
+        if (a < c_.soft_lower || a > c_.soft_upper) continue;
+        const double margin=c_.margin(a);
         // A stopped vehicle re-steers before it drives, so it must not begin a
         // segment on a branch that leaves less travel than the trajectory may ask
         // for. Both branches of a direction are kinematically identical; only the
         // interior one survives a pass of cross-track and heading corrections.
-        if (stationary && c_.soft-std::abs(a)<c_.segment_margin) continue;
+        if (stationary && margin<c_.segment_margin) continue;
         // Only a latched limit-reconfiguration event restricts choices to the
-        // interior branch. Ordinary stops/reversals do not force recentering.
-        if (reconfigure && std::abs(a)>pi/2+c_.hysteresis) continue;
+        // branch furthest from either limit. Ordinary stops/reversals do not.
+        if (reconfigure && margin<c_.recentre_margin()) continue;
         // Mechanical travel, not wrapped angle distance. Prefer continuity at ties.
-        const double margin=c_.soft-std::abs(a);
         const double cost=std::abs(a-actual[i])+0.02/(0.1+margin)
           +(std::abs(a-previous[i])>pi/2?c_.hysteresis:0);
         if (cost<best) {best=cost;out.angle[i]=a;out.speed[i]=(k%2==0?speed:-speed);}
@@ -109,10 +127,17 @@ class Controller {
       const double steering_speed=std::max(std::abs(steer_velocity_[i]),std::abs(actual_steer_rates[i]));
       const double reserve=c_.limit_reserve+steering_speed*steering_speed/(2*c_.steer_accel)
         +steering_speed*dt;
-      const double travel=std::max(std::abs(angles[i]),std::abs(out_.angle[i]));
-      const bool outward=(target.angle[i]-angles[i])*angles[i]>1e-8
-        || actual_steer_rates[i]*angles[i]>1e-8 || steer_velocity_[i]*out_.angle[i]>1e-8;
-      limit_approach |= outward && c_.soft-travel<=reserve;
+      // With the limits asymmetric about straight ahead, "moving outward" is no
+      // longer "moving away from zero": what decides is the sign of the motion and
+      // the headroom left on that side, measured at whichever of the feedback and
+      // the internal command leads in that direction.
+      const double ahead=std::max(angles[i],out_.angle[i]);
+      const double behind=std::min(angles[i],out_.angle[i]);
+      const auto nearing=[&](double direction){
+        return std::abs(direction)>1e-8
+          && (direction>0?c_.soft_upper-ahead:behind-c_.soft_lower)<=reserve;};
+      limit_approach |= nearing(target.angle[i]-angles[i]) || nearing(actual_steer_rates[i])
+        || nearing(steer_velocity_[i]);
     }
     const bool zero=desired<1e-5;
     if(mode_==Mode::Drive && (err>c_.reorient||reverse||zero||excessive_mismatch||limit_approach)) {
@@ -159,13 +184,13 @@ class Controller {
         steer_velocity_[i]=approach(steer_velocity_[i],velocity,c_.steer_accel*dt);
         const double step=steer_velocity_[i]*dt;
         out_.angle[i]=std::clamp(out_.angle[i]+step,
-          std::min(-c_.soft,out_.angle[i]),std::max(c_.soft,out_.angle[i]));
+          std::min(c_.soft_lower,out_.angle[i]),std::max(c_.soft_upper,out_.angle[i]));
       } else {
         // Stop existing steering motion smoothly before holding the wheel axes.
         // Do not pursue the newly requested angle while the chassis is braking.
         steer_velocity_[i]=approach(steer_velocity_[i],0,c_.steer_accel*dt);
         out_.angle[i]=std::clamp(out_.angle[i]+steer_velocity_[i]*dt,
-          std::min(-c_.soft,out_.angle[i]),std::max(c_.soft,out_.angle[i]));
+          std::min(c_.soft_lower,out_.angle[i]),std::max(c_.soft_upper,out_.angle[i]));
       }
     }
     // One interpolation fraction preserves coordinated wheel-speed proportions.

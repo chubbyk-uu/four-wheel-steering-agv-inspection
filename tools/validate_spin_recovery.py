@@ -18,7 +18,12 @@ def main():
     args = parser.parse_args()
     platform = yaml.safe_load(Path('src/agv_description/config/platform.yaml').read_text())
     policy = yaml.safe_load(Path('src/agv_bringup/config/motion.yaml').read_text())['swerve_controller']['ros__parameters']
-    soft = platform['steer_soft_limit']; reserve = policy['steering_limit_reserve']
+    lower = platform['steer_soft_lower']; upper = platform['steer_soft_upper']
+    reserve = policy['steering_limit_reserve']; required = policy['steering_segment_margin']
+
+    def margin(angle):
+        return min(upper-angle, angle-lower)
+
     rclpy.init(); node = Evaluator(); reasons = set(); report = {'passed': False, 'cases': []}
     node.create_subscription(String, '/motion_transition_reason', lambda m: reasons.add(m.data), 20)
 
@@ -54,27 +59,35 @@ def main():
             settle((0,0,0))
             wheels = []
             for old, new in zip(before, after):
-                candidates = [k*math.pi for k in range(-2,3) if abs(k*math.pi) <= soft]
+                candidates = [k*math.pi for k in range(-3,4) if lower <= k*math.pi <= upper]
                 nearest = min(candidates, key=lambda a: abs(a-old))
-                allowed = [a for a in candidates if abs(a) <= soft-reserve]
+                allowed = [a for a in candidates if margin(a) >= required]
                 expected = min(allowed, key=lambda a: abs(a-old))
                 wheels.append(dict(before_deg=math.degrees(old), after_deg=math.degrees(new),
-                    travel_deg=math.degrees(abs(new-old)), nearest_without_reserve_deg=math.degrees(nearest),
-                    nearest_reserve_deg=math.degrees(soft-abs(nearest)),
-                    nearest_rejected_by_reserve=abs(nearest)>soft-reserve))
+                    travel_deg=math.degrees(abs(new-old)), nearest_branch_deg=math.degrees(nearest),
+                    nearest_branch_margin_deg=math.degrees(margin(nearest)),
+                    nearest_rejected_by_margin=margin(nearest) < required,
+                    chosen_margin_deg=math.degrees(margin(new))))
                 assert abs(new-expected)<.035, wheels[-1]
+                assert margin(new) >= required-.035, wheels[-1]
                 if abs(new-old)>math.pi/2:
-                    assert abs(nearest)>soft-reserve, 'unexplained nonminimal steering'
-            if not lateral: assert all(w['travel_deg']<90 for w in wheels)
-            elif soft-reserve>=math.pi:
-                assert all(w['travel_deg']<90 for w in wheels)
-            else: assert sum(w['travel_deg']>90 for w in wheels)==2
+                    assert margin(nearest) < required, 'unexplained nonminimal steering'
+            # Asymmetric limits leave both straight-ahead branches 95 deg clear, so
+            # every recovery is the same 54.13 deg turn the spin itself made. The
+            # 126 deg unwind the symmetric placement forced after a crab is gone.
+            assert all(w['travel_deg'] < 90 for w in wheels), wheels
             report['cases'].append(dict(case=label, before_spin_deg=list(map(math.degrees,start)),
                                         wheels=wheels, recovery_reasons=observed))
         report.update(passed=True, final_motion_state=node.state,
-                      soft_limit_deg=math.degrees(soft), stationary_reserve_deg=math.degrees(reserve),
-                      hard_limit_deg=math.degrees(platform['steer_hard_limit']),
-                      total_hard_reserve_deg=math.degrees(platform['steer_hard_limit']-soft+reserve),
+                      soft_limit_deg=[math.degrees(lower), math.degrees(upper)],
+                      hard_limit_deg=[math.degrees(platform['steer_hard_lower']),
+                                      math.degrees(platform['steer_hard_upper'])],
+                      dynamic_reserve_deg=math.degrees(reserve),
+                      segment_margin_deg=math.degrees(required),
+                      guaranteed_branch_margin_deg=math.degrees((upper-lower-math.pi)/2),
+                      total_hard_reserve_deg=[
+                          math.degrees(lower-platform['steer_hard_lower']+reserve),
+                          math.degrees(platform['steer_hard_upper']-upper+reserve)],
                       wheel_order=['fl','fr','rl','rr'])
     finally:
         try: settle((0,0,0))

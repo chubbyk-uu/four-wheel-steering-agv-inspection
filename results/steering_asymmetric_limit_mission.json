@@ -1,0 +1,251 @@
+{
+  "first_odometry_wall_s": 11.499549520001892,
+  "steady_rtf": 0.9985661785183282,
+  "steady_min_speed_m_s": 0.9,
+  "steady_wall_s": 106.7330361199929,
+  "passed": true,
+  "capture_passed": true,
+  "gui_rviz": true,
+  "blocks": 63,
+  "rows": 258048,
+  "ros_archive_identical": true,
+  "pause_retains_frame": true,
+  "requested_speed_m_s": 1.0,
+  "region_m": [
+    13.0,
+    7.0
+  ],
+  "discarded_tail_rows": [
+    862,
+    725,
+    774,
+    740,
+    762,
+    774,
+    759
+  ],
+  "actual_peak_speed_m_s": 1.0626201412835867,
+  "observed_rtf": 0.9975908969695307,
+  "road_display": {
+    "mesh": "file:///home/jerry/robot_ws/4WIDS_agv/local_data/asym_tracks/session/rviz_road/road.obj",
+    "frame": "world",
+    "inspection_bounds": [
+      0,
+      20,
+      -5,
+      5
+    ],
+    "bounds": [
+      0,
+      20,
+      -5,
+      5
+    ],
+    "optical_bounds": [
+      -1.024,
+      21.503999999999998,
+      -6.144,
+      6.144
+    ],
+    "triangles": 16,
+    "texture_pixels": 7448576,
+    "rgba_mipmap_budget_bytes": 39725738
+  },
+  "coverage_status": "NEEDS_RESCAN",
+  "coverage_tracks": [
+    {
+      "track_id": 0,
+      "direction": 1,
+      "assigned_road_y_m": [
+        -3.5,
+        -2.5
+      ],
+      "estimated_covered_along_m": [
+        [
+          0.0,
+          12.689086421861756
+        ]
+      ],
+      "unverified_along_m": [
+        [
+          12.689086421861756,
+          13.0
+        ]
+      ],
+      "excluded_footprint_tags": 0,
+      "max_lateral_allowance_m": 0.13822150913810613,
+      "quality_flags": []
+    },
+    {
+      "track_id": 1,
+      "direction": -1,
+      "assigned_road_y_m": [
+        -2.5,
+        -1.5
+      ],
+      "estimated_covered_along_m": [
+        [
+          0.0,
+          12.741995790137443
+        ]
+      ],
+      "unverified_along_m": [
+        [
+          12.741995790137443,
+          13.0
+        ]
+      ],
+      "excluded_footprint_tags": 0,
+      "max_lateral_allowance_m": 0.13851527227301086,
+      "quality_flags": []
+    },
+    {
+      "track_id": 2,
+      "direction": 1,
+      "assigned_road_y_m": [
+        -1.5,
+        -0.5
+      ],
+      "estimated_covered_along_m": [
+        [
+          0.0,
+          12.734167149395638
+        ]
+      ],
+      "unverified_along_m": [
+        [
+          12.734167149395638,
+          13.0
+        ]
+      ],
+      "excluded_footprint_tags": 0,
+      "max_lateral_allowance_m": 0.1451739190061923,
+      "quality_flags": []
+    },
+    {
+      "track_id": 3,
+      "direction": -1,
+      "assigned_road_y_m": [
+        -0.5,
+        0.5
+      ],
+      "estimated_covered_along_m": [
+        [
+          0.0,
+          12.740377903118882
+        ]
+      ],
+      "unverified_along_m": [
+        [
+          12.740377903118882,
+          13.0
+        ]
+      ],
+      "excluded_footprint_tags": 0,
+      "max_lateral_allowance_m": 0.14877569869631302,
+      "quality_flags": []
+    },
+    {
+      "track_id": 4,
+      "direction": 1,
+      "assigned_road_y_m": [
+        0.5,
+        1.5
+      ],
+      "estimated_covered_along_m": [
+        [
+          0.0,
+          12.741600601159426
+        ]
+      ],
+      "unverified_along_m": [
+        [
+          12.741600601159426,
+          13.0
+        ]
+      ],
+      "excluded_footprint_tags": 0,
+      "max_lateral_allowance_m": 0.13890619269210955,
+      "quality_flags": []
+    },
+    {
+      "track_id": 5,
+      "direction": -1,
+      "assigned_road_y_m": [
+        1.5,
+        2.5
+      ],
+      "estimated_covered_along_m": [
+        [
+          0.0,
+          12.736450550178217
+        ]
+      ],
+      "unverified_along_m": [
+        [
+          12.736450550178217,
+          13.0
+        ]
+      ],
+      "excluded_footprint_tags": 0,
+      "max_lateral_allowance_m": 0.13982412130817298,
+      "quality_flags": []
+    },
+    {
+      "track_id": 6,
+      "direction": 1,
+      "assigned_road_y_m": [
+        2.5,
+        3.5
+      ],
+      "estimated_covered_along_m": [
+        [
+          0.9411675792778186,
+          12.739583938360656
+        ]
+      ],
+      "unverified_along_m": [
+        [
+          0.0,
+          0.9411675792778186
+        ],
+        [
+          12.739583938360656,
+          13.0
+        ]
+      ],
+      "excluded_footprint_tags": 0,
+      "max_lateral_allowance_m": 0.1405226894196544,
+      "quality_flags": []
+    }
+  ],
+  "final_state": "ACQUIRED",
+  "final_motion": "HOLD",
+  "wheel_steering_range_rad": {
+    "fl": [
+      -1.6814829548714214,
+      1.2166994831631235
+    ],
+    "fr": [
+      -3.2163771996207746,
+      1.252348033642677
+    ],
+    "rl": [
+      -3.216377199621484,
+      1.2336161266807828
+    ],
+    "rr": [
+      -1.6120571311576735,
+      1.2688976880683087
+    ]
+  },
+  "late_static_display_received": {
+    "road": 3,
+    "plan": 7
+  },
+  "new_task_cancel": {
+    "state": "CANCELED",
+    "motion_state": "HOLD",
+    "capture_active": false
+  }
+}

@@ -6,8 +6,18 @@ wheel_width: 0.16
 body_length: 1.9
 body_width: 1.1
 mass: 550.0
-steer_hard_limit: 3.3161255787892263
-steer_soft_limit: 3.2288591161895095
+# Steering travel is 380 deg but it is not centred on straight ahead. Direction is
+# periodic modulo 180 deg, so the span fixes the guaranteed margin -- 380 >= 180+2m
+# gives m = 100 deg either way it is placed -- and the placement only decides which
+# direction is stuck with the branch beside a limit. Symmetric +-190 deg put that
+# branch on straight ahead (180 deg, 10 deg of margin), held for a whole 110 s pass;
+# [-280, +100] leaves it on lateral +90 deg instead, which is held only in transfers.
+# All four corners share one pair: rotation splits the wheels by diagonal and lateral
+# motion wants all four at one angle, so no left/right mirror matches either.
+steer_hard_lower: -4.886921905584122
+steer_hard_upper: 1.7453292519943295
+steer_soft_lower: -4.799655442984406
+steer_soft_upper: 1.6580627893946132
 steer_rate: 0.65
 steer_accel: 1.5
 max_speed: 2.777777777777778

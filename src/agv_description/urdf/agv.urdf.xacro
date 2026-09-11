@@ -133,7 +133,7 @@
     </link>
     <joint name="${name}_steer_joint" type="revolute"><parent link="${name}_suspension_link"/><child link="${name}_steer_link"/>
       <origin xyz="0 0 -0.10"/><axis xyz="0 0 1"/>
-      <limit lower="${-p.steer_hard_limit}" upper="${p.steer_hard_limit}" effort="${p.steer_effort}" velocity="${p.steer_rate}"/>
+      <limit lower="${p.steer_hard_lower}" upper="${p.steer_hard_upper}" effort="${p.steer_effort}" velocity="${p.steer_rate}"/>
       <dynamics damping="0.5" friction="0.1"/>
     </joint>
     <link name="${name}_wheel_link">
@@ -195,7 +195,7 @@
   </gazebo>
   <ros2_control name="GazeboSystem" type="system"><hardware><plugin>gz_ros2_control/GazeboSimSystem</plugin></hardware>
     <xacro:macro name="interfaces" params="name">
-      <joint name="${name}_steer_joint"><command_interface name="position"><param name="min">${-p.steer_hard_limit}</param><param name="max">${p.steer_hard_limit}</param></command_interface><state_interface name="position"/><state_interface name="velocity"/></joint>
+      <joint name="${name}_steer_joint"><command_interface name="position"><param name="min">${p.steer_hard_lower}</param><param name="max">${p.steer_hard_upper}</param></command_interface><state_interface name="position"/><state_interface name="velocity"/></joint>
       <joint name="${name}_drive_joint"><command_interface name="velocity"><param name="min">${-p.max_speed/p.wheel_radius}</param><param name="max">${p.max_speed/p.wheel_radius}</param></command_interface><state_interface name="position"/><state_interface name="velocity"/></joint>
     </xacro:macro>
     <xacro:macro name="passive" params="name"><joint name="${name}_suspension_joint"><state_interface name="position"/><state_interface name="velocity"/></joint></xacro:macro>

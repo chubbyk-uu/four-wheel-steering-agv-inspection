@@ -14,8 +14,10 @@ class SwerveNode : public rclcpp::Node {
     agv::Config c;
     c.wheelbase=declare_parameter("wheelbase",c.wheelbase);c.track=declare_parameter("track",c.track);
     c.radius=declare_parameter("wheel_radius",c.radius);radius_=c.radius;
-    c.soft=declare_parameter("steer_soft_limit",c.soft);
-    hard_=declare_parameter("steer_hard_limit",190*agv::pi/180);
+    c.soft_lower=declare_parameter("steer_soft_lower",c.soft_lower);
+    c.soft_upper=declare_parameter("steer_soft_upper",c.soft_upper);
+    hard_lower_=declare_parameter("steer_hard_lower",-280*agv::pi/180);
+    hard_upper_=declare_parameter("steer_hard_upper",100*agv::pi/180);
     c.rate=declare_parameter("steer_rate",c.rate);c.steer_accel=declare_parameter("steer_accel",c.steer_accel);
     c.max_speed=declare_parameter("max_speed",c.max_speed);c.max_yaw=declare_parameter("max_yaw_rate",c.max_yaw);
     c.accel=declare_parameter("drive_accel",c.accel);
@@ -29,7 +31,8 @@ class SwerveNode : public rclcpp::Node {
     c.segment_margin=declare_parameter("steering_segment_margin",c.segment_margin);
     c.wheel_deadband=declare_parameter("wheel_speed_deadband",c.wheel_deadband);
     timeout_=declare_parameter("command_timeout",0.4);
-    if(!std::isfinite(hard_)||hard_<=c.soft||!std::isfinite(timeout_)||timeout_<=0)
+    if(!std::isfinite(hard_lower_)||!std::isfinite(hard_upper_)||hard_lower_>=c.soft_lower
+       ||hard_upper_<=c.soft_upper||!std::isfinite(timeout_)||timeout_<=0)
       throw std::invalid_argument("invalid limits or timeout");
     core_=std::make_unique<agv::Controller>(c);
     steer_pub_=create_publisher<std_msgs::msg::Float64MultiArray>("steering_controller/commands",10);
@@ -55,7 +58,7 @@ class SwerveNode : public rclcpp::Node {
             if(it==m->name.end()||j>=m->velocity.size()||(type==0&&j>=m->position.size())){ok=false;continue;}
             if(type==0){a[i]=m->position[j];sr[i]=m->velocity[j];}else v[i]=m->velocity[j]*radius_;
           }
-          ok &= std::isfinite(a[i])&&std::isfinite(v[i])&&std::isfinite(sr[i])&&std::abs(a[i])<=hard_+0.01;
+          ok &= std::isfinite(a[i])&&std::isfinite(v[i])&&std::isfinite(sr[i])&&a[i]>=hard_lower_-0.01&&a[i]<=hard_upper_+0.01;
         }
         if(ok){angles_=a;speeds_=v;steer_rates_=sr;feedback_stamp_=rclcpp::Time(m->header.stamp);have_feedback_=true;}
         else have_feedback_=false;
@@ -98,7 +101,7 @@ class SwerveNode : public rclcpp::Node {
   const std::array<std::string,4> names_{"fl","fr","rl","rr"};
   std::unique_ptr<agv::Controller> core_;
   agv::Four angles_{},speeds_{},steer_rates_{};agv::Twist command_;
-  double radius_{},hard_{},timeout_{};bool have_feedback_{false},command_valid_{false};
+  double radius_{},hard_lower_{},hard_upper_{},timeout_{};bool have_feedback_{false},command_valid_{false};
   std::chrono::steady_clock::time_point clock_wall_{std::chrono::steady_clock::now()};
   rclcpp::Time last_{0,0,RCL_ROS_TIME},feedback_stamp_{0,0,RCL_ROS_TIME},command_stamp_{0,0,RCL_ROS_TIME};
   rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr steer_pub_,drive_pub_;

@@ -13,11 +13,11 @@ TEST(Kinematics, ReconstructAllModes){
  }
 }
 TEST(Kinematics, MechanicalLimitsAndReverse){
- Controller c;Four a; a.fill(184*pi/180);
+ Config cfg;Controller c(cfg);Four a; a.fill(cfg.soft_lower+4*pi/180);
  auto r=c.allocate({1,0,0},a,a);
- for(size_t i=0;i<4;++i){EXPECT_NEAR(r.angle[i],pi,1e-9);EXPECT_LT(r.speed[i],0);}
+ for(size_t i=0;i<4;++i){EXPECT_NEAR(r.angle[i],-pi,1e-9);EXPECT_LT(r.speed[i],0);}
  for(int deg=-180;deg<=180;++deg){double h=deg*pi/180;auto q=c.allocate({std::cos(h),std::sin(h),0},a,a);
-  for(double angle:q.angle)EXPECT_LE(std::abs(angle),185*pi/180);}
+  for(double angle:q.angle){EXPECT_GE(angle,cfg.soft_lower);EXPECT_LE(angle,cfg.soft_upper);}}
 }
 TEST(Kinematics, ZeroHoldsAndLimits){
  Controller c;Four a{1,2,-1,-2};auto r=c.allocate({},a,a);EXPECT_EQ(r.angle,a);
@@ -77,10 +77,19 @@ TEST(Configuration, RejectInvalidAndTime){
  a[0]=NAN;EXPECT_THROW(c.update({},a,a,.01),std::invalid_argument);
 }
 TEST(Kinematics, ExplicitLimitReconfigurationSelectsInterior){
- Controller c;Four a; a.fill(pi);
+ Config cfg;Controller c(cfg);Four a; a.fill(cfg.soft_upper-pi/180);
  for(double vx:{-1.0,1.0}) {
   auto r=c.allocate({vx,0,0},a,a,true);
   for(size_t i=0;i<4;++i){EXPECT_NEAR(r.angle[i],0,1e-9);EXPECT_NEAR(r.speed[i],vx,1e-9);}
+ }
+ // The branch this placement leaves beside a limit is lateral +pi/2. Continuity
+ // holds a wheel there; only a latched limit approach moves it to the partner.
+ Four crabbing;crabbing.fill(pi/2);
+ const auto held=c.allocate({0,.5,0},crabbing,crabbing);
+ const auto moved=c.allocate({0,.5,0},crabbing,crabbing,true);
+ for(size_t i=0;i<4;++i){
+  EXPECT_NEAR(held.angle[i],pi/2,1e-9);EXPECT_NEAR(held.speed[i],.5,1e-9);
+  EXPECT_NEAR(moved.angle[i],-pi/2,1e-9);EXPECT_NEAR(moved.speed[i],-.5,1e-9);
  }
  Four previous{};
  for(int deg=-15;deg<=15;++deg) {
@@ -135,9 +144,9 @@ TEST(Kinematics, ReverseWholeTwistNegatesEveryWheelSpeed){
  }
 }
 TEST(Kinematics, AtanBranchCutIsNotMechanicalDiscontinuity){
- Controller c;Four a;a.fill(179*pi/180);
- auto r=c.allocate({.3*std::cos(181*pi/180),.3*std::sin(181*pi/180),0},a,a);
- for(size_t i=0;i<4;++i){EXPECT_NEAR(r.angle[i],181*pi/180,1e-9);EXPECT_GT(r.speed[i],0);}
+ Controller c;Four a;a.fill(-179*pi/180);
+ auto r=c.allocate({.3*std::cos(-181*pi/180),.3*std::sin(-181*pi/180),0},a,a);
+ for(size_t i=0;i<4;++i){EXPECT_NEAR(r.angle[i],-181*pi/180,1e-9);EXPECT_GT(r.speed[i],0);}
 }
 TEST(Kinematics, ZeroSpeedModuleHoldsThroughNoise){
  Controller c;Four a{.7,0,0,0};
@@ -150,21 +159,21 @@ TEST(Kinematics, ZeroSpeedModuleHoldsThroughNoise){
 TEST(Transitions, ContinuousHeadingSweepReconfiguresBeforeLimit){
  for(double direction:{-1.,1.}) {
   Config cfg;Controller c(cfg);Four a{},v{};Target r;
-  int limit_stops=0;double maximum_angle=0;Mode old_mode=Mode::Hold;
+  int limit_stops=0;double least_margin=1e9;Mode old_mode=Mode::Hold;
   for(int n=0;n<7000;++n){
    const double heading=direction*.2*n*.01;
    r=c.update({.25*std::cos(heading),.25*std::sin(heading),0},a,v,.01);
    if(old_mode==Mode::Drive && c.mode()==Mode::Brake && c.reason()=="LIMIT_RECONFIGURE") {
-    ++limit_stops;EXPECT_LT(Controller::max_abs(a),cfg.soft-cfg.limit_reserve);
+    ++limit_stops;for(double angle:a)EXPECT_GT(cfg.margin(angle),cfg.limit_reserve);
    }
    for(size_t i=0;i<4;++i){
     EXPECT_LE(std::abs(r.angle[i]-a[i]),cfg.rate*.01+1e-9);
-    maximum_angle=std::max(maximum_angle,std::abs(r.angle[i]));
+    least_margin=std::min(least_margin,cfg.margin(r.angle[i]));
    }
    if(c.mode()==Mode::Align){EXPECT_LT(Controller::max_abs(r.speed),.025);}
    old_mode=c.mode();a=r.angle;v=r.speed;
   }
-  EXPECT_GE(limit_stops,3);EXPECT_LT(maximum_angle,cfg.soft-cfg.limit_reserve);
+  EXPECT_GE(limit_stops,3);EXPECT_GT(least_margin,cfg.limit_reserve);
  }
 }
 TEST(Transitions, PureSpinDoesNotAccumulateSteeringTravel){
@@ -187,17 +196,19 @@ TEST(Transitions, AlignmentRequiresActualSteeringToSettle){
  EXPECT_EQ(c.mode(),Mode::Drive);
 }
 TEST(Kinematics, OrdinaryStoppedChoiceIsShortestNotForcedHome){
- Controller c;Four a;a.fill(170*pi/180);
- const double heading=160*pi/180;
+ Controller c;Four a;a.fill(-170*pi/180);
+ const double heading=-160*pi/180;
  const auto r=c.allocate({.3*std::cos(heading),.3*std::sin(heading),0},a,a,false,true);
  for(double angle:r.angle)EXPECT_NEAR(angle,heading,1e-9);
 }
-TEST(Kinematics, StationaryShortestChoiceMustLeaveLimitReserve){
- Config cfg;cfg.limit_reserve=10*pi/180;Controller c(cfg);Four a;a.fill(160*pi/180);
- const auto r=c.allocate({.3,0,0},a,a,false,true);
- for(size_t i=0;i<4;++i){EXPECT_NEAR(r.angle[i],0,1e-9);EXPECT_GT(r.speed[i],0);}
+TEST(Kinematics, StationaryShortestChoiceMustLeaveSegmentMargin){
+ // Ten degrees from the +pi/2 branch, the short turn is 17 times cheaper than
+ // its partner and still refused: a stopped vehicle must not start there.
+ Config cfg;Controller c(cfg);Four a;a.fill(80*pi/180);
+ const auto r=c.allocate({0,.3,0},a,a,false,true);
+ for(size_t i=0;i<4;++i){EXPECT_NEAR(r.angle[i],-pi/2,1e-9);EXPECT_NEAR(r.speed[i],-.3,1e-9);}
 }
-TEST(Kinematics, SpinRecoveryLongTravelIsRequiredOnlyByStationaryLimitReserve){
+TEST(Kinematics, SpinRecoveryNeedsNoLongUnwindUnderAsymmetricLimits){
  Config cfg;cfg.wheelbase=1.3;cfg.track=.94;cfg.limit_reserve=10*pi/180;Controller c(cfg);Four zero{};
  for(double direction:{-1.,1.}) {
   const auto direct=c.allocate({0,0,direction*.3},zero,zero,false,true);
@@ -206,57 +217,56 @@ TEST(Kinematics, SpinRecoveryLongTravelIsRequiredOnlyByStationaryLimitReserve){
    EXPECT_LT(std::abs(direct.angle[i]),pi/2);
    EXPECT_NEAR(straight.angle[i],0,1e-9);
   }
-  Four lateral;lateral.fill(direction*pi/2);
-  const auto spin=c.allocate({0,0,direction*.3},lateral,lateral,false,true);
-  const auto constrained=c.allocate({.4,0,0},spin.angle,spin.angle,false,true);
-  const auto unrestricted=c.allocate({.4,0,0},spin.angle,spin.angle,false,false);
-  int long_turns=0;
+  // Crab, spin, then recover. Under +-190 deg two wheels came out of the spin at
+  // 125.87 deg, whose 54.13 deg branch at 180 deg had only 5 deg of margin, so
+  // the only legal straight branch was 0 deg: a 126 deg turn mid-mission. Here
+  // both straight branches are 95 deg clear and every turn stays at 54.13 deg.
+  Four zero{};
+  const auto lateral=c.allocate({0,direction*.4,0},zero,zero,false,true);
+  const auto spin=c.allocate({0,0,direction*.3},lateral.angle,lateral.angle,false,true);
+  const auto recovered=c.allocate({.4,0,0},spin.angle,spin.angle,false,true);
   for(size_t i=0;i<4;++i) {
-   EXPECT_NEAR(constrained.angle[i],0,1e-9);
-   if(std::abs(spin.angle[i])>pi/2) {
-    ++long_turns;
-    EXPECT_NEAR(std::abs(unrestricted.angle[i]),pi,1e-9);
-    EXPECT_LT(std::abs(unrestricted.angle[i]-spin.angle[i]),pi/2);
-    EXPECT_LT(cfg.soft-std::abs(unrestricted.angle[i]),cfg.limit_reserve);
-    EXPECT_LT(unrestricted.speed[i],0);
-   }
+   // Both lateral branches drive the same axis; only one clears the margin.
+   EXPECT_NEAR(lateral.angle[i],-pi/2,1e-9);
+   EXPECT_NEAR(lateral.speed[i]*std::sin(lateral.angle[i]),direction*.4,1e-9);
+   EXPECT_NEAR(std::abs(spin.angle[i]-lateral.angle[i]),35.8698235177*pi/180,1e-9);
+   EXPECT_NEAR(std::abs(recovered.angle[i]-spin.angle[i]),54.1301764823*pi/180,1e-9);
+   EXPECT_NEAR(recovered.speed[i]*std::cos(recovered.angle[i]),.4,1e-9);
+   EXPECT_GE(cfg.margin(recovered.angle[i]),cfg.segment_margin);
   }
-  EXPECT_EQ(long_turns,2);
  }
 }
 TEST(Kinematics, StoppedVehicleDoesNotStartASegmentBesideTheSteeringLimit){
- // The 8 deg mechanical reserve makes a 180 deg branch reachable and it is the
- // shorter turn out of a spin, but it leaves only 5 deg of outward travel. A
- // 100 m pass asks for more than that through cross-track and heading
- // correction, and paid for it with a 180 deg reconfiguration 15 mm before the
- // end of the scan. Re-steering is free while stopped, so the interior branch
- // is taken even though it is the longer turn.
+ // A branch within the segment margin of a limit is kinematically identical to
+ // its partner but leaves no travel for a pass of cross-track and heading
+ // correction: parking 5 deg from the limit cost a 100 m pass a 180 deg
+ // reconfiguration 15 mm before the end of the scan. Re-steering is free while
+ // stopped, so the interior branch is taken even though it is the longer turn.
+ // Moving the span off centre relocates that branch from straight ahead to
+ // lateral +pi/2 but cannot remove it: some direction always owns it.
  Config cfg;cfg.wheelbase=1.3;cfg.track=.94;cfg.limit_reserve=3*pi/180;
  Controller c(cfg);
  for(double sign:{-1.,1.}) {
-  Four lateral;lateral.fill(sign*pi/2);
-  const auto spin=c.allocate({0,0,sign*.3},lateral,lateral,false,true);
-  const auto straight=c.allocate({.4,0,0},spin.angle,spin.angle,false,true);
-  const auto driving=c.allocate({.4,0,0},spin.angle,spin.angle,false,false);
-  int near_limit=0,long_turns=0;
+  Four crabbing;crabbing.fill(pi/2);
+  const auto stopped_start=c.allocate({0,sign*.4,0},crabbing,crabbing,false,true);
+  const auto driving=c.allocate({0,sign*.4,0},crabbing,crabbing,false,false);
   for(size_t i=0;i<4;++i) {
-   EXPECT_GE(cfg.soft-std::abs(straight.angle[i]),cfg.segment_margin);
-   EXPECT_NEAR(straight.speed[i]*std::cos(straight.angle[i]),.4,1e-9);
    // Continuity alone still prefers the near-limit branch, which is how a wheel
-   // reaches 180 deg in the first place; only the stopped case refuses it.
-   if(cfg.soft-std::abs(driving.angle[i])<cfg.segment_margin) {
-    ++near_limit;EXPECT_LT(std::abs(driving.angle[i]-spin.angle[i]),std::abs(straight.angle[i]-spin.angle[i]));
-   }
-   if(std::abs(spin.angle[i])>pi/2) ++long_turns;
+   // reaches it in the first place; only the stopped case refuses it.
+   EXPECT_NEAR(driving.angle[i],pi/2,1e-9);
+   EXPECT_LT(cfg.margin(driving.angle[i]),cfg.segment_margin);
+   EXPECT_NEAR(stopped_start.angle[i],-pi/2,1e-9);
+   EXPECT_GE(cfg.margin(stopped_start.angle[i]),cfg.segment_margin);
+   EXPECT_NEAR(stopped_start.speed[i]*std::sin(stopped_start.angle[i]),sign*.4,1e-9);
+   EXPECT_GT(std::abs(stopped_start.angle[i]-crabbing[i]),std::abs(driving.angle[i]-crabbing[i]));
   }
-  EXPECT_EQ(near_limit,2);EXPECT_EQ(long_turns,2);
   // Dynamic braking margin still triggers well before the hard endpoint.
   Four a{},v{};Mode old=Mode::Hold;bool stopped=false;
   for(int k=0;k<3000;++k){
    double h=sign*.2*k*.01;
    auto out=c.update({.25*std::cos(h),.25*std::sin(h),0},a,v,.01);
    if(old==Mode::Drive && c.mode()==Mode::Brake && c.reason()=="LIMIT_RECONFIGURE")stopped=true;
-   for(double angle:out.angle)EXPECT_LT(std::abs(angle),185*pi/180);
+   for(double angle:out.angle)EXPECT_GT(cfg.margin(angle),0);
    old=c.mode();a=out.angle;v=out.speed;
   }
   EXPECT_TRUE(stopped);
@@ -302,6 +312,26 @@ TEST(DriveLimits, SeparateAccelerationAndDecelerationBothSigns){
 TEST(DriveLimits, RejectInvalidDeceleration){
  Config c;for(double value:std::array<double,4>{0.,-1.,INFINITY,NAN}){c.decel=value;EXPECT_THROW(Controller{c},std::invalid_argument);}
 }
+TEST(Configuration, RejectSteeringLimitsThatCannotCoverEveryDirection){
+ // A span below pi+2*segment_margin leaves some direction with no branch a
+ // stopped vehicle may start on, whichever way the span is placed.
+ Config narrow;narrow.soft_lower=-110*pi/180;narrow.soft_upper=105*pi/180;
+ EXPECT_LT(narrow.span(),pi+2*narrow.segment_margin);
+ EXPECT_THROW(Controller{narrow},std::invalid_argument);
+ // Straight ahead is the mechanical zero and must stay directly commandable.
+ for(auto pair:{std::pair<double,double>{10*pi/180,240*pi/180},{-370*pi/180,-10*pi/180}}) {
+  Config offset;offset.soft_lower=pair.first;offset.soft_upper=pair.second;
+  EXPECT_GE(offset.span(),pi+2*offset.segment_margin);
+  EXPECT_THROW(Controller{offset},std::invalid_argument);
+ }
+ // The shipped placement is the widest guaranteed margin its span can give.
+ Config shipped;
+ for(double shift=-95*pi/180;shift<=95*pi/180;shift+=pi/180) {
+  Config moved;moved.soft_lower=shipped.soft_lower+shift;moved.soft_upper=shipped.soft_upper+shift;
+  if(moved.soft_lower>=0||moved.soft_upper<=0)continue;
+  EXPECT_LE(std::min(moved.margin(0),moved.margin(-pi)),shipped.margin(0)+1e-12)<<shift;
+ }
+}
 
 
 TEST(Alignment, BriefPassiveRollingKeepsDrivesZeroButSustainedMotionBrakes) {
@@ -321,7 +351,8 @@ TEST(Configuration, DefaultsMatchShippedPlatformAndPolicy) {
  auto platform=YAML::LoadFile(std::string(AGV_CONFIG_ROOT)+"/agv_description/config/platform.yaml");
  auto policy=YAML::LoadFile(std::string(AGV_CONFIG_ROOT)+"/agv_bringup/config/motion.yaml")["swerve_controller"]["ros__parameters"];
  for(auto pair: {std::pair<const char*,double>{"wheelbase",c.wheelbase},{"track",c.track},
-   {"wheel_radius",c.radius},{"steer_soft_limit",c.soft},{"steer_rate",c.rate},
+   {"wheel_radius",c.radius},{"steer_soft_lower",c.soft_lower},
+   {"steer_soft_upper",c.soft_upper},{"steer_rate",c.rate},
    {"steer_accel",c.steer_accel},{"max_speed",c.max_speed},{"max_yaw_rate",c.max_yaw},
    {"drive_accel",c.accel},{"drive_decel",c.decel},{"max_lateral_speed",c.max_lateral_speed}}) {
   EXPECT_NEAR(platform[pair.first].as<double>(),pair.second,1e-12)<<pair.first;
@@ -335,13 +366,27 @@ TEST(Configuration, DefaultsMatchShippedPlatformAndPolicy) {
  auto tracking=YAML::LoadFile(std::string(AGV_CONFIG_ROOT)+"/agv_mission/config/tracking.yaml");
  const double ratio=tracking["cross_command_ratio"].as<double>();
  EXPECT_GE(c.segment_margin,std::atan(ratio)+c.limit_reserve);
+ // Every direction has a branch clear of that margin iff the span is at least
+ // pi+2m; the shipped span carries 95 deg against a 20 deg margin.
+ EXPECT_GE(c.span(),pi+2*c.segment_margin);
+ EXPECT_NEAR((c.span()-pi)/2,95*pi/180,1e-12);
+ // Straight ahead is held for a whole 110 s pass, so both of its branches, not
+ // just one, must clear the margin. That is what the placement buys.
+ for(double branch:{0.,-pi})EXPECT_GE(c.margin(branch),c.segment_margin);
+ // Hard limits keep 5 deg beyond the software limit on each side; with the 3 deg
+ // dynamic reserve that is the same 8 deg of mechanical reserve as before.
+ const double lower=platform["steer_hard_lower"].as<double>();
+ const double upper=platform["steer_hard_upper"].as<double>();
+ EXPECT_NEAR(c.soft_lower-lower+c.limit_reserve,8*pi/180,1e-12);
+ EXPECT_NEAR(upper-c.soft_upper+c.limit_reserve,8*pi/180,1e-12);
+ EXPECT_NEAR(upper-lower,380*pi/180,1e-12);
  // Every direction the planner drives a segment along must clear that margin,
- // including a reverse pass starting from wheels already parked at 180 deg.
+ // including a reverse pass starting from wheels already parked at -180 deg.
  Controller allocator(c);
  for(auto request:{Twist{.4,0,0},Twist{-.4,0,0},Twist{0,.4,0},Twist{0,-.4,0}}) {
-  Four parked;parked.fill(pi);
+  Four parked;parked.fill(-pi);
   const auto stopped=allocator.allocate(request,parked,parked,false,true);
-  for(size_t i=0;i<4;++i)EXPECT_GE(c.soft-std::abs(stopped.angle[i]),c.segment_margin);
+  for(size_t i=0;i<4;++i)EXPECT_GE(c.margin(stopped.angle[i]),c.segment_margin);
  }
  EXPECT_NEAR(std::atan(c.wheelbase/c.track)*180/pi,54.1301764823,1e-6);
 }
