@@ -77,5 +77,51 @@
     "Straight 62 m constant-speed pass on flat ground; not a mission, not 100x10 m acceptance.",
     "Transient phases are rejected by the trust gate and coast on the gyro; missions do not capture during ACCELERATE/RUNOUT_BRAKE.",
     "Consistency is checked against simulator truth; it does not certify real GNSS/IMU hardware or sloped ground."
-  ]
+  ],
+  "mission_closure": {
+    "date": "2026-09-11",
+    "tool": "validate_operator_session.py --speed 0.8 --scene assets/road/runtime_fullwidth_20m_v1/manifest.json (GUI+RViz+OptiX capture, isolated WSL OptiX runtime)",
+    "coverage_status": "ESTIMATED_COMPLETE",
+    "passed": true,
+    "capture_passed": true,
+    "blocks": 6,
+    "rows": 19604,
+    "steady_rtf": 0.9981499821538778,
+    "observed_rtf": 0.9987629529972241,
+    "ros_archive_identical": true,
+    "final_state": "ACQUIRED",
+    "final_motion": "HOLD",
+    "tracks": [
+      {
+        "track_id": 0,
+        "max_lateral_allowance_m": 0.14413963127159116,
+        "unverified_along_m": [],
+        "quality_flags": [],
+        "excluded_footprint_tags": 0
+      },
+      {
+        "track_id": 1,
+        "max_lateral_allowance_m": 0.1368669303254252,
+        "unverified_along_m": [],
+        "quality_flags": [],
+        "excluded_footprint_tags": 0
+      }
+    ],
+    "baseline_same_tool_and_speed": {
+      "results/rviz_operator_hardening.json#initial_08_before_braking": {
+        "status": "NEEDS_RESCAN",
+        "track0": 0.1906,
+        "track1": 0.2801
+      },
+      "results/rviz_operator_hardening.json#final_08_pause_and_injection": {
+        "status": "NEEDS_RESCAN",
+        "track0": 0.1736,
+        "track1": 0.2869
+      }
+    },
+    "motion_tilt_updates": 352,
+    "motion_tilt_rejects": 829,
+    "telemetry_note": "motion_tilt_rejects counts IMU samples inside a rejection period (100 Hz) while updates are capped by motion_tilt_interval_s, so their ratio is NOT an acceptance rate.",
+    "scope": "20 m scene, two 3x2 m tracks at 0.8 m/s. Closes the coverage root cause end to end; it is not 100x10 m acceptance and not a speed or fault matrix."
+  }
 }
