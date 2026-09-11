@@ -84,9 +84,36 @@ def test_road_transform_is_not_user_heading(request_data, vehicle):
 def test_braking_and_acceleration_distinct(request_data, vehicle):
     from dataclasses import replace
     vehicle=replace(vehicle,accel=.8,decel=1.)
+    # Fast enough that both distances clear the sensor over-run floor below.
+    request_data['scan_speed_m_s']=1.
     p=plan(request_data,vehicle)
-    assert p['lead_distance_m'] == pytest.approx(.5**2/(2*.8)+.1)
-    assert p['runout_distance_m'] == pytest.approx(.5**2/(2*1)+.1)
+    assert p['lead_distance_m'] == pytest.approx(1/(2*.8)+.1)
+    assert p['runout_distance_m'] == pytest.approx(1/(2*1)+.1)
+
+
+def test_runout_contains_the_discardable_sensor_tail(request_data, vehicle):
+    # Capture may not close at the region edge. The sensor drops a closing image
+    # shorter than min_tail_rows, so the last archived row trails the closing
+    # point by that much, and the audit shrinks each span by the declared
+    # uncertainty on top. Closing 0.10 m past a 13 m pass against a 0.37 m
+    # discardable tail left 0.26-0.31 m of every pass unverified.
+    assert vehicle.discardable_tail_m == pytest.approx(1000*.0003662109375)
+    request_data['coverage_error_m']=.1
+    request_data['scan_speed_m_s']=1.
+    p=plan(request_data,vehicle)
+    assert p['scan_overrun_distance_m'] == pytest.approx(vehicle.discardable_tail_m+.2)
+    assert p['runout_distance_m'] >= p['scan_overrun_distance_m']
+    # Where the braking distance is the shorter of the two, the over-run sets the
+    # run-out: the vehicle must still drive far enough to verify the region tail.
+    request_data['scan_speed_m_s']=.25
+    slow=plan(request_data,vehicle)
+    assert slow['runout_distance_m'] == pytest.approx(slow['scan_overrun_distance_m']+.1)
+    assert slow['runout_distance_m'] > .25**2/(2*vehicle.decel)+.1
+    # Capture closes strictly before the tracker stops, in every case.
+    for report in (p,slow):
+        assert report['runout_distance_m'] > report['scan_overrun_distance_m']
+    # The head only has to clear the audit's own shrink, not a discarded tail.
+    assert slow['lead_distance_m'] >= request_data['coverage_error_m']
     request_data['scan_speed_m_s'] = vehicle.max_speed
     with pytest.raises(PlanningError,match='swept vehicle'):
         plan(request_data,vehicle)

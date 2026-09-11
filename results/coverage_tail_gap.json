@@ -1,0 +1,245 @@
+{
+  "schema": "agv.coverage.tail.v1",
+  "question": "why every pass reported an unverified strip at its far end",
+  "cause": "capture closed 0.10 m past the region end while the sensor discards a closing image below min_tail_rows (1000 lines x 0.3662109375 mm = 0.3662 m), so the discarded stretch always came out of the region; the audit then shrank each span by coverage_error_m on top",
+  "fix": "the planner derives scan_overrun_distance_m = min_tail_rows*line_spacing + 2*coverage_error and floors the run-out with it; the executor closes capture at that distance instead of 0.10 m",
+  "mission": "7 passes x 13 m at 1.0 m/s, GUI + RViz + OptiX, identical request either side",
+  "before": {
+    "coverage_status": "NEEDS_RESCAN",
+    "blocks": 63,
+    "rows": 258048,
+    "discarded_tail_rows": [
+      862,
+      725,
+      774,
+      740,
+      762,
+      774,
+      759
+    ],
+    "steady_rtf": 0.9985661785183282,
+    "final_state": "ACQUIRED",
+    "final_motion": "HOLD",
+    "tracks": [
+      {
+        "track_id": 0,
+        "covered": [
+          [
+            0.0,
+            12.689086421861756
+          ]
+        ],
+        "unverified": [
+          [
+            12.689086421861756,
+            13.0
+          ]
+        ],
+        "max_lateral_allowance_m": 0.13822150913810613,
+        "quality_flags": []
+      },
+      {
+        "track_id": 1,
+        "covered": [
+          [
+            0.0,
+            12.741995790137443
+          ]
+        ],
+        "unverified": [
+          [
+            12.741995790137443,
+            13.0
+          ]
+        ],
+        "max_lateral_allowance_m": 0.13851527227301086,
+        "quality_flags": []
+      },
+      {
+        "track_id": 2,
+        "covered": [
+          [
+            0.0,
+            12.734167149395638
+          ]
+        ],
+        "unverified": [
+          [
+            12.734167149395638,
+            13.0
+          ]
+        ],
+        "max_lateral_allowance_m": 0.1451739190061923,
+        "quality_flags": []
+      },
+      {
+        "track_id": 3,
+        "covered": [
+          [
+            0.0,
+            12.740377903118882
+          ]
+        ],
+        "unverified": [
+          [
+            12.740377903118882,
+            13.0
+          ]
+        ],
+        "max_lateral_allowance_m": 0.14877569869631302,
+        "quality_flags": []
+      },
+      {
+        "track_id": 4,
+        "covered": [
+          [
+            0.0,
+            12.741600601159426
+          ]
+        ],
+        "unverified": [
+          [
+            12.741600601159426,
+            13.0
+          ]
+        ],
+        "max_lateral_allowance_m": 0.13890619269210955,
+        "quality_flags": []
+      },
+      {
+        "track_id": 5,
+        "covered": [
+          [
+            0.0,
+            12.736450550178217
+          ]
+        ],
+        "unverified": [
+          [
+            12.736450550178217,
+            13.0
+          ]
+        ],
+        "max_lateral_allowance_m": 0.13982412130817298,
+        "quality_flags": []
+      },
+      {
+        "track_id": 6,
+        "covered": [
+          [
+            0.9411675792778186,
+            12.739583938360656
+          ]
+        ],
+        "unverified": [
+          [
+            0.0,
+            0.9411675792778186
+          ],
+          [
+            12.739583938360656,
+            13.0
+          ]
+        ],
+        "max_lateral_allowance_m": 0.1405226894196544,
+        "quality_flags": []
+      }
+    ],
+    "note": "track 6 additionally lost its first 1.5 m block to an 18 ms overlap with an ALIGN_WHEEL_MOTION quality window at the start of the pass; that is a separate mechanism, not addressed here"
+  },
+  "after": {
+    "coverage_status": "ESTIMATED_COMPLETE",
+    "blocks": 70,
+    "rows": 272435,
+    "discarded_tail_rows": [],
+    "steady_rtf": 0.999153487262224,
+    "final_state": "ACQUIRED",
+    "final_motion": "HOLD",
+    "tracks": [
+      {
+        "track_id": 0,
+        "covered": [
+          [
+            0.0,
+            13.0
+          ]
+        ],
+        "unverified": [],
+        "max_lateral_allowance_m": 0.14337722960570273,
+        "quality_flags": []
+      },
+      {
+        "track_id": 1,
+        "covered": [
+          [
+            0.0,
+            13.0
+          ]
+        ],
+        "unverified": [],
+        "max_lateral_allowance_m": 0.15174426432275823,
+        "quality_flags": []
+      },
+      {
+        "track_id": 2,
+        "covered": [
+          [
+            0.0,
+            13.0
+          ]
+        ],
+        "unverified": [],
+        "max_lateral_allowance_m": 0.13968271045896674,
+        "quality_flags": []
+      },
+      {
+        "track_id": 3,
+        "covered": [
+          [
+            0.0,
+            13.0
+          ]
+        ],
+        "unverified": [],
+        "max_lateral_allowance_m": 0.14562270023871532,
+        "quality_flags": []
+      },
+      {
+        "track_id": 4,
+        "covered": [
+          [
+            0.0,
+            13.0
+          ]
+        ],
+        "unverified": [],
+        "max_lateral_allowance_m": 0.15065708819283805,
+        "quality_flags": []
+      },
+      {
+        "track_id": 5,
+        "covered": [
+          [
+            0.0,
+            13.0
+          ]
+        ],
+        "unverified": [],
+        "max_lateral_allowance_m": 0.13898235016239532,
+        "quality_flags": []
+      },
+      {
+        "track_id": 6,
+        "covered": [
+          [
+            0.0,
+            13.0
+          ]
+        ],
+        "unverified": [],
+        "max_lateral_allowance_m": 0.14194320924332673,
+        "quality_flags": []
+      }
+    ]
+  }
+}

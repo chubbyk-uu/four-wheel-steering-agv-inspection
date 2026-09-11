@@ -45,6 +45,7 @@ class Vehicle:
     accel: float
     decel: float
     max_speed: float
+    discardable_tail_m: float = 0.0
     minimum_sweep_radius: float = 1.5
     raw_swath_factor: float = 1.04
 
@@ -70,8 +71,13 @@ class Vehicle:
         # Current optical model must remain monotone, as required by the sensor.
         if polynomial != [0.0, 1.0, 0.0, 0.04]:
             raise PlanningError('raw optical envelope must be revalidated for changed distortion')
+        # The sensor drops a closing image shorter than min_tail_rows, so the last
+        # archived row may trail wherever capture was closed by this much.
+        tail = number(camera.get('min_tail_rows', 0), 'min tail rows', 0) * \
+            number(camera['line_spacing_m'], 'line spacing', 0, True)
         return cls(camera['nominal_width_m'], camera['camera_x_m'], platform['base_height'],
-                   platform['drive_accel'], trajectory_deceleration(platform), platform['max_speed'])
+                   platform['drive_accel'], trajectory_deceleration(platform), platform['max_speed'],
+                   tail)
 
 
 def plan(request, vehicle):
@@ -121,8 +127,16 @@ def plan(request, vehicle):
         raise PlanningError('too many tracks')
     actual = spacing if n > 1 else 0.0
     centers = [y + width / 2 + (i - (n - 1) / 2) * actual for i in range(n)]
-    lead = speed**2 / (2 * vehicle.accel) + margin
-    runout = speed**2 / (2 * vehicle.decel) + margin
+    # Capture cannot close at the region edge. What the sensor may still discard
+    # trails behind the closing point, and the audit then shrinks each span by the
+    # declared uncertainty and reads the span end at the nearest corner of the last
+    # footprint, which trails the camera centre. Closing 0.10 m past a 13 m pass
+    # against a 0.37 m discardable tail left 0.26-0.31 m of every pass unverified.
+    overrun = vehicle.discardable_tail_m + 2 * error
+    lead = max(speed**2 / (2 * vehicle.accel), error) + margin
+    # The margin also keeps the capture close ahead of the tracker's own stop, so
+    # a short braking distance cannot race the over-run to the end of the pass.
+    runout = max(speed**2 / (2 * vehicle.decel), overrun) + margin
     c, s = math.cos(yaw), math.sin(yaw)
 
     def world(px, py, z=0):
@@ -211,6 +225,7 @@ def plan(request, vehicle):
             'track_count': n, 'actual_track_spacing_m': actual,
             'guaranteed_overlap_m': effective-actual if n > 1 else None,
             'lead_distance_m': lead, 'runout_distance_m': runout,
+            'scan_overrun_distance_m': overrun,
             'turn_runout_distance_m': max(runout, 2*vehicle.camera_x+lead),
             'sweep_radius_m': radius, 'total_base_translation_m': total_s,
             'region_xyz_m': [world(px,py) for px,py in [(x,y),(x+length,y),(x+length,y+width),(x,y+width)]],
