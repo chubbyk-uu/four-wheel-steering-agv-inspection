@@ -17,6 +17,24 @@ gnss_frequency_hz: 10.0
 imu_delay_s: [0.005, 0.001]
 wheel_delay_s: [0.010, 0.002]
 gnss_delay_s: [0.050, 0.005]
+# Continuous gravity-referenced roll/pitch with kinematic acceleration removed
+# (AHRS practice). Wheel twist supplies dv/dt and omega x v; a stationary ZUPT
+# tilt remains the preferred source and suppresses this path while it applies.
+motion_tilt_enabled: true
+motion_tilt_window_s: 0.2
+motion_tilt_interval_s: 0.1
+# Unmodelled body acceleration: suspension, lever arm, slope and tyre slip.
+motion_tilt_extra_sigma_m_s2: 0.10
+# Compensation error scales with the compensation applied: tyre slip and
+# suspension pitch during acceleration transients are not in the wheel model.
+motion_tilt_accel_fraction: 0.3
+# Accelerometer trust gate: above this kinematic acceleration the wheel model is
+# not reliable enough (slip, suspension pitch) and attitude coasts on the gyro.
+motion_tilt_max_accel_m_s2: 0.3
+# Residual |g| error above this rejects the sample instead of inflating it.
+motion_tilt_reject_m_s2: 0.5
+# IMU samples averaged for a stationary tilt; 100 Hz, must fit the mission dwell.
+stationary_tilt_samples: 60
 gnss_outage_start_s: -1.0
 gnss_outage_duration_s: 0.0
 # T_true is the current physical URDF. T_hat=T_true*Delta; Delta has local

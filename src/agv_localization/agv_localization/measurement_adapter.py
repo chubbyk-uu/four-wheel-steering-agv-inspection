@@ -20,7 +20,7 @@ from std_msgs.msg import String
 from tf2_ros import StaticTransformBroadcaster
 from .common import load
 from .core import (EncoderOdometry, DeliveryQueue, delay_sample, stamp_seconds,
-                   calibrated_antennas, dual_gnss_pose, gravity_tilt, wrap)
+                   calibrated_antennas, dual_gnss_pose, gravity_tilt, body_acceleration, wrap)
 
 
 class MeasurementAdapter(Node):
@@ -37,7 +37,12 @@ class MeasurementAdapter(Node):
         self.accel_bias=self.rng.normal(0,self.config['accel_bias_sigma_m_s2'] if noise else 0,3)
         self.queue=DeliveryQueue()
         self.local=deque(maxlen=250);self.pairs={}
-        self.stationary=deque(maxlen=100);self.last_tilt=-math.inf;self.tilt_ready=False
+        self.stationary=deque(maxlen=self.config['stationary_tilt_samples'])
+        self.last_tilt=-math.inf;self.tilt_ready=False
+        # Measured body twist history feeds the kinematic acceleration removed
+        # from the accelerometer; never a command or ground-truth proxy.
+        self.body_twist=deque(maxlen=400);self.gravity=deque(maxlen=200)
+        self.last_motion_tilt=-math.inf;self.motion_tilts=0;self.motion_rejects=0
         self.wheel_speed=math.inf;self.gyro_speed=math.inf
         self.last_raw_imu=-math.inf
         self.ages={'wheel':-math.inf,'imu':-math.inf,'gnss':-math.inf}
@@ -127,6 +132,9 @@ class MeasurementAdapter(Node):
         if value is None:return
         twist,cov,residual=value
         self.wheel_speed=float(np.linalg.norm(twist))
+        moment=stamp_seconds(msg.header.stamp)
+        if not self.body_twist or moment>self.body_twist[-1][0]:
+            self.body_twist.append((moment,float(twist[0]),float(twist[1]),float(twist[2])))
         out=Odometry();out.header.stamp=msg.header.stamp;out.header.frame_id='odom';out.child_frame_id='base_link'
         out.pose.pose.orientation.w=1.;out.pose.covariance=(np.eye(6)*1e6).ravel().tolist()
         out.twist.twist.linear.x,out.twist.twist.linear.y,out.twist.twist.angular.z=twist.tolist()
@@ -156,26 +164,77 @@ class MeasurementAdapter(Node):
         out.linear_acceleration_covariance=(np.eye(3)*av).ravel().tolist()
         self.queue.push(t+delay_sample(self.config,'imu',self.timings['imu']),'imu',out)
 
-    def stationary_tilt(self,msg):
+    def publish_tilt(self,msg,vector,variance):
+        angles=gravity_tilt(vector)
+        out=Imu();out.header=msg.header
+        q=Rotation.from_euler('xyz',[*angles,0]).as_quat()
+        out.orientation.x,out.orientation.y,out.orientation.z,out.orientation.w=q.tolist()
+        out.orientation_covariance=np.diag([variance,variance,1e6]).ravel().tolist()
+        out.angular_velocity_covariance[0]=-1.;out.linear_acceleration_covariance[0]=-1.
+        self.pubs['tilt'].publish(out);self.tilt_ready=True
+
+    def tilt(self,msg):
         t=stamp_seconds(msg.header.stamp)
         g=np.array([msg.angular_velocity.x,msg.angular_velocity.y,msg.angular_velocity.z])
         a=np.array([msg.linear_acceleration.x,msg.linear_acceleration.y,msg.linear_acceleration.z])
         # Measured encoder speed AND gyro AND gravity magnitude; never a command proxy.
-        if self.wheel_speed>.01 or np.linalg.norm(g)>.01 or abs(np.linalg.norm(a)-9.81)>.1:
-            self.stationary.clear();return
+        still=(self.wheel_speed<=.01 and np.linalg.norm(g)<=.01 and abs(np.linalg.norm(a)-9.81)<=.1)
+        if still:
+            self.gravity.clear();self.stationary_tilt(msg,t,a)
+        else:
+            self.stationary.clear();self.motion_tilt(msg,t,a)
+
+    def stationary_tilt(self,msg,t,a):
+        """Zero-velocity tilt update: the preferred source when it applies."""
         if self.stationary and t-self.stationary[-1][0]>.025:self.stationary.clear()
         self.stationary.append((t,a))
-        if len(self.stationary)<100 or t-self.last_tilt<1.:return
-        angles=gravity_tilt(np.mean([v for _,v in self.stationary],axis=0))
-        out=Imu();out.header=msg.header
-        q=Rotation.from_euler('xyz',[*angles,0]).as_quat()
-        out.orientation.x,out.orientation.y,out.orientation.z,out.orientation.w=q.tolist()
-        variance=((self.config['accel_sigma_m_s2']**2/100+self.config['accel_bias_sigma_m_s2']**2)/9.81**2
+        if len(self.stationary)<self.stationary.maxlen or t-self.last_tilt<1.:return
+        n=len(self.stationary)
+        variance=((self.config['accel_sigma_m_s2']**2/n+self.config['accel_bias_sigma_m_s2']**2)/9.81**2
                   if self.config['noise_enabled'] else 1e-10)
-        out.orientation_covariance=np.diag([variance,variance,1e6]).ravel().tolist()
-        out.angular_velocity_covariance[0]=-1.;out.linear_acceleration_covariance[0]=-1.
-        self.pubs['tilt'].publish(out);self.tilt_ready=True;self.last_tilt=t
-        self.stationary.clear()
+        self.publish_tilt(msg,np.mean([v for _,v in self.stationary],axis=0),variance)
+        self.last_tilt=t;self.stationary.clear()
+
+    def motion_tilt(self,msg,t,a):
+        """Gravity reference while driving, with wheel-derived kinematics removed.
+
+        Standard AHRS practice: the accelerometer measures specific force, so an
+        independent velocity source must supply the kinematic term before the
+        residual can be read as gravity. The twist slope describes the window
+        mean time, so the accelerometer is averaged over the SAME span and the
+        result is stamped there; pairing it with the newest sample would bias
+        pitch by jerk times half the window. Samples whose residual magnitude
+        disagrees with gravity are rejected, never silently trusted.
+        """
+        if not self.config['motion_tilt_enabled']:self.gravity.clear();return
+        if self.gravity and t-self.gravity[-1][0]>.025:self.gravity.clear()
+        self.gravity.append((t,a,msg))
+        if t-self.last_motion_tilt<self.config['motion_tilt_interval_s']:return
+        value=body_acceleration(self.body_twist,self.config['motion_tilt_window_s'])
+        if value is None or (self.body_twist and t-self.body_twist[-1][0]>.05):return
+        kinematic,sigma,centre,(low,high)=value
+        # Transient dynamics: coast on the gyro rather than trust a wheel model
+        # that tyre slip and suspension pitch invalidate.
+        if float(np.linalg.norm(kinematic))>self.config['motion_tilt_max_accel_m_s2']:
+            self.motion_rejects+=1;return
+        window=[r for r in self.gravity if low<=r[0]<=high]
+        if len(window)<3:return
+        vector=np.mean([v for _,v,_ in window],axis=0)-kinematic
+        deviation=abs(float(np.linalg.norm(vector))-9.81)
+        if deviation>self.config['motion_tilt_reject_m_s2']:self.motion_rejects+=1;return
+        n=len(window)
+        # Slip and suspension pitch scale with the compensation applied, so the
+        # trust in a driving sample must fall as the kinematic term grows.
+        kinematic_variance=(sigma**2+self.config['motion_tilt_extra_sigma_m_s2']**2+deviation**2
+                            +(self.config['motion_tilt_accel_fraction']*float(np.linalg.norm(kinematic)))**2)
+        noise=(self.config['accel_sigma_m_s2']**2/n+self.config['accel_bias_sigma_m_s2']**2
+               if self.config['noise_enabled'] else 0.)
+        variance=(noise+kinematic_variance)/9.81**2
+        # Stamp at the window mean time; robot_localization accepts lagged data.
+        anchor=min(window,key=lambda r:abs(r[0]-centre))[2]
+        try:self.publish_tilt(anchor,vector,variance)
+        except ValueError:self.motion_rejects+=1;return
+        self.last_motion_tilt=t;self.motion_tilts+=1
 
     def local_pose(self,msg):
         self.local.append(msg)
@@ -226,7 +285,7 @@ class MeasurementAdapter(Node):
         for kind,msg in self.queue.pop(now):
             self.pubs[kind].publish(msg)
             self.ages[kind]=max(self.ages[kind],stamp_seconds(msg.header.stamp))
-            if kind=='imu':self.stationary_tilt(msg)
+            if kind=='imu':self.tilt(msg)
             if kind=='wheel' and self.config['assume_continuous_ground_contact']:
                 contact=TwistWithCovarianceStamped();contact.header.stamp=msg.header.stamp;contact.header.frame_id='base_link'
                 covariance=np.eye(6)*1e6
@@ -248,6 +307,7 @@ class MeasurementAdapter(Node):
                     'filter_age_s':{'local':local_filter_age if math.isfinite(local_filter_age) else None,
                                     'global':global_filter_age if math.isfinite(global_filter_age) else None},
                     'tilt_initialized':self.tilt_ready,'delivery_queue_peak':self.queue.peak,
+                    'motion_tilt_updates':self.motion_tilts,'motion_tilt_rejects':self.motion_rejects,
                     'stop_required':state!='READY'})))
 
 

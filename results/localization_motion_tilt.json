@@ -1,0 +1,81 @@
+{
+  "date": "2026-09-11",
+  "change": "Continuous gravity-referenced roll/pitch with wheel-derived kinematic acceleration removed, window-aligned, with an accelerometer trust gate. Stationary ZUPT tilt retained and preferred.",
+  "method": "Headless d3d12 Gazebo, agv_localization regression driven straight at 2.0 m/s for 30 s (62.3 m). Identical build and motion; only motion_tilt_enabled and the noise seed differ. Lateral/longitudinal 3-sigma reproduce the capture_audit footprint propagation. Truth roll/pitch come from /ground_truth/odom and are used ONLY for evaluation.",
+  "budget_note": "Coverage certification needs lateral 3-sigma <= swath/2 - spacing/2 = 0.75 - 0.50 = 0.25 m.",
+  "seeds": {
+    "20260908": {
+      "off": {
+        "tag": "off",
+        "n": 1601,
+        "lat_med": 0.21031721681609894,
+        "lat_p95": 0.25360245146355886,
+        "lat_max": 0.2690127583200777,
+        "over": 7.8700811992504685,
+        "roll_sig_med": 0.04107569422555097,
+        "roll_err_rms": 0.0011562282772269806,
+        "pitch_err_rms": 0.005433339516432872,
+        "hit3s": 100.0,
+        "nees": 0.034078715020087504,
+        "pos_rmse": 0.007331995917078906,
+        "tilts": 0,
+        "rejects": 0
+      },
+      "on": {
+        "tag": "on",
+        "n": 1601,
+        "lat_med": 0.12557248674516394,
+        "lat_p95": 0.14371473031109047,
+        "lat_max": 0.16425407287277013,
+        "over": 0.0,
+        "roll_sig_med": 0.007547075580902044,
+        "roll_err_rms": 0.0006894453983490866,
+        "pitch_err_rms": 0.003044189891389471,
+        "hit3s": 100.0,
+        "nees": 0.03132584644944978,
+        "pos_rmse": 0.008870023974213825,
+        "tilts": 259,
+        "rejects": 449
+      }
+    },
+    "20260911": {
+      "off": {
+        "tag": "off",
+        "n": 1601,
+        "lat_med": 0.20956083635749856,
+        "lat_p95": 0.2544971121414178,
+        "lat_max": 0.2681921597296753,
+        "over": 8.432229856339788,
+        "roll_sig_med": 0.04107583538873291,
+        "roll_err_rms": 0.001733186335458517,
+        "pitch_err_rms": 0.0065037337221576525,
+        "hit3s": 100.0,
+        "nees": 0.045634636379164345,
+        "pos_rmse": 0.011019216919293195,
+        "tilts": 0,
+        "rejects": 0
+      },
+      "on": {
+        "tag": "on",
+        "n": 1601,
+        "lat_med": 0.12552729185656503,
+        "lat_p95": 0.1442247759892201,
+        "lat_max": 0.16567441599606753,
+        "over": 0.0,
+        "roll_sig_med": 0.007450841030295385,
+        "roll_err_rms": 0.0013725175951283019,
+        "pitch_err_rms": 0.003068371128505874,
+        "hit3s": 100.0,
+        "nees": 0.04181947525656146,
+        "pos_rmse": 0.01027897591293335,
+        "tilts": 259,
+        "rejects": 449
+      }
+    }
+  },
+  "limits": [
+    "Straight 62 m constant-speed pass on flat ground; not a mission, not 100x10 m acceptance.",
+    "Transient phases are rejected by the trust gate and coast on the gyro; missions do not capture during ACCELERATE/RUNOUT_BRAKE.",
+    "Consistency is checked against simulator truth; it does not certify real GNSS/IMU hardware or sloped ground."
+  ]
+}

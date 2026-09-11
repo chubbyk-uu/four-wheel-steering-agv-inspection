@@ -145,6 +145,44 @@ def dual_gnss_pose(points, mounts, tilt, covariance):
     return value, jac@covariance@jac.T
 
 
+def body_acceleration(samples,window):
+    """Least-squares planar kinematic acceleration in the body frame.
+
+    samples: increasing (t, vx, vy, yaw_rate) measured body twist history.
+    Returns (a_xyz, sigma, reference_time, span) or None when the window is not
+    covered. a = dv/dt + omega x v; the vertical term is not observed by wheel
+    twist. The slope describes the window mean time, NOT its latest sample, so
+    the caller must pair it with accelerometer samples over the same span.
+    sigma combines the slope standard error with a jerk-induced alignment bound
+    taken from the half-window slope difference.
+    """
+    if not math.isfinite(window) or window<=0:raise ValueError('invalid acceleration window')
+    if len(samples)<4:return None
+    last=samples[-1][0]
+    rows=[r for r in samples if last-r[0]<=window]
+    if len(rows)<4 or last-rows[0][0]<window*.5:return None
+    def fit(block):
+        t=np.array([r[0] for r in block],dtype=float);centre=t.mean();t=t-centre
+        spread=float(t@t)
+        if spread<=0:return None
+        v=np.array([[r[1],r[2]] for r in block],dtype=float)
+        mean=v.mean(axis=0);slope=(t@(v-mean))/spread
+        residual=v-mean-np.outer(t,slope)
+        sigma=math.sqrt(float(np.sum(residual**2))/max(1,2*(len(block)-2))/spread)
+        return slope,mean,centre,sigma,spread
+    whole=fit(rows)
+    if whole is None:return None
+    slope,mean,centre,sigma,_=whole
+    omega=float(np.mean([r[3] for r in rows]))
+    a=np.array([slope[0]-omega*mean[1],slope[1]+omega*mean[0],0.])
+    half=len(rows)//2
+    early,late=fit(rows[:half]),fit(rows[half:])
+    jerk=float(np.linalg.norm(late[0]-early[0]))/2 if early and late else 0.
+    sigma=math.hypot(sigma,jerk)
+    if not np.isfinite(a).all() or not math.isfinite(sigma):raise ValueError('nonfinite kinematic acceleration')
+    return a,sigma,centre,(rows[0][0],rows[-1][0])
+
+
 def gravity_tilt(acceleration):
     x,y,z=finite(acceleration,(3,))
     if not 9.3 < math.sqrt(x*x+y*y+z*z) < 10.3:

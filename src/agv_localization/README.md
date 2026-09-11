@@ -28,7 +28,7 @@ ros2 launch agv_bringup sim.launch.py \
 | `/sensors/gnss/fixed/left`、`right` | 同测量时刻的两个有效FIX天线位置，PoseWithCovarianceStamped | 10 Hz |
 | `/localization/wheel_odom` | 编码器量化/几何标定后的vx、vy、wz；不融合它的pose | 100 Hz |
 | `/localization/imu` | 角速度与加速度；orientation_covariance[0]=−1 | 100 Hz |
-| `/localization/tilt` | 静止窗口的重力方向，仅roll/pitch | 最多1 Hz，仅停稳时 |
+| `/localization/tilt` | 重力方向，仅roll/pitch；停稳窗口或行驶中扣除运动加速度后 | 停稳最多1 Hz；行驶中最多10 Hz |
 | `/localization/contact_velocity` | 持续接地的车体法向速度约束，明确不是编码器直接测量 | 100 Hz |
 | `/localization/gnss_pose` | 杆臂补偿后的XYZ/yaw联合观测及交叉协方差 | 10 Hz |
 | `/odometry/local`、`/odometry/global` | robot_localization的局部/全局估计 | 100 / 50 Hz |
@@ -45,7 +45,11 @@ GNSS节点仅模拟已转换成局部ENU的天线位置；当前地图原点和�
 
 双天线基线1.10 m，航向来自两点之差并扣除标定基线方向。默认尚未知真机载波相位相对解精度，采用两个独立位置解，理论航向σ约1.84°；不能把它包装成双天线设备的最终规格。配置`gnss_correlation`允许表达已知的共模相关性，改变它必须有依据。基线和后置杆臂同时传播到XYZ/yaw的完整4×4协方差，保留位置—航向相关项。
 
-IMU不融合Gazebo提供的理想绝对姿态。初始roll/pitch由100个连续静止加速度样本获得；同时要求实测轮速、角速度和重力模长满足门限。运动中依靠陀螺传播，不把带车辆加速度的重力方向直接当姿态。首版加速度发布但不融合；固定零偏未被宣称自动消除。单条GNSS基线不能观测全部三轴姿态。
+IMU不融合Gazebo提供的理想绝对姿态。停稳时roll/pitch由连续静止加速度样本获得（`stationary_tilt_samples`，默认60，须短于任务转场dwell）；同时要求实测轮速、角速度和重力模长满足门限。
+
+行驶中按AHRS常规做法提供连续重力参考：加速度计测的是比力，必须先由独立速度源扣除运动加速度才能读作重力。运动项`a = dv/dt + omega x v`来自四轮转向编码器解出的车体twist最小二乘拟合，**不使用加速度计自身积分，也不使用真值**。拟合斜率代表窗口中心时刻，因此加速度计在同一跨度上平均并按该时刻发布；若与最新样本配对，pitch会被jerk乘以半个窗口的量偏置。不确定度包含斜率标准误、半窗斜率差给出的jerk界、与补偿量成正比的滑移/悬挂项，以及残余重力模长偏差。`motion_tilt_max_accel_m_s2`是加速度计可信度门：运动加速度超过该值时轮速模型不再可靠（滑移、悬挂俯仰），姿态改由陀螺推算。整条通路可用`motion_tilt_enabled`关闭。
+
+首版加速度发布但不融合；固定零偏未被宣称自动消除。单条GNSS基线不能观测全部三轴姿态。四轮独立转向可侧移，因此不施加NHC横向零速假设——车体横向速度由轮速直接测量，测量优于假设。
 
 两个滤波器均`two_d_mode=false`，局部不融合GNSS。全局加入XYZ/yaw；迟到数据历史1 s，输出预测到当前时刻。过程噪声是初始工程配置，后续要结合任务速度和创新统计继续评价。配置依据[robot_localization官方状态估计说明](https://github.com/cra-ros-pkg/robot_localization/blob/rolling-devel/doc/state_estimation_nodes.rst)及[坐标/测量说明](https://github.com/cra-ros-pkg/robot_localization/blob/rolling-devel/doc/preparing_sensor_data.rst)。
 

@@ -6,7 +6,7 @@ import pytest
 import yaml
 from scipy.spatial.transform import Rotation
 from agv_localization.core import (EncoderOdometry, DeliveryQueue, delay_sample, nominal_antennas,
-    calibrated_antennas, dual_gnss_pose, gnss_covariance, gravity_tilt)
+    calibrated_antennas, dual_gnss_pose, gnss_covariance, gravity_tilt, body_acceleration)
 
 ROOT=Path(__file__).resolve().parents[1]
 
@@ -135,3 +135,63 @@ def test_body_contact_constraint_does_not_lock_world_height():
     # Motion tangent to a tilted body still has a world-vertical component.
     world_velocity=Rotation.from_euler('y',-.1).apply([1.,0.,0.])
     assert world_velocity[2]==pytest.approx(math.sin(.1))
+
+
+def test_body_acceleration_separates_longitudinal_and_centripetal():
+    dt=.01
+    straight=[(i*dt,.8*i*dt,0.,0.) for i in range(40)]
+    a,sigma,centre,span=body_acceleration(straight,.2)
+    assert a==pytest.approx([.8,0,0],abs=1e-9) and sigma==pytest.approx(0,abs=1e-9)
+    # The slope describes the window mean time, not its newest sample.
+    assert centre==pytest.approx((span[0]+span[1])/2,abs=1e-9)
+    assert span[1]==pytest.approx(straight[-1][0]) and centre<span[1]-.04
+    # Constant speed through a turn is pure omega x v, not a speed change.
+    turning=[(i*dt,2.,0.,.3) for i in range(40)]
+    assert body_acceleration(turning,.2)[0]==pytest.approx([0,.6,0],abs=1e-9)
+
+
+def test_body_acceleration_refuses_an_uncovered_window():
+    dt=.01
+    assert body_acceleration([(0,0.,0.,0.),(dt,0.,0.,0.)],.2) is None
+    assert body_acceleration([(i*dt,0.,0.,0.) for i in range(5)],.2) is None
+    assert body_acceleration([(i*dt,0.,0.,0.) for i in range(40)],.2) is not None
+    with pytest.raises(ValueError):body_acceleration([(0,0.,0.,0.)],0)
+
+
+def test_body_acceleration_reports_slope_uncertainty_from_noisy_twist():
+    rng=np.random.default_rng(7);dt=.01
+    noisy=[(i*dt,.8*i*dt+rng.normal(0,.02),0.,0.) for i in range(20)]
+    a,sigma,_,_=body_acceleration(noisy,.2)
+    # A least-squares window must stay far better than a raw two-sample difference.
+    assert sigma<.3 and abs(a[0]-.8)<3*sigma
+
+
+def test_body_acceleration_inflates_uncertainty_under_jerk():
+    dt=.01
+    steady=[(i*dt,.8*i*dt,0.,0.) for i in range(40)]
+    # Quadratic speed: acceleration changes across the window, so a single slope
+    # cannot represent both halves and the reported sigma must say so.
+    jerking=[(i*dt,.5*3.*(i*dt)**2,0.,0.) for i in range(40)]
+    assert body_acceleration(jerking,.2)[1]>body_acceleration(steady,.2)[1]+.1
+
+
+def test_motion_compensated_gravity_recovers_tilt_while_accelerating():
+    roll,pitch,accel=math.radians(2.),math.radians(-1.5),.8
+    body=Rotation.from_euler('xyz',[roll,pitch,0])
+    measured=np.array([accel,0,0])+body.inv().apply([0,0,9.81])
+    dt=.01;kinematic=body_acceleration([(i*dt,accel*i*dt,0.,0.) for i in range(40)],.2)[0]
+    assert gravity_tilt(measured-kinematic)==pytest.approx([roll,pitch],abs=1e-9)
+    # Without the kinematic term the same sample reads a large false pitch.
+    assert abs(gravity_tilt(measured)[1]-pitch)>math.radians(4.)
+
+
+def test_motion_tilt_configuration_is_validated(config):
+    from agv_localization.common import validate
+    assert validate(copy.deepcopy(config)) is not None
+    for key,bad in [('motion_tilt_window_s',0.),('motion_tilt_interval_s',-1.),
+                    ('motion_tilt_extra_sigma_m_s2',0.),('motion_tilt_reject_m_s2',float('nan')),
+                    ('motion_tilt_accel_fraction',0.),
+                    ('stationary_tilt_samples',1),('stationary_tilt_samples',True),
+                    ('motion_tilt_enabled','yes')]:
+        broken=copy.deepcopy(config);broken[key]=bad
+        with pytest.raises(ValueError):validate(broken)
