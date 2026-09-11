@@ -50,6 +50,15 @@ def segment_arguments(step,position,quaternion):
     return None
 
 
+def camera_along_m(plan,camera,step,position,quaternion):
+    """Camera travel along the pass, measured from the region start."""
+    track=plan['tracks'][step['track_id']]
+    start=np.array(track['scan_start_xyz_m']);finish=np.array(track['scan_end_xyz_m'])
+    length=float(np.linalg.norm(finish-start));axis=(finish-start)/length
+    center=np.asarray(position)+Rotation.from_quat(quaternion).apply([camera['camera_x_m'],0.,0.])
+    return float((center-start)@axis),length
+
+
 def scan_end_reached(plan,camera,step,position,quaternion):
     """Do not reopen capture when resuming in an already passed runout zone.
 
@@ -58,8 +67,5 @@ def scan_end_reached(plan,camera,step,position,quaternion):
     threshold, so that stretch would otherwise be taken out of the region itself.
     The planner owns the distance so the run-out is long enough to contain it.
     """
-    track=plan['tracks'][step['track_id']]
-    start=np.array(track['scan_start_xyz_m']);finish=np.array(track['scan_end_xyz_m'])
-    axis=(finish-start)/np.linalg.norm(finish-start)
-    center=np.asarray(position)+Rotation.from_quat(quaternion).apply([camera['camera_x_m'],0.,0.])
-    return (center-start)@axis>=np.linalg.norm(finish-start)+plan['scan_overrun_distance_m']
+    along,length=camera_along_m(plan,camera,step,position,quaternion)
+    return along>=length+plan['scan_overrun_distance_m']

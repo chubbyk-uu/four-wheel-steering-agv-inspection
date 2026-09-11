@@ -16,7 +16,7 @@ from nav_msgs.msg import Odometry
 from std_msgs.msg import String
 from std_srvs.srv import Trigger
 from .planner import plan,Vehicle
-from .execution import compile_steps,segment_arguments,check_position,scan_end_reached
+from .execution import compile_steps,segment_arguments,check_position,scan_end_reached,camera_along_m
 from .tracking import SegmentTracker
 from .capture import CaptureGate
 from .callback_trace import TracedExecutor,PhaseTrace,StallWatch
@@ -236,7 +236,10 @@ class Executor(Node):
                 self.state='ACQUIRED' if self.capture.enabled else 'COMPLETED'
             return
         step=self.steps[self.index]
-        if self.capture.future is not None and (self.capture.target or self.core is None):
+        # A pending close still halts the step, and so does any toggle before the
+        # tracker exists. An open now happens while a pass is already driving its
+        # lead-in, and must not brake the vehicle for the duration of a handshake.
+        if self.capture.future is not None and (self.core is None or not self.capture.target):
             self.command([0,0,0]);return
         if self.core is None:
             self.command([0,0,0])
@@ -246,8 +249,6 @@ class Executor(Node):
             if args is None:
                 if not self.capture.request(False,reason='step_end'):return
                 self.index+=1;self.step_attempts=0;return
-            if step['kind']=='PASS' and args['kind']=='translate' and not scan_end_reached(self.plan,self.camera,step,p,q):
-                if not self.capture.request(True,step['track_id']):return
             self.step_attempts+=1
             if self.step_attempts>5:self.fault('STEP_NOT_CONVERGED');return
             self.active_kind=args['kind']
@@ -256,9 +257,22 @@ class Executor(Node):
         v=self.odom.twist.twist
         cmd=self.core.update(p,q,[v.linear.x,v.linear.y,v.angular.z],self.mode,dt)
         self.command(cmd)
-        if step['kind']=='PASS':
-            if scan_end_reached(self.plan,self.camera,step,p,q) or self.core.state=='STOPPING':
+        if step['kind']=='PASS' and self.active_kind=='translate':
+            along,length=camera_along_m(self.plan,self.camera,step,p,q)
+            if along>=length+self.plan['scan_overrun_distance_m'] or self.core.state=='STOPPING':
                 self.capture.request(False,reason='track_end')
+            else:
+                # Open only once the wheels have settled. Opening before the pass
+                # re-steers leaves the alignment's own creep in the first image,
+                # and a motion-quality window then excludes that whole 1.5 m block
+                # -- 18 ms of overlap cost one pass 0.84 m inside the region. The
+                # handshake measured 4-20 ms against 0.6 m of lead-in remaining.
+                if self.mode=='DRIVE':self.capture.request(True,step['track_id'])
+                # The guarantee that replaces "do not move before the sensor
+                # acknowledges": never let the camera reach the region without it.
+                if (self.capture.enabled and self.capture.active is not True
+                        and along>=-self.plan['request']['coverage_error_m']):
+                    self.fault('CAPTURE_NOT_ACTIVE_AT_REGION');return
         if self.core.state=='FAULT':self.fault(self.core.reason)
         elif self.core.state=='COMPLETED':
             # A time-profile translation has reached its endpoint within the tracker
