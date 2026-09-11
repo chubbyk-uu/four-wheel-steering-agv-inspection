@@ -205,6 +205,13 @@ class SegmentTracker:
         if self.kind=='translate':
             forward=feedforward+float(np.dot(linear,self.axis))
             if self.forward_only:forward=max(0.,forward)
+            # An open-loop time profile overshoots by the actuation delay times the
+            # speed it is braking from: 40 ms and 1 m/s measured 40 mm against a
+            # 50 mm terminal tolerance. Cap the request by what can still be stopped
+            # in the distance actually left, which is the profile's own braking law
+            # read from the measured pose instead of from the reference clock.
+            travelled=float(np.dot(self.rotation.inv().apply(p-self.start)[:2],self.axis))
+            forward=min(forward,math.sqrt(2*self.decel*max(0.,self.length-travelled)))
             cross=linear-self.axis*np.dot(linear,self.axis)
             bound=self.cfg['cross_command_ratio']*abs(forward)
             if np.linalg.norm(cross)>bound:cross*=bound/np.linalg.norm(cross)

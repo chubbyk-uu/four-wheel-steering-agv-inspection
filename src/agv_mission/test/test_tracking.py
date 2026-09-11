@@ -188,3 +188,35 @@ def test_segment_watchdog_factor_may_not_shorten_the_plan():
     config['segment_timeout_factor']=.9
     with pytest.raises(ValueError):
         SegmentTracker([0,0,.65],[0,0,0,1],'translate',[4,0],1,.5,platform,config)
+
+
+def closed_loop_pass(distance,speed,delay_ticks,dt=.02):
+    """Drive the tracker against a plant whose speed is its own command, delayed."""
+    from collections import deque
+    core,_=segment(distance,speed)
+    core.forward_only=True
+    lag=deque([0.]*delay_ticks,maxlen=delay_ticks)
+    p=np.array([0.,0.,.65]);q=[0,0,0,1];v=0.;elapsed=0.
+    while core.state not in ('COMPLETED','FAULT') and elapsed<core.budget:
+        mode='HOLD' if core.state=='STOPPING' and v<core.cfg['stopped_speed_m_s'] else 'DRIVE'
+        command=core.update(p,q,[v,0.,0.],mode,dt)
+        lag.append(float(command[0]));v=lag[0]
+        p=p+np.array([v*dt,0.,0.]);elapsed+=dt
+    return core,float(p[0])
+
+
+def test_terminal_overshoot_absorbs_the_actuation_delay():
+    # Two ticks of pure delay is the measured 40 ms between command and motion.
+    # Open loop that costs speed x delay = 40 mm of overshoot, four fifths of the
+    # terminal tolerance, and a forward-only pass cannot take any of it back.
+    core,x=closed_loop_pass(20.,1.,2)
+    assert core.state=='COMPLETED',core.reason
+    overshoot=x-20.
+    assert 0<=overshoot<.01,overshoot
+
+
+def test_stopping_distance_cap_does_not_slow_the_scan():
+    # The cap is the profile's own braking curve, so it must be inactive while
+    # there is distance left; a pass may not take longer than its plan allows.
+    core,x=closed_loop_pass(20.,1.,2)
+    assert core.elapsed<core.profile.duration+2.

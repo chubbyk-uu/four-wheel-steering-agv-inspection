@@ -224,21 +224,32 @@ TEST(Kinematics, SpinRecoveryLongTravelIsRequiredOnlyByStationaryLimitReserve){
   EXPECT_EQ(long_turns,2);
  }
 }
-TEST(Kinematics, EightDegreeHardReserveAllowsShortestSpinRecoveryAt180){
+TEST(Kinematics, StoppedVehicleDoesNotStartASegmentBesideTheSteeringLimit){
+ // The 8 deg mechanical reserve makes a 180 deg branch reachable and it is the
+ // shorter turn out of a spin, but it leaves only 5 deg of outward travel. A
+ // 100 m pass asks for more than that through cross-track and heading
+ // correction, and paid for it with a 180 deg reconfiguration 15 mm before the
+ // end of the scan. Re-steering is free while stopped, so the interior branch
+ // is taken even though it is the longer turn.
  Config cfg;cfg.wheelbase=1.3;cfg.track=.94;cfg.limit_reserve=3*pi/180;
  Controller c(cfg);
  for(double sign:{-1.,1.}) {
   Four lateral;lateral.fill(sign*pi/2);
   const auto spin=c.allocate({0,0,sign*.3},lateral,lateral,false,true);
   const auto straight=c.allocate({.4,0,0},spin.angle,spin.angle,false,true);
-  int reversed=0;
+  const auto driving=c.allocate({.4,0,0},spin.angle,spin.angle,false,false);
+  int near_limit=0,long_turns=0;
   for(size_t i=0;i<4;++i) {
-   EXPECT_LT(std::abs(straight.angle[i]-spin.angle[i]),pi/2);
-   EXPECT_LE(std::abs(straight.angle[i]),182*pi/180);
+   EXPECT_GE(cfg.soft-std::abs(straight.angle[i]),cfg.segment_margin);
    EXPECT_NEAR(straight.speed[i]*std::cos(straight.angle[i]),.4,1e-9);
-   if(straight.speed[i]<0) {++reversed;EXPECT_NEAR(std::abs(straight.angle[i]),pi,1e-9);}
+   // Continuity alone still prefers the near-limit branch, which is how a wheel
+   // reaches 180 deg in the first place; only the stopped case refuses it.
+   if(cfg.soft-std::abs(driving.angle[i])<cfg.segment_margin) {
+    ++near_limit;EXPECT_LT(std::abs(driving.angle[i]-spin.angle[i]),std::abs(straight.angle[i]-spin.angle[i]));
+   }
+   if(std::abs(spin.angle[i])>pi/2) ++long_turns;
   }
-  EXPECT_EQ(reversed,2);
+  EXPECT_EQ(near_limit,2);EXPECT_EQ(long_turns,2);
   // Dynamic braking margin still triggers well before the hard endpoint.
   Four a{},v{};Mode old=Mode::Hold;bool stopped=false;
   for(int k=0;k<3000;++k){
@@ -317,5 +328,20 @@ TEST(Configuration, DefaultsMatchShippedPlatformAndPolicy) {
  }
  EXPECT_FALSE(policy["max_lateral_speed"]); // One shared limit for allocator and tracker.
  EXPECT_NEAR(policy["steering_limit_reserve"].as<double>(),c.limit_reserve,1e-12);
+ EXPECT_NEAR(policy["steering_segment_margin"].as<double>(),c.segment_margin,1e-12);
+ // Cross-package invariant: the travel a stopped vehicle keeps in hand must
+ // cover the largest wheel deviation the tracker is allowed to ask for, where
+ // the lateral command and the yaw rate are each bounded by the same ratio.
+ auto tracking=YAML::LoadFile(std::string(AGV_CONFIG_ROOT)+"/agv_mission/config/tracking.yaml");
+ const double ratio=tracking["cross_command_ratio"].as<double>();
+ EXPECT_GE(c.segment_margin,std::atan(ratio)+c.limit_reserve);
+ // Every direction the planner drives a segment along must clear that margin,
+ // including a reverse pass starting from wheels already parked at 180 deg.
+ Controller allocator(c);
+ for(auto request:{Twist{.4,0,0},Twist{-.4,0,0},Twist{0,.4,0},Twist{0,-.4,0}}) {
+  Four parked;parked.fill(pi);
+  const auto stopped=allocator.allocate(request,parked,parked,false,true);
+  for(size_t i=0;i<4;++i)EXPECT_GE(c.soft-std::abs(stopped.angle[i]),c.segment_margin);
+ }
  EXPECT_NEAR(std::atan(c.wheelbase/c.track)*180/pi,54.1301764823,1e-6);
 }

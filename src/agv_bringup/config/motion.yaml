@@ -10,4 +10,12 @@ swerve_controller:
     # Reserve is measured from the 185 deg software command limit:
     # (190 deg hard - 185 deg soft) + 3 deg = 8 deg total mechanical reserve.
     steering_limit_reserve: 0.05235987755982989
+    # Travel a stopped vehicle must leave before it starts a segment. Parking
+    # a branch 5 deg from the soft limit, which the 8 deg mechanical reserve
+    # permits, cost a 100 m pass a 180 deg reconfiguration 15 mm from its end:
+    # the tracker's cross-track correction alone may swing a wheel by
+    # atan(cross_command_ratio) = 11.3 deg on top of the 3 deg dynamic reserve.
+    # 20 deg refuses the 180 deg branch while leaving ordinary stopped choices
+    # free; a wheel is still allowed within 20 deg of the limit while driving.
+    steering_segment_margin: 0.3490658503988659
     wheel_speed_deadband: 0.005

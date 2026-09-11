@@ -17,11 +17,13 @@ struct Config {
   double alignment_motion_confirm_s{0.06};
   double lateral_mismatch{0.12};
   double max_lateral_speed{1.0};
-  double limit_reserve{3*pi/180}, wheel_deadband{0.005};
+  double limit_reserve{3*pi/180}, segment_margin{20*pi/180}, wheel_deadband{0.005};
   void validate() const {
-    for (double v : {wheelbase,track,radius,soft,rate,steer_accel,max_speed,max_yaw,accel,decel,reorient,aligned,stopped,hysteresis,lateral_mismatch,max_lateral_speed,limit_reserve,wheel_deadband,alignment_motion_confirm_s})
+    for (double v : {wheelbase,track,radius,soft,rate,steer_accel,max_speed,max_yaw,accel,decel,reorient,aligned,stopped,hysteresis,lateral_mismatch,max_lateral_speed,limit_reserve,segment_margin,wheel_deadband,alignment_motion_confirm_s})
       if (!std::isfinite(v) || v <= 0) throw std::invalid_argument("invalid controller parameter");
-    if (alignment_motion_confirm_s > .1 || soft < pi/2 || aligned >= reorient || limit_reserve >= soft-pi/2 || wheel_deadband>=stopped)
+    // A lateral endpoint is pi/2, so the margin must still leave that legal.
+    if (alignment_motion_confirm_s > .1 || soft < pi/2 || aligned >= reorient || limit_reserve >= soft-pi/2
+        || segment_margin <= limit_reserve || segment_margin >= soft-pi/2 || wheel_deadband>=stopped)
       throw std::invalid_argument("invalid steering thresholds");
   }
 };
@@ -60,9 +62,11 @@ class Controller {
       for (int k=-3;k<=3;++k) {
         const double a=base+k*pi;
         if (a < -c_.soft || a > c_.soft) continue;
-        // Do not initiate a stationary manoeuvre whose endpoint already uses
-        // up the reserved steering travel, even if it is the nearest solution.
-        if (stationary && std::abs(a)>c_.soft-c_.limit_reserve) continue;
+        // A stopped vehicle re-steers before it drives, so it must not begin a
+        // segment on a branch that leaves less travel than the trajectory may ask
+        // for. Both branches of a direction are kinematically identical; only the
+        // interior one survives a pass of cross-track and heading corrections.
+        if (stationary && c_.soft-std::abs(a)<c_.segment_margin) continue;
         // Only a latched limit-reconfiguration event restricts choices to the
         // interior branch. Ordinary stops/reversals do not force recentering.
         if (reconfigure && std::abs(a)>pi/2+c_.hysteresis) continue;
