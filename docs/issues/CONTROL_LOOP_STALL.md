@@ -57,23 +57,31 @@ clock，与仿真时间分离）。
 （`status_publish`峰值0.000194 s，修复前0.328 s）。同期`/proc/pressure/io`记录到18次系统I/O停顿，
 含连续6个窗口、每52 ms阻塞25–35 ms，控制回路未受影响。
 
-## 未解决：WSLg图形上下文偶发创建失败
+## 未解决：WSLg图形上下文与gz-transport发现线程的偶发启动失败
 
 同期5次整区跑里有3次在启动阶段失败，两种表现：
 
 - `[QT] Failed to create OpenGL context for format QSurfaceFormat(version 2.0, ...)`，GUI退出后
   `on_exit_shutdown`连带杀掉服务器；
-- `gz::transport::Discovery::RecvMessages() → env() → getenv`段错误，属`getenv`/`setenv`跨线程竞态。
+- `gz::transport::v13::Discovery<ServicePublisher>::RecvMessages() → env() → getenv`段错误。
 
-环境为Mesa 25.2.8、Gazebo Sim 8.11.0、`GALLIUM_DRIVER=d3d12`。上游未见修复：
-[gz-sim#2614](https://github.com/gazebosim/gz-sim/issues/2614)无结论，
-[gz-rendering#852](https://github.com/gazebosim/gz-rendering/issues/852)记录d3d12下部分用例失败、
-`LIBGL_ALWAYS_SOFTWARE=true`可规避，
-[wslg#321](https://github.com/microsoft/wslg/issues/321)、
-[wslg#1045](https://github.com/microsoft/wslg/issues/1045)记录WSLg下OpenGL应用创建上下文失败与段错误。
+环境为Mesa 25.2.8、Gazebo Sim 8.11.0、`GALLIUM_DRIVER=d3d12`、NVIDIA适配器。**没有找到与本现象匹配
+的上游报告**，检索到的相近条目逐条核对后都不是同一回事，记录于此以免重复检索：
 
-`sim.launch.py`已把RViz推迟到控制器spawn之后，注释写明"不要让两个WSLg图形客户端竞争启动时的上下文
-创建"；但Gazebo GUI自身仍与传感器服务器同时创建上下文，未被错开。失败均发生在启动阶段，5次中2次
-成功的前面都刚好有一段显式等待，样本太小不能当结论。可选缓解尚未采用，需要先定：错开GUI启动、
-只让GUI走软件GL（与"不得静默回退软件渲染"的约定冲突，需显式选择）、或让GUI失败降级为无头而不是
-终止任务。
+| 条目 | 状态 | 为何不匹配 |
+|---|---|---|
+| [gz-sim#2614](https://github.com/gazebosim/gz-sim/issues/2614) | 开启 | 仅错误串相同；环境为Docker、未提WSL、可稳定复现、无任何诊断 |
+| [gz-rendering#852](https://github.com/gazebosim/gz-rendering/issues/852) | **已关闭** | 是d3d12下的**着色器编译**失败（`TerraShadowGenerator failed to compile`），不是上下文创建 |
+| [wslg#321](https://github.com/microsoft/wslg/issues/321) | 开启 | 双GPU＋雷电坞环境下**所有**OpenGL程序全部失败；我们是偶发，多数情况正常 |
+| [wslg#1045](https://github.com/microsoft/wslg/issues/1045) | 开启 | AMD显卡，每次必现，崩在d3d12的`create_gfx_pipeline_state` |
+| [gz-sim#2952](https://github.com/gazebosim/gz-sim/issues/2952) | 开启 | 栈同为`Discovery::RecvMessages`，但崩在protobuf解析、平台为macOS M2 |
+
+能站得住的只有两点。其一，失败发生在我们的节点开始工作之前，不在本项目代码内。其二，`getenv`那条
+有明确机理：C库的`getenv`对并发`setenv`不安全——`setenv`扩容时会重新分配`environ`数组，另一线程
+`getenv`可能读到已释放的指针。gz-transport在发现线程里调用`env()`，而插件加载在主线程改环境变量，
+两者构成竞态。这条解释不依赖任何issue，但也**尚未在本项目上验证**。OpenGL上下文那条目前无法解释。
+
+`sim.launch.py`已把RViz推迟到控制器spawn之后，注释写明不要让两个WSLg图形客户端竞争启动时的上下文
+创建；但Gazebo GUI自身仍与传感器服务器同时创建上下文，未被错开。5次中2次成功的前面都刚好有一段
+显式等待，样本太小，不作为结论。可选缓解尚未采用，需要先定：错开GUI启动、只让GUI走软件GL（与
+"不得静默回退软件渲染"的约定冲突，需显式选择）、或让GUI失败降级为无头而不是终止任务。
