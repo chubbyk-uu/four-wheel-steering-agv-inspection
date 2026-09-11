@@ -24,7 +24,11 @@ feedback_age_limit_s: 0.12
 wall_timeout_s: 0.35
 max_tracking_error_m: 0.6
 max_heading_error_rad: 0.35
-segment_timeout_s: 90.0
+# Segment watchdog scales with the planned time profile: a fixed budget either
+# starves a 100 m pass or lets a short one stall. The margin covers wheel
+# alignment, brake waits and the terminal settle, which do not scale with length.
+segment_timeout_factor: 1.5
+segment_timeout_margin_s: 20.0
 
 terminal_dwell_s: 0.4
 terminal_translation_speed_m_s: 0.08

@@ -148,3 +148,43 @@ def test_planner_and_tracker_reserve_physical_braking_authority():
     assert platform['drive_decel']==1.
     assert c.profile.dd==pytest.approx(platform['max_speed']**2/(2*vehicle.decel))
     with pytest.raises(ValueError):trajectory_deceleration(dict(platform,trajectory_decel=1.1))
+
+
+def segment(distance,speed):
+    root=Path(__file__).resolve().parents[1]
+    config=yaml.safe_load((root/'config/tracking.yaml').read_text())
+    platform=yaml.safe_load((root.parent/'agv_description/config/platform.yaml').read_text())
+    return SegmentTracker([0,0,.65],[0,0,0,1],'translate',[distance,0],1,speed,platform,config),config
+
+
+def test_segment_watchdog_scales_with_the_planned_profile():
+    short,config=segment(4.,.5)
+    long,_=segment(103.,1.)
+    for core in (short,long):
+        assert core.budget>core.profile.duration
+        assert core.budget==pytest.approx(core.profile.duration*config['segment_timeout_factor']
+                                          +config['segment_timeout_margin_s'])
+    # A 100 m pass must fit; the old fixed 90 s budget faulted it mid-scan.
+    assert long.profile.duration>90. and long.budget>long.profile.duration
+    # Scaling must not loosen a short segment: it stays well inside the old value.
+    assert short.budget<90.
+
+
+def test_segment_watchdog_still_faults_a_stalled_segment():
+    # Never reaching DRIVE keeps the reference frozen, so the segment stalls
+    # without the earlier tracking-error watchdog masking the timeout.
+    core,_=segment(4.,.5)
+    elapsed=0.
+    while elapsed<core.budget+2. and core.state!='FAULT':
+        core.update([0,0,.65],[0,0,0,1],[0,0,0],'HOLD',.05);elapsed+=.05
+    assert core.state=='FAULT' and core.reason=='SEGMENT_TIMEOUT'
+    assert elapsed==pytest.approx(core.budget,abs=.1)
+
+
+def test_segment_watchdog_factor_may_not_shorten_the_plan():
+    root=Path(__file__).resolve().parents[1]
+    config=yaml.safe_load((root/'config/tracking.yaml').read_text())
+    platform=yaml.safe_load((root.parent/'agv_description/config/platform.yaml').read_text())
+    config['segment_timeout_factor']=.9
+    with pytest.raises(ValueError):
+        SegmentTracker([0,0,.65],[0,0,0,1],'translate',[4,0],1,.5,platform,config)

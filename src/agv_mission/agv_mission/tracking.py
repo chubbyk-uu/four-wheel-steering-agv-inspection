@@ -71,6 +71,8 @@ class SegmentTracker:
         self.accel=platform['drive_accel'] if kind=='translate' else config['angular_accel_rad_s2']
         self.decel=trajectory_deceleration(platform) if kind=='translate' else config['angular_decel_rad_s2']
         self.profile=Profile(self.length,self.speed,self.accel,self.decel)
+        if config['segment_timeout_factor']<1.:raise ValueError('segment timeout factor must not shorten the plan')
+        self.budget=self.profile.duration*config['segment_timeout_factor']+config['segment_timeout_margin_s']
         self.clock=0.;self.offset=0.;self.elapsed=0.;self.settled=0.
         self.state='ALIGNING';self.reason='';self.filtered=np.zeros(3);self.command=np.zeros(3)
         self.reconfigurations=0;self.was_running=False;self.last_angle=0.;self.unwrapped_angle=0.
@@ -110,6 +112,9 @@ class SegmentTracker:
             self.axis=np.zeros(2);self.goal=p.copy();self.goal_rotation=self.final_rotation
             self.speed=self.cfg['terminal_rotation_speed_rad_s'];self.accel=self.cfg['angular_accel_rad_s2'];self.decel=self.cfg['angular_decel_rad_s2']
         self.profile=Profile(self.length,self.speed,self.accel,self.decel)
+        # A trim is planned extra work, so it extends the watchdog rather than
+        # racing the budget already spent reaching the endpoint.
+        self.budget+=self.profile.duration*self.cfg['segment_timeout_factor']+self.cfg['settle_time_s']
         self.clock=0.;self.offset=0.;self.was_running=False;self.filtered[:]=0.
         self.last_angle=0.;self.unwrapped_angle=0.;self.terminal_filtered=None;self.alignment_probe=None;self.state='ALIGNING'
 
@@ -128,7 +133,7 @@ class SegmentTracker:
         if self.state in ('FAULT','COMPLETED'):
             self.command[:]=0;return self.command.copy()
         self.elapsed+=dt
-        if self.elapsed>self.cfg['segment_timeout_s']:
+        if self.elapsed>self.budget:
             self.fault('SEGMENT_TIMEOUT');return self.command.copy()
         tangent_error=self.final_tangent.inv().apply(self.final_goal-p)[:2]
         heading_error=self.yaw_error(self.final_rotation,r)
