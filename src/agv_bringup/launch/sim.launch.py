@@ -93,10 +93,17 @@ def setup(context):
     with tempfile.NamedTemporaryFile(prefix='agv_sensors_', suffix='.sdf', delete=False) as f:
         world_path = f.name
     sensor_tree.write(world_path, encoding='unicode')
-    gz = IncludeLaunchDescription(PythonLaunchDescriptionSource(str(
-        Path(get_package_share_directory('ros_gz_sim')) / 'launch/gz_sim.launch.py')),
-        launch_arguments={'gz_args': '-r ' + ('-s ' if headless else '--gui-config ' + LaunchConfiguration('gui_config').perform(context) + ' ') + world_path,
-                          'on_exit_shutdown': 'true'}.items())
+    def gz_sim(args):
+        return IncludeLaunchDescription(PythonLaunchDescriptionSource(str(
+            Path(get_package_share_directory('ros_gz_sim')) / 'launch/gz_sim.launch.py')),
+            launch_arguments={'gz_args': args, 'on_exit_shutdown': 'true'}.items())
+    # Server and GUI are separate invocations even with a GUI, so that the GUI
+    # does not create its graphics context while the sensor server creates its
+    # own. Both still stop the run when they exit: a mission observed headless
+    # is not the joint GUI acceptance it would be mistaken for.
+    gz = gz_sim('-s -r ' + world_path)
+    gz_gui = None if headless else gz_sim(
+        '-g --gui-config ' + LaunchConfiguration('gui_config').perform(context))
     if linescan and not any(os.environ.get(k) for k in ('FASTRTPS_DEFAULT_PROFILES_FILE','FASTDDS_DEFAULT_PROFILES_FILE')):
         gz = GroupAction(actions=[SetEnvironmentVariable('FASTRTPS_DEFAULT_PROFILES_FILE',
                                   str(bringup/'config/fastdds_linescan.xml')), gz])
@@ -152,6 +159,11 @@ def setup(context):
     if not headless and LaunchConfiguration('follow_camera').perform(context).lower() == 'true':
         actions.append(Node(package='agv_bringup', executable='follow_camera.py', output='screen'))
     actions.append(SetEnvironmentVariable('GZ_GUI_PLUGIN_PATH', str(Path(get_package_prefix('agv_bringup'))/'lib') + os.pathsep + os.environ.get('GZ_GUI_PLUGIN_PATH','')))
+    if gz_gui is not None:
+        # Hold the GUI until the controllers are up, the same point RViz waits
+        # for. A failed spawn already shuts the run down through check_spawn.
+        actions.append(RegisterEventHandler(OnProcessExit(target_action=spawner,
+            on_exit=lambda event,context:[gz_gui] if event.returncode==0 else [])))
     return actions + [gz,
         RegisterEventHandler(OnProcessExit(target_action=controller,
             on_exit=[EmitEvent(event=Shutdown(reason='Motion controller exited'))])),

@@ -1,0 +1,170 @@
+{
+ "schema": "agv.startup_reliability.v1",
+ "trial": "launch inspection.launch.py, wait for real HOLD, hold 40 s, tear down",
+ "scene": "assets/road/runtime_fullwidth_20m_v1",
+ "gpu_backend": "d3d12",
+ "adapter": "NVIDIA",
+ "mesa": "25.2.8",
+ "gz_sim": "8.11.0",
+ "before": {
+  "description": "single gz sim -r --gui-config <world>, server and GUI in one invocation",
+  "trials": [
+   {
+    "trial": 0,
+    "verdict": "SIM_EXITED",
+    "seconds": 21.1,
+    "failure": "QT_OPENGL"
+   },
+   {
+    "trial": 1,
+    "verdict": "OK",
+    "seconds": 51.7,
+    "failure": ""
+   },
+   {
+    "trial": 2,
+    "verdict": "OK",
+    "seconds": 55.5,
+    "failure": ""
+   },
+   {
+    "trial": 3,
+    "verdict": "SIM_EXITED",
+    "seconds": 20.2,
+    "failure": "GZ_TRANSPORT_SEGFAULT"
+   },
+   {
+    "trial": 4,
+    "verdict": "OK",
+    "seconds": 51.5,
+    "failure": ""
+   },
+   {
+    "trial": 5,
+    "verdict": "OK",
+    "seconds": 53.8,
+    "failure": ""
+   },
+   {
+    "trial": 6,
+    "verdict": "OK",
+    "seconds": 51.6,
+    "failure": ""
+   },
+   {
+    "trial": 7,
+    "verdict": "OK",
+    "seconds": 51.8,
+    "failure": ""
+   },
+   {
+    "trial": 8,
+    "verdict": "OK",
+    "seconds": 52.1,
+    "failure": ""
+   },
+   {
+    "trial": 9,
+    "verdict": "OK",
+    "seconds": 52.0,
+    "failure": ""
+   },
+   {
+    "trial": 10,
+    "verdict": "OK",
+    "seconds": 51.8,
+    "failure": ""
+   },
+   {
+    "trial": 11,
+    "verdict": "OK",
+    "seconds": 52.0,
+    "failure": ""
+   }
+  ]
+ },
+ "after": {
+  "description": "gz sim -s -r <world> plus gz sim -g --gui-config started on spawner exit",
+  "trials": [
+   {
+    "trial": 0,
+    "verdict": "OK",
+    "seconds": 51.6,
+    "failure": ""
+   },
+   {
+    "trial": 1,
+    "verdict": "OK",
+    "seconds": 51.4,
+    "failure": ""
+   },
+   {
+    "trial": 2,
+    "verdict": "OK",
+    "seconds": 51.6,
+    "failure": ""
+   },
+   {
+    "trial": 3,
+    "verdict": "OK",
+    "seconds": 52.1,
+    "failure": ""
+   },
+   {
+    "trial": 4,
+    "verdict": "OK",
+    "seconds": 51.6,
+    "failure": ""
+   },
+   {
+    "trial": 5,
+    "verdict": "OK",
+    "seconds": 51.5,
+    "failure": ""
+   },
+   {
+    "trial": 6,
+    "verdict": "OK",
+    "seconds": 51.6,
+    "failure": ""
+   },
+   {
+    "trial": 7,
+    "verdict": "OK",
+    "seconds": 51.4,
+    "failure": ""
+   },
+   {
+    "trial": 8,
+    "verdict": "OK",
+    "seconds": 51.5,
+    "failure": ""
+   },
+   {
+    "trial": 9,
+    "verdict": "OK",
+    "seconds": 52.0,
+    "failure": ""
+   },
+   {
+    "trial": 10,
+    "verdict": "OK",
+    "seconds": 51.7,
+    "failure": ""
+   },
+   {
+    "trial": 11,
+    "verdict": "OK",
+    "seconds": 51.5,
+    "failure": ""
+   }
+  ]
+ },
+ "result": {
+  "before_failures": 2,
+  "after_failures": 0,
+  "fisher_exact_two_tailed_p": 0.478,
+  "conclusion": "not significant at 12 trials per arm; the split is kept because it costs nothing and matches the staggering RViz already needs, not because the improvement is proven",
+  "confound": "both baseline failures fell in the first four trials, minutes after a long GPU-heavy mission; the second arm started on a quieter machine"
+ }
+}
