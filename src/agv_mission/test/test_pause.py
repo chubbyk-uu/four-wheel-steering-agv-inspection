@@ -4,6 +4,7 @@ from types import SimpleNamespace as NS
 import numpy as np
 import yaml
 from agv_mission.execution_node import Executor
+from agv_mission.callback_trace import PhaseTrace
 
 
 class Harness:
@@ -20,6 +21,10 @@ class Harness:
         self.steps=[dict(kind='PASS',end=dict(position=[6.,0.,.65],orientation_xyzw=[0,0,0,1]),speed=.5)]
         self.plan=dict(request=dict(road=dict(origin_xyz_m=[0,0,0],yaw_rad=0),drivable_bounds_xy_m=[0,20,-5,5]),sweep_radius_m=1.5)
         self.healthy=True;self.reason='';self.core=object();self.step_attempts=3
+        self.probe=PhaseTrace(self.cfg['control_stall_threshold_s']);self.ticks=0
+        # Writes stay synchronous here so a test can read the record it just made.
+        self.archive=NS(errors=0,peak=0,submit=lambda action:action(),
+                        append=lambda handle,text:handle.write(text))
     def get_clock(self):return NS(now=lambda:NS(nanoseconds=round(self.now*1e9)))
     def valid(self,now):return self.healthy
     def count_publishers(self,topic):return 1
@@ -86,10 +91,58 @@ def test_callback_gap_is_distinguished_from_localization_timeout():
         h.odom.header=NS(stamp=NS(sec=0,nanosec=900000000))
         h.capture=NS(error='',poll=lambda:None,enabled=True,active=True,future=None,
                      heartbeat={},close_failed=False)
-        h.status=NS(publish=lambda message:None)
+        h.published=[];h.status_stream=NS(offer=h.published.append,dropped=0,errors=0)
         Executor.tick(h)
         assert h.state=='FAULT' and h.reason==expected and h.cmd==[0,0,0]
         record=json.loads(h.log.getvalue())
         assert record['control_dt_s']==pytest.approx(dt)
         assert record['health']['state']=='READY'
         assert record['odom_age_s']==pytest.approx(.1)
+
+
+def blocked_tick(gap,dt,healthy):
+    """Drive one tick after the executor's own thread was blocked for `gap` seconds."""
+    import io
+    from time import monotonic
+    h=Harness();h.last_sim=h.now-dt;h.healthy=healthy
+    h.core=None;h.steps=[];h.health={'state':'READY'};h.execution_id='test';h.ready_since=None
+    h.last_command=[.5,0,0];h.motion_reason='';h.log=io.StringIO()
+    h.odom.header=NS(stamp=NS(sec=0,nanosec=900000000))
+    # Feedback arrived before the block and was never dispatched during it.
+    h.arrivals={k:monotonic()-gap for k in ('odom','mode','health')}
+    h.capture=NS(error='',poll=lambda:None,enabled=True,active=True,future=None,
+                 heartbeat={},close_failed=False)
+    h.published=[];h.status_stream=NS(offer=h.published.append,dropped=0,errors=0)
+    h.probe.previous_end=monotonic()-gap
+    Executor.tick(h)
+    return h
+
+
+def test_executor_stall_is_not_reported_as_stale_localization():
+    import json
+    # The recorded 0.38 s block left the simulation clock undispatched, so the
+    # timestep check could not fire and healthy feedback was blamed instead.
+    h=blocked_tick(.38,0.,True)
+    assert h.state=='FAULT' and h.reason=='CONTROL_LOOP_STALLED' and h.cmd==[0,0,0]
+    record=json.loads(h.log.getvalue())
+    assert record['health']['state']=='READY'
+    assert min(record['feedback_wall_age_s'].values())>h.cfg['wall_timeout_s']
+    stall=record['control_stalls'][-1]
+    assert stall['kind']=='gap' and stall['gap_before_s']>=.38
+    # Telemetry is handed over, not published from the control thread, and the
+    # archived record and the broadcast one must stay the same object.
+    assert h.published==[h.log.getvalue().rstrip('\n')]
+
+
+def test_genuinely_stale_feedback_still_faults_as_localization():
+    # Same stale arrival ages, but the control loop itself never stopped.
+    h=blocked_tick(0.,.02,False)
+    h.arrivals={}
+    assert h.state=='FAULT' and h.reason=='STALE_OR_UNREADY_LOCALIZATION'
+
+
+def test_paused_mission_also_names_its_own_stall():
+    from time import monotonic
+    h=Harness();h.state='PAUSED';h.probe.begin();h.probe.previous_end=monotonic()-.38
+    h.probe.begin();h.pause_tick(1.,True,.02,1.)
+    assert h.state=='FAULT' and h.reason=='CONTROL_LOOP_STALLED'

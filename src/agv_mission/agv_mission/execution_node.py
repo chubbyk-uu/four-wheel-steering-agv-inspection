@@ -1,5 +1,6 @@
 """One rectangle per instance; fused navigation, explicit terminal and fault states."""
 import json
+import threading
 import time
 from pathlib import Path
 from scipy.spatial.transform import Rotation
@@ -18,7 +19,8 @@ from .planner import plan,Vehicle
 from .execution import compile_steps,segment_arguments,check_position,scan_end_reached
 from .tracking import SegmentTracker
 from .capture import CaptureGate
-from .callback_trace import TracedExecutor
+from .callback_trace import TracedExecutor,PhaseTrace,StallWatch
+from .offload import TelemetryPublisher,ArchiveWriter
 
 
 class Executor(Node):
@@ -37,17 +39,23 @@ class Executor(Node):
         self.output.mkdir(parents=True,exist_ok=False)
         self.execution_id=self.output.parent.name
         (self.output/'plan.json').write_text(json.dumps(self.plan,indent=2)+'\n')
-        self.log=(self.output/'execution.jsonl').open('x')
+        self.archive=ArchiveWriter()
+        self.log=self.archive.track((self.output/'execution.jsonl').open('x'))
         self.auto=self.declare_parameter('autostart',False).value
-        self.capture=CaptureGate(self,self.output,self.declare_parameter('capture',False).value,self.cfg['capture_state_timeout_s'])
+        self.probe=PhaseTrace(self.cfg['control_stall_threshold_s'])
+        self.watch=StallWatch(self.probe,self.cfg['control_stall_threshold_s'])
+        self.watch.start(threading.get_native_id())
+        self.capture=CaptureGate(self,self.output,self.declare_parameter('capture',False).value,self.cfg['capture_state_timeout_s'],self.archive)
         self.odom=None;self.mode='';self.health={};self.arrivals={};self.last_command=[0.,0.,0.];self.motion_reason=''
         self.state='READY';self.reason='';self.ready_since=None;self.steps=[];self.index=0;self.core=None
-        self.last_sim=None;self.last_clock=time.monotonic();self.step_attempts=0;self.stopped_since=None
+        self.last_sim=None;self.last_clock=time.monotonic();self.step_attempts=0;self.stopped_since=None;self.ticks=0
         self.pause_pose=None;self.pause_started=None;self.pause_events=[]
         self.cmd=self.create_publisher(TwistStamped,'/cmd_vel',10)
         # Telemetry is periodically refreshed and fully archived locally. A slow
-        # display must not back-pressure the control loop through reliable DDS.
+        # display must not back-pressure the control loop, and best-effort QoS
+        # alone does not achieve that: the call itself is made off this thread.
         self.status=self.create_publisher(String,'/mission/status',qos_profile_sensor_data)
+        self.status_stream=TelemetryPublisher(self.status,lambda data:String(data=data))
         self.create_subscription(Odometry,'/odometry/global',self.on_odom,20)
         self.create_subscription(String,'/motion_state',self.on_mode,20)
         self.create_subscription(String,'/motion_transition_reason',lambda m:setattr(self,'motion_reason',m.data),20)
@@ -89,7 +97,8 @@ class Executor(Node):
         self.pause_events.append(dict(event=event,time_s=self.get_clock().now().nanoseconds*1e-9,
             step_index=self.index,position_m=p.tolist(),orientation_xyzw=q.tolist(),
             capture_active=self.capture.active))
-        (self.output/'pause_events.json').write_text(json.dumps(self.pause_events,indent=2)+'\n')
+        payload=json.dumps(self.pause_events,indent=2)+'\n';path=self.output/'pause_events.json'
+        self.archive.submit(lambda:path.write_text(payload))
     def stopped(self):
         if self.odom is None or self.mode!='HOLD':return False
         v=self.odom.twist.twist
@@ -123,9 +132,12 @@ class Executor(Node):
         response.success=True;response.message='continuing to original endpoint with a new rest-to-rest profile';return response
     def pause_tick(self,now,valid,dt,wall):
         self.command([0,0,0])
+        # A blocked control thread inflates every arrival age it then measures, so
+        # its own outage must be named before feedback is called stale.
+        if self.probe.gap>self.cfg['max_control_step_s']:self.fault('CONTROL_LOOP_STALLED');return
         if not valid:self.fault('STALE_OR_UNREADY_LOCALIZATION');return
         if wall-self.last_clock>self.cfg['wall_timeout_s']:self.fault('SIM_CLOCK_STALLED');return
-        if dt<0 or dt>.1:self.fault('INVALID_CONTROL_TIMESTEP');return
+        if dt<0 or dt>self.cfg['max_control_step_s']:self.fault('INVALID_CONTROL_TIMESTEP');return
         if self.state=='PAUSED':return
         if now-self.pause_started>self.cfg['pause_stop_timeout_s']:
             self.fault('PAUSE_STOP_TIMEOUT');return
@@ -148,12 +160,16 @@ class Executor(Node):
                 self.fault(value['reason'])
         except (ValueError,TypeError):pass
     def tick(self):
+        self.probe.begin()
         now=self.get_clock().now().nanoseconds*1e-9;wall=time.monotonic()
         dt=0 if self.last_sim is None else now-self.last_sim;self.last_sim=now
         if dt>0:self.last_clock=wall
-        valid=self.valid(now)
-        self.capture.poll()
+        ages={k:wall-v for k,v in self.arrivals.items()}
+        valid=self.valid(now);self.probe.mark('feedback_check')
+        self.capture.poll();self.probe.mark('capture_poll')
         if self.capture.error:self.fault(self.capture.error)
+        # A write that failed on the archive thread must not stay silent.
+        if self.archive.errors:self.fault('ARCHIVE_WRITE_FAILED')
         if self.state=='READY':
             if self.capture.enabled and self.capture.active is None and self.capture.future is None:
                 if self.capture.client.service_is_ready():self.capture.request(False,reason='prepare')
@@ -164,8 +180,12 @@ class Executor(Node):
         elif self.state in ('PAUSING','PAUSED'):
             self.pause_tick(now,valid,dt,wall)
         elif self.state=='RUNNING':
-            if self.count_publishers('/cmd_vel')!=1:self.fault('COMPETING_COMMAND_PUBLISHER')
-            elif dt<0 or dt>.1:self.fault('INVALID_CONTROL_TIMESTEP')
+            publishers=self.count_publishers('/cmd_vel');self.probe.mark('graph_query')
+            if publishers!=1:self.fault('COMPETING_COMMAND_PUBLISHER')
+            # Our own outage is named before the simulation clock is blamed for it;
+            # a large step with no stall is a genuinely different condition.
+            elif self.probe.gap>self.cfg['max_control_step_s']:self.fault('CONTROL_LOOP_STALLED')
+            elif dt<0 or dt>self.cfg['max_control_step_s']:self.fault('INVALID_CONTROL_TIMESTEP')
             elif not valid:self.fault('STALE_OR_UNREADY_LOCALIZATION')
             elif wall-self.last_clock>self.cfg['wall_timeout_s']:self.fault('SIM_CLOCK_STALLED')
             elif dt>0:self.run_step(dt)
@@ -173,6 +193,7 @@ class Executor(Node):
             self.command([0,0,0])
             self.capture.request(False,reason=self.reason or self.state.lower())
             if self.state=='CANCELING' and self.mode=='HOLD' and self.capture.active is False and self.capture.future is None:self.state='CANCELED'
+        self.probe.mark('control')
         record={'time_s':now,'state':self.state,'reason':self.reason,'motion_state':self.mode,
                 'step_index':self.index,'step_count':len(self.steps),'capture_integrated':self.capture.enabled,'capture_active':self.capture.active,'capture_sensor_enabled':self.capture.heartbeat.get('enabled') if self.capture.heartbeat else None,'capture_close_failed':self.capture.close_failed,'command_body':self.last_command,'motion_reason':self.motion_reason}
         record.update(execution_id=self.execution_id,capture_pending=self.capture.future is not None,
@@ -182,15 +203,29 @@ class Executor(Node):
         if self.core:record.update(tracker_state=self.core.state,profile_time_s=self.core.clock,
             profile_duration_s=self.core.profile.duration,terminal_trims=self.core.trims,
             reference_position_m=self.core.reference.tolist(),**self.core.diagnostic)
+        record['control_dt_s']=dt
+        self.ticks+=1
+        # Peaks are archived on a slow cadence so the loop's worst phase is
+        # evidenced even in runs where nothing crossed the stall threshold.
+        if self.ticks%self.cfg['control_phase_report_ticks']==0:
+            record['control_phase_peaks_s']={k:round(v,6) for k,v in self.probe.peaks.items()}
+        stalls=self.probe.drain()
+        if stalls:record['control_stalls']=stalls
         if self.state=='FAULT':
             record['health']=self.health
-            record['feedback_wall_age_s']={k:time.monotonic()-v for k,v in self.arrivals.items()}
+            record['feedback_wall_age_s']=ages
             record['odom_age_s']=now-(self.odom.header.stamp.sec+self.odom.header.stamp.nanosec*1e-9) if self.odom else None
-            record['control_dt_s']=dt
             record['operator_callbacks']=getattr(self,'operator_callback_stats',{})
             executor=getattr(self,'executor',None)
             if hasattr(executor,'trace'):record['callback_trace']=executor.trace.snapshot()
-        self.log.write(json.dumps(record)+'\n');self.log.flush();self.status.publish(String(data=json.dumps(record)))
+        if self.status_stream.dropped or self.status_stream.errors:
+            record['telemetry']={'dropped':self.status_stream.dropped,'errors':self.status_stream.errors,
+                                 'last_error':self.status_stream.last_error}
+        if self.archive.peak>1:record['archive_backlog_peak']=self.archive.peak
+        payload=json.dumps(record)
+        self.archive.append(self.log,payload+'\n');self.probe.mark('log_write')
+        self.status_stream.offer(payload);self.probe.mark('status_publish')
+        self.probe.end(state=self.state,feedback_wall_age_s=ages,control_dt_s=dt,valid=valid)
     def run_step(self,dt):
         p,q=self.pose()
         try:check_position(self.plan,p)
@@ -233,7 +268,8 @@ class Executor(Node):
             self.core=None
     def destroy_node(self):
         if rclpy.ok():self.command([0,0,0])
-        self.capture.close();self.log.close();return super().destroy_node()
+        self.status_stream.close();self.watch.close()
+        self.archive.close();return super().destroy_node()
 
 
 def main():
@@ -249,7 +285,8 @@ def main():
             node.cancel(None,Trigger.Response());deadline=time.monotonic()+8
             while time.monotonic()<deadline and not(node.mode=='HOLD' and node.capture.active is False and node.capture.future is None):
                 executor.spin_once(timeout_sec=.02)
-        (node.output/'callback_trace.json').write_text(json.dumps(executor.trace.snapshot(),indent=2)+'\n')
+        (node.output/'callback_trace.json').write_text(json.dumps(
+            dict(executor.trace.snapshot(),control_tick=node.probe.snapshot()),indent=2)+'\n')
         node.destroy_node()
         executor.shutdown()
         if rclpy.ok():rclpy.shutdown()

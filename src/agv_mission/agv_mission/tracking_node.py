@@ -13,6 +13,7 @@ from geometry_msgs.msg import TwistStamped
 from std_msgs.msg import String
 from std_srvs.srv import Trigger
 from ament_index_python.packages import get_package_share_directory
+from .offload import TelemetryPublisher,ArchiveWriter
 from .tracking import SegmentTracker
 
 
@@ -31,11 +32,15 @@ class TrackingNode(Node):
         self.heading_offset=self.declare_parameter('heading_offset_rad',0.).value
         self.auto=self.declare_parameter('autostart',False).value
         self.output=Path(self.declare_parameter('output_dir','').value or tempfile.mkdtemp(prefix='agv_tracking_'))
-        self.output.mkdir(parents=True,exist_ok=True);self.log=(self.output/'tracking.jsonl').open('x')
+        self.output.mkdir(parents=True,exist_ok=True);self.archive=ArchiveWriter()
+        self.log=self.archive.track((self.output/'tracking.jsonl').open('x'))
         self.odom=None;self.mode='';self.health={};self.arrivals={};self.core=None
         self.last_sim=None;self.last_clock_wall=time.monotonic();self.last_tick=time.monotonic();self.ready_since=None
         self.pub=self.create_publisher(TwistStamped,'/cmd_vel',10)
         self.status=self.create_publisher(String,'/mission/tracking_status',20)
+        # Published from a writer thread: the transport's buffer allocation
+        # waits on the consumer and must never enter the control period.
+        self.status_stream=TelemetryPublisher(self.status,lambda data:String(data=data))
         self.create_subscription(Odometry,'/odometry/global',self.on_odom,20)
         self.create_subscription(String,'/motion_state',self.on_mode,20)
         self.create_subscription(String,'/localization/status',self.on_health,20)
@@ -118,11 +123,13 @@ class TrackingNode(Node):
             record['health']=self.health
             record['feedback_wall_age_s']={k:wall-v for k,v in self.arrivals.items()}
             record['odom_age_s']=now-(self.odom.header.stamp.sec+self.odom.header.stamp.nanosec*1e-9)
-        self.log.write(json.dumps(record,allow_nan=False)+'\n');self.log.flush()
-        self.status.publish(String(data=json.dumps(record)))
+        payload=json.dumps(record,allow_nan=False)
+        self.archive.append(self.log,payload+'\n')
+        self.status_stream.offer(payload)
 
     def destroy_node(self):
-        self.command([0.,0.,0.]);self.log.close();return super().destroy_node()
+        self.command([0.,0.,0.]);self.status_stream.close()
+        self.archive.close();return super().destroy_node()
 
 
 def main():

@@ -19,6 +19,7 @@ from nav_msgs.msg import Odometry
 from std_msgs.msg import String
 from tf2_ros import StaticTransformBroadcaster
 from .common import load
+from .offload import TelemetryPublisher,ArchiveWriter
 from .core import (EncoderOdometry, DeliveryQueue, delay_sample, stamp_seconds,
                    calibrated_antennas, dual_gnss_pose, gravity_tilt, body_acceleration, wrap)
 
@@ -52,6 +53,9 @@ class MeasurementAdapter(Node):
                    'gnss':self.create_publisher(PoseWithCovarianceStamped,'/localization/gnss_pose',20)}
         self.contact_pub=self.create_publisher(TwistWithCovarianceStamped,'/localization/contact_velocity',20)
         self.status=self.create_publisher(String,'/localization/status',10)
+        # The 500 Hz delivery timer shares this thread. A publish that waits on
+        # a consumer would stop delivery and then be read back as stale sensors.
+        self.status_stream=TelemetryPublisher(self.status,lambda data:String(data=data))
         self.create_subscription(JointState,'/joint_states',self.joints,qos_profile_sensor_data)
         self.create_subscription(Imu,'/sensors/imu/raw',self.imu,qos_profile_sensor_data)
         self.create_subscription(Odometry,'/odometry/local',self.local_pose,20)
@@ -63,7 +67,8 @@ class MeasurementAdapter(Node):
         directory=self.declare_parameter('output_dir','').value or tempfile.mkdtemp(prefix='agv_navigation_')
         self.output=Path(directory);self.output.mkdir(parents=True,exist_ok=True)
         # Exclusive creation prevents a second run from overwriting previous navigation.
-        self.archive=(self.output/'navigation.jsonl').open('x')
+        self.writer=ArchiveWriter()
+        self.archive=self.writer.track((self.output/'navigation.jsonl').open('x'))
         self.last_archive_stamp=-math.inf
         self.create_subscription(Odometry,'/odometry/global',self.record_navigation,100)
         self.static=StaticTransformBroadcaster(self)
@@ -110,15 +115,15 @@ class MeasurementAdapter(Node):
         self.last_archive_stamp=t
         p=msg.pose.pose.position;q=msg.pose.pose.orientation
         v=msg.twist.twist.linear;w=msg.twist.twist.angular
-        self.archive.write(json.dumps({'time_s':t,'frame_id':msg.header.frame_id,'child_frame_id':msg.child_frame_id,
+        self.writer.append(self.archive,json.dumps({'time_s':t,'frame_id':msg.header.frame_id,'child_frame_id':msg.child_frame_id,
             'position_m':[p.x,p.y,p.z],'orientation_xyzw':[q.x,q.y,q.z,q.w],
             'linear_velocity_m_s':[v.x,v.y,v.z],'angular_velocity_rad_s':[w.x,w.y,w.z],
             'pose_covariance':list(msg.pose.covariance),'twist_covariance':list(msg.twist.covariance),
             'calibration_id':self.calibration_id},allow_nan=False)+'\n')
 
     def destroy_node(self):
-        if hasattr(self,'archive'):
-            self.archive.flush();self.archive.close()
+        if hasattr(self,'status_stream'):self.status_stream.close()
+        if hasattr(self,'writer'):self.writer.close()
         return super().destroy_node()
 
     def joints(self,msg):
@@ -294,7 +299,8 @@ class MeasurementAdapter(Node):
                 self.contact_pub.publish(contact)
 
     def health(self):
-        self.archive.flush()
+        # Flushing happens on the archive thread: a system-wide I/O stall must not
+        # stop the 500 Hz delivery timer that shares this one.
         now=self.get_clock().now().nanoseconds*1e-9
         age={k:now-v if math.isfinite(v) else None for k,v in self.ages.items()}
         local_ok=all(age[k] is not None and 0<=age[k]<.1 for k in ('wheel','imu'))
@@ -303,12 +309,12 @@ class MeasurementAdapter(Node):
         filters_ok=-.02<=local_filter_age<.1 and -.02<=global_filter_age<.1
         fix_ok=age['gnss'] is not None and 0<=age['gnss']<.5
         state='READY' if local_ok and filters_ok and fix_ok and self.tilt_ready else 'NOT_READY'
-        self.status.publish(String(data=json.dumps({'state':state,'measurement_age_s':age,
+        self.status_stream.offer(json.dumps({'state':state,'measurement_age_s':age,
                     'filter_age_s':{'local':local_filter_age if math.isfinite(local_filter_age) else None,
                                     'global':global_filter_age if math.isfinite(global_filter_age) else None},
                     'tilt_initialized':self.tilt_ready,'delivery_queue_peak':self.queue.peak,
                     'motion_tilt_updates':self.motion_tilts,'motion_tilt_rejects':self.motion_rejects,
-                    'stop_required':state!='READY'})))
+                    'stop_required':state!='READY'}))
 
 
 def main():

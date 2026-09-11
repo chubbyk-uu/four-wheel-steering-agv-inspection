@@ -22,6 +22,15 @@ alignment_linear_probe_m_s: 0.025
 alignment_angular_probe_rad_s: 0.02
 feedback_age_limit_s: 0.12
 wall_timeout_s: 0.35
+# Any control tick whose wall time or preceding gap exceeds this is archived
+# with its phase breakdown. Diagnosing a stall must not depend on it faulting.
+control_stall_threshold_s: 0.05
+# Cadence for archiving the per-phase peaks of the control tick.
+control_phase_report_ticks: 100
+# Longest step the control loop may take, measured either on the simulation
+# clock or on the executor's own steady clock. A blocked executor must be named
+# as such, not reported as stale localization it never got to read.
+max_control_step_s: 0.1
 max_tracking_error_m: 0.6
 max_heading_error_rad: 0.35
 # Segment watchdog scales with the planned time profile: a fixed budget either

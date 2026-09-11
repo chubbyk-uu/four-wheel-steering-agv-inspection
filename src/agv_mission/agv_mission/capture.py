@@ -7,15 +7,17 @@ from std_srvs.srv import SetBool
 
 
 class CaptureGate:
-    def __init__(self,node,output,enabled,state_timeout=.5):
+    def __init__(self,node,output,enabled,state_timeout=.5,archive=None):
         self.node=node;self.enabled=enabled;self.active=None if enabled else False;self.future=None;self.target=False
         self.track=None;self.intervals=[];self.error='';self.started_wall=0;self.close_reason='requested'
         self.close_failed=False
         self.state_timeout=state_timeout;self.heartbeat=None;self.heartbeat_wall=0;self.enable_wall=0;self.enable_time=0
         self.client=node.create_client(SetBool,'/linescan/set_enabled') if enabled else None
-        self.output=output
-        self.events=(output/'capture_events.jsonl').open('x')
-        self.blocks=(output/'capture_blocks.jsonl').open('x')
+        self.output=output;self.archive=archive
+        # Every write goes through the owner's archive thread: these callbacks
+        # share the control executor, and a stalled filesystem blocks them too.
+        self.events=archive.track((output/'capture_events.jsonl').open('x'))
+        self.blocks=archive.track((output/'capture_blocks.jsonl').open('x'))
         node.create_subscription(String,'/linescan/status',self.event,100)
         node.create_subscription(String,'/linescan/state',self.on_state,20)
         node.create_subscription(String,'/linescan/block_metadata',self.block,100)
@@ -40,7 +42,7 @@ class CaptureGate:
     def event(self,msg):
         if not self.enabled:return
         value=json.loads(msg.data);value['received_time_s']=self.now()
-        self.events.write(json.dumps(value)+'\n');self.events.flush()
+        self.archive.append(self.events,json.dumps(value)+'\n')
         # All interruptions are archived. Spatial coverage is checked separately;
         # end-of-pass braking outside the ROI is not mislabeled as a missing strip.
         reason=value.get('reason','')
@@ -48,7 +50,7 @@ class CaptureGate:
         # A sensor segment break must never silently turn into ACQUIRED.
         if reason and reason not in expected:
             self.error='CAMERA_'+value['reason']
-    def block(self,msg):self.blocks.write(msg.data+'\n');self.blocks.flush()
+    def block(self,msg):self.archive.append(self.blocks,msg.data+'\n')
     def request(self,value,track=None,reason='requested'):
         if not self.enabled:return True
         if self.future is not None:return False
@@ -76,5 +78,6 @@ class CaptureGate:
             self.enable_wall=time.monotonic();self.enable_time=self.now()
             self.intervals.append({'track_id':self.track,'enabled_ack_time_s':self.now(),'archive':response.message})
         elif self.intervals:self.intervals[-1].update(disabled_ack_time_s=self.now(),end_reason=self.close_reason)
-        (self.output/'capture_intervals.json').write_text(json.dumps(self.intervals,indent=2)+'\n')
-    def close(self):self.events.close();self.blocks.close()
+        payload=json.dumps(self.intervals,indent=2)+'\n';path=self.output/'capture_intervals.json'
+        self.archive.submit(lambda:path.write_text(payload))
+    # Archive files are closed by the writer that owns them, after it drains.

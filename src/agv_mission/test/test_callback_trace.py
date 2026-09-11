@@ -29,3 +29,19 @@ def test_real_executor_records_blocking_timer_and_preserves_exceptions():
             while time.monotonic()<end:executor.spin_once(timeout_sec=.1)
     finally:
         node.destroy_node();executor.shutdown();rclpy.try_shutdown()
+
+
+def test_stall_watch_names_the_kernel_wait_point():
+    import threading,time
+    from agv_mission.callback_trace import PhaseTrace,StallWatch
+    probe=PhaseTrace(.02);watch=StallWatch(probe,.02,period=.002)
+    watch.start(threading.get_native_id())
+    try:
+        probe.begin();time.sleep(.15);probe.end()
+    finally:watch.close()
+    entry=probe.slow[-1]
+    assert entry['wait_points'],'no wait point sampled'
+    # The blocked thread must be identified by the kernel function it sleeps in,
+    # not merely by how long it took.
+    assert any(p['wchan'] and p['wchan']!='0' for p in entry['wait_points']),entry['wait_points']
+    assert all(p['syscall'].isdigit() or p['syscall']=='running' for p in entry['wait_points'])
