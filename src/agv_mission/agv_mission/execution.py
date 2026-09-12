@@ -88,11 +88,23 @@ def phase_of(plan,camera,record):
     if kind!='PASS':return 'other'
     # A pass still aligning its heading is turning, not accelerating down the track.
     if segment=='rotate':return 'rotate'
+    measured=region_along_m(plan,camera,record)
+    if measured is None:return 'none'
+    along,length=measured
+    if record.get('tracker_state')=='STOPPING' or along>length:return 'runout'
+    return 'accelerate' if along<0 else 'scan'
+
+
+def region_along_m(plan,camera,record):
+    """Camera distance into the track's region, and the region length.
+
+    Approximates the camera offset along the track axis rather than rotating it
+    by the recorded attitude: a pass holds that heading, and the telemetry record
+    carries no orientation. Returns None when the record cannot place the camera.
+    """
     position=record.get('position_m')
-    if position is None or segment is None:return 'none'
+    if position is None or record.get('segment_kind') is None:return None
     track=plan['tracks'][record['track_id']]
     start=np.asarray(track['scan_start_xyz_m']);finish=np.asarray(track['scan_end_xyz_m'])
     length=float(np.linalg.norm(finish-start));axis=(finish-start)/length
-    along=float((np.asarray(position)-start)@axis)+camera['camera_x_m']
-    if record.get('tracker_state')=='STOPPING' or along>length:return 'runout'
-    return 'accelerate' if along<0 else 'scan'
+    return float((np.asarray(position)-start)@axis)+camera['camera_x_m'],length

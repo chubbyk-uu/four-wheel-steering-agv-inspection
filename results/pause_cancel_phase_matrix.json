@@ -320,5 +320,6 @@
     "localization timeout and camera-disabled faults were not re-run per phase; they remain validated only in the scan phase",
     "repeat counts, full-area runs and the rescan loop are separate acceptance items",
     "capture behaviour under pause is evidenced by one scene probe, not by every phase"
-  ]
+  ],
+  "measurement_caveat": "The stopping distances and final speeds in these probes were sampled when the terminal state flipped, not after the body came to rest: cancel_* probes passed the resting-speed check only by sampling luck. A later run showed truth still decelerating at 0.036 m/s at that moment. The probe now spins a 1.5 s settle window before measuring or archiving; see results/rescan_loop_closure.json. The pass/fail verdicts stand -- every cancel did reach CANCELED at HOLD -- but the distances here understate the full stopping distance."
 }

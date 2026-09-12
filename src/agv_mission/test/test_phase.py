@@ -73,3 +73,15 @@ def test_every_compiled_step_kind_is_covered():
     named={'APPROACH':'approach','SHIFT':'shift','ROTATE_180':'rotate'}
     for kind in kinds-{'PASS'}:
         assert phase_of(p,CAMERA,dict(kind=kind,track_id=0,segment_kind='translate'))==named[kind]
+
+
+def test_region_along_measures_from_the_region_start_including_the_camera_offset():
+    from agv_mission.execution import region_along_m
+    p=fixture();length=float(np.linalg.norm(
+        np.array(p['tracks'][0]['scan_end_xyz_m'])-p['tracks'][0]['scan_start_xyz_m']))
+    along,reported=region_along_m(p,CAMERA,record(p,0,2.))
+    assert reported==length
+    assert along==2.+CAMERA['camera_x_m']
+    # Both reversed and forward tracks measure along their own heading.
+    assert region_along_m(p,CAMERA,record(p,1,2.))[0]==2.+CAMERA['camera_x_m']
+    assert region_along_m(p,CAMERA,{}) is None

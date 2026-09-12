@@ -13,7 +13,7 @@ from nav_msgs.msg import Odometry
 from std_msgs.msg import String
 from std_srvs.srv import Trigger,SetBool
 from sensor_msgs.msg import Image,JointState
-from agv_mission.execution import phase_of
+from agv_mission.execution import phase_of,region_along_m
 from label_mission_capture import label
 from prepare_mission_camera import prepare
 from validate_tracking import stop
@@ -46,6 +46,9 @@ def main():
     parser.add_argument('--stop-after-pause',choices=['cancel','localization_timeout'],help='instead of resuming, validate partial-frame termination')
     parser.add_argument('--moving-fault',choices=['localization_timeout','camera_disabled'])
     parser.add_argument('--cancel-moving',action='store_true',help='cancel from full speed without pausing first')
+    parser.add_argument('--inject-along-m',type=float,
+                        help='in the scan phase, wait until the camera is this far into the region '
+                             '(use it to leave real coverage behind an interrupted mission)')
     parser.add_argument('--inject-phase',default='scan',
                         choices=['approach','accelerate','scan','runout','shift','rotate'],
                         help='motion phase the pause or fault is injected in')
@@ -92,12 +95,25 @@ def main():
         # Let the motion develop past its own ramp start before disturbing it.
         if current.get('profile_time_s',0)<.5:return False
         if phase_of(mission_plan,camera_cfg,current)!=a.inject_phase:return False
+        if a.inject_along_m is not None:
+            measured=region_along_m(mission_plan,camera_cfg,current)
+            if measured is None or measured[0]<a.inject_along_m:return False
         # An in-place rotation carries no linear speed; both are "moving".
         if latest.get('truth_speed',0)<=.1 and abs(latest.get('truth_yaw_rate',0))<=.05:return False
         observed_phase=dict(phase=a.inject_phase,time_s=current['time_s'],track_id=current['track_id'],
             segment_kind=current.get('segment_kind'),capture_active=current.get('capture_active'),
             truth_speed_m_s=latest.get('truth_speed'),truth_yaw_rate_rad_s=latest.get('truth_yaw_rate'))
         return True
+    def settle(seconds=1.5):
+        """Spin past the terminal state so rest is measured, not raced.
+
+        The executor reaches CANCELED/FAULT and the controller reports HOLD from
+        the commanded stop, while the body is still rolling off the last tens of
+        millimetres. Asserting the truth speed the instant the state flips passed
+        only by timing luck.
+        """
+        until=time.monotonic()+seconds
+        while time.monotonic()<until:rclpy.spin_once(node,timeout_sec=.02)
     def status(m):
         v=json.loads(m.data);latest.update(status=v);records.append(v)
     def actual(m):
@@ -174,6 +190,9 @@ def main():
             until=time.monotonic()+1
             while time.monotonic()<until:rclpy.spin_once(node,timeout_sec=.02)
             assert latest['status']['state']=='FAULT','localization recovery restarted faulted mission'
+        # Let the body actually come to rest before anything is measured or
+        # archived, so the saved truth trace ends where the assertions claim.
+        settle()
         end=latest['status'];np.save(a.output/'truth_evaluation.npy',np.asarray(truth))
         np.save(a.output/'joint_evaluation.npy',np.asarray(joint_samples))
         assert joint_samples,'no actual wheel steering samples'
@@ -229,7 +248,8 @@ def main():
             reaction_budget=max(cfg['wall_timeout_s'],cfg['capture_state_timeout_s'])+.15
             assert first_fault['command_body']==[0.,0.,0.] and 0<=latency<reaction_budget
             budget=moving_injection['speed_m_s']*reaction_budget+moving_injection['speed_m_s']**2/(2*platform['drive_decel'])+.10
-            assert distance<budget and latest['truth_speed']<.025
+            assert distance<budget,(distance,budget)
+            assert latest['truth_speed']<cfg['stopped_speed_m_s'],latest['truth_speed']
             from PIL import Image as PilImage
             blocks=list((a.output/'raw').glob('*/block_*.json'))
             # A fault injected before the first shutter opening archives nothing.
@@ -250,7 +270,8 @@ def main():
             distance=float(np.linalg.norm(np.array(latest['truth_position'])-moving_injection['position_m']))
             budget=moving_injection['speed_m_s']*(cfg['wall_timeout_s']+.15)+moving_injection['speed_m_s']**2/(2*platform['drive_decel'])+.10
             assert first['command_body']==[0.,0.,0.] and 0<=latency<cfg['wall_timeout_s']+.15
-            assert distance<budget and latest['truth_speed']<cfg['stopped_speed_m_s'],(distance,budget)
+            assert distance<budget,(distance,budget)
+            assert latest['truth_speed']<cfg['stopped_speed_m_s'],latest['truth_speed']
             # An in-place rotation never translates, so the distance bound above is
             # vacuous there. What has to stop is the yaw rate; the swept angle after
             # the cancel is recorded as measured evidence, not asserted against an
@@ -272,7 +293,15 @@ def main():
                 until=time.monotonic()+1
                 while time.monotonic()<until:rclpy.spin_once(node,timeout_sec=.02)
                 blocks=list((a.output/'raw').glob('*/block_*.json'))
-                assert blocks or not any(r.get('capture_active') for r in records)
+                # A cancel soon after the shutter opens leaves a tail under the
+                # sensor's discard floor, so an empty archive is a correct result.
+                # What must hold is that the sensor said so.
+                if not blocks and any(r.get('capture_active') for r in records):
+                    events=[json.loads(line) for path in (a.output/'raw').glob('*/events.jsonl')
+                            for line in path.read_text().splitlines() if line.strip()]
+                    discarded=[e for e in events if e.get('reason')=='tail_discarded']
+                    assert discarded,'capture ran but nothing was archived or discarded'
+                    probe['tail_discarded']=[dict(rows=e['rows'],minimum_rows=e['minimum_rows']) for e in discarded]
                 for path in blocks:
                     m=json.loads(path.read_text());pixels=np.asarray(PilImage.open(path.with_suffix('.pgm'))).tobytes()
                     assert images.get(round(m['last']['time_s']*1e9))==(hashlib.sha256(pixels).hexdigest(),m['width'],m['rows'])

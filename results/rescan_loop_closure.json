@@ -1,0 +1,148 @@
+{
+  "schema": "agv.mission.rescan_closure.v1",
+  "date": "2026-09-12",
+  "scope": "One interrupted capture mission audited, its generated rescan candidates driven as real missions, each audited independently, and the three sessions merged. Conservative footprint rectangles on a flat road; not image stitching and not pixel-level proof.",
+  "region_m": [
+    8.0,
+    2.0
+  ],
+  "track_count": 2,
+  "gap_origin": {
+    "method": "cancel from motion 3.5 m into the region of track 0",
+    "note": "the gap is produced by a real interruption, not by editing a report",
+    "injection": {
+      "phase": "scan",
+      "time_s": 21.726000000000003,
+      "track_id": 0,
+      "segment_kind": "translate",
+      "capture_active": true,
+      "truth_speed_m_s": 0.5002905461298658,
+      "truth_yaw_rate_rad_s": 0.0
+    },
+    "cancel": {
+      "injection": {
+        "time_s": 21.726000000000003,
+        "position_m": [
+          8.36340635039581,
+          -0.49234076438586244,
+          0.6484268648847444
+        ],
+        "speed_m_s": 0.5002905461298658
+      },
+      "reaction_sim_s": 0.019999999999999574,
+      "stopping_distance_m": 0.13106623477815518,
+      "stopping_budget_m": 0.47529058833839255,
+      "yaw_rate_at_injection_rad_s": 0.0,
+      "yaw_swept_after_cancel_rad": 1.9010098863106834e-06,
+      "final_yaw_rate_rad_s": 0.0,
+      "blocks": 3,
+      "ros_archive_identical": true
+    }
+  },
+  "parent": {
+    "status": "NEEDS_RESCAN",
+    "tracks": [
+      {
+        "track_id": 0,
+        "covered": [
+          [
+            0.0,
+            3.42335408091813
+          ]
+        ],
+        "unverified": [
+          [
+            3.42335408091813,
+            8.0
+          ]
+        ],
+        "quality_flags": []
+      },
+      {
+        "track_id": 1,
+        "covered": [],
+        "unverified": [
+          [
+            0.0,
+            8.0
+          ]
+        ],
+        "quality_flags": [
+          "NO_CAPTURE_EVIDENCE"
+        ]
+      }
+    ],
+    "candidates": 2,
+    "issues": []
+  },
+  "children": [
+    {
+      "mission_id": "rectangle_execution_trial_rescan_000",
+      "status": "ESTIMATED_COMPLETE",
+      "covered": [
+        [
+          [
+            0.0,
+            4.67664591908187
+          ]
+        ]
+      ],
+      "issues": []
+    },
+    {
+      "mission_id": "rectangle_execution_trial_rescan_001",
+      "status": "ESTIMATED_COMPLETE",
+      "covered": [
+        [
+          [
+            0.0,
+            8.0
+          ]
+        ]
+      ],
+      "issues": []
+    }
+  ],
+  "merged": {
+    "status": "ESTIMATED_COMPLETE",
+    "tracks": [
+      {
+        "track_id": 0,
+        "covered": [
+          [
+            0.0,
+            8.0
+          ]
+        ],
+        "unverified": [],
+        "source_quality_flags": []
+      },
+      {
+        "track_id": 1,
+        "covered": [
+          [
+            0.0,
+            8.0
+          ]
+        ],
+        "unverified": [],
+        "source_quality_flags": [
+          "NO_CAPTURE_EVIDENCE"
+        ]
+      }
+    ],
+    "remaining_candidates": 0,
+    "merged_navigation_sessions": 3,
+    "scene_contract_sha256": [
+      "5824efa0ea8a692857a1ea5d52688dec485199af60e0657a7ad79b2889708081"
+    ],
+    "issues": []
+  },
+  "passed": true,
+  "retained_evidence": "track 1 keeps NO_CAPTURE_EVIDENCE as a source_quality_flag: the parent genuinely captured nothing there, and a later successful rescan does not erase that record",
+  "not_covered": [
+    "one interruption shape on one small region; not a full-area rescan and not a repeated trial",
+    "the children were driven as fresh simulator instances, which is not in-place recovery of a faulted run",
+    "coverage remains an interval estimate with a declared uncertainty allowance, not certification"
+  ]
+}

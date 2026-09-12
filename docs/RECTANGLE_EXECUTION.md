@@ -68,6 +68,12 @@ ros2 service call /mission/cancel std_srvs/srv/Trigger '{}'
 
 回归工具可用`tools/validate_rectangle_execution.py --gui --profile normal --scene ... --request .../rescan_000.yaml --output ...`复现补扫；它启动独立仿真实例，不代表故障进程原地无缝恢复。
 
+整条闭环已实跑验证一次：用`--cancel-moving --inject-phase scan --inject-along-m 3.5`在轨0进区3.5 m处取消，
+父任务审计得`NEEDS_RESCAN`并生成2个候选，两个候选各自实跑并独立审计，`tools/merge_mission_coverage.py`
+合并后两道均无未确认段、剩余候选0。合并保留父任务的`source_quality_flags`（该例中轨1的
+`NO_CAPTURE_EVIDENCE`），补扫成功不抹掉原始证据。`--inject-along-m`决定中断前已采多少：
+不设时未满帧可能低于1000行被丢弃、父任务贡献为零，合并就退化成"补扫覆盖全区"。见[闭环记录](../results/rescan_loop_closure.json)。
+
 
 ## RViz巡检任务面板
 
