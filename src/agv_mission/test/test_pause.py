@@ -12,6 +12,7 @@ class Harness:
     resume=Executor.resume
     pause_tick=Executor.pause_tick
     stopped=Executor.stopped
+    localization_reason=Executor.localization_reason
     def __init__(self):
         self.cfg=yaml.safe_load((Path(__file__).resolve().parents[1]/'config/tracking.yaml').read_text())
         self.state='RUNNING';self.now=1.;self.last_clock=1.;self.mode='DRIVE';self.events=[]
@@ -21,6 +22,7 @@ class Harness:
         self.steps=[dict(kind='PASS',end=dict(position=[6.,0.,.65],orientation_xyzw=[0,0,0,1]),speed=.5)]
         self.plan=dict(request=dict(road=dict(origin_xyz_m=[0,0,0],yaw_rad=0),drivable_bounds_xy_m=[0,20,-5,5]),sweep_radius_m=1.5)
         self.healthy=True;self.reason='';self.core=object();self.step_attempts=3
+        self.health={}
         self.probe=PhaseTrace(self.cfg['control_stall_threshold_s']);self.ticks=0
         # Writes stay synchronous here so a test can read the record it just made.
         self.archive=NS(errors=0,peak=0,submit=lambda action:action(),
@@ -146,3 +148,26 @@ def test_paused_mission_also_names_its_own_stall():
     h=Harness();h.state='PAUSED';h.probe.begin();h.probe.previous_end=monotonic()-.38
     h.probe.begin();h.pause_tick(1.,True,.02,1.)
     assert h.state=='FAULT' and h.reason=='CONTROL_LOOP_STALLED'
+
+
+def test_a_lost_navigation_record_is_not_reported_as_stale_localization():
+    # The adapter demotes itself when its archive write fails, which is what stops
+    # the mission. Calling that staleness would send the search to the wrong node.
+    import io
+    h=Harness();h.last_sim=h.now-.02;h.healthy=False
+    h.core=None;h.steps=[];h.arrivals={};h.execution_id='test';h.ready_since=None
+    h.health={'state':'NOT_READY','archive_errors':1,'stop_required':True}
+    h.last_command=[.5,0,0];h.motion_reason='';h.log=io.StringIO()
+    h.odom.header=NS(stamp=NS(sec=0,nanosec=900000000))
+    h.capture=NS(error='',poll=lambda:None,enabled=True,active=True,future=None,
+                 heartbeat={},close_failed=False)
+    h.published=[];h.status_stream=NS(offer=h.published.append,dropped=0,errors=0)
+    Executor.tick(h)
+    assert h.state=='FAULT' and h.reason=='NAVIGATION_ARCHIVE_WRITE_FAILED'
+    # The same outage during a pause must name the same cause.
+    p=Harness();park(p);p.health={'archive_errors':2}
+    p.pause_tick(1.,False,.02,1.)
+    assert p.reason=='NAVIGATION_ARCHIVE_WRITE_FAILED'
+    # Without an archive failure the reason is unchanged.
+    q=Harness();park(q);q.pause_tick(1.,False,.02,1.)
+    assert q.reason=='STALE_OR_UNREADY_LOCALIZATION'

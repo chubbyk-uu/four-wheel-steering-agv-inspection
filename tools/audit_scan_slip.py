@@ -44,6 +44,46 @@ def tag_intervals(blocks):
                        ratio=travel/(lines*spacing), seconds=end['time_s']-start['time_s'])
 
 
+def identity(block):
+    """What makes an archived block that block and no other."""
+    return (block['block_id'], block['segment_id'], block['rows'],
+            block['first']['global_line'], block['last']['global_line'])
+
+
+def locate_images(blocks, archives):
+    """Pair every archived block with its own pixels, by the sensor's naming.
+
+    The two detectors read different files: the ratio test reads metadata, the
+    duplicate-row test reads pixels. Left to find its images by globbing an
+    archive directory, the pixel half tests nothing at all once that directory
+    has been cleaned or moved -- and an audit that tested nothing still reported
+    a pass. Pairing block by block makes a missing image a finding instead, and
+    confines the pixel half to this mission's blocks rather than to whatever
+    else shares the sensor session.
+    """
+    found, missing = [], []
+    for block in blocks:
+        name = 'block_%06d' % block['block_id']
+        located = None
+        for directory in archives:
+            metadata = directory/(name+'.json')
+            if not metadata.is_file():
+                continue
+            try:
+                raw = json.loads(metadata.read_text())
+            except ValueError:
+                continue
+            if identity(raw) == identity(block):
+                located = directory/(name+'.pgm')
+                break
+        if located is not None and located.is_file():
+            found.append(located)
+        else:
+            missing.append(dict(block_id=block['block_id'], image=name+'.pgm',
+                                metadata_located=located is not None))
+    return found, missing
+
+
 def row_differences(path, stride):
     """Mean absolute difference between adjacent rows of one archived image."""
     with Image.open(path) as image:
@@ -71,9 +111,12 @@ def main():
     slips = sorted((v for v in intervals if v['ratio'] < args.ratio_floor),
                    key=lambda v: v['ratio'])
 
-    archives = {Path(entry['archive']) for entry in
-                json.loads((args.mission/'capture_intervals.json').read_text())}
-    images = sorted(path for archive in archives for path in archive.glob('block_*.pgm'))
+    archives = []
+    for entry in json.loads((args.mission/'capture_intervals.json').read_text()):
+        directory = Path(entry['archive'])
+        if directory not in archives:
+            archives.append(directory)
+    images, missing = locate_images(blocks, archives)
     per_image, worst, floor_seen = [], [], math.inf
     for path in images:
         difference = row_differences(path, args.column_stride)
@@ -94,6 +137,8 @@ def main():
     report = dict(
         schema='agv.scan_slip.v1', mission=str(args.mission),
         blocks=len(blocks), images=len(images), lines=sum(v['lines'] for v in intervals),
+        pixel_evidence=dict(archives=[str(v) for v in archives], blocks=len(blocks),
+                            images=len(images), missing=len(missing), first_missing=missing[:8]),
         encoder_vs_ground=dict(
             intervals=len(intervals), floor=args.ratio_floor,
             median=float(np.median(ratios)), minimum=float(ratios.min()),
@@ -104,17 +149,25 @@ def main():
             duplicate_threshold=threshold, observed_minimum=floor_seen,
             images_flagged=len(worst), flagged=worst[:8],
             exact_duplicate_rows=sum(v['exact_duplicates'] for v in per_image)),
-        scope=('Simulation truth pose tags and archived pixels. The ratio test needs '
+        scope=('Every archived block must present its own image; a block whose pixels '
+               'are missing fails the audit rather than going untested. '
+               'Simulation truth pose tags and archived pixels. The ratio test needs '
                'the rendered camera position and cannot run against estimated '
                'navigation, whose centimetre noise hides a millimetre stall.'))
-    report['passed'] = not slips and not worst
+    # An empty image set satisfies "no duplicate rows" vacuously, so the pixel
+    # half must first prove it had pixels to test.
+    report['passed'] = bool(images) and not missing and not slips and not worst
     args.output.write_text(json.dumps(report, indent=2)+'\n')
     print('slip intervals below %.2f: %d/%d' % (args.ratio_floor, len(slips), len(intervals)))
     print('row-difference median %.3f, threshold %.3f, observed floor %.3f'
           % (median, threshold, floor_seen))
     print('images with duplicate rows: %d/%d   exact duplicates: %d'
           % (len(worst), len(images), report['adjacent_rows']['exact_duplicate_rows']))
+    if missing:
+        print('blocks with no archived image: %d/%d   first: %s'
+              % (len(missing), len(blocks), ', '.join(v['image'] for v in missing[:8])))
     print('passed:', report['passed'])
+    raise SystemExit(0 if report['passed'] else 1)
 
 
 if __name__ == '__main__':

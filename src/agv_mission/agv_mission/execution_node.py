@@ -135,7 +135,7 @@ class Executor(Node):
         # A blocked control thread inflates every arrival age it then measures, so
         # its own outage must be named before feedback is called stale.
         if self.probe.gap>self.cfg['max_control_step_s']:self.fault('CONTROL_LOOP_STALLED');return
-        if not valid:self.fault('STALE_OR_UNREADY_LOCALIZATION');return
+        if not valid:self.fault(self.localization_reason());return
         if wall-self.last_clock>self.cfg['wall_timeout_s']:self.fault('SIM_CLOCK_STALLED');return
         if dt<0 or dt>self.cfg['max_control_step_s']:self.fault('INVALID_CONTROL_TIMESTEP');return
         if self.state=='PAUSED':return
@@ -149,6 +149,11 @@ class Executor(Node):
     def cancel(self,request,response):
         if self.state not in ('COMPLETED','ACQUIRED','FAULT','CANCELED'):self.state='CANCELING';self.reason='CANCELED'
         self.command([0,0,0]);response.success=True;response.message='braking requested';return response
+    def localization_reason(self):
+        """Name the localization failure. A lost navigation record is not staleness,
+        and reporting it as one sends the search in the wrong direction."""
+        if self.health.get('archive_errors'):return 'NAVIGATION_ARCHIVE_WRITE_FAILED'
+        return 'STALE_OR_UNREADY_LOCALIZATION'
     def fault(self,reason):
         if self.state not in ('COMPLETED','ACQUIRED','FAULT'):
             self.state='FAULT';self.reason=reason
@@ -186,7 +191,7 @@ class Executor(Node):
             # a large step with no stall is a genuinely different condition.
             elif self.probe.gap>self.cfg['max_control_step_s']:self.fault('CONTROL_LOOP_STALLED')
             elif dt<0 or dt>self.cfg['max_control_step_s']:self.fault('INVALID_CONTROL_TIMESTEP')
-            elif not valid:self.fault('STALE_OR_UNREADY_LOCALIZATION')
+            elif not valid:self.fault(self.localization_reason())
             elif wall-self.last_clock>self.cfg['wall_timeout_s']:self.fault('SIM_CLOCK_STALLED')
             elif dt>0:self.run_step(dt)
         else:

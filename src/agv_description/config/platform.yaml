@@ -23,7 +23,11 @@ steer_accel: 1.5
 # Vehicle top speed (15 km/h). This bounds the controller, the drive joints and
 # the sensor's "impossible wheel speed" guard -- it is what the machine can do,
 # not what a scan asks for. A scan commanded at the top speed would leave the
-# tracker no authority to accelerate, so the two must stay separate.
+# tracker no authority to accelerate, so the two must stay separate. The measured
+# feedback demand only proves the top speed must exceed the rated 10 km/h; 15 is
+# engineering rounding above that, not a derived figure. The derived ceiling on
+# scan speed is lower and belongs to the sensor: 11 kHz at 0.3662 mm per line is
+# 4.028 m/s (14.5 km/h).
 max_speed: 4.166666666666667
 # Rated inspection speed (10 km/h): the fastest scan a mission may request.
 # Line rate at this speed is 7585 Hz against the 11 kHz sampling bench result.

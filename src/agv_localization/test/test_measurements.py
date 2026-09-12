@@ -277,3 +277,42 @@ def test_a_closed_gate_keeps_counting_at_imu_rate_so_the_ratio_is_not_a_rate(con
     # Every sample that reached the gravity check was rejected, one per sample.
     covered=calls-h.motion_outcomes['window_too_short']
     assert h.motion_outcomes['deviation_too_large']==covered>1
+
+
+class HealthHarness:
+    """Drive MeasurementAdapter.health without a ROS graph."""
+    from agv_localization.measurement_adapter import MeasurementAdapter as _A
+    health=_A.health
+    motion_rejects=_A.motion_rejects
+    def __init__(self,now=10.):
+        from types import SimpleNamespace as NS
+        self.now=now;self.published=[]
+        self.ages={'wheel':now-.01,'imu':now-.01,'gnss':now-.01}
+        self.local=[NS(header=NS(stamp=NS(sec=int(now)-1,nanosec=990000000)))]
+        self.last_archive_stamp=now-.01;self.tilt_ready=True
+        self.queue=NS(peak=0);self.motion_tilts=0
+        self.motion_outcomes={k:0 for k in ('accepted','rate_limited','no_body_twist',
+            'stale_body_twist','kinematic_too_large','window_too_short',
+            'deviation_too_large','publish_error')}
+        self.writer=NS(errors=0,last_error='')
+        self.status_stream=NS(offer=self.published.append)
+    def get_clock(self):
+        from types import SimpleNamespace as NS
+        return NS(now=lambda:NS(nanoseconds=round(self.now*1e9)))
+    def last(self):
+        import json
+        self.health();return json.loads(self.published[-1])
+
+
+def test_a_failed_navigation_write_stops_the_mission_instead_of_reporting_ready():
+    # The write happens on the archive thread and its exception is counted, not
+    # raised. Nothing read that counter, so a full disk lost navigation records
+    # while the adapter kept reporting READY and stop_required false.
+    h=HealthHarness()
+    assert h.last()['state']=='READY'
+    assert h.last()['stop_required'] is False
+    h.writer.errors=1;h.writer.last_error="OSError(28, 'No space left on device')"
+    value=h.last()
+    assert value['state']=='NOT_READY' and value['stop_required'] is True
+    assert value['archive_errors']==1
+    assert 'No space left' in value['archive_last_error']

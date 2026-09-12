@@ -90,7 +90,7 @@ IMU不融合Gazebo提供的理想绝对姿态。停稳时roll/pitch由连续静�
 
 ## 状态与验证
 
-READY同时要求轮/IMU、局部/全局滤波输出新鲜、重力初始化完成、有效GNSS测量年龄小于0.5 s。缺测或失锁发布NOT_READY及`stop_required=true`，恢复后重新评价。当前只输出状态，尚未接任务控制器停车；独立墙钟通信看门狗由下一阶段执行器落实，不将ROS时钟暂停误当作已完成安全停机。
+READY同时要求轮/IMU、局部/全局滤波输出新鲜、重力初始化完成、有效GNSS测量年龄小于0.5 s，**以及导航归档写入无失败**（2026-09-12加入：归档线程只把异常计进`writer.errors`，此前无人读它，磁盘满时会一边丢记录一边报READY；现同时上报`archive_errors`/`archive_last_error`，执行器据此报`NAVIGATION_ARCHIVE_WRITE_FAILED`而非定位不新鲜）。缺测或失锁发布NOT_READY及`stop_required=true`，恢复后重新评价。当前只输出状态，尚未接任务控制器停车；独立墙钟通信看门狗由下一阶段执行器落实，不将ROS时钟暂停误当作已完成安全停机。
 
 ```bash
 colcon test --packages-select agv_localization

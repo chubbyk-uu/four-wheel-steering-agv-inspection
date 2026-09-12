@@ -1,5 +1,7 @@
 """The duplicate-texture detectors must catch the artifact they were written for."""
 import importlib.util
+import json
+import sys
 from pathlib import Path
 import numpy as np
 import pytest
@@ -68,3 +70,48 @@ def test_ground_distance_ignores_suspension_travel():
                                           line_spacing_m=SPACING, pose_tags=tags)])
     assert interval['ground_m'] == pytest.approx(0.)
     assert interval['ratio'] == pytest.approx(0.)
+
+
+def archived(tmp_path, with_image=True, rows=256):
+    """A one-block mission whose archive may or may not still hold its pixels."""
+    mission = tmp_path/'mission'; mission.mkdir()
+    archive = tmp_path/'raw'/'session'; archive.mkdir(parents=True)
+    tags = [dict(global_line=0, camera_position_world_m=[0., 0., 1.], time_s=0.),
+            dict(global_line=rows-1, camera_position_world_m=[(rows-1)*SPACING, 0., 1.], time_s=1.)]
+    record = dict(block_id=0, segment_id=0, rows=rows, line_spacing_m=SPACING, pose_tags=tags,
+                  first=dict(global_line=0), last=dict(global_line=rows-1))
+    (mission/'capture_blocks.jsonl').write_text(json.dumps(record)+'\n')
+    (mission/'capture_intervals.json').write_text(json.dumps(
+        [dict(track_id=0, archive=str(archive), enabled_ack_time_s=0., disabled_ack_time_s=1.)]))
+    (archive/'block_000000.json').write_text(json.dumps(record))
+    if with_image:
+        from PIL import Image
+        pixels = np.random.default_rng(1).integers(40, 200, size=(rows, 64), dtype=np.uint8)
+        Image.fromarray(pixels, mode='L').save(archive/'block_000000.pgm')
+    return mission
+
+
+def run(mission, output, monkeypatch):
+    monkeypatch.setattr(sys, 'argv',
+                        ['audit_scan_slip', '--mission', str(mission), '--output', str(output)])
+    with pytest.raises(SystemExit) as exit:
+        audit.main()
+    return exit.value.code, json.loads(output.read_text()) if output.is_file() else None
+
+
+def test_metadata_without_pixels_is_a_failure_not_a_pass(tmp_path, monkeypatch):
+    # Deleting or moving an archive used to leave the pixel half with nothing to
+    # test, and "no duplicate rows found" then passed the audit vacuously.
+    code, report = run(archived(tmp_path, with_image=False), tmp_path/'r.json', monkeypatch)
+    assert report['blocks'] == 1 and report['images'] == 0
+    assert report['pixel_evidence']['missing'] == 1
+    assert report['pixel_evidence']['first_missing'][0]['image'] == 'block_000000.pgm'
+    assert report['pixel_evidence']['first_missing'][0]['metadata_located'] is True
+    assert report['passed'] is False and code == 1
+
+
+def test_a_block_paired_with_its_own_image_passes(tmp_path, monkeypatch):
+    code, report = run(archived(tmp_path), tmp_path/'r.json', monkeypatch)
+    assert report['blocks'] == 1 and report['images'] == 1
+    assert report['pixel_evidence']['missing'] == 0
+    assert report['passed'] is True and code == 0

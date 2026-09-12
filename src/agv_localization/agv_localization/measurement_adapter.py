@@ -324,13 +324,19 @@ class MeasurementAdapter(Node):
         global_filter_age=now-self.last_archive_stamp
         filters_ok=-.02<=local_filter_age<.1 and -.02<=global_filter_age<.1
         fix_ok=age['gnss'] is not None and 0<=age['gnss']<.5
-        state='READY' if local_ok and filters_ok and fix_ok and self.tilt_ready else 'NOT_READY'
+        # A navigation record that failed to reach disk is lost evidence, and the
+        # mission must stop for it. The executor already faults on its own archive;
+        # this is the same failure on the other side of the graph, and it was the
+        # only one of the two that nothing read.
+        archive_ok=self.writer.errors==0
+        state='READY' if local_ok and filters_ok and fix_ok and self.tilt_ready and archive_ok else 'NOT_READY'
         self.status_stream.offer(json.dumps({'state':state,'measurement_age_s':age,
                     'filter_age_s':{'local':local_filter_age if math.isfinite(local_filter_age) else None,
                                     'global':global_filter_age if math.isfinite(global_filter_age) else None},
                     'tilt_initialized':self.tilt_ready,'delivery_queue_peak':self.queue.peak,
                     'motion_tilt_updates':self.motion_tilts,'motion_tilt_rejects':self.motion_rejects,
                     'motion_tilt_outcomes':dict(self.motion_outcomes),
+                    'archive_errors':self.writer.errors,'archive_last_error':self.writer.last_error,
                     'stop_required':state!='READY'}))
 
 
