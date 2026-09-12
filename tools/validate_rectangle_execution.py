@@ -236,30 +236,72 @@ def main():
             result.update(passed=True,scope='paused frame terminated explicitly; incomplete ROI, no coverage success',
                 termination_probe=probe,pause_resume=pause_report)
         if a.moving_fault:
-            assert moving_injection is not None and end['state']=='FAULT' and end['motion_state']=='HOLD' and end['capture_active'] is False,end
-            expected='STALE_OR_UNREADY_LOCALIZATION' if a.moving_fault=='localization_timeout' else 'CAMERA_DISABLED_UNEXPECTEDLY'
-            assert end['reason']==expected,end
-            if camera_future:assert camera_future.done() and camera_future.result().success
-            first_fault=next(r for r in records if r['state']=='FAULT')
-            latency=first_fault['time_s']-moving_injection['time_s']
-            distance=float(np.linalg.norm(np.array(latest['truth_position'])-moving_injection['position_m']))
+            assert moving_injection is not None,'fault never injected'
             cfg=yaml.safe_load(Path('src/agv_mission/config/tracking.yaml').read_text())
             platform=yaml.safe_load(Path('src/agv_description/config/platform.yaml').read_text())
-            reaction_budget=max(cfg['wall_timeout_s'],cfg['capture_state_timeout_s'])+.15
-            assert first_fault['command_body']==[0.,0.,0.] and 0<=latency<reaction_budget
-            budget=moving_injection['speed_m_s']*reaction_budget+moving_injection['speed_m_s']**2/(2*platform['drive_decel'])+.10
-            assert distance<budget,(distance,budget)
-            assert latest['truth_speed']<cfg['stopped_speed_m_s'],latest['truth_speed']
+            if camera_future:assert camera_future.done() and camera_future.result().success
+            probe=dict(case=a.moving_fault,injection=moving_injection,shutter_open_at_injection=shutter_open)
+            # Disabling a camera the mission is not using is not a mission fault:
+            # capture.check_state() returns early unless the window is open. The
+            # property worth testing there is that nothing spurious fires.
+            expects_fault=a.moving_fault=='localization_timeout' or shutter_open
+            if not expects_fault:
+                # Two outcomes are legitimate and which one occurs is not asserted:
+                # the next pass re-requests the sensor and may recover it, or the
+                # sensor refuses and the mission faults on a camera reason. What
+                # must hold either way is that nothing fires at the injection
+                # itself, the run reaches a defined terminal state, and any fault
+                # is attributable to the camera and stops the vehicle.
+                window=[r for r in records if moving_injection['time_s']<=r['time_s']
+                        <moving_injection['time_s']+cfg['capture_state_timeout_s']]
+                assert not any(r['state']=='FAULT' for r in window),'closed shutter faulted immediately'
+                assert end['state'] in ('COMPLETED','ACQUIRED','FAULT'),end
+                assert end['motion_state']=='HOLD',end
+                if end['state']=='FAULT':
+                    assert end['reason'].startswith('CAMERA_'),end
+                    assert latest['truth_speed']<cfg['stopped_speed_m_s'],latest['truth_speed']
+                probe['outcome']=('later camera fault: '+end['reason'] if end['state']=='FAULT'
+                                  else 'mission unaffected; the closed shutter was not depended on')
+            else:
+                assert end['state']=='FAULT' and end['motion_state']=='HOLD' and end['capture_active'] is False,end
+                expected='STALE_OR_UNREADY_LOCALIZATION' if a.moving_fault=='localization_timeout' else 'CAMERA_DISABLED_UNEXPECTEDLY'
+                assert end['reason']==expected,end
+                first_fault=next(r for r in records if r['state']=='FAULT')
+                latency=first_fault['time_s']-moving_injection['time_s']
+                distance=float(np.linalg.norm(np.array(latest['truth_position'])-moving_injection['position_m']))
+                reaction_budget=max(cfg['wall_timeout_s'],cfg['capture_state_timeout_s'])+.15
+                assert first_fault['command_body']==[0.,0.,0.] and 0<=latency<reaction_budget
+                budget=moving_injection['speed_m_s']*reaction_budget+moving_injection['speed_m_s']**2/(2*platform['drive_decel'])+.10
+                assert distance<budget,(distance,budget)
+                assert latest['truth_speed']<cfg['stopped_speed_m_s'],latest['truth_speed']
+                # A rotation does not translate, so the distance bound above is
+                # vacuous there; what must stop is the yaw rate.
+                assert abs(latest['truth_yaw_rate'])<cfg['stopped_yaw_rate_rad_s'],latest['truth_yaw_rate']
+                after=[row for row in truth if row[0]>=moving_injection['time_s']]
+                swept=None
+                if len(after)>1:
+                    from scipy.spatial.transform import Rotation
+                    swept=float((Rotation.from_quat(after[0][4:8]).inv()*Rotation.from_quat(after[-1][4:8])).magnitude())
+                probe.update(outcome='controlled stop',reason=end['reason'],reaction_sim_s=latency,
+                    stopping_distance_m=distance,stopping_budget_m=budget,
+                    yaw_rate_at_injection_rad_s=observed_phase['truth_yaw_rate_rad_s'],
+                    yaw_swept_after_fault_rad=swept,final_yaw_rate_rad_s=latest['truth_yaw_rate'])
             from PIL import Image as PilImage
-            blocks=list((a.output/'raw').glob('*/block_*.json'))
-            # A fault injected before the first shutter opening archives nothing.
-            assert blocks or not any(r.get('capture_active') for r in records)
             until=time.monotonic()+1
             while time.monotonic()<until:rclpy.spin_once(node,timeout_sec=.02)
+            blocks=list((a.output/'raw').glob('*/block_*.json'))
+            if not blocks and any(r.get('capture_active') for r in records):
+                events=[json.loads(line) for path in (a.output/'raw').glob('*/events.jsonl')
+                        for line in path.read_text().splitlines() if line.strip()]
+                discarded=[e for e in events if e.get('reason')=='tail_discarded']
+                assert discarded,'capture ran but nothing was archived or discarded'
+                probe['tail_discarded']=[dict(rows=e['rows'],minimum_rows=e['minimum_rows']) for e in discarded]
             for path in blocks:
                 m=json.loads(path.read_text());pixels=np.asarray(PilImage.open(path.with_suffix('.pgm'))).tobytes()
                 assert images.get(round(m['last']['time_s']*1e9))==(hashlib.sha256(pixels).hexdigest(),m['width'],m['rows'])
-            result.update(passed=True,scope='moving fault braking and valid tail archive; incomplete ROI',moving_fault=dict(case=a.moving_fault,injection=moving_injection,reaction_sim_s=latency,stopping_distance_m=distance,stopping_budget_m=budget,blocks=len(blocks),ros_archive_identical=True))
+            probe.update(blocks=len(blocks),ros_archive_identical=True)
+            result.update(passed=True,scope='moving fault handling and valid tail archive; incomplete ROI',
+                moving_fault=probe)
         if a.cancel_moving:
             cfg=yaml.safe_load(Path('src/agv_mission/config/tracking.yaml').read_text())
             platform=yaml.safe_load(Path('src/agv_description/config/platform.yaml').read_text())

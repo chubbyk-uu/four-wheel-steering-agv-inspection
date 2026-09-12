@@ -1,0 +1,215 @@
+{
+  "schema": "agv.mission.fault_phase_matrix.v1",
+  "date": "2026-09-12",
+  "scope": "Localization timeout and unexpected camera shutdown injected per motion phase on an 8 x 2 m two-track OptiX capture mission. Fault handling only; no ROI completion claimed for the faulted runs.",
+  "region_m": [
+    8.0,
+    2.0
+  ],
+  "probes": [
+    {
+      "probe": "fault_cam_accelerate",
+      "passed": true,
+      "case": "camera_disabled",
+      "phase": "accelerate",
+      "shutter_open_at_injection": true,
+      "truth_speed_m_s": 0.36430022165500997,
+      "truth_yaw_rate_rad_s": 7.338939836870957e-07,
+      "final_state": "FAULT",
+      "final_reason": "CAMERA_DISABLED_UNEXPECTEDLY",
+      "outcome": "controlled stop",
+      "reaction_sim_s": 0.03500000000000014,
+      "stopping_distance_m": 0.10481903615134217,
+      "stopping_budget_m": 0.4031524698247012,
+      "yaw_swept_after_fault_rad": 0.0024215668829571904,
+      "final_yaw_rate_rad_s": 0.0,
+      "blocks": 0,
+      "tail_discarded": [
+        {
+          "rows": 248,
+          "minimum_rows": 1000
+        }
+      ]
+    },
+    {
+      "probe": "fault_cam_rotate",
+      "passed": true,
+      "case": "camera_disabled",
+      "phase": "rotate",
+      "shutter_open_at_injection": false,
+      "truth_speed_m_s": 0.0021945823525745473,
+      "truth_yaw_rate_rad_s": 0.06803905128553166,
+      "final_state": "ACQUIRED",
+      "final_reason": "",
+      "outcome": "mission unaffected; the closed shutter was not depended on",
+      "reaction_sim_s": null,
+      "stopping_distance_m": null,
+      "stopping_budget_m": null,
+      "yaw_swept_after_fault_rad": null,
+      "final_yaw_rate_rad_s": null,
+      "blocks": 12,
+      "tail_discarded": null
+    },
+    {
+      "probe": "fault_cam_scan",
+      "passed": true,
+      "case": "camera_disabled",
+      "phase": "scan",
+      "shutter_open_at_injection": true,
+      "truth_speed_m_s": 0.5104893402114488,
+      "truth_yaw_rate_rad_s": 0.0009393606617506499,
+      "final_state": "FAULT",
+      "final_reason": "CAMERA_DISABLED_UNEXPECTEDLY",
+      "outcome": "controlled stop",
+      "reaction_sim_s": 0.014999999999998792,
+      "stopping_distance_m": 0.14908286800422776,
+      "stopping_budget_m": 0.5621177543722018,
+      "yaw_swept_after_fault_rad": 0.00046728157109671625,
+      "final_yaw_rate_rad_s": 0.0,
+      "blocks": 0,
+      "tail_discarded": [
+        {
+          "rows": 729,
+          "minimum_rows": 1000
+        }
+      ]
+    },
+    {
+      "probe": "fault_cam_shift",
+      "passed": true,
+      "case": "camera_disabled",
+      "phase": "shift",
+      "shutter_open_at_injection": false,
+      "truth_speed_m_s": 0.3638095395649376,
+      "truth_yaw_rate_rad_s": -0.010788324370116517,
+      "final_state": "ACQUIRED",
+      "final_reason": "",
+      "outcome": "mission unaffected; the closed shutter was not depended on",
+      "reaction_sim_s": null,
+      "stopping_distance_m": null,
+      "stopping_budget_m": null,
+      "yaw_swept_after_fault_rad": null,
+      "final_yaw_rate_rad_s": null,
+      "blocks": 12,
+      "tail_discarded": null
+    },
+    {
+      "probe": "fault_loc_accelerate",
+      "passed": true,
+      "case": "localization_timeout",
+      "phase": "accelerate",
+      "shutter_open_at_injection": true,
+      "truth_speed_m_s": 0.36596612821653607,
+      "truth_yaw_rate_rad_s": 8.702530293461219e-07,
+      "final_state": "FAULT",
+      "final_reason": "STALE_OR_UNREADY_LOCALIZATION",
+      "outcome": "controlled stop",
+      "reaction_sim_s": 0.33999999999999986,
+      "stopping_distance_m": 0.3016214710701114,
+      "stopping_budget_m": 0.40484358684164945,
+      "yaw_swept_after_fault_rad": 0.0024209582595967876,
+      "final_yaw_rate_rad_s": 0.0,
+      "blocks": 0,
+      "tail_discarded": [
+        {
+          "rows": 722,
+          "minimum_rows": 1000
+        }
+      ]
+    },
+    {
+      "probe": "fault_loc_rotate",
+      "passed": true,
+      "case": "localization_timeout",
+      "phase": "rotate",
+      "shutter_open_at_injection": false,
+      "truth_speed_m_s": 0.002328626543870123,
+      "truth_yaw_rate_rad_s": 0.06541597874837073,
+      "final_state": "FAULT",
+      "final_reason": "STALE_OR_UNREADY_LOCALIZATION",
+      "outcome": "controlled stop",
+      "reaction_sim_s": 0.3200000000000003,
+      "stopping_distance_m": 0.0013918738639730954,
+      "stopping_budget_m": 0.101516318504306,
+      "yaw_swept_after_fault_rad": 0.03530581772764259,
+      "final_yaw_rate_rad_s": 0.0,
+      "blocks": 6,
+      "tail_discarded": null
+    },
+    {
+      "probe": "fault_loc_runout",
+      "passed": true,
+      "case": "localization_timeout",
+      "phase": "runout",
+      "shutter_open_at_injection": true,
+      "truth_speed_m_s": 0.4999856565752265,
+      "truth_yaw_rate_rad_s": 0.0,
+      "final_state": "FAULT",
+      "final_reason": "STALE_OR_UNREADY_LOCALIZATION",
+      "outcome": "controlled stop",
+      "reaction_sim_s": 0.3200000000000003,
+      "stopping_distance_m": 0.2886871568318869,
+      "stopping_budget_m": 0.5499835051643773,
+      "yaw_swept_after_fault_rad": 1.2635506385806534e-05,
+      "final_yaw_rate_rad_s": 0.0,
+      "blocks": 6,
+      "tail_discarded": null
+    },
+    {
+      "probe": "fault_loc_scan",
+      "passed": true,
+      "case": "localization_timeout",
+      "phase": "scan",
+      "shutter_open_at_injection": true,
+      "truth_speed_m_s": 0.5033374319881797,
+      "truth_yaw_rate_rad_s": 4.305157399802448e-07,
+      "final_state": "FAULT",
+      "final_reason": "STALE_OR_UNREADY_LOCALIZATION",
+      "outcome": "controlled stop",
+      "reaction_sim_s": 0.3600000000000012,
+      "stopping_distance_m": 0.314550985701382,
+      "stopping_budget_m": 0.5538436160125445,
+      "yaw_swept_after_fault_rad": 0.00025474277082968184,
+      "final_yaw_rate_rad_s": 0.0,
+      "blocks": 1,
+      "tail_discarded": null
+    },
+    {
+      "probe": "fault_loc_shift",
+      "passed": true,
+      "case": "localization_timeout",
+      "phase": "shift",
+      "shutter_open_at_injection": false,
+      "truth_speed_m_s": 0.357094724178088,
+      "truth_yaw_rate_rad_s": -0.010018899180670338,
+      "final_state": "FAULT",
+      "final_reason": "STALE_OR_UNREADY_LOCALIZATION",
+      "outcome": "controlled stop",
+      "reaction_sim_s": 0.3399999999999963,
+      "stopping_distance_m": 0.31947010647759166,
+      "stopping_budget_m": 0.3958698917336696,
+      "yaw_swept_after_fault_rad": 0.01123804687203725,
+      "final_yaw_rate_rad_s": 0.0,
+      "blocks": 6,
+      "tail_discarded": null
+    }
+  ],
+  "passed": true,
+  "retries": 0,
+  "findings": {
+    "camera_fault_depends_on_the_shutter": "capture.check_state() returns early unless the capture window is open, so disabling the camera during SHIFT or ROTATE_180 is not a mission fault. Both probes ran to ACQUIRED with 12 archived blocks: the next pass re-requests the sensor and recovers it transparently. The probe asserted only the invariants -- nothing fires at injection, a defined terminal state is reached, any fault is CAMERA_* and stops the vehicle -- rather than guessing which way it goes.",
+    "reaction_paths_differ_by_an_order_of_magnitude": "the camera fault travels on the sensor heartbeat and fired in 15-35 ms; the localization fault waits out wall_timeout_s and fired in 320-360 ms. Both are within budget, but they are not the same mechanism and should not be quoted as one reaction time.",
+    "rotation_needs_a_yaw_criterion": "fault_loc_rotate stopped within 0.0014 m against a 0.1015 m budget, which an in-place rotation satisfies by standing still. The yaw evidence is what carries it: 0.0654 rad/s at injection, 0.0353 rad swept after the fault, settling to zero.",
+    "discarded_tails_are_a_correct_empty_archive": "three probes archived no block because the closing tail fell under the 1000-row floor; the sensor recorded tail_discarded and the probe checks for that rather than demanding a block."
+  },
+  "reaction_budget_s": 0.65,
+  "stop_thresholds": {
+    "stopped_speed_m_s": 0.025,
+    "stopped_yaw_rate_rad_s": 0.015
+  },
+  "not_covered": [
+    "camera_disabled was not injected in the runout phase: the shutter closes there only once the camera passes the planned over-run, so the outcome depends on which side of that point the injection lands and would not be reproducible",
+    "one region size, one noise profile, one injection per phase; not a repeat trial",
+    "approach phase not injected: it carries no capture and duplicates the shift result"
+  ]
+}
