@@ -14,8 +14,8 @@
     "probes": "pause/resume retained-frame probe on; cancel probe off, as in the runs this compares against",
     "seeds_passed_as": "localization_config, so the shipped measurements.yaml is untouched and each seed is on the record"
   },
-  "verdict": "NOT MET",
-  "verdict_detail": "coverage, capture and image quality passed in all three consecutive runs, but the steady real-time factor floor of 0.95 was missed twice (0.9450, 0.9439). The gate requires consecutive runs, so a degradation caused by running consecutively is a finding against the gate rather than an artifact to be excused.",
+  "verdict": "MET under the 0.92 floor adopted on 2026-09-12; NOT MET under the 0.95 floor in force when the runs were made",
+  "verdict_detail": "Coverage, capture and image quality passed in all three consecutive runs. Steady RTF was 0.9588, 0.9450 and 0.9439: two of the three missed the 0.95 floor that was in force when these runs were made, and all three clear the 0.92 floor the project owner adopted the same day. The reasoning for the lower floor is recorded at REALTIME_FLOOR in tools/validate_rendered_linescan.py. Relaxing the floor does not explain the monotone decline, which stays open.",
   "runs": [
     {
       "name": "repeat_a",
@@ -168,8 +168,8 @@
       0.944997467153503,
       0.9439179388039287
     ],
-    "floor": 0.95,
-    "below_floor": 2,
+    "floor": 0.92,
+    "below_floor": 0,
     "same_work_took_longer": {
       "steady_wall_s": [
         388.72895275500014,
@@ -197,7 +197,27 @@
       "disk": "867 GiB free, local_data 39 GiB",
       "gpu_throttle_flags": "no thermal or power slowdown reported at idle after the runs"
     },
-    "open": "the three runs cannot separate degradation caused by running consecutively from a machine that is now persistently slower. The experiment that separates them is a cooldown followed by a repeat of the first run at its own seed."
+    "open": "the three runs cannot separate degradation caused by running consecutively from a machine that is now persistently slower. The experiment that separates them is a cooldown followed by a repeat of the first run at its own seed.",
+    "floor_history": [
+      {
+        "value": 0.95,
+        "until": "2026-09-12"
+      },
+      {
+        "value": 0.92,
+        "adopted": "2026-09-12",
+        "by": "project owner"
+      }
+    ],
+    "below_previous_floor": 2,
+    "margin_to_floor": [
+      0.0677,
+      0.0421,
+      0.0388,
+      0.025,
+      0.0239
+    ],
+    "what_the_floor_does_not_bind": "the control loop had room to spare at the lowest sample: phase peaks of 6 ms against a 50 ms stall threshold and a 100 ms maximum step, with one stall record in about 120000 ticks across the three runs. Data validity does not depend on it either, since the encoder triggers by distance and the simulation clock is authoritative. What it bounds is wall-clock cost per run."
   },
   "findings": [
     "Coverage is reproducible at the rated speed: three seeds, ten tracks each, every track [0, 100] with no unverified span, no quality flag and no excluded footprint tag. Block and row counts agree to 0.02 percent.",

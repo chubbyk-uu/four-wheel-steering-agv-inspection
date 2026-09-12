@@ -11,6 +11,17 @@ import sys
 import time
 
 
+# Steady real-time factor a joint capture acceptance must reach. Lowered from
+# 0.95 to 0.92 on 2026-09-12 by the project owner. The simulation clock is
+# authoritative and the encoder triggers by distance, so this bounds how long a
+# run takes, not whether its data is valid; the measured control loop peaked at
+# 6 ms against its 50 ms stall threshold at 0.944, so it is not the binding
+# constraint either. It is still a floor: the rated area's samples have fallen
+# monotonically (0.9877, 0.9621, 0.9588, 0.9450, 0.9439) for reasons not yet
+# established, and a floor moved ahead of an unexplained trend buys one turn.
+REALTIME_FLOOR=.92
+
+
 def evaluate(args):
     import rclpy
     import numpy as np
@@ -310,12 +321,12 @@ def evaluate(args):
             report['full_block_delivery_lines_per_wall_second']=(len(full_received)-1)*args.block_rows/(full_received[-1]-full_received[0]) if len(full_received)>1 else None
             report['full_acceptance_passed']=False
             report['notes']='OptiX shared static mesh plus thirteen robot links with per-exposure transforms and configured LED shadow samples; ROS images and PGM archive. Sampling rate excludes physics/ROS/archive. Not the independent durable-write throughput acceptance.'
-        report['realtime_target_met']=report['real_time_factor']>=.95
-        report['realtime_required']=args.require_realtime
+        report['realtime_target_met']=report['real_time_factor']>=REALTIME_FLOOR
+        report['realtime_required']=args.require_realtime;report['realtime_floor']=REALTIME_FLOOR
         report['passed']=report['passed'] and (not args.require_realtime or report['realtime_target_met'])
         (Path(args.archive)/'summary.json').write_text(json.dumps(report,indent=2)+'\n')
         print(json.dumps(report),flush=True)
-        assert report['passed'], 'required realtime factor >=0.95 was not met'
+        assert report['passed'], 'required realtime factor >=%g was not met'%REALTIME_FLOOR
         if args.view_hold: run_for(args.view_hold,(0,0,0))
     finally:
         node.command((0,0,0)); node.destroy_node(); rclpy.shutdown()
@@ -327,7 +338,7 @@ def main():
     parser.add_argument('--camera-config',default='')
     parser.add_argument('--correction-profile',default='')
     parser.add_argument('--reference-target',action='store_true')
-    parser.add_argument('--require-realtime',action='store_true',help='fail capture acceptance when steady real-time factor is below 0.95')
+    parser.add_argument('--require-realtime',action='store_true',help='fail capture acceptance when the steady real-time factor is below the floor')
     parser.add_argument('--gui',action='store_true')
     parser.add_argument('--rviz',action='store_true')
     parser.add_argument('--stop-capture-before-brake',action='store_true')
