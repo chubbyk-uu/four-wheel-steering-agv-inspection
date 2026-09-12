@@ -1,0 +1,28 @@
+{
+  "schema": "agv.scan_slip.v1",
+  "mission": "local_data/fullarea_10kmh/session/tasks/20260912_110336_0cc5d3/mission",
+  "blocks": 710,
+  "images": 710,
+  "lines": 2879741,
+  "encoder_vs_ground": {
+    "intervals": 2822,
+    "floor": 0.95,
+    "median": 0.99999519926691,
+    "minimum": 0.9817232543058335,
+    "p0_1": 0.9921727580943537,
+    "p1": 0.9984320959355768,
+    "below_floor": 0,
+    "worst": []
+  },
+  "adjacent_rows": {
+    "column_stride": 4,
+    "run_median": 9.23583984375,
+    "duplicate_threshold": 3.6943359375,
+    "observed_minimum": 5.654296875,
+    "images_flagged": 0,
+    "flagged": [],
+    "exact_duplicate_rows": 0
+  },
+  "scope": "Simulation truth pose tags and archived pixels. The ratio test needs the rendered camera position and cannot run against estimated navigation, whose centimetre noise hides a millimetre stall.",
+  "passed": true
+}

@@ -254,5 +254,130 @@
     "lateral allowance ROSE slightly at the higher speed (0.148-0.167 m vs 0.140-0.147 m), the opposite of the prediction that halving the per-pass integration time would help. The dominant term is therefore not gyro-over-time; acceleration disturbing the gravity reference is the likelier cause. Still 33% inside the 0.25 m budget, but the reasoning behind the speed choice was wrong",
     "this run merges plan items 2 and 3 (low-speed full-area coverage, then the speed ramp). It passed, so nothing is ambiguous, but full-area coverage has not been confirmed separately at 1.0 m/s",
     "startup: no WSLg OpenGL failure and no gz-transport segfault, 18 consecutive starts since the server/GUI split; the split itself is still not proven significant (p = 0.478 at 12 trials per arm)"
-  ]
+  ],
+  "rated_10kmh": {
+    "note": "the rated inspection speed, reachable only after max_speed and rated_scan_speed were separated. Mechanically and in real time it is fine; the coverage verdict fails on localization lateral uncertainty, which neither of the tail/head fixes touches and which grows monotonically with speed",
+    "scan_speed_m_s": 2.777777777777778,
+    "mission_seconds": 731,
+    "coverage_status": "NEEDS_RESCAN",
+    "blocks": 710,
+    "rows": 2880451,
+    "steady_rtf": 0.9877260219258834,
+    "actual_peak_speed_m_s": 2.9167448275359797,
+    "discarded_tail_rows": [],
+    "final_state": "ACQUIRED",
+    "final_motion": "HOLD",
+    "audit_issues": 0,
+    "audit_inputs": 0,
+    "wheel_steering_range_deg": {
+      "fl": [
+        -100.44,
+        27.19
+      ],
+      "fr": [
+        -182.26,
+        27.3
+      ],
+      "rl": [
+        -182.04,
+        27.54
+      ],
+      "rr": [
+        -93.15,
+        27.69
+      ]
+    },
+    "tracks": [
+      {
+        "track_id": 0,
+        "unverified": [],
+        "max_lateral_allowance_m": 0.16859266856397437,
+        "quality_flags": []
+      },
+      {
+        "track_id": 1,
+        "unverified": [
+          [
+            0.0,
+            0.46751200484562216
+          ]
+        ],
+        "max_lateral_allowance_m": 0.1835549754349944,
+        "quality_flags": [
+          "UNCERTAINTY_EXCEEDS_OVERLAP"
+        ]
+      },
+      {
+        "track_id": 2,
+        "unverified": [],
+        "max_lateral_allowance_m": 0.17003226872494195,
+        "quality_flags": []
+      },
+      {
+        "track_id": 3,
+        "unverified": [],
+        "max_lateral_allowance_m": 0.17027257899466272,
+        "quality_flags": []
+      },
+      {
+        "track_id": 4,
+        "unverified": [],
+        "max_lateral_allowance_m": 0.17817426646142692,
+        "quality_flags": [
+          "UNCERTAINTY_EXCEEDS_OVERLAP"
+        ]
+      },
+      {
+        "track_id": 5,
+        "unverified": [],
+        "max_lateral_allowance_m": 0.16823243117624323,
+        "quality_flags": []
+      },
+      {
+        "track_id": 6,
+        "unverified": [],
+        "max_lateral_allowance_m": 0.16891524354714765,
+        "quality_flags": []
+      },
+      {
+        "track_id": 7,
+        "unverified": [],
+        "max_lateral_allowance_m": 0.168181670899531,
+        "quality_flags": []
+      },
+      {
+        "track_id": 8,
+        "unverified": [],
+        "max_lateral_allowance_m": 0.16637977042910396,
+        "quality_flags": []
+      },
+      {
+        "track_id": 9,
+        "unverified": [],
+        "max_lateral_allowance_m": 0.16601825507351087,
+        "quality_flags": []
+      }
+    ]
+  },
+  "lateral_allowance_by_speed": {
+    "1.0": [
+      0.14,
+      0.147
+    ],
+    "2.0": [
+      0.148,
+      0.167
+    ],
+    "2.778": [
+      0.166,
+      0.184
+    ],
+    "budget_note": "the audit needs the padded footprint to still span the assigned band: with a 1.5 m swath on 1.0 m spacing a perfectly centred camera allows 0.25 m of padding, and every millimetre of cross-track offset comes out of that allowance"
+  },
+  "rtf_by_duration": {
+    "1 track, 90 s": 0.9945,
+    "10 tracks, 731 s": 0.9877,
+    "10 tracks, 854 s": 0.979,
+    "note": "real-time factor tracks mission duration, not line rate. 10 km/h runs 39% more lines per second than 2 m/s and still scores higher, because the mission is shorter"
+  }
 }
