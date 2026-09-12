@@ -165,8 +165,13 @@ fl −96.34..76.27°、fr −184.28..71.75°、rl −184.28..70.68°、rr −92.
 绝对角超过100°——在新摆放下这些恰好是高余量的一侧，同一个−184.28°在旧±185°摆放里只剩0.71°。
 
 覆盖判定仍是`NEEDS_RESCAN`：每道末端约0.26–0.31 m未验证，第6道另有`[0, 0.941]`。横向余量0.138–0.149 m，
-远在0.25 m预算内，与本次限位改动无关，是此前已记录的尾段覆盖问题（见[终点过冲](PASS_TERMINAL_OVERSHOOT.md)），
-本轮不处理。
+远在0.25 m预算内，与本次限位改动无关，是此前已记录的尾段覆盖问题（见
+[覆盖缺口](COVERAGE_TAIL_GAP.md)），已于同日修复。
+
+2026-09-12在完整100×10 m区域（10道、9次转场、2.0 m/s）复核不对称限位：舵角区间
+fl −100.9~34.8°、fr −183.0~34.9°、rl −181.7~35.2°、rr −93.9~35.6°，**最小余量59.4°**，
+0次`LIMIT_RECONFIGURE`。其中−183.0°在旧±185°摆放里只剩2°余量——这正是每道连续保持50 s的直行分支。
+见[全区验收对照](../../results/full_area_acceptance.json)。
 
 C++回归按新几何重写：`MechanicalLimitsAndReverse`、`ExplicitLimitReconfigurationSelectsInterior`
 （新增横移+90°必须被recentre筛掉的断言）、`AtanBranchCutIsNotMechanicalDiscontinuity`、

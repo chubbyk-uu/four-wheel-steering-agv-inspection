@@ -1,0 +1,258 @@
+{
+  "schema": "agv.full_area_acceptance.v1",
+  "goal": "full 100 x 10 m area coverage, implementation plan item 2",
+  "note": "first run to reach ESTIMATED_COMPLETE over the whole area. The baseline predates the asymmetric steering limits, the scan over-run and the capture-open ordering; it also ran at half the speed, so the two rows differ in more than one variable",
+  "region_m": [
+    100.0,
+    10.0
+  ],
+  "track_spacing_m": 1.0,
+  "tracks": 10,
+  "scene": "assets/road/runtime_fullwidth_100m_v1",
+  "stack": "GUI + RViz + OptiX, d3d12/NVIDIA, WSL2",
+  "baseline_1ms": {
+    "scan_speed_m_s": 1.0,
+    "mission_seconds": 1378,
+    "coverage_status": "NEEDS_RESCAN",
+    "blocks": 670,
+    "rows": 2744320,
+    "steady_rtf": 0.994187558659602,
+    "actual_peak_speed_m_s": 1.057086613485183,
+    "discarded_tail_rows": [
+      958,
+      996,
+      952,
+      849,
+      782,
+      873,
+      955,
+      821,
+      904,
+      944
+    ],
+    "final_state": "ACQUIRED",
+    "final_motion": "HOLD",
+    "pause_retains_frame": null,
+    "ros_archive_identical": true,
+    "tracks": [
+      {
+        "track_id": 0,
+        "unverified": [
+          [
+            99.6464918855767,
+            100.0
+          ]
+        ],
+        "max_lateral_allowance_m": 0.14621900256021447,
+        "quality_flags": []
+      },
+      {
+        "track_id": 1,
+        "unverified": [
+          [
+            0.0,
+            0.14100719055495006
+          ],
+          [
+            99.64809418133206,
+            100.0
+          ]
+        ],
+        "max_lateral_allowance_m": 0.1471786985125798,
+        "quality_flags": [
+          "UNCERTAINTY_EXCEEDS_OVERLAP"
+        ]
+      },
+      {
+        "track_id": 2,
+        "unverified": [
+          [
+            99.68427442084227,
+            100.0
+          ]
+        ],
+        "max_lateral_allowance_m": 0.14513741675299083,
+        "quality_flags": []
+      },
+      {
+        "track_id": 3,
+        "unverified": [
+          [
+            99.70612261829373,
+            100.0
+          ]
+        ],
+        "max_lateral_allowance_m": 0.14501406621266794,
+        "quality_flags": []
+      },
+      {
+        "track_id": 4,
+        "unverified": [
+          [
+            99.71147733322417,
+            100.0
+          ]
+        ],
+        "max_lateral_allowance_m": 0.14167633431432264,
+        "quality_flags": []
+      },
+      {
+        "track_id": 5,
+        "unverified": [
+          [
+            99.6860323866153,
+            100.0
+          ]
+        ],
+        "max_lateral_allowance_m": 0.1435803109774722,
+        "quality_flags": []
+      },
+      {
+        "track_id": 6,
+        "unverified": [
+          [
+            99.66700059397577,
+            100.0
+          ]
+        ],
+        "max_lateral_allowance_m": 0.14178998577132268,
+        "quality_flags": []
+      },
+      {
+        "track_id": 7,
+        "unverified": [
+          [
+            99.68982873667721,
+            100.0
+          ]
+        ],
+        "max_lateral_allowance_m": 0.14446322547676602,
+        "quality_flags": []
+      },
+      {
+        "track_id": 8,
+        "unverified": [
+          [
+            99.68408218801193,
+            100.0
+          ]
+        ],
+        "max_lateral_allowance_m": 0.14034122865588017,
+        "quality_flags": []
+      },
+      {
+        "track_id": 9,
+        "unverified": [
+          [
+            99.67122122238654,
+            100.0
+          ]
+        ],
+        "max_lateral_allowance_m": 0.14444095073792795,
+        "quality_flags": []
+      }
+    ]
+  },
+  "fixed_2ms": {
+    "scan_speed_m_s": 2.0,
+    "mission_seconds": 854,
+    "coverage_status": "ESTIMATED_COMPLETE",
+    "blocks": 690,
+    "rows": 2816291,
+    "steady_rtf": 0.9790289619413749,
+    "actual_peak_speed_m_s": 2.112273274249203,
+    "discarded_tail_rows": [],
+    "final_state": "ACQUIRED",
+    "final_motion": "HOLD",
+    "pause_retains_frame": true,
+    "ros_archive_identical": true,
+    "tracks": [
+      {
+        "track_id": 0,
+        "unverified": [],
+        "max_lateral_allowance_m": 0.16612168336606858,
+        "quality_flags": []
+      },
+      {
+        "track_id": 1,
+        "unverified": [],
+        "max_lateral_allowance_m": 0.15626983774061834,
+        "quality_flags": []
+      },
+      {
+        "track_id": 2,
+        "unverified": [],
+        "max_lateral_allowance_m": 0.148250523469933,
+        "quality_flags": []
+      },
+      {
+        "track_id": 3,
+        "unverified": [],
+        "max_lateral_allowance_m": 0.16669855564100045,
+        "quality_flags": []
+      },
+      {
+        "track_id": 4,
+        "unverified": [],
+        "max_lateral_allowance_m": 0.16059700898605372,
+        "quality_flags": []
+      },
+      {
+        "track_id": 5,
+        "unverified": [],
+        "max_lateral_allowance_m": 0.14757616768824489,
+        "quality_flags": []
+      },
+      {
+        "track_id": 6,
+        "unverified": [],
+        "max_lateral_allowance_m": 0.15987485820872638,
+        "quality_flags": []
+      },
+      {
+        "track_id": 7,
+        "unverified": [],
+        "max_lateral_allowance_m": 0.1553372674977525,
+        "quality_flags": []
+      },
+      {
+        "track_id": 8,
+        "unverified": [],
+        "max_lateral_allowance_m": 0.15106964455324273,
+        "quality_flags": []
+      },
+      {
+        "track_id": 9,
+        "unverified": [],
+        "max_lateral_allowance_m": 0.16169039100638677,
+        "quality_flags": []
+      }
+    ],
+    "wheel_steering_range_deg": {
+      "fl": [
+        -100.91,
+        34.79
+      ],
+      "fr": [
+        -182.98,
+        34.93
+      ],
+      "rl": [
+        -181.72,
+        35.23
+      ],
+      "rr": [
+        -93.94,
+        35.56
+      ]
+    },
+    "audit_issues": 0,
+    "audit_inputs": 0
+  },
+  "observations": [
+    "steady RTF fell 0.994 -> 0.979: 2 m/s doubles the line rate to 5461 Hz and with it the OptiX work per simulated second. Data validity is unaffected (the encoder triggers on distance and the simulation clock is authoritative) but the margin to real time is now 2.1%",
+    "lateral allowance ROSE slightly at the higher speed (0.148-0.167 m vs 0.140-0.147 m), the opposite of the prediction that halving the per-pass integration time would help. The dominant term is therefore not gyro-over-time; acceleration disturbing the gravity reference is the likelier cause. Still 33% inside the 0.25 m budget, but the reasoning behind the speed choice was wrong",
+    "this run merges plan items 2 and 3 (low-speed full-area coverage, then the speed ramp). It passed, so nothing is ambiguous, but full-area coverage has not been confirmed separately at 1.0 m/s",
+    "startup: no WSLg OpenGL failure and no gz-transport segfault, 18 consecutive starts since the server/GUI split; the split itself is still not proven significant (p = 0.478 at 12 trials per arm)"
+  ]
+}
