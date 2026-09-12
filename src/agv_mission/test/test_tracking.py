@@ -142,11 +142,17 @@ def test_planner_and_tracker_reserve_physical_braking_authority():
     platform=yaml.safe_load((root/'agv_description/config/platform.yaml').read_text())
     camera=yaml.safe_load((root/'agv_description/config/linescan.yaml').read_text())
     cfg=yaml.safe_load((root/'agv_mission/config/tracking.yaml').read_text())
-    c=SegmentTracker([0,0,0],[0,0,0,1],'translate',[15,0],0,platform['max_speed'],platform,cfg)
+    # The rated scan speed, not the vehicle top speed: a 15 m segment reaches
+    # cruise at 10 km/h, so the profile really does have a braking phase to check.
+    c=SegmentTracker([0,0,0],[0,0,0,1],'translate',[15,0],0,platform['rated_scan_speed'],platform,cfg)
     vehicle=Vehicle.from_configs(platform,camera)
     assert c.profile.decel==vehicle.decel==.8
     assert platform['drive_decel']==1.
-    assert c.profile.dd==pytest.approx(platform['max_speed']**2/(2*vehicle.decel))
+    assert c.profile.dd==pytest.approx(platform['rated_scan_speed']**2/(2*vehicle.decel))
+    # A segment may still be commanded up to the vehicle top speed.
+    SegmentTracker([0,0,0],[0,0,0,1],'translate',[60,0],0,platform['max_speed'],platform,cfg)
+    with pytest.raises(ValueError):
+        SegmentTracker([0,0,0],[0,0,0,1],'translate',[60,0],0,platform['max_speed']*1.01,platform,cfg)
     with pytest.raises(ValueError):trajectory_deceleration(dict(platform,trajectory_decel=1.1))
 
 

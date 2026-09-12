@@ -199,7 +199,7 @@ class Operator(Node):
                     capture_pending=getattr(self.child.capture,'pending',False) or self.child.capture.future is not None,capture_close_failed=self.child.capture.close_failed,
                     capture_sensor_enabled=False if self.child.capture.active is False else None)
         else:status={'state':'IDLE'}
-        self.pub.publish(String(data=json.dumps(dict(max_requested_speed_m_s=self.platform['max_speed'],response_id=self.response_id,request=self.request,preview_valid=self.preview is not None,editable=self.editable(),busy=bool(self.pending or self.job),ok=self.ok,message=self.message,status=status,coverage=self.coverage))))
+        self.pub.publish(String(data=json.dumps(dict(max_requested_speed_m_s=self.platform['rated_scan_speed'],response_id=self.response_id,request=self.request,preview_valid=self.preview is not None,editable=self.editable(),busy=bool(self.pending or self.job),ok=self.ok,message=self.message,status=status,coverage=self.coverage))))
     def close(self):
         self.release();self.pool.shutdown(wait=True);self.destroy_node()
 

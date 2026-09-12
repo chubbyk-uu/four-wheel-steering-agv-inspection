@@ -45,6 +45,7 @@ class Vehicle:
     accel: float
     decel: float
     max_speed: float
+    rated_scan_speed: float
     discardable_tail_m: float = 0.0
     minimum_sweep_radius: float = 1.5
     raw_swath_factor: float = 1.04
@@ -75,8 +76,15 @@ class Vehicle:
         # archived row may trail wherever capture was closed by this much.
         tail = number(camera.get('min_tail_rows', 0), 'min tail rows', 0) * \
             number(camera['line_spacing_m'], 'line spacing', 0, True)
+        # The vehicle's top speed and the fastest scan it may be asked for are
+        # different numbers. Commanding a scan at the top speed would leave the
+        # tracker no authority to accelerate, only to brake.
+        top = number(platform.get('max_speed'), 'platform max speed', 0, True)
+        rated = number(platform.get('rated_scan_speed'), 'rated scan speed', 0, True)
+        if rated >= top:
+            raise PlanningError('rated scan speed must stay below the vehicle top speed')
         return cls(camera['nominal_width_m'], camera['camera_x_m'], platform['base_height'],
-                   platform['drive_accel'], trajectory_deceleration(platform), platform['max_speed'],
+                   platform['drive_accel'], trajectory_deceleration(platform), top, rated,
                    tail)
 
 
@@ -107,13 +115,16 @@ def plan(request, vehicle):
     margin = number(request['longitudinal_margin_m'], 'longitudinal margin', 0)
     radius = number(request['vehicle_sweep_radius_m'], 'sweep radius', 0, True)
     step = number(request['sample_step_m'], 'sample step', 0, True)
-    for name in ('swath', 'base_height', 'accel', 'decel', 'max_speed', 'minimum_sweep_radius'):
+    for name in ('swath', 'base_height', 'accel', 'decel', 'max_speed', 'rated_scan_speed',
+                 'minimum_sweep_radius'):
         number(getattr(vehicle, name), name, 0, True)
     number(vehicle.camera_x, 'camera offset')
+    if vehicle.rated_scan_speed >= vehicle.max_speed:
+        raise PlanningError('rated scan speed must stay below the vehicle top speed')
     if radius < vehicle.minimum_sweep_radius:
         raise PlanningError('sweep radius is smaller than the audited 1.5 m vehicle envelope')
-    if speed > vehicle.max_speed:
-        raise PlanningError('scan speed exceeds platform limit')
+    if speed > vehicle.rated_scan_speed:
+        raise PlanningError('scan speed exceeds the rated inspection speed')
     effective = vehicle.swath - 2 * error
     if effective <= 0 or spacing > effective:
         raise PlanningError('spacing/uncertainty permits an uncovered gap')

@@ -21,7 +21,13 @@ TEST(Kinematics, MechanicalLimitsAndReverse){
 }
 TEST(Kinematics, ZeroHoldsAndLimits){
  Controller c;Four a{1,2,-1,-2};auto r=c.allocate({},a,a);EXPECT_EQ(r.angle,a);
- auto q=c.allocate({20,20,3},a,a);for(double v:q.speed)EXPECT_LE(std::abs(v),10/3.6+1e-9);
+ // Read the cap rather than restating it. This request is dominated by the
+ // lateral limit, so add one that the vehicle top speed alone has to hold.
+ const double cap=Config{}.max_speed;
+ auto q=c.allocate({20,20,3},a,a);for(double v:q.speed)EXPECT_LE(std::abs(v),cap+1e-9);
+ auto f=c.allocate({20,0,0},a,a);
+ for(double v:f.speed)EXPECT_LE(std::abs(v),cap+1e-9);
+ EXPECT_NEAR(Controller::max_abs(f.speed),cap,1e-9);
  EXPECT_THROW(c.allocate({NAN,0,0},a,a),std::invalid_argument);
 }
 TEST(Transitions, StopBeforeLateralSteering){
@@ -55,7 +61,10 @@ TEST(Transitions, SteeringRateAndAcceleration){
 TEST(Transitions, HighSpeedSmallAngleRequiresBraking){
  Controller c;Four a{},v{};Target r;
  for(int n=0;n<900;++n){r=c.update({5,0,0},a,v,.01);a=r.angle;v=r.speed;}
- ASSERT_NEAR(v[0],10/3.6,1e-9);  // An excessive request is capped before changing direction.
+ // An excessive request is capped at the vehicle top speed before it may
+ // change direction. Read the cap rather than restating it, or a change to the
+ // platform spec silently turns this into a different test.
+ ASSERT_NEAR(v[0],Config{}.max_speed,1e-9);
  r=c.update({5,.25,0},a,v,.01);EXPECT_EQ(c.mode(),Mode::Brake);
 }
 TEST(Transitions, RestartWhileMovingBrakesBeforeSteering){
@@ -388,5 +397,14 @@ TEST(Configuration, DefaultsMatchShippedPlatformAndPolicy) {
   const auto stopped=allocator.allocate(request,parked,parked,false,true);
   for(size_t i=0;i<4;++i)EXPECT_GE(c.margin(stopped.angle[i]),c.segment_margin);
  }
+ // The vehicle's top speed and the fastest scan a mission may request are
+ // different numbers. A scan commanded at the top speed would leave the tracker
+ // no authority to accelerate, only to brake, so the rated inspection speed has
+ // to clear the top speed by at least that authority.
+ const double rated=platform["rated_scan_speed"].as<double>();
+ EXPECT_NEAR(c.max_speed,15/3.6,1e-12);   // 15 km/h vehicle top speed
+ EXPECT_NEAR(rated,10/3.6,1e-12);         // 10 km/h rated inspection speed
+ EXPECT_LT(rated,c.max_speed);
+ EXPECT_LE(rated+tracking["max_position_feedback_m_s"].as<double>(),c.max_speed);
  EXPECT_NEAR(std::atan(c.wheelbase/c.track)*180/pi,54.1301764823,1e-6);
 }

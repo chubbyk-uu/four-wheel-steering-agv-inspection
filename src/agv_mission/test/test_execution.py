@@ -12,7 +12,8 @@ def fixture():
     req['coverage_error_m']=.1
     # The shipped sensor discards a closing image below 1000 lines; the capture
     # window has to reach past the region by at least that, so say so here.
-    v=Vehicle(1.5,1.15,.65,.8,1.,2.778,1000*.0003662109375)
+    v=Vehicle(1.5,1.15,.65,.8,1.,max_speed=15/3.6,rated_scan_speed=10/3.6,
+              discardable_tail_m=1000*.0003662109375)
     return plan(req,v)
 
 

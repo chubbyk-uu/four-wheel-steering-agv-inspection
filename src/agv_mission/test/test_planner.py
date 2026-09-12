@@ -114,9 +114,41 @@ def test_runout_contains_the_discardable_sensor_tail(request_data, vehicle):
         assert report['runout_distance_m'] > report['scan_overrun_distance_m']
     # The head only has to clear the audit's own shrink, not a discarded tail.
     assert slow['lead_distance_m'] >= request_data['coverage_error_m']
-    request_data['scan_speed_m_s'] = vehicle.max_speed
+    request_data['scan_speed_m_s'] = vehicle.rated_scan_speed
     with pytest.raises(PlanningError,match='swept vehicle'):
         plan(request_data,vehicle)
+
+
+def test_rated_scan_speed_is_separate_from_the_vehicle_top_speed(request_data, vehicle):
+    from dataclasses import replace
+    # 15 km/h is what the machine can do; 10 km/h is the fastest scan it may be
+    # asked for. Commanding a scan at the top speed would leave the tracker no
+    # authority to accelerate, only to brake.
+    assert vehicle.max_speed == pytest.approx(15/3.6)
+    assert vehicle.rated_scan_speed == pytest.approx(10/3.6)
+    assert vehicle.rated_scan_speed < vehicle.max_speed
+    request_data['scan_speed_m_s'] = vehicle.rated_scan_speed + 1e-6
+    with pytest.raises(PlanningError, match='rated inspection speed'):
+        plan(request_data, vehicle)
+    # A vehicle whose rated speed reaches its top speed is not plannable at all.
+    for bad in (vehicle.max_speed, vehicle.max_speed*1.01):
+        request_data['scan_speed_m_s'] = .5
+        with pytest.raises(PlanningError, match='rated scan speed must stay below'):
+            plan(request_data, replace(vehicle, rated_scan_speed=bad))
+
+
+def test_platform_without_the_split_is_rejected(vehicle):
+    import yaml
+    from pathlib import Path as _P
+    config = ROOT.parent/'agv_description/config'
+    platform = yaml.safe_load((config/'platform.yaml').read_text())
+    camera = yaml.safe_load((config/'linescan.yaml').read_text())
+    assert Vehicle.from_configs(platform, camera) == vehicle
+    # A stale platform file must say which key is missing, not raise KeyError.
+    for key in ('max_speed', 'rated_scan_speed'):
+        stale = {k: v for k, v in platform.items() if k != key}
+        with pytest.raises(PlanningError):
+            Vehicle.from_configs(stale, camera)
 
 
 @pytest.mark.parametrize('key,value', [('scan_speed_m_s',3),('scan_speed_m_s',float('nan')),

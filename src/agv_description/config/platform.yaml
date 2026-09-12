@@ -20,7 +20,14 @@ steer_soft_lower: -4.799655442984406
 steer_soft_upper: 1.6580627893946132
 steer_rate: 0.65
 steer_accel: 1.5
-max_speed: 2.777777777777778
+# Vehicle top speed (15 km/h). This bounds the controller, the drive joints and
+# the sensor's "impossible wheel speed" guard -- it is what the machine can do,
+# not what a scan asks for. A scan commanded at the top speed would leave the
+# tracker no authority to accelerate, so the two must stay separate.
+max_speed: 4.166666666666667
+# Rated inspection speed (10 km/h): the fastest scan a mission may request.
+# Line rate at this speed is 7585 Hz against the 11 kHz sampling bench result.
+rated_scan_speed: 2.777777777777778
 max_yaw_rate: 0.35
 # Shared by the wheel allocator and mission tracker.
 max_lateral_speed: 1.0

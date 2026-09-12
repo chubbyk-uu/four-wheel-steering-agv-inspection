@@ -19,7 +19,7 @@ struct Config {
   // [-275, 95] deg keeps both straight-ahead branches at 95 deg and leaves the
   // poor branch on lateral +pi/2, which is only held during a transfer.
   double soft_lower{-275*pi/180}, soft_upper{95*pi/180};
-  double rate{0.65}, steer_accel{1.5}, max_speed{10/3.6}, max_yaw{0.35}, accel{0.8}, decel{1.0};
+  double rate{0.65}, steer_accel{1.5}, max_speed{15/3.6}, max_yaw{0.35}, accel{0.8}, decel{1.0};
   double reorient{0.30}, aligned{0.035}, stopped{0.025}, hysteresis{0.08};
   double alignment_motion_confirm_s{0.06};
   double lateral_mismatch{0.12};

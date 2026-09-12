@@ -64,7 +64,7 @@ def test_full_speed_trigger_count(config):
     tr = Trigger(config['line_spacing_m'])
     tr.update(0, 0)
     platform = yaml.safe_load((Path(__file__).resolve().parents[2]/'agv_description/config/platform.yaml').read_text())
-    speed = platform['max_speed']
+    speed = platform['rated_scan_speed']
     assert speed == pytest.approx(10/3.6)
     events = tr.update(1, speed)
     assert len(events) == math.floor(speed/config['line_spacing_m'])

@@ -17,7 +17,7 @@ def test_full_region_all_speeds_fit_with_tracking_allowance():
     report,request=budget()
     config=ROOT/'src/agv_description/config'
     vehicle=Vehicle.from_configs(yaml.safe_load((config/'platform.yaml').read_text()),yaml.safe_load((config/'linescan.yaml').read_text()))
-    for speed in (.5,1.,2.,vehicle.max_speed):
+    for speed in (.5,1.,2.,vehicle.rated_scan_speed):
         request['scan_speed_m_s']=speed;p=plan(request,vehicle)
         assert p['track_count']==10
         assert [t['center_road_y_m'] for t in p['tracks']]==[i-.5 for i in range(-4,6)]

@@ -19,7 +19,7 @@ def budget():
     camera=yaml.safe_load((config/'linescan.yaml').read_text())
     vehicle=Vehicle.from_configs(platform,camera)
     request=yaml.safe_load((ROOT/'src/agv_mission/config/rectangle_demo.yaml').read_text())
-    request.update(mission_id='full_road_100x10',scan_speed_m_s=platform['max_speed'],coverage_error_m=.1)
+    request.update(mission_id='full_road_100x10',scan_speed_m_s=platform['rated_scan_speed'],coverage_error_m=.1)
     request['road']['frame_id']='map'
     request['region']=dict(start_xy_m=[0.,-5.],length_m=100.,width_m=10.)
     request['drivable_bounds_xy_m']=[-100,200,-100,100]
