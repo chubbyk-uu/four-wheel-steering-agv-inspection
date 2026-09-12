@@ -1,0 +1,131 @@
+{
+  "schema": "agv.realtime_factor_investigation.v1",
+  "question": "the steady real-time factor fell from 0.9588 to 0.8669 across six runs in 75 minutes. What limits it, and what was falling?",
+  "cache_experiment": {
+    "design": "ABA on ground_material.cache_slots, 32 -> 128 -> 32, four tracks over 100 m at the rated speed on one seed. The outer arms bound the drift, which is the whole reason the middle arm cannot be read on its own.",
+    "arms": [
+      {
+        "name": "cache_a32",
+        "cache_slots": 32,
+        "when": "before the WSL restart, after three full-area runs and a heavy audit pass",
+        "steady_rtf": 0.9059525425433486,
+        "observed_rtf": 0.9349285301038287,
+        "sim_span_s": 311,
+        "blocks": 284,
+        "coverage_status": "ESTIMATED_COMPLETE",
+        "render_seconds": 35.674959350000144,
+        "renders": 3456762,
+        "tile_loads": 3392,
+        "tile_evictions": 3368,
+        "tile_generation_seconds": 19.660230179000024,
+        "monotonic_start_s": 12781.91431035
+      },
+      {
+        "name": "cache_b128",
+        "cache_slots": 128,
+        "when": "before the WSL restart",
+        "steady_rtf": 0.8866416849179853,
+        "observed_rtf": 0.9126889251402873,
+        "sim_span_s": 309,
+        "blocks": 284,
+        "coverage_status": "ESTIMATED_COMPLETE",
+        "render_seconds": 33.592078641999976,
+        "renders": 3455964,
+        "tile_loads": 3390,
+        "tile_evictions": 3367,
+        "tile_generation_seconds": 18.728256870000067,
+        "monotonic_start_s": 13157.160409534
+      },
+      {
+        "name": "cache_c32",
+        "cache_slots": 32,
+        "when": "before the WSL restart",
+        "steady_rtf": 0.8669029833752416,
+        "observed_rtf": 0.9085533546861225,
+        "sim_span_s": 311,
+        "blocks": 284,
+        "coverage_status": "ESTIMATED_COMPLETE",
+        "render_seconds": 39.494614456999976,
+        "renders": 3456972,
+        "tile_loads": 3389,
+        "tile_evictions": 3366,
+        "tile_generation_seconds": 23.590957577999983,
+        "monotonic_start_s": 13550.600368159
+      }
+    ],
+    "drift_between_outer_arms": -0.039,
+    "expected_middle_from_drift": 0.8864,
+    "observed_middle": 0.8866,
+    "effect_of_the_change": 0.0002,
+    "verdict": "null. Raising the cache fourfold changed the real-time factor by 0.0001 once drift is removed, and changed the tile counts not at all: 3392/3390/3389 loads and 3368/3367/3366 evictions.",
+    "mechanism": "eviction is not capacity driven. prefetch_ahead_m 1.5 and prefetch_behind_m 0.5 bound the working set, so a tile is generated once as the camera sweeps over it and dropped when the window moves on. Four 100 m tracks sweep about 3900 tiles and the run loads 3390: each tile is paid for once. Holding them instead would need the whole x range of a y band -- thousands of slots at about 38.6 MB each -- so the streaming cost is structural, not a tuning mistake.",
+    "correction": "the 8455 evictions in the earlier full-area run were read as cache thrash. They are not; they are streaming."
+  },
+  "degradation": {
+    "observation": "steady RTF by run, in order, over 75 minutes: 0.9588, 0.9450, 0.9439 (ten tracks), 0.9060, 0.8866, 0.8669 (four tracks)",
+    "within_run": "RTF measured in 60 s windows shows no downward trend inside any run; the whole distribution sits lower for each successive launch. The level is set at process start, not accumulated during the run.",
+    "ruled_out": {
+      "our_processes": "every run is a fresh process tree and no process survives between runs, so a leak in our code cannot carry over. Peak RSS and device memory were flat across runs.",
+      "gpu_thermal": "the GPU sat idle for about 25 minutes between run 3 and run 4 while a CPU and disk bound audit ran, and RTF still fell from 0.9439 to 0.9060. During the clean run it peaked at 56 C.",
+      "host_exhaustion": "12 GB of host memory and 854 GB of disk were free at the worst point; no stray processes.",
+      "dxg_ioctl_failures": "counted 0 in one early run and 600-900 in later ones, which looked like a lead. It is not: the clean post-restart run logged 598 of them and had the best RTF of any four-track arm."
+    },
+    "decisive_test": {
+      "action": "wsl --shutdown from Windows, then rerun the identical four-track arm at 32 slots on the same seed",
+      "before": 0.8669029833752416,
+      "after": 0.9466696991248259,
+      "recovery": 0.0798,
+      "verdict": "the degradation is state accumulated outside our processes in the WSL or host GPU stack, and a WSL restart clears it. It also cleared the page cache, so restart-clears-it is established while which of the two mattered is not."
+    },
+    "consequence": "a real-time factor measured without recording how long WSL has been up, and how many simulations have run in it, is not comparable to another. The three repeat-run figures were runs one to three after roughly two and a half hours of uptime, so they are lower bounds rather than the configuration."
+  },
+  "what_limits_it": {
+    "gpu_during_the_clean_run": {
+      "temperature_c": {
+        "min": 46.0,
+        "median": 51.0,
+        "p90": 54.0,
+        "max": 56.0
+      },
+      "sm_clock_mhz": {
+        "min": 742.0,
+        "median": 2745.0,
+        "p90": 2902.0,
+        "max": 2917.0
+      },
+      "gpu_utilization_pct": {
+        "min": 2.0,
+        "median": 32.0,
+        "p90": 49.0,
+        "max": 66.0
+      },
+      "memory_bandwidth_utilization_pct": {
+        "min": 1.0,
+        "median": 10.0,
+        "p90": 13.0,
+        "max": 33.0
+      },
+      "memory_used_mib": {
+        "min": 1586.0,
+        "median": 9922.0,
+        "p90": 9997.0,
+        "max": 10148.0
+      },
+      "power_w": {
+        "min": 25.98,
+        "median": 94.91499999999999,
+        "p90": 131.16,
+        "max": 134.8
+      }
+    },
+    "gpu_reading": "median utilization 32 percent, median memory bandwidth 10 percent, median power 95 W of a 360 W limit, clocks at boost and 51 C. The GPU is idle about two thirds of the time.",
+    "cpu_reading": "24 cores with a load average near 5.6 during the run, about 23 percent of the machine.",
+    "work_is_fixed_by_area": "line spacing is 0.3662 mm in space, so 100 x 10 m is 2.88 M lines and 8.64 M renders whether the vehicle drives 2.0 or 2.78 m/s. The rated run rendered 86.7 s and the 2 m/s run 97.0 s for the same area. Going faster adds no pixels; it gives the simulator fewer simulated seconds to hide the same work in, which is why RTF falls with speed by construction.",
+    "interpretation": "latency and serialisation bound, not throughput bound: 8.64 M launches of about 10 us each, against a single threaded 1 ms physics step that the mission needs 761000 of. Neither more cores nor a larger GPU would move it; fewer and larger submissions would."
+  },
+  "not_covered": [
+    "which of the two things a WSL restart clears -- host GPU stack state or page cache -- is responsible",
+    "whether RTF keeps degrading within a fresh WSL at the same rate, and after how many runs it crosses a floor",
+    "a repeat of the three full-area acceptance runs from a fresh WSL, which is what a comparable RTF figure would need"
+  ]
+}

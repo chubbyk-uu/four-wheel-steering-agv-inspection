@@ -16,9 +16,11 @@ import time
 # authoritative and the encoder triggers by distance, so this bounds how long a
 # run takes, not whether its data is valid; the measured control loop peaked at
 # 6 ms against its 50 ms stall threshold at 0.944, so it is not the binding
-# constraint either. It is still a floor: the rated area's samples have fallen
-# monotonically (0.9877, 0.9621, 0.9588, 0.9450, 0.9439) for reasons not yet
-# established, and a floor moved ahead of an unexplained trend buys one turn.
+# constraint either. Measure it from a freshly restarted WSL and record how many
+# simulations have run in that instance: the figure decays with the instance, not
+# with the code -- six runs in 75 minutes fell from 0.9588 to 0.8669, and a
+# wsl --shutdown restored the identical arm from 0.8669 to 0.9467. A figure
+# without that context is not comparable to another.
 REALTIME_FLOOR=.92
 
 
