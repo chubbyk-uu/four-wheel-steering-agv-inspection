@@ -1,0 +1,324 @@
+{
+  "schema": "agv.mission.phase_matrix.v1",
+  "date": "2026-09-12",
+  "scope": "Pause/resume and cancel injected in each named motion phase of a two-track rectangle. Motion-only probes carry no camera; one scene probe carries OptiX capture. Not a full-area acceptance run and not an image-quality result.",
+  "region_m": [
+    3.0,
+    2.0
+  ],
+  "scene_probe_region_m": [
+    8.0,
+    2.0
+  ],
+  "phase_source": "agv_mission.execution.phase_of on live telemetry, not elapsed-time guesses",
+  "injection_gate": {
+    "tracker_state": "RUNNING",
+    "min_profile_time_s": 0.5,
+    "min_truth_speed_m_s": 0.1,
+    "min_truth_yaw_rate_rad_s": 0.05,
+    "note": "an in-place rotation has no linear speed, so yaw rate alone qualifies as moving"
+  },
+  "stop_thresholds": {
+    "stopped_speed_m_s": 0.025,
+    "stopped_yaw_rate_rad_s": 0.015,
+    "wall_timeout_s": 0.35
+  },
+  "probes": [
+    {
+      "probe": "cancel_accelerate",
+      "passed": true,
+      "phase": "accelerate",
+      "injected_track_id": 0,
+      "segment_kind": "translate",
+      "capture_active_at_injection": false,
+      "truth_speed_m_s": 0.3673846446713646,
+      "truth_yaw_rate_rad_s": -2.3545856091883198e-08,
+      "final_state": "CANCELED",
+      "final_reason": "CANCELED",
+      "final_motion_state": "HOLD",
+      "scope": "cancel from motion; incomplete ROI, no coverage success",
+      "cancel_moving": {
+        "injection": {
+          "time_s": 14.293000000000001,
+          "position_m": [
+            4.699481162970326,
+            -0.5001056141248328,
+            0.6484278557731156
+          ],
+          "speed_m_s": 0.3673846446713646
+        },
+        "reaction_sim_s": 0.019999999999999574,
+        "stopping_distance_m": 0.08969523737239525,
+        "stopping_budget_m": 0.3511780609058347
+      }
+    },
+    {
+      "probe": "cancel_rotate",
+      "passed": true,
+      "phase": "rotate",
+      "injected_track_id": 1,
+      "segment_kind": "rotate",
+      "capture_active_at_injection": false,
+      "truth_speed_m_s": 3.523196658482021e-08,
+      "truth_yaw_rate_rad_s": 0.06274287611047226,
+      "final_state": "CANCELED",
+      "final_reason": "CANCELED",
+      "final_motion_state": "HOLD",
+      "scope": "cancel from motion; incomplete ROI, no coverage success",
+      "cancel_moving": {
+        "injection": {
+          "time_s": 37.230000000000004,
+          "position_m": [
+            10.392746440375449,
+            0.4999001753599897,
+            0.6484267967021368
+          ],
+          "speed_m_s": 3.523196658482021e-08
+        },
+        "reaction_sim_s": 0.01999999999999602,
+        "stopping_distance_m": 2.4568220938191593e-05,
+        "stopping_budget_m": 0.10000001761598391,
+        "yaw_rate_at_injection_rad_s": 0.06274287611047226,
+        "yaw_swept_after_cancel_rad": 0.0024559878647429263,
+        "final_yaw_rate_rad_s": 0.010658782149628199
+      }
+    },
+    {
+      "probe": "cancel_runout",
+      "passed": true,
+      "phase": "runout",
+      "injected_track_id": 0,
+      "segment_kind": "translate",
+      "capture_active_at_injection": false,
+      "truth_speed_m_s": 0.49999851198697054,
+      "truth_yaw_rate_rad_s": 0.0,
+      "final_state": "CANCELED",
+      "final_reason": "CANCELED",
+      "final_motion_state": "HOLD",
+      "scope": "cancel from motion; incomplete ROI, no coverage success",
+      "cancel_moving": {
+        "injection": {
+          "time_s": 20.962,
+          "position_m": [
+            7.853288931234032,
+            -0.49991288267557143,
+            0.6484268583272692
+          ],
+          "speed_m_s": 0.49999851198697054
+        },
+        "reaction_sim_s": 0.020000000000003126,
+        "stopping_distance_m": 0.12946144233179907,
+        "stopping_budget_m": 0.47499851198807763
+      }
+    },
+    {
+      "probe": "cancel_scan",
+      "passed": true,
+      "phase": "scan",
+      "injected_track_id": 0,
+      "segment_kind": "translate",
+      "capture_active_at_injection": false,
+      "truth_speed_m_s": 0.5035991719819107,
+      "truth_yaw_rate_rad_s": 6.507887151274007e-06,
+      "final_state": "CANCELED",
+      "final_reason": "CANCELED",
+      "final_motion_state": "HOLD",
+      "scope": "cancel from motion; incomplete ROI, no coverage success",
+      "cancel_moving": {
+        "injection": {
+          "time_s": 14.531,
+          "position_m": [
+            4.85132470538779,
+            -0.5000990241552874,
+            0.6484247186381769
+          ],
+          "speed_m_s": 0.5035991719819107
+        },
+        "reaction_sim_s": 0.019999999999999574,
+        "stopping_distance_m": 0.13409658219655285,
+        "stopping_budget_m": 0.47860564900138836
+      }
+    },
+    {
+      "probe": "cancel_shift",
+      "passed": true,
+      "phase": "shift",
+      "injected_track_id": 1,
+      "segment_kind": "translate",
+      "capture_active_at_injection": false,
+      "truth_speed_m_s": 0.3472321670971614,
+      "truth_yaw_rate_rad_s": -0.01066734607026541,
+      "final_state": "CANCELED",
+      "final_reason": "CANCELED",
+      "final_motion_state": "HOLD",
+      "scope": "cancel from motion; incomplete ROI, no coverage success",
+      "cancel_moving": {
+        "injection": {
+          "time_s": 30.034000000000002,
+          "position_m": [
+            10.383613289001142,
+            -0.40288346053736457,
+            0.6484340704691451
+          ],
+          "speed_m_s": 0.3472321670971614
+        },
+        "reaction_sim_s": 0.019999999999999574,
+        "stopping_distance_m": 0.08661233622723066,
+        "stopping_budget_m": 0.33390117248207624
+      }
+    },
+    {
+      "probe": "capture_pause_accelerate",
+      "passed": true,
+      "phase": "accelerate",
+      "injected_track_id": 0,
+      "segment_kind": "translate",
+      "capture_active_at_injection": true,
+      "truth_speed_m_s": 0.38217765572396417,
+      "truth_yaw_rate_rad_s": -3.755821432346767e-07,
+      "final_state": "ACQUIRED",
+      "final_reason": "",
+      "final_motion_state": "HOLD",
+      "scope": "rectangle motion + OptiX raw capture + sparse fused labels; no correction/stitching",
+      "pause_resume": {
+        "requested_time_s": 14.422,
+        "stopped_time_s": 15.338000000000001,
+        "resume_request_time_s": 18.338,
+        "crossing_blocks": [
+          {
+            "block_id": 0,
+            "rows": 4096,
+            "pause_gap_s": 3.674331077819632
+          }
+        ],
+        "no_partial_frame_during_pause": true
+      }
+    },
+    {
+      "probe": "pause_accelerate",
+      "passed": true,
+      "phase": "accelerate",
+      "injected_track_id": 0,
+      "segment_kind": "translate",
+      "capture_active_at_injection": false,
+      "truth_speed_m_s": 0.3591099515474494,
+      "truth_yaw_rate_rad_s": -7.396466792834175e-09,
+      "final_state": "COMPLETED",
+      "final_reason": "",
+      "final_motion_state": "HOLD",
+      "scope": "rectangle motion only; capture integration pending",
+      "pause_resume": {
+        "requested_time_s": 14.695,
+        "stopped_time_s": 15.615,
+        "resume_request_time_s": 18.615000000000002
+      }
+    },
+    {
+      "probe": "pause_approach",
+      "passed": true,
+      "phase": "approach",
+      "injected_track_id": 0,
+      "segment_kind": "translate",
+      "capture_active_at_injection": false,
+      "truth_speed_m_s": 0.3750438560865921,
+      "truth_yaw_rate_rad_s": -0.0001538050679301767,
+      "final_state": "COMPLETED",
+      "final_reason": "",
+      "final_motion_state": "HOLD",
+      "scope": "rectangle motion only; capture integration pending",
+      "pause_resume": {
+        "requested_time_s": 8.604000000000001,
+        "stopped_time_s": 9.504000000000001,
+        "resume_request_time_s": 12.504000000000001
+      }
+    },
+    {
+      "probe": "pause_rotate",
+      "passed": true,
+      "phase": "rotate",
+      "injected_track_id": 1,
+      "segment_kind": "rotate",
+      "capture_active_at_injection": false,
+      "truth_speed_m_s": 3.954267152849924e-08,
+      "truth_yaw_rate_rad_s": -0.06547079157165574,
+      "final_state": "COMPLETED",
+      "final_reason": "",
+      "final_motion_state": "HOLD",
+      "scope": "rectangle motion only; capture integration pending",
+      "pause_resume": {
+        "requested_time_s": 36.300000000000004,
+        "stopped_time_s": 36.900000000000006,
+        "resume_request_time_s": 39.900000000000006
+      }
+    },
+    {
+      "probe": "pause_runout",
+      "passed": true,
+      "phase": "runout",
+      "injected_track_id": 0,
+      "segment_kind": "translate",
+      "capture_active_at_injection": false,
+      "truth_speed_m_s": 0.49999833072991595,
+      "truth_yaw_rate_rad_s": 0.0,
+      "final_state": "COMPLETED",
+      "final_reason": "",
+      "final_motion_state": "HOLD",
+      "scope": "rectangle motion only; capture integration pending",
+      "pause_resume": {
+        "requested_time_s": 20.551000000000002,
+        "stopped_time_s": 21.571,
+        "resume_request_time_s": 24.571
+      }
+    },
+    {
+      "probe": "pause_scan",
+      "passed": true,
+      "phase": "scan",
+      "injected_track_id": 0,
+      "segment_kind": "translate",
+      "capture_active_at_injection": false,
+      "truth_speed_m_s": 0.5019256463402193,
+      "truth_yaw_rate_rad_s": 9.373571757642616e-06,
+      "final_state": "COMPLETED",
+      "final_reason": "",
+      "final_motion_state": "HOLD",
+      "scope": "rectangle motion only; capture integration pending",
+      "pause_resume": {
+        "requested_time_s": 14.538,
+        "stopped_time_s": 15.558000000000002,
+        "resume_request_time_s": 18.578
+      }
+    },
+    {
+      "probe": "pause_shift",
+      "passed": true,
+      "phase": "shift",
+      "injected_track_id": 1,
+      "segment_kind": "translate",
+      "capture_active_at_injection": false,
+      "truth_speed_m_s": 0.3608939540034206,
+      "truth_yaw_rate_rad_s": -0.012390582140392407,
+      "final_state": "COMPLETED",
+      "final_reason": "",
+      "final_motion_state": "HOLD",
+      "scope": "rectangle motion only; capture integration pending",
+      "pause_resume": {
+        "requested_time_s": 30.365000000000002,
+        "stopped_time_s": 31.265,
+        "resume_request_time_s": 34.265
+      }
+    }
+  ],
+  "passed": true,
+  "harness_defects_found": [
+    "validate_rectangle_execution.py injected only at a hardcoded point in the first PASS, so no phase but the scan was ever exercised",
+    "the rotate cancel asserted a stopping distance, which an in-place rotation trivially satisfies; it now asserts the yaw rate settles and records the yaw swept after the cancel",
+    "the probe runner did not wrap scene runs in tools/with_optix_runtime.sh, so every OptiX probe aborted at optixInit(): 7804 before the mission began",
+    "the probe runner deleted a failed attempt before retrying, destroying the only evidence of how it failed"
+  ],
+  "not_covered": [
+    "localization timeout and camera-disabled faults were not re-run per phase; they remain validated only in the scan phase",
+    "repeat counts, full-area runs and the rescan loop are separate acceptance items",
+    "capture behaviour under pause is evidenced by one scene probe, not by every phase"
+  ]
+}

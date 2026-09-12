@@ -13,6 +13,7 @@ from nav_msgs.msg import Odometry
 from std_msgs.msg import String
 from std_srvs.srv import Trigger,SetBool
 from sensor_msgs.msg import Image,JointState
+from agv_mission.execution import phase_of
 from label_mission_capture import label
 from prepare_mission_camera import prepare
 from validate_tracking import stop
@@ -44,9 +45,14 @@ def main():
     parser.add_argument('--pause-once',action='store_true',help='pause early in first PASS, retain camera frame, then resume')
     parser.add_argument('--stop-after-pause',choices=['cancel','localization_timeout'],help='instead of resuming, validate partial-frame termination')
     parser.add_argument('--moving-fault',choices=['localization_timeout','camera_disabled'])
+    parser.add_argument('--cancel-moving',action='store_true',help='cancel from full speed without pausing first')
+    parser.add_argument('--inject-phase',default='scan',
+                        choices=['approach','accelerate','scan','runout','shift','rotate'],
+                        help='motion phase the pause or fault is injected in')
     parser.add_argument('--length',type=float,default=3.);parser.add_argument('--width',type=float,default=2.)
     a=parser.parse_args();a.pause_once=a.pause_once or bool(a.stop_after_pause);a.output.mkdir(parents=True,exist_ok=False)
     if a.moving_fault and (a.pause_once or not a.scene):parser.error('moving fault requires a scene and cannot combine with pause probes')
+    if a.cancel_moving and (a.pause_once or a.moving_fault):parser.error('a moving cancel is its own probe')
     req=yaml.safe_load((a.request or Path('src/agv_mission/config/rectangle_demo.yaml')).read_text())
     if a.request:
         a.length=req['region']['length_m'];a.width=req['region']['width_m']
@@ -72,12 +78,32 @@ def main():
     cancel_client=node.create_client(Trigger,'/mission/cancel');suspended=None;stop_injected=False
     pause_future=None;resume_future=None;paused_at=None;image_count_at_pause=None;pause_report={}
     camera_client=node.create_client(SetBool,'/linescan/set_enabled');moving_injection=None;camera_future=None
+    camera_cfg=yaml.safe_load((camera_path if a.scene else Path('src/agv_description/config/linescan.yaml')).read_text())
+    mission_plan=None;observed_phase=None
+    def armed(current):
+        """Is the vehicle now moving through the phase this probe targets?"""
+        nonlocal mission_plan,observed_phase
+        if mission_plan is None:
+            written=a.output/'mission/plan.json'
+            if not written.exists():return False
+            try:mission_plan=json.loads(written.read_text())
+            except ValueError:return False
+        if current.get('track_id') not in (0,1) or current.get('tracker_state')!='RUNNING':return False
+        # Let the motion develop past its own ramp start before disturbing it.
+        if current.get('profile_time_s',0)<.5:return False
+        if phase_of(mission_plan,camera_cfg,current)!=a.inject_phase:return False
+        # An in-place rotation carries no linear speed; both are "moving".
+        if latest.get('truth_speed',0)<=.1 and abs(latest.get('truth_yaw_rate',0))<=.05:return False
+        observed_phase=dict(phase=a.inject_phase,time_s=current['time_s'],track_id=current['track_id'],
+            segment_kind=current.get('segment_kind'),capture_active=current.get('capture_active'),
+            truth_speed_m_s=latest.get('truth_speed'),truth_yaw_rate_rad_s=latest.get('truth_yaw_rate'))
+        return True
     def status(m):
         v=json.loads(m.data);latest.update(status=v);records.append(v)
     def actual(m):
         p=m.pose.pose.position;q=m.pose.pose.orientation
         latest['truth_position']=[p.x,p.y,p.z];v=m.twist.twist
-        latest['truth_speed']=float(np.hypot(v.linear.x,v.linear.y))
+        latest['truth_speed']=float(np.hypot(v.linear.x,v.linear.y));latest['truth_yaw_rate']=float(v.angular.z)
         truth.append([m.header.stamp.sec+m.header.stamp.nanosec*1e-9,p.x,p.y,p.z,q.x,q.y,q.z,q.w])
     def image(m):images[m.header.stamp.sec*10**9+m.header.stamp.nanosec]=(hashlib.sha256(m.data).hexdigest(),m.width,m.height)
     def joints(m):
@@ -104,8 +130,7 @@ def main():
             assert time.monotonic()<deadline,'mission timeout'
             rclpy.spin_once(node,timeout_sec=.02)
             current=latest.get('status',{})
-            if a.moving_fault and moving_injection is None and current.get('kind')=='PASS' and current.get('track_id')==0 and current.get('tracker_state')=='RUNNING' and current.get('profile_time_s',0)>2.5:
-                assert latest.get('truth_speed',0)>.4,'fault must be injected while moving'
+            if a.moving_fault and moving_injection is None and armed(current):
                 moving_injection=dict(time_s=current['time_s'],position_m=latest['truth_position'],speed_m_s=latest['truth_speed'])
                 if a.moving_fault=='localization_timeout':
                     matches=[p for p in psutil.Process(sim.pid).children(recursive=True) if any(v.endswith('/measurement_adapter') for v in p.cmdline())]
@@ -115,7 +140,7 @@ def main():
                     assert camera_client.service_is_ready()
                     camera_future=camera_client.call_async(SetBool.Request(data=False))
             if a.pause_once:
-                if pause_future is None and current.get('kind')=='PASS' and current.get('track_id')==0 and current.get('tracker_state')=='RUNNING' and current.get('profile_time_s',0)>1.2:
+                if pause_future is None and armed(current):
                     assert pause_client.service_is_ready()
                     pause_future=pause_client.call_async(Trigger.Request())
                     pause_report['requested_time_s']=current['time_s']
@@ -140,6 +165,10 @@ def main():
                             resume_future=resume_client.call_async(Trigger.Request())
                             pause_report['resume_request_time_s']=current['time_s']
                 if resume_future is not None and resume_future.done():assert resume_future.result().success,resume_future.result().message
+            if a.cancel_moving and not stop_injected and armed(current):
+                assert cancel_client.service_is_ready()
+                cancel_future=cancel_client.call_async(Trigger.Request());stop_injected=True
+                moving_injection=dict(time_s=current['time_s'],position_m=latest['truth_position'],speed_m_s=latest['truth_speed'])
         if suspended:
             suspended.send_signal(signal.SIGCONT);suspended=None
             until=time.monotonic()+1
@@ -159,6 +188,12 @@ def main():
             'follow_camera':a.gui and a.follow_camera,
             'wheel_steering_range_rad':{k:[float(np.min(np.asarray(joint_samples)[:,i+1])),float(np.max(np.asarray(joint_samples)[:,i+1]))] for i,k in enumerate(('fl','fr','rl','rr'))},
             'region_m':[a.length,a.width],'track_spacing_m':plan['actual_track_spacing_m'],'tracks':passes,'final':end}
+        if observed_phase is not None:
+            assert observed_phase['phase']==a.inject_phase
+            result['injection']=observed_phase
+        # Whether a partial frame exists is decided by the shutter at injection,
+        # not by the phase name: capture already opens during the lead-in.
+        shutter_open=bool(observed_phase and observed_phase['capture_active'])
         if a.pause_once and not a.stop_after_pause:
             assert resume_future is not None and resume_future.done() and resume_future.result().success,'pause/resume not exercised'
             assert all(r['command_body'][0]>=-1e-9 for r in records if r.get('kind')=='PASS'),'reverse PASS command'
@@ -170,14 +205,17 @@ def main():
             assert end['motion_state']=='HOLD' and end['capture_active'] is False
             until=time.monotonic()+1
             while time.monotonic()<until:rclpy.spin_once(node,timeout_sec=.02)
-            from PIL import Image as PilImage
-            raw=list((a.output/'raw').glob('*/block_*.json'))
-            assert raw and len(raw)==1,'expected one unfinished first frame at pause'
-            m=json.loads(raw[0].read_text());assert 0<m['rows']<4096 and m['end_reason']!='full'
-            stamp=round(m['last']['time_s']*1e9);pixels=np.asarray(PilImage.open(raw[0].with_suffix('.pgm'))).tobytes()
-            assert images.get(stamp)==(hashlib.sha256(pixels).hexdigest(),m['width'],m['rows'])
-            result.update(passed=True,scope='paused partial frame terminated explicitly; incomplete ROI, no coverage success',
-                termination_probe=dict(case=a.stop_after_pause,tail_rows=m['rows'],sensor_end_reason=m['end_reason'],ros_archive_identical=True),pause_resume=pause_report)
+            probe=dict(case=a.stop_after_pause,shutter_open_at_pause=shutter_open)
+            if shutter_open:
+                from PIL import Image as PilImage
+                raw=list((a.output/'raw').glob('*/block_*.json'))
+                assert raw and len(raw)==1,'expected one unfinished first frame at pause'
+                m=json.loads(raw[0].read_text());assert 0<m['rows']<4096 and m['end_reason']!='full'
+                stamp=round(m['last']['time_s']*1e9);pixels=np.asarray(PilImage.open(raw[0].with_suffix('.pgm'))).tobytes()
+                assert images.get(stamp)==(hashlib.sha256(pixels).hexdigest(),m['width'],m['rows'])
+                probe.update(tail_rows=m['rows'],sensor_end_reason=m['end_reason'],ros_archive_identical=True)
+            result.update(passed=True,scope='paused frame terminated explicitly; incomplete ROI, no coverage success',
+                termination_probe=probe,pause_resume=pause_report)
         if a.moving_fault:
             assert moving_injection is not None and end['state']=='FAULT' and end['motion_state']=='HOLD' and end['capture_active'] is False,end
             expected='STALE_OR_UNREADY_LOCALIZATION' if a.moving_fault=='localization_timeout' else 'CAMERA_DISABLED_UNEXPECTEDLY'
@@ -193,14 +231,55 @@ def main():
             budget=moving_injection['speed_m_s']*reaction_budget+moving_injection['speed_m_s']**2/(2*platform['drive_decel'])+.10
             assert distance<budget and latest['truth_speed']<.025
             from PIL import Image as PilImage
-            blocks=list((a.output/'raw').glob('*/block_*.json'));assert blocks
+            blocks=list((a.output/'raw').glob('*/block_*.json'))
+            # A fault injected before the first shutter opening archives nothing.
+            assert blocks or not any(r.get('capture_active') for r in records)
             until=time.monotonic()+1
             while time.monotonic()<until:rclpy.spin_once(node,timeout_sec=.02)
             for path in blocks:
                 m=json.loads(path.read_text());pixels=np.asarray(PilImage.open(path.with_suffix('.pgm'))).tobytes()
                 assert images.get(round(m['last']['time_s']*1e9))==(hashlib.sha256(pixels).hexdigest(),m['width'],m['rows'])
             result.update(passed=True,scope='moving fault braking and valid tail archive; incomplete ROI',moving_fault=dict(case=a.moving_fault,injection=moving_injection,reaction_sim_s=latency,stopping_distance_m=distance,stopping_budget_m=budget,blocks=len(blocks),ros_archive_identical=True))
-        if a.scene and result['passed'] and not a.stop_after_pause and not a.moving_fault:
+        if a.cancel_moving:
+            cfg=yaml.safe_load(Path('src/agv_mission/config/tracking.yaml').read_text())
+            platform=yaml.safe_load(Path('src/agv_description/config/platform.yaml').read_text())
+            assert stop_injected and moving_injection is not None
+            assert end['state']=='CANCELED' and end['motion_state']=='HOLD' and end['capture_active'] is False,end
+            first=next(r for r in records if r['state'] in ('CANCELING','CANCELED'))
+            latency=first['time_s']-moving_injection['time_s']
+            distance=float(np.linalg.norm(np.array(latest['truth_position'])-moving_injection['position_m']))
+            budget=moving_injection['speed_m_s']*(cfg['wall_timeout_s']+.15)+moving_injection['speed_m_s']**2/(2*platform['drive_decel'])+.10
+            assert first['command_body']==[0.,0.,0.] and 0<=latency<cfg['wall_timeout_s']+.15
+            assert distance<budget and latest['truth_speed']<cfg['stopped_speed_m_s'],(distance,budget)
+            # An in-place rotation never translates, so the distance bound above is
+            # vacuous there. What has to stop is the yaw rate; the swept angle after
+            # the cancel is recorded as measured evidence, not asserted against an
+            # invented yaw deceleration.
+            assert abs(latest['truth_yaw_rate'])<cfg['stopped_yaw_rate_rad_s'],latest['truth_yaw_rate']
+            after=[row for row in truth if row[0]>=moving_injection['time_s']]
+            swept=None
+            if len(after)>1:
+                from scipy.spatial.transform import Rotation
+                swept=float((Rotation.from_quat(after[0][4:8]).inv()*Rotation.from_quat(after[-1][4:8])).magnitude())
+            # A cancel is not a fault: nothing may be reported as one.
+            assert not any(r['state']=='FAULT' for r in records),'cancel escalated to a fault'
+            probe=dict(injection=moving_injection,reaction_sim_s=latency,
+                stopping_distance_m=distance,stopping_budget_m=budget,
+                yaw_rate_at_injection_rad_s=observed_phase['truth_yaw_rate_rad_s'],
+                yaw_swept_after_cancel_rad=swept,final_yaw_rate_rad_s=latest['truth_yaw_rate'])
+            if a.scene:
+                from PIL import Image as PilImage
+                until=time.monotonic()+1
+                while time.monotonic()<until:rclpy.spin_once(node,timeout_sec=.02)
+                blocks=list((a.output/'raw').glob('*/block_*.json'))
+                assert blocks or not any(r.get('capture_active') for r in records)
+                for path in blocks:
+                    m=json.loads(path.read_text());pixels=np.asarray(PilImage.open(path.with_suffix('.pgm'))).tobytes()
+                    assert images.get(round(m['last']['time_s']*1e9))==(hashlib.sha256(pixels).hexdigest(),m['width'],m['rows'])
+                probe.update(blocks=len(blocks),ros_archive_identical=True)
+            result.update(passed=True,scope='cancel from motion; incomplete ROI, no coverage success',
+                cancel_moving=probe)
+        if a.scene and result['passed'] and not a.stop_after_pause and not a.moving_fault and not a.cancel_moving:
             # Drain reliable metadata/image delivery after storage close acknowledgement.
             until=time.monotonic()+1
             while time.monotonic()<until:rclpy.spin_once(node,timeout_sec=.02)
@@ -238,7 +317,7 @@ def main():
                 assert spanning,'no uninterrupted sensor segment spans ROI'
                 captured.append({'track_id':track['id'],'blocks':len(blocks),'rows':sum(b['rows'] for b in blocks),
                     'truth_along_extent_m':[min(positions),max(positions)],'continuous_roi':True})
-            if a.pause_once:
+            if a.pause_once and shutter_open:
                 crossing=[]
                 for b in manifest['blocks']:
                     tags=b['pose_tags']
@@ -253,7 +332,8 @@ def main():
             result.update(scope='rectangle motion + OptiX raw capture + sparse fused labels; no correction/stitching',capture=captured)
         (a.output/'results.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result))
         assert result['passed'],end
-        if not a.stop_after_pause and not a.moving_fault:assert all(t['running_samples']>0 for t in passes),'missing pass execution'
+        if not a.stop_after_pause and not a.moving_fault and not a.cancel_moving:
+            assert all(t['running_samples']>0 for t in passes),'missing pass execution'
     finally:
         if suspended:
             try:suspended.send_signal(signal.SIGCONT)

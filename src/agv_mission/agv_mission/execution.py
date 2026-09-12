@@ -69,3 +69,30 @@ def scan_end_reached(plan,camera,step,position,quaternion):
     """
     along,length=camera_along_m(plan,camera,step,position,quaternion)
     return along>=length+plan['scan_overrun_distance_m']
+
+
+def phase_of(plan,camera,record):
+    """Name the motion phase a telemetry record was taken in.
+
+    The acceptance matrix injects pauses and faults per phase, but the compiled
+    steps merge ACCELERATE/SCAN/RUNOUT_BRAKE into one PASS, so the sub-phase has
+    to come back out of the record. The camera, not base_link, decides it: the
+    region boundary that matters is the one the sensor crosses.
+    """
+    kind=record.get('kind')
+    if kind is None:return 'none'
+    if kind=='APPROACH':return 'approach'
+    if kind=='ROTATE_180':return 'rotate'
+    segment=record.get('segment_kind')
+    if kind=='SHIFT':return 'shift' if segment=='translate' else 'rotate'
+    if kind!='PASS':return 'other'
+    # A pass still aligning its heading is turning, not accelerating down the track.
+    if segment=='rotate':return 'rotate'
+    position=record.get('position_m')
+    if position is None or segment is None:return 'none'
+    track=plan['tracks'][record['track_id']]
+    start=np.asarray(track['scan_start_xyz_m']);finish=np.asarray(track['scan_end_xyz_m'])
+    length=float(np.linalg.norm(finish-start));axis=(finish-start)/length
+    along=float((np.asarray(position)-start)@axis)+camera['camera_x_m']
+    if record.get('tracker_state')=='STOPPING' or along>length:return 'runout'
+    return 'accelerate' if along<0 else 'scan'

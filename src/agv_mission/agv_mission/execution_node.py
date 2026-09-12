@@ -49,7 +49,7 @@ class Executor(Node):
         self.odom=None;self.mode='';self.health={};self.arrivals={};self.last_command=[0.,0.,0.];self.motion_reason=''
         self.state='READY';self.reason='';self.ready_since=None;self.steps=[];self.index=0;self.core=None
         self.last_sim=None;self.last_clock=time.monotonic();self.step_attempts=0;self.stopped_since=None;self.ticks=0
-        self.pause_pose=None;self.pause_started=None;self.pause_events=[]
+        self.pause_pose=None;self.pause_started=None;self.pause_events=[];self.active_kind=''
         self.cmd=self.create_publisher(TwistStamped,'/cmd_vel',10)
         # Telemetry is periodically refreshed and fully archived locally. A slow
         # display must not back-pressure the control loop, and best-effort QoS
@@ -199,6 +199,9 @@ class Executor(Node):
         record.update(execution_id=self.execution_id,capture_pending=self.capture.future is not None,
             ready_to_start=self.state=='READY' and self.ready_since is not None and wall-self.ready_since>=self.cfg['initial_ready_hold_s'])
         if self.steps and self.index<len(self.steps):record.update(kind=self.steps[self.index]['kind'],track_id=self.steps[self.index]['track_id'])
+        # The compiled step merges accelerate/scan/brake, so the tracker's own
+        # segment kind is what tells a reader which motion is actually running.
+        if self.core is not None:record['segment_kind']=self.active_kind
         if self.odom is not None:record['position_m']=self.pose()[0].tolist()
         if self.core:record.update(tracker_state=self.core.state,profile_time_s=self.core.clock,
             profile_duration_s=self.core.profile.duration,terminal_trims=self.core.trims,

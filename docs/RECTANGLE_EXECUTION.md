@@ -46,6 +46,24 @@ ros2 service call /mission/cancel std_srvs/srv/Trigger '{}'
 ```
 
 
+### 分阶段注入回归
+
+`tools/validate_rectangle_execution.py --inject-phase {approach,accelerate,scan,runout,shift,rotate}`
+决定暂停/取消/故障注入发生在哪个运动阶段。阶段由`agv_mission.execution.phase_of`从遥测记录判定，
+不是由脚本按秒数猜：编译后的步骤把加速/扫描/驶出合并成一个`PASS`，子阶段靠新增的`segment_kind`
+字段加上**相机**（不是base_link）穿越采集区边界的位置还原，因为决定是否在采集的是镜头不是轴。
+注入条件另要求跟踪器`RUNNING`、profile已走过0.5 s，且真值线速度>0.1 m/s或偏航角速度>0.05 rad/s——
+原地旋转没有线速度，两者都算"在动"。
+
+`--cancel-moving`在全速下直接取消，不先暂停；它验证取消不升级为FAULT。归档中是否存在未满帧由
+注入时刻的`capture_active`决定，不由阶段名决定：采集窗口在驶入段（`accelerate`）就已经打开——
+带场景的探针实测该处`capture_active`为真，暂停3.674 s后同一图块仍以完整4096行收尾，未被切分，
+暂停期间不产出未满帧。结果JSON中的`injection`字段记录实际命中的阶段、真值速度与快门状态。
+
+**在WSL上带`--scene`的回归必须经`bash tools/with_optix_runtime.sh`启动**，否则gz会在任务开始前
+以`optixInit(): 7804`中止；这种中止表现为`ekf_node`抛`RCLError`、launch整体关停，容易被误读成
+中间件故障。纯运动探针不加载OptiX，不受影响。
+
 补扫使用审计输出的`rescan_*.yaml`作为新的`request`，启动新的执行器与输出目录；先确认旧执行器已退出、车辆HOLD、定位与相机恢复健康，保持唯一cmd_vel发布者。FAULT不会因生成补扫请求而自动恢复。实际初始位姿仍经过执行器接近路径检查，候选规划通过不意味着任意停车位置都能直接接入。
 
 回归工具可用`tools/validate_rectangle_execution.py --gui --profile normal --scene ... --request .../rescan_000.yaml --output ...`复现补扫；它启动独立仿真实例，不代表故障进程原地无缝恢复。

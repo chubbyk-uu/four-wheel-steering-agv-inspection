@@ -20,6 +20,8 @@
 暂停协议修改后，用`tools/validate_rectangle_execution.py --gui --profile normal --scene ... --pause-once`验证原图跨停车时间而不分帧、相邻行号/标签、无PASS后退及正常区域连续性。再分别用`--stop-after-pause cancel`和`--stop-after-pause localization_timeout`验证未满帧明确关闭，后者只挂起本次启动的定位适配进程并在验证/清理时恢复，不影响其他实例。故障恢复后仍应保持FAULT；测试的passed表示预期故障处理通过，不表示采集区域完成。
 
 
+注入点由`--inject-phase {approach,accelerate,scan,runout,shift,rotate}`选择，默认`scan`；`--cancel-moving`在全速下直接取消而不先暂停。带`--scene`的回归在WSL上必须经`bash tools/with_optix_runtime.sh`启动。分阶段结果见[矩阵](../results/pause_cancel_phase_matrix.json)。
+
 运动故障回归使用`tools/validate_rectangle_execution.py --gui --profile normal --scene ... --moving-fault localization_timeout`或`camera_disabled`，记录故障时速度、零指令延时、真值停车距离、实际逐轮转角、尾图与HOLD；不得将仿真时间延时当作墙钟响应。普通暂停需同时复测，防止心跳误报。结束后用`tools/audit_mission_capture.py`检查归档并生成补扫预览；用验证器`--request`执行选定候选，独立审计新会话，不将局部补扫当作全区域完成。
 
 
