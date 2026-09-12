@@ -1,0 +1,93 @@
+{
+  "schema": "agv.vertical_process_noise.v1",
+  "defect": "ekf_global carried q_z = 0.02 for the vertical position state while x and y were 5e-05. 0.02 is exactly what ekf_local uses for every position axis, so it is what ekf_global started from and what was left behind when the horizontal axes were tightened. 0.02 m^2/s lets z wander 0.141 m in a second; the body is bounded by 0.05 m of suspension travel and by the ground, so it is less free than x and y.",
+  "how_it_reached_the_audit": "twice, and the second way was the binding one. The inflated covariance became the padding allowance; and the loose estimate put the camera up to 76 mm off in height, which scales the projected footprint directly -- width is 2 x height x 0.7168 -- so a low estimate shrank a nominally 1.4966 m footprint to 1.408 m. Substituting the true height into the ten failing tags of the 10 km/h run made all ten pass without touching the padding.",
+  "why_it_is_not_covariance_shrinking": "the filter was reporting 52.2 mm of vertical sigma against a 21.9 mm actual error: err/sigma standard deviation 0.426 where a consistent filter reads 1.0. Tightening it makes the reported uncertainty more truthful, and the actual error improved alongside it.",
+  "baseline_consistency": {
+    "note": "base_link estimate against truth, 3532 pose tags, 10 km/h full area, before the change",
+    "x": {
+      "err_sd_mm": 4.94,
+      "sigma_mm": 6.787,
+      "ratio": 0.726
+    },
+    "y": {
+      "err_sd_mm": 8.691,
+      "sigma_mm": 10.996,
+      "ratio": 0.786
+    },
+    "z": {
+      "err_sd_mm": 21.944,
+      "sigma_mm": 52.157,
+      "ratio": 0.426
+    },
+    "roll": {
+      "err_sd_mrad": 3.935,
+      "sigma_mrad": 7.673,
+      "ratio": 0.281
+    },
+    "pitch": {
+      "err_sd_mrad": 2.267,
+      "sigma_mrad": 7.642,
+      "ratio": 0.182
+    },
+    "yaw": {
+      "err_sd_mrad": 1.96,
+      "sigma_mrad": 4.133,
+      "ratio": 0.461
+    }
+  },
+  "localization_regression": {
+    "tool": "validate_localization.py --profile normal",
+    "note": "same seed, same scripted motion, same input",
+    "before": {
+      "q_z": 0.02,
+      "fusion_vertical_rmse_m": 0.0231,
+      "fusion_horizontal_rmse_m": 0.0091,
+      "position_max_m": 0.0801,
+      "yaw_rmse_deg": 0.254,
+      "gnss_vertical_rmse_m": 0.0293
+    },
+    "after": {
+      "q_z": 0.001,
+      "fusion_vertical_rmse_m": 0.0123,
+      "fusion_horizontal_rmse_m": 0.009,
+      "position_max_m": 0.0375,
+      "yaw_rmse_deg": 0.255,
+      "gnss_vertical_rmse_m": 0.0292
+    }
+  },
+  "single_pass_10kmh": {
+    "before": {
+      "z_err_sd_mm": 23.7,
+      "sigma_z_mm": 52.37,
+      "consistency": 0.455,
+      "lateral_3sigma_max_m": 0.1747
+    },
+    "after": {
+      "z_err_sd_mm": 15.49,
+      "sigma_z_mm": 19.44,
+      "consistency": 0.78,
+      "lateral_3sigma_max_m": 0.1154
+    }
+  },
+  "lateral_variance_composition": {
+    "before": {
+      "z": 0.593,
+      "roll": 0.171,
+      "pitch": 0.077,
+      "y": 0.049,
+      "yaw": 0.009,
+      "cross": 0.101
+    },
+    "after": {
+      "z": 0.192,
+      "roll": 0.368,
+      "pitch": 0.099,
+      "y": 0.105,
+      "yaw": 0.021,
+      "cross": 0.216
+    },
+    "note": "roll is now the largest single term, which is why the next question is about it"
+  },
+  "roll_is_not_a_process_noise_problem": "roll posterior sigma 7.67 mrad already sits below the per-observation sigma of about 10.2 mrad, which motion_tilt_extra_sigma_m_s2 = 0.10 sets. Its covariance does not show the 10 Hz process-noise sawtooth z had; it rises from 1.6 to 21.9 mrad between updates that arrive at roughly 1 Hz instead of the intended 10 Hz, because 74% of the driving gravity references are rejected (1386 rejects against 488 updates). Tightening q_roll would add confidence without adding information. The rejection rate is a separate defect and the three gates are not counted separately, so it needs its own instrumentation."
+}

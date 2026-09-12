@@ -299,6 +299,16 @@ ekf_global:
     - 0.0
     - 0.1
     # Translation/yaw propagate from wheel/IMU; avoid treating GNSS jumps as rapid motion.
+    # Vertical position process noise. This was 0.02, the value ekf_local uses for
+    # every position axis, left behind when x and y were tightened to 5e-05 here.
+    # 0.02 m^2/s lets z wander 0.141 m in a second; the body is bounded by 0.05 m
+    # of suspension travel and by the ground, so it is less free than x and y, not
+    # 400 times more. It made the filter report 52 mm of vertical sigma against a
+    # 22 mm actual error -- err/sigma standard deviation 0.426 where a consistent
+    # filter reads 1.0 -- and that inflation reached the coverage audit twice, as a
+    # padding allowance and as a camera height that shrank the projected footprint.
+    # 0.001 keeps 20x the horizontal value as headroom for road undulation, which
+    # the body-normal contact constraint does not observe.
     process_noise_covariance:
     - 0.00005
     - 0.0
@@ -332,7 +342,7 @@ ekf_global:
     - 0.0
     - 0.0
     - 0.0
-    - 0.02
+    - 0.001
     - 0.0
     - 0.0
     - 0.0
