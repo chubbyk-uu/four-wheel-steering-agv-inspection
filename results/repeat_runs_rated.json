@@ -1,0 +1,215 @@
+{
+  "schema": "agv.repeat_runs.v1",
+  "goal": "implementation plan item 6.5: at least three consecutive full-area runs, at least two normal noise seeds, at least one at the rated 10 km/h",
+  "configuration": {
+    "region_m": [
+      100,
+      10
+    ],
+    "track_spacing_m": 1.0,
+    "tracks": 10,
+    "scan_speed_m_s": 2.777777777777778,
+    "scene": "assets/road/runtime_fullwidth_100m_v1",
+    "stack": "GUI + RViz + OptiX, d3d12/NVIDIA, WSL2",
+    "probes": "pause/resume retained-frame probe on; cancel probe off, as in the runs this compares against",
+    "seeds_passed_as": "localization_config, so the shipped measurements.yaml is untouched and each seed is on the record"
+  },
+  "verdict": "NOT MET",
+  "verdict_detail": "coverage, capture and image quality passed in all three consecutive runs, but the steady real-time factor floor of 0.95 was missed twice (0.9450, 0.9439). The gate requires consecutive runs, so a degradation caused by running consecutively is a finding against the gate rather than an artifact to be excused.",
+  "runs": [
+    {
+      "name": "repeat_a",
+      "noise_seed": 20260908,
+      "coverage_status": "ESTIMATED_COMPLETE",
+      "blocks": 710,
+      "rows": 2880146,
+      "steady_rtf": 0.9587657347326464,
+      "steady_wall_s": 388.72895275500014,
+      "observed_rtf": 0.9695582730854969,
+      "startup_to_first_odometry_s": 37.26616373100114,
+      "final_state": "ACQUIRED",
+      "final_motion": "HOLD",
+      "discarded_tail_rows": [],
+      "pause_retains_frame": true,
+      "actual_peak_speed_m_s": 2.9171304242847835,
+      "tracks_with_unverified": 0,
+      "tracks_with_quality_flags": 0,
+      "excluded_footprint_tags": 0,
+      "lateral_allowance_m": [
+        0.11297133320216388,
+        0.11966571156423869
+      ],
+      "sim_span_s": 760.8399999999999,
+      "driving_s": 495.99999999999824,
+      "motion_tilt_outcomes": {
+        "accepted": 5509,
+        "rate_limited": 51993,
+        "no_body_twist": 13,
+        "stale_body_twist": 0,
+        "kinematic_too_large": 8783,
+        "window_too_short": 254,
+        "deviation_too_large": 58,
+        "publish_error": 0
+      },
+      "gravity_gate_closed_s": 87.8,
+      "gravity_gate_fraction_of_driving": 0.1771,
+      "scan_slip": {
+        "blocks": 710,
+        "images": 710,
+        "missing": 0,
+        "intervals_below_floor": 0,
+        "intervals": 2822,
+        "images_with_duplicate_rows": 0,
+        "exact_duplicate_rows": 0,
+        "passed": true
+      }
+    },
+    {
+      "name": "repeat_b",
+      "noise_seed": 20260912,
+      "coverage_status": "ESTIMATED_COMPLETE",
+      "blocks": 710,
+      "rows": 2880337,
+      "steady_rtf": 0.944997467153503,
+      "steady_wall_s": 394.49841185600053,
+      "observed_rtf": 0.9567032724732913,
+      "startup_to_first_odometry_s": 38.50041447199874,
+      "final_state": "ACQUIRED",
+      "final_motion": "HOLD",
+      "discarded_tail_rows": [],
+      "pause_retains_frame": true,
+      "actual_peak_speed_m_s": 2.916263159420104,
+      "tracks_with_unverified": 0,
+      "tracks_with_quality_flags": 0,
+      "excluded_footprint_tags": 0,
+      "lateral_allowance_m": [
+        0.11291389791559739,
+        0.12000359698681487
+      ],
+      "sim_span_s": 761.8199999999999,
+      "driving_s": 495.25999999999976,
+      "motion_tilt_outcomes": {
+        "accepted": 5556,
+        "rate_limited": 52444,
+        "no_body_twist": 13,
+        "stale_body_twist": 0,
+        "kinematic_too_large": 8623,
+        "window_too_short": 262,
+        "deviation_too_large": 8,
+        "publish_error": 0
+      },
+      "gravity_gate_closed_s": 86.2,
+      "gravity_gate_fraction_of_driving": 0.1741,
+      "scan_slip": {
+        "blocks": 710,
+        "images": 710,
+        "missing": 0,
+        "intervals_below_floor": 0,
+        "intervals": 2822,
+        "images_with_duplicate_rows": 0,
+        "exact_duplicate_rows": 0,
+        "passed": true
+      }
+    },
+    {
+      "name": "repeat_c",
+      "noise_seed": 20260913,
+      "coverage_status": "ESTIMATED_COMPLETE",
+      "blocks": 710,
+      "rows": 2880666,
+      "steady_rtf": 0.9439179388039287,
+      "steady_wall_s": 394.9495869020011,
+      "observed_rtf": 0.9534434213267133,
+      "startup_to_first_odometry_s": 38.90611929500119,
+      "final_state": "ACQUIRED",
+      "final_motion": "HOLD",
+      "discarded_tail_rows": [],
+      "pause_retains_frame": true,
+      "actual_peak_speed_m_s": 2.915767849641394,
+      "tracks_with_unverified": 0,
+      "tracks_with_quality_flags": 0,
+      "excluded_footprint_tags": 0,
+      "lateral_allowance_m": [
+        0.11439260256564054,
+        0.11983827055492305
+      ],
+      "sim_span_s": 759.44,
+      "driving_s": 494.82000000000096,
+      "motion_tilt_outcomes": {
+        "accepted": 5507,
+        "rate_limited": 52006,
+        "no_body_twist": 13,
+        "stale_body_twist": 0,
+        "kinematic_too_large": 8666,
+        "window_too_short": 236,
+        "deviation_too_large": 5,
+        "publish_error": 0
+      },
+      "gravity_gate_closed_s": 86.7,
+      "gravity_gate_fraction_of_driving": 0.1751,
+      "scan_slip": {
+        "blocks": 710,
+        "images": 710,
+        "missing": 0,
+        "intervals_below_floor": 0,
+        "intervals": 2822,
+        "images_with_duplicate_rows": 0,
+        "exact_duplicate_rows": 0,
+        "passed": true
+      }
+    }
+  ],
+  "rtf_history": {
+    "note": "rated 10 km/h full-area steady RTF, oldest first. The first predates the q_z fix; the rest share the current configuration.",
+    "samples": [
+      0.9877260219258834,
+      0.9620961854356798,
+      0.9587657347326464,
+      0.944997467153503,
+      0.9439179388039287
+    ],
+    "floor": 0.95,
+    "below_floor": 2,
+    "same_work_took_longer": {
+      "steady_wall_s": [
+        388.72895275500014,
+        394.49841185600053,
+        394.9495869020011
+      ],
+      "startup_s": [
+        37.26616373100114,
+        38.50041447199874,
+        38.90611929500119
+      ]
+    },
+    "ruled_out": {
+      "process_tree_rss_peak_bytes": [
+        21107380224,
+        21208436736,
+        20973056000
+      ],
+      "device_memory_peak_bytes": [
+        10498342912,
+        10436476928,
+        10496245760
+      ],
+      "host_memory": "31 GiB total, 18 GiB free after the runs",
+      "disk": "867 GiB free, local_data 39 GiB",
+      "gpu_throttle_flags": "no thermal or power slowdown reported at idle after the runs"
+    },
+    "open": "the three runs cannot separate degradation caused by running consecutively from a machine that is now persistently slower. The experiment that separates them is a cooldown followed by a repeat of the first run at its own seed."
+  },
+  "findings": [
+    "Coverage is reproducible at the rated speed: three seeds, ten tracks each, every track [0, 100] with no unverified span, no quality flag and no excluded footprint tag. Block and row counts agree to 0.02 percent.",
+    "The gravity-reference acceleration gate at the rated speed is closed for 17.4-17.7 percent of driving time (86-88 s of 495-496 s), against 13.0 percent measured at 1 m/s. The three runs agree to 0.3 percentage points, so this is a designed quantity, not noise.",
+    "deviation_too_large fires at the rated speed for the first time (58, 8, 5 counts). It was zero in every low-speed measurement. The magnitude gate is real but rare.",
+    "Driving time is 495 s of a 760 s mission: a third of the mission is spent stationary in settle, handshake and step transitions.",
+    "The scan-slip audit paired 710 of 710 blocks with their images in each run, which is the first use of the new per-block pairing at full-area scale."
+  ],
+  "not_covered": [
+    "a fourth run after a cooldown, which is what would separate consecutive-run degradation from a persistently slower machine",
+    "repeat load/prepare/execute and GUI/RViz interaction regression, still not re-run per phase",
+    "full-area rescan, still validated only on an 8 x 2 m region",
+    "the cancel probe, deliberately off so these count as normal complete runs"
+  ]
+}

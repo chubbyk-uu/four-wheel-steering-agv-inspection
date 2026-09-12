@@ -25,11 +25,13 @@ def main():
     p.add_argument('--fault-probe',action='store_true');p.add_argument('--no-pause',action='store_true');p.add_argument('--short-tail-probe',action='store_true');p.add_argument('--no-cancel-probe',action='store_true')
     p.add_argument('--broker-stall',action='store_true',help='freeze only the GUI broker for 0.6 seconds during capture')
     p.add_argument('--executor-exit-probe',action='store_true',help='kill only the owned mission worker during a second task')
+    p.add_argument('--localization-config',type=Path,help='measurement config overriding the shipped one, to run a named noise seed')
     a=p.parse_args();process_start=time.monotonic()
     if a.short_tail_probe:a.no_pause=True;a.no_cancel_probe=True
     a.output.mkdir(parents=True,exist_ok=False);session=a.output/'session'
     os.environ.update(ROS_DOMAIN_ID=str(100+os.getpid()%80),GZ_PARTITION='agv_operator_'+str(os.getpid()))
-    log=(a.output/'simulation.log').open('w');sim=subprocess.Popen(['ros2','launch','agv_bringup','inspection.launch.py','session_dir:='+str(session.resolve()),'spawn_x:='+str(a.spawn_x),'scene_manifest:='+str(a.scene.resolve())],stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
+    log=(a.output/'simulation.log').open('w');sim=subprocess.Popen(['ros2','launch','agv_bringup','inspection.launch.py','session_dir:='+str(session.resolve()),'spawn_x:='+str(a.spawn_x),'scene_manifest:='+str(a.scene.resolve())]
+        +(['localization_config:='+str(a.localization_config.resolve())] if a.localization_config else []),stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
     resources=ResourceMonitor(sim.pid,a.output/'resources.jsonl')
     rclpy.init();n=Node('operator_evaluator');latest={};images={};joints=[];states=[];actual=[]
     health_history=deque(maxlen=512)

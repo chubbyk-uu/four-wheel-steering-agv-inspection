@@ -29,6 +29,7 @@ def setup(context):
         'scene_manifest':str(scene),'camera_config':str(camera),'scan_speed_limit':str(config['max_scan_speed_m_s']),'spawn_x':LaunchConfiguration('spawn_x').perform(context),
         'capture_dir':str(root/'raw'),'localization_output_dir':str(root/'navigation'),
         'gpu_backend':LaunchConfiguration('gpu_backend').perform(context),
+        'localization_config':LaunchConfiguration('localization_config').perform(context),
         'headless':LaunchConfiguration('headless').perform(context)}.items()),
         Node(package='agv_mission',executable='mission_operator',parameters=[{'use_sim_time':True,'output_root':str(root/'tasks'),'navigation_dir':str(root/'navigation'),'road_display':str(road_config)}],output='screen')]
 
@@ -39,4 +40,6 @@ def generate_launch_description():
         DeclareLaunchArgument('scene_manifest',default_value='assets/road/runtime_fullwidth_20m_v1/manifest.json'),
         DeclareLaunchArgument('gpu_backend',default_value='d3d12',choices=['d3d12','native']),
         DeclareLaunchArgument('spawn_x',default_value='3'),
+        # A repeat run has to name its noise seed without editing the shipped config.
+        DeclareLaunchArgument('localization_config',default_value=''),
         DeclareLaunchArgument('headless',default_value='false'),OpaqueFunction(function=setup)])
