@@ -195,3 +195,85 @@ def test_motion_tilt_configuration_is_validated(config):
                     ('motion_tilt_enabled','yes')]:
         broken=copy.deepcopy(config);broken[key]=bad
         with pytest.raises(ValueError):validate(broken)
+
+
+class TiltHarness:
+    """Drive MeasurementAdapter.motion_tilt without a ROS graph."""
+    from agv_localization.measurement_adapter import MeasurementAdapter as _A
+    motion_tilt=_A.motion_tilt
+    motion_rejects=_A.motion_rejects
+    def __init__(self,config,twist):
+        from collections import deque
+        self.config=config;self.gravity=deque(maxlen=200)
+        self.body_twist=twist;self.last_motion_tilt=-math.inf
+        self.motion_tilts=0;self.published=[]
+        self.motion_outcomes={k:0 for k in ('accepted','rate_limited','no_body_twist',
+            'stale_body_twist','kinematic_too_large','window_too_short',
+            'deviation_too_large','publish_error')}
+    def publish_tilt(self,msg,vector,variance):self.published.append((vector,variance))
+
+
+DT=.01;COUNT=60
+
+
+def twist_history(accel=0.,speed=.5):
+    return [(i*DT,speed+accel*i*DT,0.,0.) for i in range(COUNT)]
+
+
+def drive(config,accel,measured,twist=None,span=20):
+    """Feed accelerometer samples over the same span the twist fit covers.
+
+    The accelerometer must be averaged over the twist window, so samples fed
+    after it land outside [low, high] and leave through window_too_short.
+    """
+    h=TiltHarness(config,twist if twist is not None else twist_history(accel))
+    start=(COUNT-span)*DT
+    for i in range(span):h.motion_tilt(object(),start+i*DT,measured)
+    return h
+
+
+def test_every_motion_tilt_exit_is_counted_separately(config):
+    config=copy.deepcopy(config);config['noise_enabled']=False
+    level=np.array([0.,0.,9.81])
+
+    h=drive(config,0.,level)
+    assert h.motion_outcomes['accepted']>=1 and h.published
+    # The first samples cannot fill the window yet; that is not a rejection.
+    assert h.motion_outcomes['window_too_short']>=1
+    assert h.motion_rejects==0
+    # Once one is accepted the interval throttles the rest.
+    assert h.motion_outcomes['rate_limited']>=1
+
+    h=TiltHarness(config,[])
+    for i in range(5):h.motion_tilt(object(),.4+i*DT,level)
+    assert h.motion_outcomes['no_body_twist']==5 and not h.published
+
+    h=TiltHarness(config,twist_history())
+    h.motion_tilt(object(),2.0,level)
+    assert h.motion_outcomes['stale_body_twist']==1
+
+    # 2 m/s^2 is past motion_tilt_max_accel_m_s2: the wheel model is not trusted.
+    h=drive(config,2.,level+np.array([2.,0,0]))
+    assert h.motion_outcomes['kinematic_too_large']>=1
+    assert h.motion_rejects==h.motion_outcomes['kinematic_too_large']
+    assert not h.published
+
+    h=drive(config,0.,level*2)
+    assert h.motion_outcomes['deviation_too_large']>=1
+    assert h.motion_rejects==h.motion_outcomes['deviation_too_large']
+    assert not h.published
+
+
+def test_a_closed_gate_keeps_counting_at_imu_rate_so_the_ratio_is_not_a_rate(config):
+    config=copy.deepcopy(config);config['noise_enabled']=False
+    # last_motion_tilt only advances on success, so a rejection never arms the
+    # throttle: every later sample is evaluated and rejected again at IMU rate,
+    # while accepted updates are capped at 1/motion_tilt_interval_s. Rejects
+    # over accepts is therefore not an acceptance rate.
+    calls=40
+    h=drive(config,0.,np.array([0.,0.,19.62]),span=calls)
+    assert sum(h.motion_outcomes.values())==calls,h.motion_outcomes
+    assert h.motion_outcomes['rate_limited']==0 and h.motion_tilts==0
+    # Every sample that reached the gravity check was rejected, one per sample.
+    covered=calls-h.motion_outcomes['window_too_short']
+    assert h.motion_outcomes['deviation_too_large']==covered>1

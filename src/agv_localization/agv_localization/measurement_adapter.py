@@ -43,7 +43,13 @@ class MeasurementAdapter(Node):
         # Measured body twist history feeds the kinematic acceleration removed
         # from the accelerometer; never a command or ground-truth proxy.
         self.body_twist=deque(maxlen=400);self.gravity=deque(maxlen=200)
-        self.last_motion_tilt=-math.inf;self.motion_tilts=0;self.motion_rejects=0
+        self.last_motion_tilt=-math.inf;self.motion_tilts=0
+        # One counter could not say why a driving gravity reference was dropped,
+        # and two of the six exits were not counted at all, so the reported
+        # rejection rate had no well-defined denominator.
+        self.motion_outcomes={k:0 for k in ('accepted','rate_limited','no_body_twist',
+            'stale_body_twist','kinematic_too_large','window_too_short',
+            'deviation_too_large','publish_error')}
         self.wheel_speed=math.inf;self.gyro_speed=math.inf
         self.last_raw_imu=-math.inf
         self.ages={'wheel':-math.inf,'imu':-math.inf,'gnss':-math.inf}
@@ -178,6 +184,12 @@ class MeasurementAdapter(Node):
         out.angular_velocity_covariance[0]=-1.;out.linear_acceleration_covariance[0]=-1.
         self.pubs['tilt'].publish(out);self.tilt_ready=True
 
+    @property
+    def motion_rejects(self):
+        """Genuine rejections only: throttling and a missing window are not one."""
+        return sum(self.motion_outcomes[k] for k in
+                   ('kinematic_too_large','deviation_too_large','publish_error'))
+
     def tilt(self,msg):
         t=stamp_seconds(msg.header.stamp)
         g=np.array([msg.angular_velocity.x,msg.angular_velocity.y,msg.angular_velocity.z])
@@ -214,19 +226,23 @@ class MeasurementAdapter(Node):
         if not self.config['motion_tilt_enabled']:self.gravity.clear();return
         if self.gravity and t-self.gravity[-1][0]>.025:self.gravity.clear()
         self.gravity.append((t,a,msg))
-        if t-self.last_motion_tilt<self.config['motion_tilt_interval_s']:return
+        def drop(reason):self.motion_outcomes[reason]+=1
+        # Not a rejection: the interval deliberately throttles how often a
+        # driving reference is produced. Counted so it stays out of the rate.
+        if t-self.last_motion_tilt<self.config['motion_tilt_interval_s']:drop('rate_limited');return
         value=body_acceleration(self.body_twist,self.config['motion_tilt_window_s'])
-        if value is None or (self.body_twist and t-self.body_twist[-1][0]>.05):return
+        if value is None:drop('no_body_twist');return
+        if self.body_twist and t-self.body_twist[-1][0]>.05:drop('stale_body_twist');return
         kinematic,sigma,centre,(low,high)=value
         # Transient dynamics: coast on the gyro rather than trust a wheel model
         # that tyre slip and suspension pitch invalidate.
         if float(np.linalg.norm(kinematic))>self.config['motion_tilt_max_accel_m_s2']:
-            self.motion_rejects+=1;return
+            drop('kinematic_too_large');return
         window=[r for r in self.gravity if low<=r[0]<=high]
-        if len(window)<3:return
+        if len(window)<3:drop('window_too_short');return
         vector=np.mean([v for _,v,_ in window],axis=0)-kinematic
         deviation=abs(float(np.linalg.norm(vector))-9.81)
-        if deviation>self.config['motion_tilt_reject_m_s2']:self.motion_rejects+=1;return
+        if deviation>self.config['motion_tilt_reject_m_s2']:drop('deviation_too_large');return
         n=len(window)
         # Slip and suspension pitch scale with the compensation applied, so the
         # trust in a driving sample must fall as the kinematic term grows.
@@ -238,8 +254,8 @@ class MeasurementAdapter(Node):
         # Stamp at the window mean time; robot_localization accepts lagged data.
         anchor=min(window,key=lambda r:abs(r[0]-centre))[2]
         try:self.publish_tilt(anchor,vector,variance)
-        except ValueError:self.motion_rejects+=1;return
-        self.last_motion_tilt=t;self.motion_tilts+=1
+        except ValueError:drop('publish_error');return
+        self.last_motion_tilt=t;self.motion_tilts+=1;drop('accepted')
 
     def local_pose(self,msg):
         self.local.append(msg)
@@ -314,6 +330,7 @@ class MeasurementAdapter(Node):
                                     'global':global_filter_age if math.isfinite(global_filter_age) else None},
                     'tilt_initialized':self.tilt_ready,'delivery_queue_peak':self.queue.peak,
                     'motion_tilt_updates':self.motion_tilts,'motion_tilt_rejects':self.motion_rejects,
+                    'motion_tilt_outcomes':dict(self.motion_outcomes),
                     'stop_required':state!='READY'}))
 
 

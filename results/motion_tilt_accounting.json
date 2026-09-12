@@ -1,0 +1,71 @@
+{
+  "schema": "agv.localization.motion_tilt_accounting.v1",
+  "date": "2026-09-12",
+  "scope": "Per-cause accounting for the driving gravity reference, measured on one validate_localization --profile normal regression. Not a mission run and not a full-area measurement.",
+  "retraction": {
+    "claim": "74% of driving gravity references are rejected (1386 rejects vs 488 accepted)",
+    "verdict": "WRONG",
+    "why": "that ratio is exactly what src/agv_localization/README.md already warned is not an acceptance rate: last_motion_tilt advances only on success, so once a gate closes every IMU sample at 100 Hz is counted again while accepted updates are capped at 1/motion_tilt_interval_s = 10 Hz. The numerator and denominator are sampled an order of magnitude apart.",
+    "also_wrong": "the claim named three gates; motion_tilt has six exits and two of them (no_body_twist, window_too_short) were not counted at all"
+  },
+  "instrumentation": {
+    "added": "motion_tilt_outcomes in /localization/status and in validate_localization results",
+    "preserved": "motion_tilt_rejects keeps its original meaning: genuine rejections only",
+    "exits": [
+      "rate_limited",
+      "no_body_twist",
+      "stale_body_twist",
+      "kinematic_too_large",
+      "window_too_short",
+      "deviation_too_large",
+      "publish_error",
+      "accepted"
+    ]
+  },
+  "measured": {
+    "observed_span_s": 36.949,
+    "outcomes": {
+      "accepted": 207,
+      "rate_limited": 1958,
+      "no_body_twist": 0,
+      "stale_body_twist": 0,
+      "kinematic_too_large": 327,
+      "window_too_short": 17,
+      "deviation_too_large": 0,
+      "publish_error": 0
+    },
+    "total_calls": 2509,
+    "driving_time_s": 25.09,
+    "accepted_update_rate_hz": 5.6023167068120925,
+    "gate_closed_fraction_of_driving": 0.13033080908728578,
+    "gate_closed_time_s": 3.27,
+    "only_gate_that_fired": "kinematic_too_large",
+    "magnitude_gate_never_fired": true,
+    "fusion": {
+      "samples": 1850,
+      "horizontal_rmse_m": 0.008140123225265535,
+      "position_max_m": 0.037455553038687354,
+      "vertical_rmse_m": 0.012160196511491188,
+      "yaw_rmse_deg": 0.2539924902748393,
+      "yaw_mean_deg": -0.0009514744586325061,
+      "rate_hz": 49.99999999999999
+    }
+  },
+  "derived_not_measured": {
+    "note": "motion_tilt_max_accel_m_s2 sits below the platform ramp rates, so every acceleration and braking ramp closes the gate for its whole duration by design. The coasting time per pass therefore grows with scan speed. These are arithmetic, not measurements.",
+    "motion_tilt_max_accel_m_s2": 0.3,
+    "drive_accel": 0.8,
+    "drive_decel": 1.0,
+    "gate_closed_s_per_pass": {
+      "1.0_m_s": 2.25,
+      "2.0_m_s": 4.5,
+      "rated_10_km_h": 6.25
+    }
+  },
+  "not_covered": [
+    "one 37 s regression at normal noise; the 10 km/h full-area mission is not measured here",
+    "the ramps are longer at higher speed, so the gate-closed fraction on a rated-speed mission is expected to be larger than the 8.8% seen here and has not been observed",
+    "whether the roll covariance growth previously seen between updates is exactly these ramp windows is consistent with this result but not proven by it"
+  ],
+  "passed": true
+}

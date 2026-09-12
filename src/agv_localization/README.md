@@ -47,7 +47,11 @@ GNSS节点仅模拟已转换成局部ENU的天线位置；当前地图原点和�
 
 IMU不融合Gazebo提供的理想绝对姿态。停稳时roll/pitch由连续静止加速度样本获得（`stationary_tilt_samples`，默认60，须短于任务转场dwell）；同时要求实测轮速、角速度和重力模长满足门限。
 
-行驶中按AHRS常规做法提供连续重力参考：加速度计测的是比力，必须先由独立速度源扣除运动加速度才能读作重力。运动项`a = dv/dt + omega x v`来自四轮转向编码器解出的车体twist最小二乘拟合，**不使用加速度计自身积分，也不使用真值**。拟合斜率代表窗口中心时刻，因此加速度计在同一跨度上平均并按该时刻发布；若与最新样本配对，pitch会被jerk乘以半个窗口的量偏置。不确定度包含斜率标准误、半窗斜率差给出的jerk界、与补偿量成正比的滑移/悬挂项，以及残余重力模长偏差。`motion_tilt_max_accel_m_s2`是加速度计可信度门：运动加速度超过该值时轮速模型不再可靠（滑移、悬挂俯仰），姿态改由陀螺推算。整条通路可用`motion_tilt_enabled`关闭。健康消息中`motion_tilt_rejects`统计的是拒收期内的IMU样本（100 Hz），而`motion_tilt_updates`受`motion_tilt_interval_s`限频，两者之比不是接受率。
+行驶中按AHRS常规做法提供连续重力参考：加速度计测的是比力，必须先由独立速度源扣除运动加速度才能读作重力。运动项`a = dv/dt + omega x v`来自四轮转向编码器解出的车体twist最小二乘拟合，**不使用加速度计自身积分，也不使用真值**。拟合斜率代表窗口中心时刻，因此加速度计在同一跨度上平均并按该时刻发布；若与最新样本配对，pitch会被jerk乘以半个窗口的量偏置。不确定度包含斜率标准误、半窗斜率差给出的jerk界、与补偿量成正比的滑移/悬挂项，以及残余重力模长偏差。`motion_tilt_max_accel_m_s2`是加速度计可信度门：运动加速度超过该值时轮速模型不再可靠（滑移、悬挂俯仰），姿态改由陀螺推算。整条通路可用`motion_tilt_enabled`关闭。健康消息中`motion_tilt_rejects`统计的是拒收期内的IMU样本（100 Hz），而`motion_tilt_updates`受`motion_tilt_interval_s`限频，**两者之比不是接受率**——`last_motion_tilt`只在成功时更新，所以门一旦关上，之后每个IMU样本都会重新穿过限频检查再被拒一次，分子按100 Hz累加而分母最多10 Hz。
+
+`motion_tilt`共有六个出口，此前只有一个计数器，且其中两个出口完全不计数，拒收原因无法区分。现增加`motion_tilt_outcomes`逐项计数：`rate_limited`（限频，设计行为不是拒绝）、`no_body_twist`（twist历史不足以覆盖窗口）、`stale_body_twist`（twist超过0.05 s未更新）、`kinematic_too_large`（运动加速度超`motion_tilt_max_accel_m_s2`）、`window_too_short`（落在拟合跨度内的加速度样本少于3个）、`deviation_too_large`（残余模长偏离9.81超`motion_tilt_reject_m_s2`）、`publish_error`、`accepted`。`motion_tilt_rejects`保留原义只含后三类真正的拒绝。`tools/validate_localization.py`的结果中`motion_tilt`给出观测跨度内的逐项增量和**接受更新的实际频率**；不要用任何两项之比当接受概率。
+
+注意加速度样本必须落在twist拟合的**同一时间跨度**内（见上文关于窗口中心时刻的说明），喂在窗口之后的样本会全部走`window_too_short`。
 
 首版加速度发布但不融合；固定零偏未被宣称自动消除。单条GNSS基线不能观测全部三轴姿态。四轮独立转向可侧移，因此不施加NHC横向零速假设——车体横向速度由轮速直接测量，测量优于假设。
 
@@ -76,7 +80,9 @@ IMU不融合Gazebo提供的理想绝对姿态。停稳时roll/pitch由连续静�
 
 这个值以两条路径影响覆盖审计，**第二条才是决定性的**：过大的协方差成为审计的padding；而松散的估计让相机高度最多偏76 mm，足迹宽度是`2×高度×0.7168`的直接函数，估计偏低就把名义1.4966 m的足迹压到1.408 m。把10 km/h全区那10个越界标签的高度换成真值后，**在不改padding的情况下10个全部通过**。
 
-基线一致性（3532个标签，base_link对真值）：x 0.726、y 0.786、z 0.426、roll 0.281、pitch 0.182、yaw 0.461——整个滤波器都偏保守，z/roll/pitch最甚。**roll/pitch不是过程噪声问题**：roll后验σ7.67 mrad已低于单次观测的约10.2 mrad（由`motion_tilt_extra_sigma_m_s2`=0.10决定），其协方差没有z那种10 Hz锯齿，而是在约1 Hz的更新间隙从1.6涨到21.9 mrad——因为**74%的行驶中重力参考被拒**（1386拒/488收）。收紧`q_roll`只会在没有新信息时增加自信。拒绝率是独立缺陷，三个闸门未分开计数，需单独埋点。见[结果](../../results/vertical_process_noise.json)。
+基线一致性（3532个标签，base_link对真值）：x 0.726、y 0.786、z 0.426、roll 0.281、pitch 0.182、yaw 0.461——整个滤波器都偏保守，z/roll/pitch最甚。**roll/pitch不是过程噪声问题**：roll后验σ7.67 mrad已低于单次观测的约10.2 mrad（由`motion_tilt_extra_sigma_m_s2`=0.10决定），其协方差没有z那种10 Hz锯齿，而是在更新间隙从1.6涨到21.9 mrad。收紧`q_roll`只会在没有新信息时增加自信。
+
+~~因为74%的行驶中重力参考被拒（1386拒/488收），拒绝率是独立缺陷~~——**2026-09-12更正：该结论作废**。那个比值正是本文上面写明不能当接受率的比值，且当时六个出口里有两个根本没计数。逐项埋点后实测（正常噪声、行驶25.1 s）：接受5.60 Hz，唯一触发的是`kinematic_too_large`占行驶时间13.0%，`deviation_too_large`为0。真正的机制是`motion_tilt_max_accel_m_s2`＝0.3低于平台加减速度0.8/1.0，**每条加减速斜坡都按设计把门关满全程**，额定10 km/h下每道6.25 s由陀螺推算。见[计数记录](../../results/motion_tilt_accounting.json)与[结果](../../results/vertical_process_noise.json)。
 
 `navigation.jsonl`保存50 Hz全局估计的XYZ、四元数、速度、协方差和标定ID；`calibration.json`保存算法外参。独立`evaluation/`放模拟配置/真实天线安装和测试器记录的真值轨迹。输入图块的融合标签和相机标定ID仍待任务采集阶段接入；当前旧采集档案不能据此宣称已换成融合标签。C8标定坐标已预留，点云误差融合/避障验收后置。
 

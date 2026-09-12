@@ -19,6 +19,30 @@ from tf2_msgs.msg import TFMessage
 from validate_motion import Evaluator
 
 
+def motion_tilt_summary(health,start):
+    """Per-cause accounting for the driving gravity reference.
+
+    A single reject counter could not be read as a rate: the interval throttle
+    is only reset by a successful update, so once a gate closes every IMU sample
+    at 100 Hz is counted again while accepted updates are capped at 10 Hz. What
+    is meaningful is how often an accepted reference actually arrives and which
+    exit the rest take.
+    """
+    samples=[(t,v) for t,v in health if t>=start and v.get('motion_tilt_outcomes')]
+    if not samples:return None
+    first,last=samples[0][1]['motion_tilt_outcomes'],samples[-1][1]['motion_tilt_outcomes']
+    span=samples[-1][0]-samples[0][0]
+    delta={k:last[k]-first.get(k,0) for k in last}
+    attempts=sum(v for k,v in delta.items() if k!='rate_limited')
+    return dict(observed_span_s=span,outcomes=delta,
+        accepted_update_rate_hz=delta['accepted']/span if span>0 else None,
+        attempts_excluding_throttle=attempts,
+        accepted_fraction_of_attempts=delta['accepted']/attempts if attempts else None,
+        note=('rate_limited is the configured throttle, not a rejection, and is excluded from '
+              'the fraction; the remaining exits are still sampled at IMU rate while a gate '
+              'stays closed, so the fraction is not a per-opportunity acceptance probability'))
+
+
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--profile',choices=['zero','normal'],default='zero')
@@ -122,6 +146,7 @@ def main():
                 'imu_delivery_age_mean_s':float(np.mean([s[1]-s[0] for s in imu])),
                 'wheel_delivery_age_mean_s':float(np.mean([s[1]-s[0] for s in wheel])),
                 'not_ready_samples':states.count('NOT_READY'),'ready_fraction':states.count('READY')/len(states),'final_motion_state':node.state,
+                'motion_tilt':motion_tilt_summary(health,start),
                 'scope':'measurement/EKF motion regression; not mission tracking or image tagging'}
         a.output.write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result))
     finally:
