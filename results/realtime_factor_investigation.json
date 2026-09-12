@@ -124,8 +124,51 @@
     "interpretation": "latency and serialisation bound, not throughput bound: 8.64 M launches of about 10 us each, against a single threaded 1 ms physics step that the mission needs 761000 of. Neither more cores nor a larger GPU would move it; fewer and larger submissions would."
   },
   "not_covered": [
-    "which of the two things a WSL restart clears -- host GPU stack state or page cache -- is responsible",
     "whether RTF keeps degrading within a fresh WSL at the same rate, and after how many runs it crosses a floor",
-    "a repeat of the three full-area acceptance runs from a fresh WSL, which is what a comparable RTF figure would need"
-  ]
+    "a repeat of the three full-area acceptance runs from a fresh WSL, which is what a comparable RTF figure would need",
+    "what actually accumulates: four runs and a read flood in a fresh instance do not reproduce it, so it needs hours of instance age that cannot be bought cheaply"
+  ],
+  "reproduction_attempt_in_a_fresh_instance": {
+    "why": "the decline was described as a level shift per launch. That description needed testing in an instance whose history is known.",
+    "instance": "WSL restarted by the user; measurements begin two minutes after boot",
+    "arms": [
+      {
+        "name": "cache_d32",
+        "order": 1,
+        "steady_rtf": 0.9467
+      },
+      {
+        "name": "cache_e32",
+        "order": 2,
+        "steady_rtf": 0.9529
+      },
+      {
+        "name": "cache_f32",
+        "order": 3,
+        "steady_rtf": 0.9364
+      },
+      {
+        "name": "cache_g32",
+        "order": 4,
+        "steady_rtf": 0.9646,
+        "note": "run immediately after replaying the 33 GB image audit that coincided with the largest single drop in the degraded instance"
+      }
+    ],
+    "guest_cpu_probe": {
+      "tool": "tools/probe_guest_cpu.py",
+      "unit": "seconds, best of five, lower is faster",
+      "fresh": 0.1879,
+      "after_one_run": 0.1823,
+      "after_two_runs": 0.1862,
+      "after_the_audit_flood": 0.186,
+      "reading": "flat within 3 percent, and the fastest reading is the middle one. The guest never lost single-thread speed in this instance."
+    },
+    "verdict": "not reproduced. Four consecutive runs and a 33 GB read flood in a 45 minute old instance stayed between 0.9364 and 0.9646 with no trend, and the post-flood run was the fastest of the four. So the decline is not caused by the number of simulations run, and not by filling the page cache: the earlier instance had been up for hours and had run many more simulations before the measurements began.",
+    "consequence": "the earlier claim that the level falls with each launch is withdrawn. What is established is narrower: an instance that has been working for hours can be much slower, and a restart fixes it. The efficiency-core hypothesis is neither confirmed nor refuted, because the degraded state was never reached here -- the CPU probe exists so that the next time it appears naturally, one measurement settles it.",
+    "how_to_settle_it_next_time": [
+      "run tools/probe_guest_cpu.py when a long session has sagged and compare with 0.188 s here",
+      "a slower figure means the guest lost CPU, which points at Windows 11 efficiency-core demotion of background work on this hybrid i7-13700F",
+      "an unchanged figure means the loss is specific to the GPU submission path"
+    ]
+  }
 }
