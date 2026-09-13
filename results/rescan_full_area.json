@@ -1,0 +1,306 @@
+{
+  "schema": "agv.rescan_full_area.v1",
+  "goal": "implementation plan item 5: close the rescan loop at full-area scale, not on the 8 x 2 m region where the union logic is degenerate",
+  "why_this_shape": "the 8 x 2 m closure of 2026-09-12 merged two children over two tracks. combine() unions road rectangles across sessions and validates candidate identity, duplicate navigation sessions and a single scene fingerprint; with two tracks and three sessions none of that is exercised. Interrupting part way through track 4 of ten leaves six candidates and seven sessions.",
+  "parent": {
+    "region_m": [
+      100,
+      10
+    ],
+    "tracks": 10,
+    "scan_speed_m_s": 2.777777777777778,
+    "noise_profile": "normal",
+    "interruption": "cancelled from full speed 49.89 m into track 4, with --inject-track 4 --inject-along-m 50",
+    "status": "NEEDS_RESCAN",
+    "issues": 0,
+    "blocks_accounted": 321,
+    "covered": {
+      "0": [
+        [
+          0.0,
+          100.0
+        ]
+      ],
+      "1": [
+        [
+          0.0,
+          100.0
+        ]
+      ],
+      "2": [
+        [
+          0.0,
+          100.0
+        ]
+      ],
+      "3": [
+        [
+          0.0,
+          100.0
+        ]
+      ],
+      "4": [
+        [
+          0.0,
+          49.98926443384896
+        ]
+      ],
+      "5": [],
+      "6": [],
+      "7": [],
+      "8": [],
+      "9": []
+    },
+    "quality_flags": {
+      "5": [
+        "NO_CAPTURE_EVIDENCE"
+      ],
+      "6": [
+        "NO_CAPTURE_EVIDENCE"
+      ],
+      "7": [
+        "NO_CAPTURE_EVIDENCE"
+      ],
+      "8": [
+        "NO_CAPTURE_EVIDENCE"
+      ],
+      "9": [
+        "NO_CAPTURE_EVIDENCE"
+      ]
+    }
+  },
+  "candidates": {
+    "generated": 6,
+    "preview_only": 6,
+    "blocked_geometry": 0,
+    "note": "every candidate planned, including track 9 at road y 4 to 5 where the 1.5 m vehicle sweep reaches the 6.5 m drivable bound exactly. A blocked outermost strip was a real possibility and did not happen."
+  },
+  "children": [
+    {
+      "name": "child_00_audit",
+      "status": "ESTIMATED_COMPLETE",
+      "region_m": [
+        50.11073556615104,
+        1.0
+      ],
+      "start_xy_m": [
+        49.88926443384896,
+        -1.0
+      ],
+      "tracks": 1,
+      "issues": 0,
+      "blocks_accounted": 37,
+      "unverified": [
+        []
+      ]
+    },
+    {
+      "name": "child_01_audit",
+      "status": "ESTIMATED_COMPLETE",
+      "region_m": [
+        100.0,
+        1.0
+      ],
+      "start_xy_m": [
+        0.0,
+        0.0
+      ],
+      "tracks": 1,
+      "issues": 0,
+      "blocks_accounted": 71,
+      "unverified": [
+        []
+      ]
+    },
+    {
+      "name": "child_02_audit",
+      "status": "ESTIMATED_COMPLETE",
+      "region_m": [
+        100.0,
+        1.0
+      ],
+      "start_xy_m": [
+        0.0,
+        1.0
+      ],
+      "tracks": 1,
+      "issues": 0,
+      "blocks_accounted": 71,
+      "unverified": [
+        []
+      ]
+    },
+    {
+      "name": "child_03_audit",
+      "status": "ESTIMATED_COMPLETE",
+      "region_m": [
+        100.0,
+        1.0
+      ],
+      "start_xy_m": [
+        0.0,
+        2.0
+      ],
+      "tracks": 1,
+      "issues": 0,
+      "blocks_accounted": 71,
+      "unverified": [
+        []
+      ]
+    },
+    {
+      "name": "child_04_audit",
+      "status": "ESTIMATED_COMPLETE",
+      "region_m": [
+        100.0,
+        1.0
+      ],
+      "start_xy_m": [
+        0.0,
+        3.0
+      ],
+      "tracks": 1,
+      "issues": 0,
+      "blocks_accounted": 71,
+      "unverified": [
+        []
+      ]
+    },
+    {
+      "name": "child_05_audit",
+      "status": "ESTIMATED_COMPLETE",
+      "region_m": [
+        100.0,
+        1.0
+      ],
+      "start_xy_m": [
+        0.0,
+        4.0
+      ],
+      "tracks": 1,
+      "issues": 0,
+      "blocks_accounted": 71,
+      "unverified": [
+        []
+      ]
+    }
+  ],
+  "merged": {
+    "status": "ESTIMATED_COMPLETE",
+    "tracks": 10,
+    "remaining_candidates": 0,
+    "original_candidates": 6,
+    "scene_fingerprints": 1,
+    "navigation_sessions": 7,
+    "every_track_covered": [
+      [
+        [
+          0.0,
+          100.0
+        ]
+      ],
+      [
+        [
+          0.0,
+          100.0
+        ]
+      ],
+      [
+        [
+          0.0,
+          100.0
+        ]
+      ],
+      [
+        [
+          0.0,
+          100.0
+        ]
+      ],
+      [
+        [
+          0.0,
+          100.0
+        ]
+      ],
+      [
+        [
+          0.0,
+          100.0
+        ]
+      ],
+      [
+        [
+          0.0,
+          100.0
+        ]
+      ],
+      [
+        [
+          0.0,
+          100.0
+        ]
+      ],
+      [
+        [
+          0.0,
+          100.0
+        ]
+      ],
+      [
+        [
+          0.0,
+          100.0
+        ]
+      ]
+    ],
+    "unverified": [
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      []
+    ],
+    "retained_source_flags": {
+      "5": [
+        "NO_CAPTURE_EVIDENCE"
+      ],
+      "6": [
+        "NO_CAPTURE_EVIDENCE"
+      ],
+      "7": [
+        "NO_CAPTURE_EVIDENCE"
+      ],
+      "8": [
+        "NO_CAPTURE_EVIDENCE"
+      ],
+      "9": [
+        "NO_CAPTURE_EVIDENCE"
+      ]
+    }
+  },
+  "timing": {
+    "parent_minutes": 7.7,
+    "child_minutes_each": 2.0,
+    "total_minutes": 20.8,
+    "disk_gb": 12
+  },
+  "findings": [
+    "the loop closes at full-area scale: NEEDS_RESCAN with six candidates, six independently driven and audited missions, and a merge to ESTIMATED_COMPLETE with all ten tracks [0, 100] and no unverified span",
+    "every child audited ESTIMATED_COMPLETE on its own, with zero issues, so the merge was not asked to paper over a bad child",
+    "seven navigation sessions and one scene fingerprint were accepted, which is what the 8 x 2 m run could not test",
+    "tracks 5 to 9 keep NO_CAPTURE_EVIDENCE as source_quality_flags. The parent genuinely captured nothing there, and closing the gap by rescan does not erase that the original pass did not see it",
+    "a 1 m wide, 100 m long rescan strip plans and drives at the rated speed, including the outermost track"
+  ],
+  "not_covered": [
+    "one interruption shape: a full-speed cancel. A fault stop, a camera loss or a quality exclusion would each leave a differently shaped gap",
+    "the children were driven headless through validate_rectangle_execution, not through the operator panel, so the GUI rescan button is still only covered at 8 x 2 m",
+    "no second-generation rescan: every child closed on its first attempt, so a child that itself needs a rescan is untested",
+    "the merged report is coverage bookkeeping. It does not claim the imagery from seven sessions is radiometrically consistent"
+  ]
+}

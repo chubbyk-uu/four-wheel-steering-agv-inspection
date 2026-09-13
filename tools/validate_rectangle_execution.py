@@ -49,6 +49,8 @@ def main():
     parser.add_argument('--inject-along-m',type=float,
                         help='in the scan phase, wait until the camera is this far into the region '
                              '(use it to leave real coverage behind an interrupted mission)')
+    parser.add_argument('--inject-track',type=int,
+                        help='restrict the injection to this track; by default either of the first two')
     parser.add_argument('--inject-phase',default='scan',
                         choices=['approach','accelerate','scan','runout','shift','rotate'],
                         help='motion phase the pause or fault is injected in')
@@ -91,7 +93,10 @@ def main():
             if not written.exists():return False
             try:mission_plan=json.loads(written.read_text())
             except ValueError:return False
-        if current.get('track_id') not in (0,1) or current.get('tracker_state')!='RUNNING':return False
+        # Which track is disturbed decides how much coverage the parent keeps, and
+        # so how many rescan candidates a cancelled mission leaves behind.
+        allowed=(0,1) if a.inject_track is None else (a.inject_track,)
+        if current.get('track_id') not in allowed or current.get('tracker_state')!='RUNNING':return False
         # Let the motion develop past its own ramp start before disturbing it.
         if current.get('profile_time_s',0)<.5:return False
         if phase_of(mission_plan,camera_cfg,current)!=a.inject_phase:return False
