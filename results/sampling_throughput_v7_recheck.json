@@ -1,0 +1,86 @@
+{
+  "schema": "agv.sampling_throughput_recheck.v1",
+  "goal": "acceptance gate: the independent 11 kHz sampling throughput bench must be re-run for the current version, and recorded separately from the whole-vehicle run that actually triggers about 7.59 kHz at 10 km/h",
+  "why_a_rerun_was_owed": "the passing bench on record was produced on 2026-09-10 by commit a3304b0. linescan.yaml changed after it, in 9bcfc49 \"Fix encoder retrace triggering\" -- a change to trigger logic, which is exactly what a line-rate bench measures. The gate asks for the new version, so the old figure could not stand in for it.",
+  "run": {
+    "tool": "tools/benchmark_optix_stream.py",
+    "scene": "assets/road/runtime_fullwidth_100m_v1",
+    "blocks": 144,
+    "pass_blocks": 70,
+    "start_x_m": -3.0,
+    "track_y_m": -4.5,
+    "target_lines_per_second": 11200.0,
+    "output": "local_data/stream_11khz_v2",
+    "calibration": "nominal-linescan-4k-20mm-large-v7"
+  },
+  "comparison": {
+    "effective_lines_per_wall_second": {
+      "previous": 11199.930066942743,
+      "current": 11199.98237509718
+    },
+    "active_pipeline_lines_per_second": {
+      "previous": 20663.315155730663,
+      "current": 23649.61437292226
+    },
+    "wall_seconds": {
+      "previous": 52.663185973,
+      "current": 52.662940016
+    },
+    "blocks": {
+      "previous": 144,
+      "current": 144
+    },
+    "lines": {
+      "previous": 589824,
+      "current": 589824
+    },
+    "invalid_pixels": {
+      "previous": 0,
+      "current": 0
+    },
+    "ros_acknowledged_blocks": {
+      "previous": 144,
+      "current": 144
+    },
+    "batch_seconds_max": {
+      "previous": 0.018464955,
+      "current": 0.012839198
+    },
+    "block_receive_interval_seconds_max": {
+      "previous": 0.38657351799999873,
+      "current": 0.3906130440000055
+    },
+    "allocated_device_bytes": {
+      "previous": 2132517516,
+      "current": 1686402316
+    },
+    "streamed_raw_capture_11khz_passed": {
+      "previous": true,
+      "current": true
+    }
+  },
+  "verdict": "passed on the current version: 11199.98 sustained lines per wall second against an 11200 target, 144 of 144 blocks acknowledged over ROS, zero invalid pixels, and both delay budgets met",
+  "what_improved": {
+    "active_pipeline_lines_per_second": [
+      20663.315155730663,
+      23649.61437292226
+    ],
+    "batch_seconds_max": [
+      0.018464955,
+      0.012839198
+    ],
+    "batch_budget_seconds": 0.022857142857142857,
+    "allocated_device_bytes": [
+      2132517516,
+      1686402316
+    ],
+    "note": "headroom rather than delivered rate: the sustained rate is pinned to the 11200 target. The batch worst case fell from 18.5 to 12.8 ms against a 22.9 ms budget, and device allocation fell by 446 MB after the acceleration-structure retention work"
+  },
+  "scope": [
+    "a fixture path with a body and LED rig, no wheel dynamics and no GZ physics",
+    "instant direction reversal at the path ends, with no warmup excluded",
+    "no correction or stitching",
+    "the OS file cache may be warm",
+    "this does not substitute for, and is not substituted by, the whole-vehicle run at 10 km/h which triggers about 7.59 kHz"
+  ]
+}

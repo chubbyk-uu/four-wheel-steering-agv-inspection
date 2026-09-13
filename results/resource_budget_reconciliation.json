@@ -1,0 +1,92 @@
+{
+  "schema": "agv.resource_budget_reconciliation.v1",
+  "goal": "acceptance gate: memory, VRAM, caches and the archive queue inside the budgets declared in 2026-09-10, with no drift across repeated missions",
+  "source_of_measurements": "the three consecutive rated full-area runs of 2026-09-12 and the 11 kHz bench of 2026-09-13",
+  "totals": {
+    "runs": [
+      {
+        "run": "repeat_a",
+        "peak_tree_rss_gib": 19.66,
+        "peak_tree_pss_gib": 18.91,
+        "peak_device_gib": 9.78,
+        "samples": 399
+      },
+      {
+        "run": "repeat_b",
+        "peak_tree_rss_gib": 19.75,
+        "peak_tree_pss_gib": 19.12,
+        "peak_device_gib": 9.72,
+        "samples": 403
+      },
+      {
+        "run": "repeat_c",
+        "peak_tree_rss_gib": 19.53,
+        "peak_tree_pss_gib": 18.91,
+        "peak_device_gib": 9.78,
+        "samples": 400
+      }
+    ],
+    "host_rss_budget_gib": 20,
+    "host_rss_verdict": "within, 19.53 to 19.75 GiB, a margin of 1.3 to 2.4 percent",
+    "device_budget_gib": 10,
+    "device_verdict": "within, 9.72 to 9.78 GiB whole device including an 899 MiB desktop baseline, a margin of 2.2 to 2.8 percent",
+    "drift": "none: peak RSS 19.66 / 19.75 / 19.53 GiB and peak device 9.78 / 9.72 / 9.78 GiB across three consecutive missions"
+  },
+  "tile_cache": {
+    "measured_payload_bytes": 1235035276,
+    "measured_payload_mib": 1177.8,
+    "decomposition": {
+      "tile slots (32 x (2052^2 x 3 bytes + 16))": {
+        "bytes": 404228096,
+        "mib": 385.5,
+        "budget_mib": 385.5,
+        "verdict": "exact"
+      },
+      "tile index (231 x 30 x 4)": {
+        "bytes": 27720,
+        "mib": 0.026
+      },
+      "runtime recipe source material": {
+        "bytes": 830779460,
+        "mib": 792.3,
+        "budget_mib": null,
+        "verdict": "no line in the declared budget"
+      }
+    },
+    "finding": "the 1177.8 MiB reported as device_payload_bytes reads as a threefold overrun of the 385.5 MiB tile cache line, and is not one. MaterialCache::Bytes() sums the slots, the tile index and the runtime recipe. The slots come to 385.5 MiB, exactly the budget, because the texture formats are the budgeted ones -- one byte of colour and two of normal per texel. The remaining 830,779,460 bytes are the recipe's own source material, which matches results/full_road_compact_pixels.json byte for byte and which the budget table has no line for.",
+    "consequence": "a budget omission rather than a breach. The declared table needs a runtime-recipe line of 792.3 MiB; the total device figure was already within its own budget with that memory included."
+  },
+  "optix_geometry": {
+    "allocated_device_bytes": 1686402316,
+    "allocated_gib": 1.57,
+    "budget_gib": 2,
+    "verdict": "within",
+    "acceleration_structure": {
+      "build_scratch_released_bytes": 110659584,
+      "gas_original_bytes": 477860352,
+      "gas_retained_bytes": 141653632,
+      "gas_saved_bytes": 336206720
+    }
+  },
+  "queues": {
+    "executor_archive_backlog_peak": 4,
+    "sensor_sampling_queue_high_water_lines": 174,
+    "sensor_sampling_queue_high_water_jobs": 23,
+    "sensor_sampling_queue_max_wait_s": 0.022111577000032412,
+    "capacity_lines": 2048,
+    "capacity_jobs": 512,
+    "archive_shutdown": "every task of 2026-09-13 recorded drained true with zero write errors",
+    "verdict": "queues never approached their capacity and nothing was dropped"
+  },
+  "findings": [
+    "host memory and whole-device VRAM are inside their declared budgets on every one of three consecutive full-area missions, with margins of about two percent",
+    "nothing drifts across repeats: the three peaks agree to within 0.2 GiB of host memory and 0.06 GiB of device memory",
+    "the tile cache is exactly on its 385.5 MiB budget; what looked like a threefold overrun is 792.3 MiB of runtime recipe source that the budget table never listed",
+    "the acceptance margins are thin, about 2 percent on both totals, so the missing recipe line matters for any future growth even though nothing is over today"
+  ],
+  "not_covered": [
+    "the declared table also reserves 512 MiB for camera, queues and robot and 3 GiB for driver, window and GZ overhead; those were reserved for long-run measurement and are still not separately attributed",
+    "whole-device VRAM cannot be attributed per process here, so the desktop baseline of 899 MiB is inside the measured figure",
+    "disk: the 164.82 GB figure budgets three captures plus a full rescan, which this workspace has not run in one sitting"
+  ]
+}
