@@ -129,7 +129,12 @@ class MeasurementAdapter(Node):
 
     def destroy_node(self):
         if hasattr(self,'status_stream'):self.status_stream.close()
-        if hasattr(self,'writer'):self.writer.close()
+        if hasattr(self,'writer'):
+            # Same asymmetry as the error counter: a close that times out drops
+            # records, and discarding its answer is the one way that goes unseen.
+            drained=self.writer.close()
+            (self.output/'archive_shutdown.json').write_text(json.dumps(dict(drained=drained,
+                errors=self.writer.errors,last_error=self.writer.last_error),indent=2)+'\n')
         return super().destroy_node()
 
     def joints(self,msg):

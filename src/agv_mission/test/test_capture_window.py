@@ -99,3 +99,57 @@ def test_capture_closes_a_full_over_run_past_the_region_not_at_its_edge():
     assert h.capture.active is True and not h.capture.closed
     h.place(length+overrun+.01);h.run_step(.02)
     assert h.capture.active is False and h.capture.closed==['track_end']
+
+
+class Queue:
+    """The archive as the executor sees it: draining happens on another thread."""
+    def __init__(self):
+        self.errors=0;self.last_error='';self.drained=False;self.syncs=0
+    def sync(self):self.syncs+=1
+    @property
+    def idle(self):return self.drained
+
+
+class End(Pass):
+    """Every step done: the tick on which the mission decides it has finished."""
+    def __init__(self,queue):
+        super().__init__()
+        self.steps=[];self.index=0;self.archive=queue;self.archive_since=None
+
+
+def test_the_mission_waits_for_the_archive_before_claiming_success():
+    # ACQUIRED used to mean the camera shut. The final interval record is handed
+    # over on that same tick, and the coverage audit drops a whole pass without it.
+    queue=Queue();h=End(queue)
+    h.run_step(.02)
+    assert h.state=='RUNNING' and h.cmd==[0,0,0]
+    assert queue.syncs>=1,'never asked the writer to drain'
+    h.run_step(.02)
+    assert h.state=='RUNNING'
+    queue.drained=True
+    h.run_step(.02)
+    assert h.state=='ACQUIRED' and h.reason==''
+
+
+def test_a_write_that_failed_while_draining_faults_instead_of_completing():
+    queue=Queue();queue.drained=True;queue.errors=1;queue.last_error="OSError('no space left')"
+    h=End(queue);h.run_step(.02)
+    assert h.state=='FAULT' and h.reason=='ARCHIVE_WRITE_FAILED'
+
+
+def test_a_queue_that_never_drains_faults_rather_than_hanging_in_running():
+    import time
+    queue=Queue();h=End(queue)
+    h.run_step(.02)
+    assert h.state=='RUNNING'
+    h.archive_since=time.monotonic()-h.cfg['archive_drain_timeout_s']-.1
+    h.run_step(.02)
+    assert h.state=='FAULT' and h.reason=='ARCHIVE_DRAIN_TIMEOUT'
+
+
+def test_a_mission_without_capture_completes_on_the_same_rule():
+    queue=Queue();h=End(queue);h.capture=Capture(enabled=False)
+    h.run_step(.02)
+    assert h.state=='RUNNING'
+    queue.drained=True;h.run_step(.02)
+    assert h.state=='COMPLETED'

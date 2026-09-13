@@ -31,6 +31,11 @@ control_phase_report_ticks: 100
 # clock or on the executor's own steady clock. A blocked executor must be named
 # as such, not reported as stale localization it never got to read.
 max_control_step_s: 0.1
+# How long the mission may wait at its own end for the archive queue to drain and
+# flush before it declares success. The vehicle is already stopped, so a tick or
+# two costs nothing; a filesystem that never drains must fault rather than let the
+# mission hang in RUNNING or claim evidence it never wrote.
+archive_drain_timeout_s: 10.0
 max_tracking_error_m: 0.6
 max_heading_error_rad: 0.35
 # Segment watchdog scales with the planned time profile: a fixed budget either

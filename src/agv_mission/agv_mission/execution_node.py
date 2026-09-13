@@ -50,6 +50,7 @@ class Executor(Node):
         self.state='READY';self.reason='';self.ready_since=None;self.steps=[];self.index=0;self.core=None
         self.last_sim=None;self.last_clock=time.monotonic();self.step_attempts=0;self.stopped_since=None;self.ticks=0
         self.pause_pose=None;self.pause_started=None;self.pause_events=[];self.active_kind=''
+        self.archive_since=None
         self.cmd=self.create_publisher(TwistStamped,'/cmd_vel',10)
         # Telemetry is periodically refreshed and fully archived locally. A slow
         # display must not back-pressure the control loop, and best-effort QoS
@@ -241,6 +242,20 @@ class Executor(Node):
         if self.index>=len(self.steps):
             self.command([0,0,0])
             if self.capture.request(False,reason='mission_end') and self.capture.future is None:
+                # A terminal state has to mean the evidence reached the file, not
+                # that the camera shut. The queue drains on its own thread, so this
+                # waits across ticks; blocking here would stall the control loop,
+                # which is the whole reason the writes were moved off it. The last
+                # interval record is submitted on the same tick the camera
+                # acknowledges its close, so it is the least confirmed write there
+                # is -- and the one the coverage audit refuses to work without.
+                if self.archive_since is None:self.archive_since=time.monotonic()
+                self.archive.sync()
+                if not self.archive.idle:
+                    if time.monotonic()-self.archive_since>self.cfg['archive_drain_timeout_s']:
+                        self.fault('ARCHIVE_DRAIN_TIMEOUT')
+                    return
+                if self.archive.errors:self.fault('ARCHIVE_WRITE_FAILED');return
                 self.state='ACQUIRED' if self.capture.enabled else 'COMPLETED'
             return
         step=self.steps[self.index]
@@ -291,17 +306,27 @@ class Executor(Node):
     def destroy_node(self):
         if rclpy.ok():self.command([0,0,0])
         self.status_stream.close();self.watch.close()
-        self.archive.close();return super().destroy_node()
+        # A close that times out leaves records unwritten and files unclosed. It
+        # used to return that silently, which is the one failure a reader of the
+        # archive has no other way to notice.
+        drained=self.archive.close()
+        (self.output/'archive_shutdown.json').write_text(json.dumps(dict(drained=drained,
+            errors=self.archive.errors,last_error=self.archive.last_error,
+            backlog_peak=self.archive.peak),indent=2)+'\n')
+        return super().destroy_node()
 
 
 def main():
+    import signal
     from rclpy.signals import SignalHandlerOptions
     rclpy.init(signal_handler_options=SignalHandlerOptions.NO);node=Executor();executor=TracedExecutor();executor.add_node(node)
     try:executor.spin()
     except KeyboardInterrupt:pass
     finally:
-        import signal
-        # The launch supervisor and owning broker may both send SIGINT.
+        # The launch supervisor and owning broker may both send SIGINT, and the
+        # second one used to land inside this block before it was ignored: the
+        # import itself was interruptible, so a cancelled mission died there and
+        # never drained its archive. Importing at entry closes that window.
         signal.signal(signal.SIGINT,signal.SIG_IGN)
         if rclpy.ok():
             node.cancel(None,Trigger.Response());deadline=time.monotonic()+8

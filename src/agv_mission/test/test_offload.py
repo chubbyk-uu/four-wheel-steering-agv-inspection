@@ -108,3 +108,49 @@ def test_archive_close_drains_every_pending_write():
     assert writer.close()
     # Draining, then flushing, then closing: no ordering leaves a record unwritten.
     assert written==list(range(200))+['flush','close']
+
+
+def test_idle_separates_handed_over_from_written_and_flushed():
+    import time
+    from agv_mission.offload import ArchiveWriter
+    written=[]
+    class Handle:
+        def write(self,text):written.append(text)
+        def flush(self):written.append('flush')
+        def close(self):written.append('close')
+    # A ten second interval: without sync, nothing reaches the file on its own.
+    writer=ArchiveWriter(flush_interval_s=10.);handle=writer.track(Handle())
+    try:
+        assert writer.idle,'an empty writer is idle'
+        writer.append(handle,'row')
+        deadline=time.monotonic()+2
+        while writer.idle and time.monotonic()<deadline:time.sleep(.005)
+        assert not writer.idle,'a queued write must not read as idle'
+        # Written but unflushed still is not idle: the evidence is in a buffer.
+        deadline=time.monotonic()+2
+        while written[:1]!=['row'] and time.monotonic()<deadline:time.sleep(.005)
+        assert written==['row'] and not writer.idle
+        writer.sync()
+        deadline=time.monotonic()+2
+        while not writer.idle and time.monotonic()<deadline:time.sleep(.005)
+        assert writer.idle and written==['row','flush']
+    finally:assert writer.close()
+
+
+def test_a_write_submitted_during_a_sync_is_not_left_behind_by_idle():
+    import time
+    from agv_mission.offload import ArchiveWriter
+    written=[]
+    class Handle:
+        def write(self,text):written.append(text)
+        def flush(self):pass
+        def close(self):pass
+    writer=ArchiveWriter(flush_interval_s=10.);handle=writer.track(Handle())
+    try:
+        for i in range(200):writer.append(handle,i)
+        writer.sync()
+        deadline=time.monotonic()+3
+        while not writer.idle and time.monotonic()<deadline:time.sleep(.005)
+        # Idle is only allowed to be true once every one of them is on the file.
+        assert writer.idle and written==list(range(200))
+    finally:assert writer.close()

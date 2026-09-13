@@ -1,0 +1,44 @@
+{
+  "schema": "agv.archive_completion.v1",
+  "goal": "code review items 2 and 3: a terminal state that means the evidence is on disk, and an audit that does not read a file still being written",
+  "problem": {
+    "background": "writes were moved to a background thread when a log flush was measured stalling the 50 Hz control loop for 0.349 s. That made \"handed over\" and \"on the file\" two different things, and three places still treated them as one.",
+    "terminal_state": "run_step declared ACQUIRED as soon as the camera acknowledged its close, with the queue still holding writes. The final capture_intervals.json record, carrying disabled_ack_time_s, is submitted on that same tick -- the least confirmed write there is, and one the coverage audit refuses an interval without.",
+    "late_errors": "fault() returns early once the state is COMPLETED, ACQUIRED or FAULT, so an ARCHIVE_WRITE_FAILED discovered after the fact changed nothing.",
+    "discarded_close": "destroy_node called archive.close() and dropped its answer. A close that times out leaves records unwritten and files unclosed, silently.",
+    "audit_timing": "the operator audited on the child process reported STATE, not its exit. execution.jsonl and navigation.jsonl are flushed at 1 Hz by two different processes and capture_intervals.json is rewritten whole, so the audit could read a stale, empty or partial file."
+  },
+  "fix": {
+    "writer": "ArchiveWriter gained sync() and idle. dirty is set under the same lock that empties the queue, so no reader sees an empty queue and a clean flag while a write is in flight.",
+    "terminal_state": "the mission asks for a drain and waits across ticks -- never blocking the control loop it was moved off -- then faults on ARCHIVE_WRITE_FAILED, or on a new ARCHIVE_DRAIN_TIMEOUT if a stalled filesystem never drains, before it may claim success.",
+    "shutdown": "both the mission and the localization adapter now record the close result to archive_shutdown.json.",
+    "audit": "the audit job waits on the navigation archive being written through the mission end time before it reads, on the audit pool rather than a callback thread, with a timeout so a missing tail cannot strand the operator."
+  },
+  "found_while_verifying": {
+    "what": "the cancel probe executor died with KeyboardInterrupt inside \"import signal\" in the shutdown handler and never drained its archive",
+    "why": "main() imported signal inside its finally block, so the window between entering the block and installing SIG_IGN contained an interruptible import. Both the launch supervisor and the owning broker send SIGINT, and the second one landed in that window.",
+    "note": "pre-existing, not introduced here, but it defeats exactly the guarantee item 2 adds, and only a real run showed it: the unit tests cannot see a process being signalled.",
+    "fix": "import signal at function entry"
+  },
+  "verification": {
+    "before": {
+      "run": "local_data/drain_check",
+      "tasks": 2,
+      "archive_shutdown_records": 1,
+      "detail": "the cancelled second task left no shutdown record and its executor.log ends in the KeyboardInterrupt traceback"
+    },
+    "after": {
+      "run": "local_data/drain_check2",
+      "tasks": 2,
+      "archive_shutdown_records": 2,
+      "detail": "both tasks report drained true with zero errors and a backlog peak of 2; no traceback in either executor.log",
+      "mission": "ACQUIRED at HOLD, ESTIMATED_COMPLETE, both tracks [0, 3] with no unverified span or quality flag, 6 blocks, 20787 rows, steady RTF 0.9986"
+    },
+    "tests": 359
+  },
+  "not_covered": [
+    "a real disk-full or stalled-filesystem run: the drain timeout and the write-failure fault are covered by unit tests with a fake queue, not by a filled disk",
+    "the audit wait is exercised by unit tests and by a normal run where navigation was already ahead; it has not been observed rescuing a real early read",
+    "a SIGKILLed executor still loses whatever the queue held, which no in-process fix can reach"
+  ]
+}

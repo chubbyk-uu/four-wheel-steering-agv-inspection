@@ -51,6 +51,10 @@ class ArchiveWriter:
     def __init__(self,flush_interval_s=1.):
         self.interval=flush_interval_s;self.pending=deque();self.handles=[]
         self.errors=0;self.last_error='';self.peak=0;self.flushed=monotonic()
+        # `dirty` is what separates "handed over" from "on the file". A caller that
+        # must not claim success before the evidence lands asks for `sync` and then
+        # watches `idle`, instead of blocking on a thread it was moved off.
+        self.dirty=False;self.syncing=False
         self.signal=threading.Condition();self.closed=False
         self.thread=threading.Thread(target=self.run,name='archive',daemon=True);self.thread.start()
 
@@ -67,6 +71,15 @@ class ArchiveWriter:
 
     def append(self,handle,text):self.submit(lambda:handle.write(text))
 
+    def sync(self):
+        """Ask for an immediate drain and flush; cheap enough to call every tick."""
+        with self.signal:self.syncing=True;self.signal.notify()
+
+    @property
+    def idle(self):
+        """Everything handed over has been written and flushed to its file."""
+        with self.signal:return not self.pending and not self.dirty
+
     def guard(self,action):
         try:action()
         except Exception as exc:self.errors+=1;self.last_error=repr(exc)
@@ -75,14 +88,19 @@ class ArchiveWriter:
         if not force and monotonic()-self.flushed<self.interval:return
         self.flushed=monotonic()
         for handle in self.handles:self.guard(handle.flush)
+        self.dirty=False
 
     def run(self):
         while True:
             with self.signal:
-                if not self.pending and not self.closed:self.signal.wait(self.interval)
+                if not self.pending and not self.closed and not self.syncing:self.signal.wait(self.interval)
                 actions=list(self.pending);self.pending.clear();closing=self.closed
+                syncing=self.syncing;self.syncing=False
+                # Marked under the same lock that empties the queue, so no reader
+                # can see an empty queue and a clean flag while a write is pending.
+                if actions:self.dirty=True
             for action in actions:self.guard(action)
-            self.flush(force=closing)
+            self.flush(force=closing or syncing)
             if closing:
                 with self.signal:
                     if not self.pending:return

@@ -105,3 +105,48 @@ def test_dead_executor_camera_close_failure_is_latched():
     child.poll();child.poll();child.poll()
     assert child.state=='FAULT' and child.capture.close_failed and child.capture.active is None
     assert len(calls)==1
+
+
+def test_navigation_tail_decides_when_the_audit_may_read(tmp_path):
+    from agv_mission.operator_node import archived_through
+    path=tmp_path/'navigation.jsonl'
+    assert not archived_through(path,10.),'a missing archive is not ready'
+    path.write_text(''.join(json.dumps(dict(time_s=t,x=0))+'\n' for t in (8.,9.,9.5)))
+    assert archived_through(path,9.5)
+    assert not archived_through(path,9.6),'the mission ends after the last record'
+    # The writer appends, so the final line can be half a record.
+    with path.open('a') as handle:handle.write('{"time_s": 10.')
+    assert archived_through(path,9.5),'a torn last line must not hide a complete one'
+    assert not archived_through(path,9.6)
+
+
+def test_the_audit_waits_for_navigation_then_runs(tmp_path, monkeypatch):
+    # Reading early is not a loud failure: the last block falls outside the
+    # execution trace and the report grows a gap, and a rescan request, from
+    # nothing. So the wait is on evidence, not on a guessed number of seconds.
+    import agv_mission.operator_node as node
+    navigation=tmp_path/'nav';navigation.mkdir()
+    path=navigation/'navigation.jsonl'
+    path.write_text(json.dumps(dict(time_s=5.))+'\n')
+    calls=[]
+    monkeypatch.setattr(node,'audit_capture',lambda *a:calls.append(a) or 'report')
+    sleeps=[]
+    def advance(seconds):
+        sleeps.append(seconds)
+        if len(sleeps)==3:
+            with path.open('a') as handle:handle.write(json.dumps(dict(time_s=12.))+'\n')
+    monkeypatch.setattr(node.time,'sleep',advance)
+    out=node.audit_when_archived('mission',navigation,'out','platform','camera',.1,12.)
+    assert out=='report' and len(calls)==1
+    assert len(sleeps)==3,'it should stop waiting as soon as the record lands'
+
+
+def test_the_audit_still_runs_if_navigation_never_catches_up(tmp_path, monkeypatch):
+    import agv_mission.operator_node as node
+    navigation=tmp_path/'nav';navigation.mkdir()
+    (navigation/'navigation.jsonl').write_text(json.dumps(dict(time_s=1.))+'\n')
+    monkeypatch.setattr(node,'audit_capture',lambda *a:'report')
+    monkeypatch.setattr(node.time,'sleep',lambda seconds:None)
+    # A missing tail must not strand the operator with a job that never returns;
+    # the audit reports whatever evidence exists and its own issues say so.
+    assert node.audit_when_archived('m',navigation,'o','p','c',.1,99.,timeout=.2)=='report'

@@ -28,6 +28,37 @@ from .scene_bounds import bind_request,check_request_scene
 TERMINAL={'ACQUIRED','COMPLETED','CANCELED','FAULT'}
 
 
+def archived_through(path,until):
+    """Has the navigation archive been flushed past this moment?"""
+    try:
+        with path.open('rb') as handle:
+            handle.seek(0,2);handle.seek(max(0,handle.tell()-8192))
+            lines=[line for line in handle.read().splitlines() if line.strip()]
+    except OSError:return False
+    # The writer is appending, so the final line can be a partial one.
+    for line in reversed(lines):
+        try:return json.loads(line)['time_s']>=until
+        except (ValueError,KeyError):continue
+    return False
+
+
+def audit_when_archived(mission,navigation,output,platform,camera,uncertainty,until,timeout=15.):
+    """Audit once navigation has been written through the mission's last moment.
+
+    The mission's own files are on disk before it reports a terminal state, but
+    navigation belongs to another process writing on its own flush interval.
+    Reading early does not fail loudly: a trailing block falls outside the
+    execution trace, is excluded as EXECUTION_TRACE_INCOMPLETE, and the report
+    grows an unverified span that never happened -- with a rescan request for it.
+    This runs on the audit pool, never on a callback thread.
+    """
+    deadline=time.monotonic()+timeout
+    while until is not None and time.monotonic()<deadline:
+        if archived_through(Path(navigation)/'navigation.jsonl',until):break
+        time.sleep(.2)
+    return audit_capture(mission,navigation,output,platform,camera,uncertainty)
+
+
 def edited_request(template,fields):
     request=deepcopy(template)
     allowed={'mission_id','start_x','start_y','length','width','spacing','speed','error'}
@@ -134,7 +165,8 @@ class Operator(Node):
             elif action=='audit':
                 if not self.child or self.child.state not in TERMINAL:raise ValueError('请等待本任务结束或取消后再审计')
                 directory=self.child.output;output=directory.parent/('audit_'+uuid.uuid4().hex[:6])
-                self.job=self.pool.submit(audit_capture,directory,self.navigation,output,self.platform,self.camera,.1)
+                self.job=self.pool.submit(audit_when_archived,directory,self.navigation,output,
+                                          self.platform,self.camera,.1,self.child.snapshot.get('time_s'))
                 self.message='正在核对原图、融合标签及覆盖范围';self.audit_output=output
             elif action=='load_coverage':
                 coverage=json.loads(Path(command['path']).read_text())
