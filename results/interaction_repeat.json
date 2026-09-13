@@ -1,0 +1,150 @@
+{
+  "schema": "agv.interaction_repeat.v1",
+  "goal": "implementation plan item 4, the part never re-run: repeated load, prepare, execute and audit inside one broker session",
+  "what_was_missing": "the phase matrices covered pause, cancel and fault. Repetition was not covered: every earlier session ran one task, so nothing showed that the broker carries no state from a finished task into the next one.",
+  "session": {
+    "region_first_m": [
+      3.0,
+      2.0
+    ],
+    "speed_m_s": 0.5,
+    "scene": "assets/road/runtime_fullwidth_20m_v1",
+    "stack": "GUI + RViz + OptiX, d3d12/NVIDIA, WSL2",
+    "rounds": 4,
+    "note": "each round asks for a different rectangle, so a retained plan or a stale coverage report cannot pass by looking like the previous one"
+  },
+  "checks_per_round": [
+    "the broker reports editable before a new task is accepted",
+    "the previewed request carries the new region, not the previous one",
+    "coverage from the previous task is cleared by prepare",
+    "captured_rows and captured_blocks are back to zero before the new task starts",
+    "the task reaches ACQUIRED at HOLD",
+    "the audit reports the new region, not the previous one",
+    "each round gets its own task directory"
+  ],
+  "rounds": [
+    {
+      "round": 1,
+      "region_m": [
+        3.0,
+        2.0
+      ],
+      "state": "ACQUIRED",
+      "motion_state": "HOLD",
+      "coverage_status": "ESTIMATED_COMPLETE",
+      "blocks": 6,
+      "rows": 20777,
+      "pause_retains_frame": true,
+      "steady_rtf": 0.9076539744854039
+    },
+    {
+      "round": 2,
+      "region_m": [
+        2.5,
+        2.0
+      ],
+      "state": "ACQUIRED",
+      "motion_state": "HOLD",
+      "coverage_status": "ESTIMATED_COMPLETE",
+      "unverified_tracks": 0,
+      "quality_flagged_tracks": 0,
+      "captured_rows": 16384,
+      "task_dir": "20260913_214715_c352ed"
+    },
+    {
+      "round": 3,
+      "region_m": [
+        2.0,
+        2.0
+      ],
+      "state": "ACQUIRED",
+      "motion_state": "HOLD",
+      "coverage_status": "ESTIMATED_COMPLETE",
+      "unverified_tracks": 0,
+      "quality_flagged_tracks": 0,
+      "captured_rows": 15339,
+      "task_dir": "20260913_214846_493ba6"
+    },
+    {
+      "round": 4,
+      "region_m": [
+        1.5,
+        2.0
+      ],
+      "state": "ACQUIRED",
+      "motion_state": "HOLD",
+      "coverage_status": "ESTIMATED_COMPLETE",
+      "unverified_tracks": 0,
+      "quality_flagged_tracks": 0,
+      "captured_rows": 12542,
+      "task_dir": "20260913_215035_3ca71b"
+    }
+  ],
+  "audits": [
+    {
+      "region_m": [
+        3.0,
+        2.0
+      ],
+      "status": "ESTIMATED_COMPLETE",
+      "tracks": 2,
+      "issues": 0,
+      "unverified_tracks": 0,
+      "quality_flagged": 0
+    },
+    {
+      "region_m": [
+        2.5,
+        2.0
+      ],
+      "status": "ESTIMATED_COMPLETE",
+      "tracks": 2,
+      "issues": 0,
+      "unverified_tracks": 0,
+      "quality_flagged": 0
+    },
+    {
+      "region_m": [
+        2.0,
+        2.0
+      ],
+      "status": "ESTIMATED_COMPLETE",
+      "tracks": 2,
+      "issues": 0,
+      "unverified_tracks": 0,
+      "quality_flagged": 0
+    },
+    {
+      "region_m": [
+        1.5,
+        2.0
+      ],
+      "status": "ESTIMATED_COMPLETE",
+      "tracks": 2,
+      "issues": 0,
+      "unverified_tracks": 0,
+      "quality_flagged": 0
+    }
+  ],
+  "archive_drain": {
+    "task_directories": 5,
+    "shutdown_records": 5,
+    "all_drained": true,
+    "errors": 0,
+    "backlog_peak": 2,
+    "executor_tracebacks": 0,
+    "note": "four consecutive releases plus the closing cancel probe, each draining its archive cleanly. This is the repetition pressure the drain work of 2026-09-13 had only been shown to survive once."
+  },
+  "findings": [
+    "four load, prepare, execute and audit cycles in one broker session all reached ACQUIRED at HOLD with ESTIMATED_COMPLETE coverage, no unverified span and no quality flag",
+    "nothing leaked between tasks: coverage cleared, counters zeroed, and every audit reported its own region",
+    "each of the five task directories closed its archive with drained true and no write errors, and no executor log carries a traceback",
+    "the closing cancel probe still works after four completed tasks, so the session is not left in a state that only tolerates one mission"
+  ],
+  "not_covered": [
+    "GUI follow and zoom are covered separately by tools/validate_gui_camera.py and were not re-run here",
+    "four rounds of a 3 x 2 m region, not a repeated full area",
+    "rounds differ only in length; a round that changes speed, spacing or start point was not exercised",
+    "round one's steady real-time factor was 0.9077 against 0.9986 for the identical configuration twenty minutes earlier in the same WSL instance, which is the instance decay recorded on 2026-09-12 and deliberately not chased here"
+  ]
+}

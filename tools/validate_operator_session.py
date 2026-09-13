@@ -26,6 +26,8 @@ def main():
     p.add_argument('--broker-stall',action='store_true',help='freeze only the GUI broker for 0.6 seconds during capture')
     p.add_argument('--executor-exit-probe',action='store_true',help='kill only the owned mission worker during a second task')
     p.add_argument('--localization-config',type=Path,help='measurement config overriding the shipped one, to run a named noise seed')
+    p.add_argument('--rounds',type=int,default=1,
+                   help='repeat load/prepare/execute/audit this many times in one session, to show the broker carries nothing between tasks')
     a=p.parse_args();process_start=time.monotonic()
     if a.short_tail_probe:a.no_pause=True;a.no_cancel_probe=True
     a.output.mkdir(parents=True,exist_ok=False);session=a.output/'session'
@@ -131,6 +133,36 @@ def main():
             result['broker_stall']={'duration_wall_s':.6,'control_max_step_s':max_gap,'continued_without_fault':True}
         (a.output/'results.json').write_text(json.dumps(result,indent=2)+'\n');np.save(a.output/'wheel_steering.npy',np.array(joints));print(json.dumps(result),flush=True)
         (a.output/'finished_for_ui').touch();delay(a.inspect_seconds)
+        result['repeat_rounds']=[]
+        for extra in range(1,a.rounds):
+            # Each round asks for a different rectangle, so a retained plan or a
+            # stale coverage report cannot pass by looking like the last one.
+            assert latest.get('editable'),'the broker must accept a new task once the last one is archived'
+            length=round(a.length-extra*.5,3)
+            send('preview',fields={'length':length,'width':a.width,'start_x':a.start_x,
+                                   'start_y':-a.width/2 if a.start_y is None else a.start_y,'speed':a.speed})
+            assert latest['request']['region']['length_m']==length,latest['request']['region']
+            send('prepare');wait(lambda:latest['status'].get('ready_to_start'))
+            # What the previous task counted must be gone before this one starts.
+            assert not latest.get('coverage'),'a stale coverage report survived into a new task'
+            assert latest['status'].get('captured_rows')==0 and latest['status'].get('captured_blocks')==0,latest['status']
+            send('start')
+            wait(lambda:latest['status']['state'] in ('ACQUIRED','FAULT'),a.run_timeout)
+            assert latest['status']['state']=='ACQUIRED',latest['status']
+            assert latest['status']['motion_state']=='HOLD',latest['status']
+            wait(lambda:latest.get('editable'));send('audit');assert latest.get('coverage')
+            assert latest['coverage']['request']['region']['length_m']==length,'the audit reported the previous region'
+            tasks=sorted(session.glob('tasks/*/mission'))
+            result['repeat_rounds'].append(dict(round=extra+1,region_m=[length,a.width],
+                state=latest['status']['state'],motion_state=latest['status']['motion_state'],
+                coverage_status=latest['coverage']['status'],
+                unverified_tracks=sum(1 for t in latest['coverage']['tracks'] if t['unverified_along_m']),
+                quality_flagged_tracks=sum(1 for t in latest['coverage']['tracks'] if t['quality_flags']),
+                captured_rows=latest['status'].get('captured_rows'),
+                task_dir=tasks[-1].parent.name))
+        if result['repeat_rounds']:
+            assert len(sorted(session.glob('tasks/*')))==a.rounds,'a round did not get its own task directory'
+            (a.output/'results.json').write_text(json.dumps(result,indent=2)+'\n')
         if a.no_cancel_probe:return
         if latest['coverage'].get('rescan_candidates'):
             send('rescan',index=0)
