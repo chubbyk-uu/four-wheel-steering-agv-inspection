@@ -56,5 +56,67 @@
   "next": [
     "sample the gz sim heap by allocation site rather than by process",
     "the per-exposure structures are the first place to look, since they are produced per line rather than per block"
-  ]
+  ],
+  "second_cut_stationary": {
+    "method": "one launch, vehicle never commanded to move, in two phases: plugin loaded with capture off, then capture enabled. A stationary vehicle never advances the encoder, so no line is ever triggered.",
+    "loaded_idle": {
+      "window": "after the scene finished loading at 36 s",
+      "rss_mib": [
+        4748,
+        4768,
+        4788,
+        4811,
+        4835
+      ],
+      "slope_mib_per_s": 2.23
+    },
+    "enabled_stationary": {
+      "rss_mib": [
+        4859,
+        4882,
+        4906,
+        4930,
+        4954,
+        4978,
+        5002,
+        5025,
+        5049,
+        5073
+      ],
+      "slope_mib_per_s": 2.39
+    },
+    "reading": "merely having the plugin loaded costs about 2.3 MiB per second with the vehicle stopped, and enabling capture with no lines produced adds nothing measurable. The 9.7 MiB/s of a real mission is therefore about 2.3 of always-on growth plus about 7.4 that needs driving and line production.",
+    "correction": "the earlier comparison was \"plugin loaded and capturing\" against \"plugin not loaded at all\", which could not separate these."
+  },
+  "third_cut_which_mapping": {
+    "method": "sample /proc/<gz sim>/maps and smaps_rollup every five seconds through a 3 x 2 m capture mission, grouped by mapping kind",
+    "measured": {
+      "heap_brk_mib": [
+        220,
+        245
+      ],
+      "anon_small_mib": [
+        97,
+        108
+      ],
+      "file_backed": "flat",
+      "rss_growth_mib_per_s": 4.73,
+      "new_anonymous_mappings_ge_8mib": {
+        "count": 20,
+        "over_seconds": 85,
+        "one_per_seconds": 4.3,
+        "rss_per_mapping_mib": 19.8
+      }
+    },
+    "reading": "the malloc heap and the small anonymous mappings are flat. All of the growth is resident pages in large anonymous mappings: about twenty new mappings of roughly 20 MiB each over 85 seconds, one every 4.3 s. A block of pixels is 16.0 MiB, so the size is the right order for an image buffer, but the mission archived only six blocks in that window, so it is not one per archived block.",
+    "what_this_rules_out": [
+      "small-object accumulation in C++ containers, which would grow the brk heap",
+      "the tile cache and the pose history, both already bounded and both on other budgets"
+    ],
+    "next": [
+      "find the allocation of roughly 16 to 20 MiB in the capture path that is made about every four seconds and not reused",
+      "the ROS image publish path is the first suspect by size, and the per-exposure render batches by cadence"
+    ]
+  },
+  "status": "localised to large anonymous allocations in the capture path; the allocation site is not yet named"
 }
