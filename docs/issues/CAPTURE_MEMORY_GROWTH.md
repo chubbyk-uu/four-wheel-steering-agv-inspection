@@ -1,6 +1,6 @@
 # 采集进程内存持续增长（根因已确认，正式修复待部署）
 
-**状态**：2026-09-14已确认 **Mesa 25.2.8 D3D12后端的命令签名缓存查找参数错误**。独立复现和临时单点修正版的实际100 m场景对照均验证。对应Ubuntu源码已应用修复并完成独立构建安装；尚未接入启动或运行验证，系统库未修改，完整长任务验收尚未完成。
+**状态**：2026-09-14已确认 **Mesa 25.2.8 D3D12后端的命令签名缓存查找参数错误**。对应Ubuntu源码已完成独立构建，项目启动选择/回退检查及源码版最小渲染复现均通过。系统库未修改，源码版GUI/整车采集与完整长任务验收尚未完成。
 **影响**：阻断实施计划第6节验收——长任务会耗尽主机内存并导致任务故障。
 **首次记录**：2026-09-14。
 
@@ -102,6 +102,31 @@ meson install -C "$MESA_BUILD_ROOT/build" --no-rebuild
 脚本同时选择Gallium、GBM、GLX/EGL库和对应DRI/EGL路径，避免旧loader加载另一套Gallium。绝对路径预加载可兼容OptiX脚本重设`LD_LIBRARY_PATH`；修复版缺失时明确失败。嵌套调用通过环境快照恢复脚本首次介入前的图形加载环境；不要把嵌套回退理解为保留中途第三方脚本对这些变量的修改。
 
 4项环境回归通过；`/proc/self/maps`实际检查修复版、系统版、两种OptiX组合顺序及嵌套切回，四个相关库均来自预期来源。见[加载检查](../../results/mesa_runtime_selection.json)。这一步只检查动态加载，不声称GUI画面或泄漏验收通过。
+
+## 源码版最小复现（第3项）
+
+2026-09-14使用上述启动脚本，各组实际绘制24,000次；前景/背景像素检查通过，无GL错误，三组32×32 RGBA图像的FNV-1a校验值均为`23b38e4559434925`。
+
+| 组别 | 第6001次RSS (KiB) | 第22001次RSS (KiB) | 拟合增长 (KiB/次) |
+|---|---:|---:|---:|
+| 系统Mesa，间接绘制 | 195564 | 242772 | 2.950333 |
+| 源码修复版，间接绘制 | 119772 | 119772 | 0 |
+| 系统Mesa，直接绘制 | 175824 | 175824 | 0 |
+
+末尾首次像素读回仍有一次性分配，不纳入持续增长窗口。源码版仅构建D3D12，初始RSS不能与完整Ubuntu包直接比较收益；此处检验的是预热后的增长趋势。
+实际进程映射确认三组均只加载预期的Gallium。系统版GLX最小程序只需GLX/Gallium；修复版由脚本预加载四个库，因此数量不同属预期。GL版本分别报告Ubuntu版`25.2.8-0ubuntu0.24.04.2`和源码版`25.2.8`，渲染器均为D3D12/NVIDIA RTX 5080。
+
+逐次样本和运行库哈希见[源码版对照](../../results/mesa_source_runtime_repro.json)。复现命令（项目根目录）：
+
+```sh
+g++ -O2 -Wall -Wextra tools/probe_mesa_indirect_memory.cpp -o /tmp/mesa_probe -lGL -lX11
+export GALLIUM_DRIVER=d3d12 MESA_D3D12_DEFAULT_ADAPTER_NAME=NVIDIA
+python3 tools/with_mesa_runtime.py --system /tmp/mesa_probe indirect 24000
+python3 tools/with_mesa_runtime.py /tmp/mesa_probe indirect 24000
+python3 tools/with_mesa_runtime.py --system /tmp/mesa_probe direct 24000
+```
+
+这次验证的是源码构建版，区别于前面的二进制副本诊断；**仍未做源码版Gazebo GUI、RViz、雷达或整车采集验收**。本轮按要求完成第2、3项后停止。
 
 ---
 

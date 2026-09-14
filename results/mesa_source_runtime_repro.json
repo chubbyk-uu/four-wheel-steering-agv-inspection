@@ -1,0 +1,215 @@
+{
+  "date": "2026-09-14",
+  "draws_per_case": 24000,
+  "scope": "Standalone GLX pbuffer; no Gazebo/RViz or full mission acceptance",
+  "cases": {
+    "system_indirect": {
+      "samples": [
+        {
+          "draws": 1,
+          "rss_kib": 181248
+        },
+        {
+          "draws": 2001,
+          "rss_kib": 183760
+        },
+        {
+          "draws": 4001,
+          "rss_kib": 189664
+        },
+        {
+          "draws": 6001,
+          "rss_kib": 195564
+        },
+        {
+          "draws": 8001,
+          "rss_kib": 201468
+        },
+        {
+          "draws": 10001,
+          "rss_kib": 207368
+        },
+        {
+          "draws": 12001,
+          "rss_kib": 213272
+        },
+        {
+          "draws": 14001,
+          "rss_kib": 219168
+        },
+        {
+          "draws": 16001,
+          "rss_kib": 225068
+        },
+        {
+          "draws": 18001,
+          "rss_kib": 230968
+        },
+        {
+          "draws": 20001,
+          "rss_kib": 236872
+        },
+        {
+          "draws": 22001,
+          "rss_kib": 242772
+        }
+      ],
+      "steady_window_draws": [
+        6001,
+        22001
+      ],
+      "steady_rss_delta_kib": 47208,
+      "fitted_kib_per_draw": 2.9503333333333335,
+      "renderer": "D3D12 (NVIDIA GeForce RTX 5080)",
+      "version": "4.6 (Core Profile) Mesa 25.2.8-0ubuntu0.24.04.2",
+      "image_fnv1a64": "23b38e4559434925",
+      "rendered": true,
+      "loaded_libraries": {
+        "libGLX_mesa.so.0.0.0": "409f932670504cc5829c7526db466eb69a6b7f9997fd5df8afc8dfb1588278c2",
+        "libgallium-25.2.8-0ubuntu0.24.04.2.so": "e37486422ecafdad74fb05bbcdcfc35300241a5f46e72b63ca442d4e0c0cca8b"
+      }
+    },
+    "patched_indirect": {
+      "samples": [
+        {
+          "draws": 1,
+          "rss_kib": 119772
+        },
+        {
+          "draws": 2001,
+          "rss_kib": 119772
+        },
+        {
+          "draws": 4001,
+          "rss_kib": 119772
+        },
+        {
+          "draws": 6001,
+          "rss_kib": 119772
+        },
+        {
+          "draws": 8001,
+          "rss_kib": 119772
+        },
+        {
+          "draws": 10001,
+          "rss_kib": 119772
+        },
+        {
+          "draws": 12001,
+          "rss_kib": 119772
+        },
+        {
+          "draws": 14001,
+          "rss_kib": 119772
+        },
+        {
+          "draws": 16001,
+          "rss_kib": 119772
+        },
+        {
+          "draws": 18001,
+          "rss_kib": 119772
+        },
+        {
+          "draws": 20001,
+          "rss_kib": 119772
+        },
+        {
+          "draws": 22001,
+          "rss_kib": 119772
+        }
+      ],
+      "steady_window_draws": [
+        6001,
+        22001
+      ],
+      "steady_rss_delta_kib": 0,
+      "fitted_kib_per_draw": 0.0,
+      "renderer": "D3D12 (NVIDIA GeForce RTX 5080)",
+      "version": "4.6 (Core Profile) Mesa 25.2.8",
+      "image_fnv1a64": "23b38e4559434925",
+      "rendered": true,
+      "loaded_libraries": {
+        "libEGL_mesa.so.0.0.0": "c66167b418659152d0b655e516a787e516325c952faa1d4ce593df8c2daa3f92",
+        "libGLX_mesa.so.0.0.0": "6877050c22bf821c7bf2b17c7f71f9c870ad86e81281e2434dbfca2a38444d30",
+        "libgallium-25.2.8.so": "eb1ac5f28b7dd6a169ec0e8d34c984d15314643ea1cbdcb4e4f0ba837e9bc39a",
+        "libgbm.so.1.0.0": "f94f8eced3aa8800dd60ea3b7090263489dbd73f0febf43b14bab848b1a2037a"
+      }
+    },
+    "system_direct": {
+      "samples": [
+        {
+          "draws": 1,
+          "rss_kib": 175824
+        },
+        {
+          "draws": 2001,
+          "rss_kib": 175824
+        },
+        {
+          "draws": 4001,
+          "rss_kib": 175824
+        },
+        {
+          "draws": 6001,
+          "rss_kib": 175824
+        },
+        {
+          "draws": 8001,
+          "rss_kib": 175824
+        },
+        {
+          "draws": 10001,
+          "rss_kib": 175824
+        },
+        {
+          "draws": 12001,
+          "rss_kib": 175824
+        },
+        {
+          "draws": 14001,
+          "rss_kib": 175824
+        },
+        {
+          "draws": 16001,
+          "rss_kib": 175824
+        },
+        {
+          "draws": 18001,
+          "rss_kib": 175824
+        },
+        {
+          "draws": 20001,
+          "rss_kib": 175824
+        },
+        {
+          "draws": 22001,
+          "rss_kib": 175824
+        }
+      ],
+      "steady_window_draws": [
+        6001,
+        22001
+      ],
+      "steady_rss_delta_kib": 0,
+      "fitted_kib_per_draw": 0.0,
+      "renderer": "D3D12 (NVIDIA GeForce RTX 5080)",
+      "version": "4.6 (Core Profile) Mesa 25.2.8-0ubuntu0.24.04.2",
+      "image_fnv1a64": "23b38e4559434925",
+      "rendered": true,
+      "loaded_libraries": {
+        "libGLX_mesa.so.0.0.0": "409f932670504cc5829c7526db466eb69a6b7f9997fd5df8afc8dfb1588278c2",
+        "libgallium-25.2.8-0ubuntu0.24.04.2.so": "e37486422ecafdad74fb05bbcdcfc35300241a5f46e72b63ca442d4e0c0cca8b"
+      }
+    }
+  },
+  "checks": {
+    "all_rendered": true,
+    "all_framebuffers_identical": true,
+    "original_leak_reproduced": true,
+    "source_built_fix_stable": true,
+    "direct_draw_control_stable": true,
+    "actual_library_maps_verified": true
+  }
+}

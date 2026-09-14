@@ -23,7 +23,7 @@ The standalone reproducer below repeatedly draws one fixed triangle to a 32x32 G
 
 Original indirect draws grow by approximately 2.95 KiB/draw; direct draws and corrected indirect draws stay flat. All rendering checks pass. The first final readback adds a one-time allocation, so it is excluded from these intervals.
 
-For diagnosis only, the correction was made to a private copy of the installed binary at the single lookup-argument instruction (load the key pointer instead of taking its stack-slot address). It is the assembly equivalent of the diff above, **not a source-built patch validation**. The original system library was untouched; preloading the unmodified library still reproduced growth. In the original application's separate short stationary test, growth fell from about 2.38 MiB/s to approximately flat. A source-built fix and broader regression testing remain to be done.
+For diagnosis only, the correction was made to a private copy of the installed binary at the single lookup-argument instruction (load the key pointer instead of taking its stack-slot address). It is the assembly equivalent of the diff above, **not a source-built patch validation**. The original system library was untouched; preloading the unmodified library still reproduced growth. In the original application's separate short stationary test, growth fell from about 2.38 MiB/s to approximately flat. A subsequent source build of the same Ubuntu version with this fix also passed 24000 indirect draws: RSS stayed at 119772 KiB over draws 6001–22001, versus 195564 to 242772 KiB for the original library. The direct-draw control stayed flat, and all three runs passed the pixel checks and produced the same full-frame checksum. Broader application regression testing remains to be done.
 
 Save the source below as `probe_mesa_indirect_memory.cpp` and run with an X display and OpenGL 4.3 available:
 
@@ -51,6 +51,7 @@ Adjust the adapter selector for other hardware. The reproducer uses Linux `/proc
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
+#include <cstdint>
 #include <unistd.h>
 
 long rssKiB() {
@@ -77,6 +78,7 @@ int main(int argc,char**argv) {
   auto surface=glXCreatePbuffer(display,configs[0],surfaceAttrs);
   if(!context || !glXMakeContextCurrent(display,surface,surface,context))return 4;
   std::printf("renderer=%s mode=%s draws=%d\n",glGetString(GL_RENDERER),indirect?"indirect":"direct",draws);
+  std::printf("version=%s\n",glGetString(GL_VERSION));
   glViewport(0,0,32,32);glClearColor(0,0,0,0);
   const char* vertex="#version 330\nvoid main(){vec2 p[3]=vec2[3](vec2(-.5,-.5),vec2(.5,-.5),vec2(0,.5));gl_Position=vec4(p[gl_VertexID],0,1);}";
   const char* fragment="#version 330\nout vec4 c;void main(){c=vec4(1);}";
@@ -100,6 +102,12 @@ int main(int argc,char**argv) {
   glReadPixels(0,0,1,1,GL_RGBA,GL_UNSIGNED_BYTE,corner);
   bool rendered=center[0]==255 && center[1]==255 && center[2]==255 &&
                 corner[0]==0 && corner[1]==0 && corner[2]==0 && glGetError()==GL_NO_ERROR;
+  unsigned char pixels[32*32*4]={};
+  glReadPixels(0,0,32,32,GL_RGBA,GL_UNSIGNED_BYTE,pixels);
+  rendered=rendered && glGetError()==GL_NO_ERROR;
+  std::uint64_t checksum=14695981039346656037ull;
+  for(auto pixel:pixels){checksum^=pixel;checksum*=1099511628211ull;}
+  std::printf("image_fnv1a64=%016llx\n",static_cast<unsigned long long>(checksum));
   std::printf("end draws=%d rss_kib=%ld rendered=%s\n",draws,rssKiB(),rendered?"true":"false");
   glDeleteBuffers(1,&buffer);glDeleteVertexArrays(1,&vao);glDeleteProgram(program);
   glXMakeContextCurrent(display,None,None,nullptr);glXDestroyPbuffer(display,surface);

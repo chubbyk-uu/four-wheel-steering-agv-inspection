@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
+#include <cstdint>
 #include <unistd.h>
 
 long rssKiB() {
@@ -36,6 +37,7 @@ int main(int argc,char**argv) {
   auto surface=glXCreatePbuffer(display,configs[0],surfaceAttrs);
   if(!context || !glXMakeContextCurrent(display,surface,surface,context))return 4;
   std::printf("renderer=%s mode=%s draws=%d\n",glGetString(GL_RENDERER),indirect?"indirect":"direct",draws);
+  std::printf("version=%s\n",glGetString(GL_VERSION));
   glViewport(0,0,32,32);glClearColor(0,0,0,0);
   const char* vertex="#version 330\nvoid main(){vec2 p[3]=vec2[3](vec2(-.5,-.5),vec2(.5,-.5),vec2(0,.5));gl_Position=vec4(p[gl_VertexID],0,1);}";
   const char* fragment="#version 330\nout vec4 c;void main(){c=vec4(1);}";
@@ -59,6 +61,12 @@ int main(int argc,char**argv) {
   glReadPixels(0,0,1,1,GL_RGBA,GL_UNSIGNED_BYTE,corner);
   bool rendered=center[0]==255 && center[1]==255 && center[2]==255 &&
                 corner[0]==0 && corner[1]==0 && corner[2]==0 && glGetError()==GL_NO_ERROR;
+  unsigned char pixels[32*32*4]={};
+  glReadPixels(0,0,32,32,GL_RGBA,GL_UNSIGNED_BYTE,pixels);
+  rendered=rendered && glGetError()==GL_NO_ERROR;
+  std::uint64_t checksum=14695981039346656037ull;
+  for(auto pixel:pixels){checksum^=pixel;checksum*=1099511628211ull;}
+  std::printf("image_fnv1a64=%016llx\n",static_cast<unsigned long long>(checksum));
   std::printf("end draws=%d rss_kib=%ld rendered=%s\n",draws,rssKiB(),rendered?"true":"false");
   glDeleteBuffers(1,&buffer);glDeleteVertexArrays(1,&vao);glDeleteProgram(program);
   glXMakeContextCurrent(display,None,None,nullptr);glXDestroyPbuffer(display,surface);
