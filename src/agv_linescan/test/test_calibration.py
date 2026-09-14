@@ -199,6 +199,55 @@ def test_offline_rejects_incomplete_or_discontinuous_session(tmp_path,fault):
     assert not (tmp_path/'corrected').exists()
 
 
+def discarded_tail_fixture(tmp_path,rows=3,minimum=1000,block_id=1):
+    """A session shaped like the real one: the short tail spent id 1 and was dropped.
+
+    Taken from the 0.5 m/s full-area run, where block 66 (segment 2) is followed by
+    block 68 (segment 4) and the sensor logged id 67 as a 806-row tail against a
+    1000-row minimum. The kept block after the gap carries a new segment id, which
+    is why the intra-segment line-continuity rule does not apply across it.
+    """
+    import json
+    source,profile=offline_fixture(tmp_path)
+    old=source/'block_000001.json';m=json.loads(old.read_text())
+    m['block_id']=2;m['segment_id']=2
+    (source/'block_000002.json').write_text(json.dumps(m));old.unlink()
+    (source/'block_000001.pgm').rename(source/'block_000002.pgm')
+    (source/'events.jsonl').write_text(json.dumps(dict(reason='tail_discarded',end_reason='capture_toggle',
+        rows=rows,minimum_rows=minimum,block_id=block_id,segment_id=0,simulation_time_s=.02))+'\n')
+    return source,profile
+
+
+def test_offline_accepts_block_ids_spent_by_a_discarded_short_tail(tmp_path):
+    # Discarding a tail under the row threshold is policy, not data loss, and it
+    # consumes a block id. Before this, a legal full-area capture could not be
+    # corrected at all: the 0.5 m/s run had nine such gaps, the first 66 -> 68.
+    from agv_linescan.offline_correction import process_session
+    source,profile=discarded_tail_fixture(tmp_path)
+    r=process_session(source,profile,tmp_path/'corrected')
+    assert r['blocks']==2 and r['rows']==20
+    assert r['block_id_gaps']==[1]
+    assert [d['block_id'] for d in r['discarded_tail_blocks']]==[1]
+    assert r['discarded_tail_blocks'][0]['rows']==3
+
+
+@pytest.mark.parametrize('fault',['no_evidence','tail_not_short','discarded_block_present'])
+def test_offline_still_rejects_gaps_without_honest_evidence(tmp_path,fault):
+    import json
+    from agv_linescan.offline_correction import process_session
+    if fault=='no_evidence':
+        source,profile=discarded_tail_fixture(tmp_path);(source/'events.jsonl').unlink()
+    elif fault=='tail_not_short':
+        # A block as long as the threshold was never a short tail, so it cannot
+        # excuse the gap; otherwise any lost block could be waved through.
+        source,profile=discarded_tail_fixture(tmp_path,rows=1000)
+    else:
+        # Claiming a block was discarded while its file is present is a contradiction.
+        source,profile=discarded_tail_fixture(tmp_path,block_id=2)
+    with pytest.raises(ValueError):process_session(source,profile,tmp_path/'corrected')
+    assert not (tmp_path/'corrected').exists()
+
+
 def test_offline_preserves_extra_sparse_tags_across_pause(tmp_path):
     import json
     from agv_linescan.offline_correction import process_session

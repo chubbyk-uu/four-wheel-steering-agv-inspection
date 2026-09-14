@@ -38,6 +38,11 @@ def build(args):
     patch = REPO / lock['project_patch']
     verify(patch, lock['project_patch_sha256'])
     root.mkdir(parents=True)
+    # Meson's cmake probes leave two directories both named MesonTemp under
+    # build/meson-private. colcon discovers them as packages and refuses the
+    # whole workspace with a duplicate-name error, so a plain "colcon test"
+    # never starts. Mark the tree before anything is written into it.
+    (root / 'COLCON_IGNORE').touch()
     for folder in ('downloads', 'deps', 'sysroot'):
         (root / folder).mkdir()
     print(f'Building private Mesa; complete log: {root / "build.log"}', flush=True)

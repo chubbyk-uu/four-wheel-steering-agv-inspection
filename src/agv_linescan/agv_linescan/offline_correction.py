@@ -17,6 +17,28 @@ def _write(path, data):
     temporary.rename(path)
 
 
+def discarded_tails(source):
+    """Block ids the sensor discarded as short tails, from its own event log.
+
+    A gap in the numbering is only acceptable with evidence, and the evidence is
+    checked rather than trusted: the event must declare fewer rows than the
+    threshold it was measured against, which is what makes it a short tail.
+    """
+    path=source/'events.jsonl';found={}
+    if not path.is_file():return found
+    for index,line in enumerate(path.read_text().splitlines()):
+        if not line.strip():continue
+        try:event=json.loads(line)
+        except ValueError:raise ValueError('corrupt capture event record %d'%index)
+        if event.get('reason')!='tail_discarded' or 'block_id' not in event:continue
+        rows,minimum=event.get('rows',0),event.get('minimum_rows',0)
+        if not 0<rows<minimum:raise ValueError('tail discard event does not justify a missing block')
+        if event['block_id'] in found:raise ValueError('duplicate tail discard for one block id')
+        found[event['block_id']]=dict(block_id=event['block_id'],rows=rows,minimum_rows=minimum,
+                                      segment_id=event.get('segment_id'),end_reason=event.get('end_reason'))
+    return found
+
+
 def process_session(source, profile, output):
     source,profile,output=map(lambda p:Path(p).resolve(),(source,profile,output))
     config=yaml.safe_load((source/'calibration.yaml').read_text())
@@ -24,10 +46,15 @@ def process_session(source, profile, output):
     paths=sorted(source.glob('block_*.json'))
     if not paths:raise ValueError('raw capture contains no image metadata')
     if {p.stem for p in paths}!={p.stem for p in source.glob('block_*.pgm')}:raise ValueError('raw image / metadata pairs are incomplete')
-    entries=[];previous=None
-    for index,path in enumerate(paths):
+    discarded=discarded_tails(source)
+    entries=[];previous=None;expected=0
+    for path in paths:
         m=json.loads(path.read_text());correction.metadata(m)
-        if m['block_id']!=index or path.stem!=f'block_{index:06d}':raise ValueError('missing or misnumbered image block')
+        # A short tail is discarded by policy and still consumes its block id, so the
+        # numbering is allowed to skip exactly those ids and nothing else.
+        while expected in discarded:expected+=1
+        if m['block_id']!=expected or path.stem!=f'block_{expected:06d}':raise ValueError('missing or misnumbered image block')
+        expected+=1
         if m.get('encoding')!='mono8' or not 1<=m['rows']<=config['block_rows']:raise ValueError('invalid raw block dimensions/encoding')
         first,last=m['first'],m['last']
         if last['global_line']-first['global_line']+1!=m['rows']:raise ValueError('line count differs from metadata')
@@ -57,6 +84,8 @@ def process_session(source, profile, output):
             calibration_id=correction.profile['calibration_id'],raw_saturated_pixels=raw_saturated,corrected_clipped_pixels=clipped,
             elapsed_seconds=elapsed,lines_per_second=rows/elapsed,max_block_seconds=max(per_block),
             metadata_preserved=True,rows_overlap_added=0,image_and_metadata_fsync=True,
+            discarded_tail_blocks=[discarded[k] for k in sorted(discarded)],
+            block_id_gaps=sorted(k for k in discarded if k<entries[-1][1]['block_id']),
             note='Source images untouched; no ROS/GZ required, no real-time throughput requirement. Directory entries are not fsynced.')
         _write(output/'summary.json',json.dumps(report,indent=2).encode()+b'\n');return report
     except Exception as e:

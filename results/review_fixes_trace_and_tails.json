@@ -1,0 +1,47 @@
+{
+  "schema": "agv.review_fixes_2026_09_14b.v1",
+  "date": "2026-09-14",
+  "scope": "Three review findings, each reproduced before the fix and checked against retained acceptance data after it.",
+  "findings": [
+    {
+      "id": 1,
+      "severity": "P1",
+      "title": "the private Mesa build tree breaks the standard build and test entry point",
+      "site": "tools/build_private_mesa.py:40",
+      "reproduced": "plain \"colcon test\" exits with: Duplicate package names not supported: MesonTemp: local_data/mesa-source-build/build/meson-private/cmake_directx-headers and .../cmake_lua. colcon list also picks up CompInfo and data, four spurious packages in all.",
+      "also_found": "with --packages-select it does not fail, so only a full-workspace run hits it, which is the run made before a release",
+      "fix": "write COLCON_IGNORE into the build root immediately after creating it, before anything else is written",
+      "note": "local_data is gitignored, so the marker in the existing tree cannot be committed; the durable half has to live in the script",
+      "verified": "colcon list finds no package under local_data; full colcon test runs again, 7 packages, 362 tests at that point"
+    },
+    {
+      "id": 2,
+      "severity": "P1",
+      "title": "a legally discarded short tail made the whole session unprocessable offline",
+      "site": "src/agv_linescan/agv_linescan/offline_correction.py:30",
+      "reproduced": "accept_tier_0500 holds 670 blocks spanning ids 0 to 678 with nine gaps, the first 66 to 68, while accept_rated_6 with no discards is contiguous. The old check required block_id == index.",
+      "mechanism": "gz_linescan.cpp:642 logs tail_discarded to the raw capture events.jsonl and the discard consumes a block id via block_++",
+      "fix": "read the sensor's own event log, allow exactly the ids it recorded as discarded, and keep rejecting every other gap. The evidence is checked rather than trusted: an event must declare 0 < rows < minimum_rows, ids may not repeat, and an id claimed discarded may not also have a file.",
+      "verified": "the new parser run against the real event log of the 0.5 m/s run resolves ten discarded ids (rows 712 to 806 against a 1000 row minimum); the nine numbering gaps are all accounted for and the tenth, 679, lies past the last block so it forms no gap. Four new tests, three of them rejections."
+    },
+    {
+      "id": 3,
+      "severity": "P2",
+      "title": "the coverage audit missed holes in the middle of the execution trace",
+      "site": "src/agv_mission/agv_mission/capture_audit.py:128",
+      "reproduced": "cutting the trace to its first and last record still returned ESTIMATED_COMPLETE with no issue raised",
+      "risk": "quality_windows is derived from the same records, so a steering reconfiguration inside a hole is invisible and the block is certified anyway",
+      "fix": "compare each interval against the control step the following record declares for itself. A slow tick still leaves evidence and its gap equals what it declares; a longer gap means records are absent.",
+      "why_not_a_fixed_threshold": "across 193,730 record pairs in six acceptance runs the interval and the declared step agree exactly, deviation 0. accept_rated_5 contains one 0.352 s step whose record declares 0.352 s, so any fixed threshold below that would have rejected sound data and any threshold above it would still miss smaller holes.",
+      "correction_to_review": "the review stated the retained acceptance logs have a maximum interval of about 22 ms. That holds for accept_rated_6 and accept_tier_0500 but not accept_rated_5, whose largest interval is 0.352 s. It sits at t=9.45 to 9.81, before the mission began, with capture inactive and no block spanning it. The quantity that matters is the largest interval inside a capture block: 0.0230, 0.0210 and 0.0220 s for the three counted runs.",
+      "verified": "the new check reports zero gaps in all six acceptance runs, so no closed result is retroactively invalidated"
+    }
+  ],
+  "tests": {
+    "before": 362,
+    "after": 368,
+    "added": 6,
+    "detail": "four for the tail-discard path in agv_linescan, two for the trace-gap path in agv_mission, one of which guards against false positives on a slow control step"
+  },
+  "fixture_correction": "the coverage test fixture emitted execution records without control_dt_s, which the real sensor never omits (present in 193,730 of 193,730 records). The fixture was made realistic rather than the check weakened to tolerate its absence."
+}

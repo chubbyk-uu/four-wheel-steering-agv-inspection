@@ -49,7 +49,7 @@ def archive(tmp_path):
     mission=tmp_path/'mission';nav=tmp_path/'nav';raw=tmp_path/'raw'
     for p in (mission,nav,raw):p.mkdir()
     (mission/'plan.json').write_text(json.dumps(source))
-    (mission/'execution.jsonl').write_text('\n'.join(json.dumps(dict(time_s=float(t),kind='PASS',capture_active=True,motion_state='DRIVE',motion_reason='NONE',track_id=0)) for t in np.arange(0,4.001,.02))+'\n')
+    (mission/'execution.jsonl').write_text('\n'.join(json.dumps(dict(time_s=float(t),kind='PASS',capture_active=True,motion_state='DRIVE',motion_reason='NONE',track_id=0,control_dt_s=.02)) for t in np.arange(0,4.001,.02))+'\n')
     (mission/'capture_intervals.json').write_text(json.dumps([dict(track_id=0,archive=str(raw),enabled_ack_time_s=0.,disabled_ack_time_s=4.)]))
     height=camera['nominal_width_m']*camera['focal_length_m']/(camera['width']*camera['pixel_pitch_m'])
     cal=dict(calibration_id='nav',optical_intrinsic_id=camera['calibration_id'],estimated_frames=[dict(frame_id='camera_optical_calibrated',translation_m=[camera['camera_x_m'],0,height-.65],orientation_xyzw=Rotation.from_euler('xyz',[np.pi,0,np.pi/2]).as_quat().tolist())])
@@ -74,7 +74,7 @@ def test_real_archive_uses_fused_pose_and_preserves_source(tmp_path):
 
 def test_steering_during_capture_keeps_pixels_but_requires_rescan(tmp_path):
     mission,nav,raw,p,c=archive(tmp_path);before=(raw/'block_000000.pgm').read_bytes()
-    row=dict(time_s=1.,kind='PASS',capture_active=True,motion_state='ALIGN',motion_reason='LIMIT_RECONFIGURE',track_id=0)
+    row=dict(time_s=1.,kind='PASS',capture_active=True,motion_state='ALIGN',motion_reason='LIMIT_RECONFIGURE',track_id=0,control_dt_s=.02)
     records=[json.loads(v) for v in (mission/'execution.jsonl').read_text().splitlines()]+[row]
     (mission/'execution.jsonl').write_text('\n'.join(json.dumps(v) for v in sorted(records,key=lambda r:r['time_s'])))
     report=audit_capture(mission,nav,tmp_path/'quality',p,c)
@@ -86,9 +86,9 @@ def test_steering_during_capture_keeps_pixels_but_requires_rescan(tmp_path):
 
 def test_ordinary_pause_and_non_capture_turn_do_not_reject_image(tmp_path):
     mission,nav,raw,p,c=archive(tmp_path)
-    rows=[dict(time_s=1.,kind='PASS',capture_active=True,motion_state='HOLD',motion_reason='STOP_REQUEST',track_id=0),
-          dict(time_s=2.,kind='PASS',capture_active=True,motion_state='ALIGN',motion_reason='STOP_REQUEST',track_id=0),
-          dict(time_s=3.5,kind='ROTATE_180',capture_active=False,motion_state='ALIGN',motion_reason='LARGE_STEER_CHANGE',track_id=0)]
+    rows=[dict(time_s=1.,kind='PASS',capture_active=True,motion_state='HOLD',motion_reason='STOP_REQUEST',track_id=0,control_dt_s=.02),
+          dict(time_s=2.,kind='PASS',capture_active=True,motion_state='ALIGN',motion_reason='STOP_REQUEST',track_id=0,control_dt_s=.02),
+          dict(time_s=3.5,kind='ROTATE_180',capture_active=False,motion_state='ALIGN',motion_reason='LARGE_STEER_CHANGE',track_id=0,control_dt_s=.02)]
     records=[json.loads(v) for v in (mission/'execution.jsonl').read_text().splitlines()]+rows
     (mission/'execution.jsonl').write_text('\n'.join(json.dumps(v) for v in sorted(records,key=lambda r:r['time_s'])))
     report=audit_capture(mission,nav,tmp_path/'pause_quality',p,c)
@@ -102,6 +102,36 @@ def test_truncated_execution_trace_cannot_certify_motion_quality(tmp_path):
     report=audit_capture(mission,nav,tmp_path/'missing_motion',p,c)
     assert report['status']=='NEEDS_RESCAN' and report['inputs'][0]['motion_quality_excluded']
     assert any('EXECUTION_TRACE_INCOMPLETE' in x['reason'] for x in report['issues'])
+
+
+def test_a_hole_inside_the_execution_trace_cannot_certify_motion_quality(tmp_path):
+    # Keeping only the first and last record leaves the bounds intact, so the
+    # old first/last check passed while seconds of vehicle behaviour went
+    # unobserved. A steering reconfiguration inside that hole would have been
+    # missed in silence and the block certified anyway.
+    mission,nav,raw,p,c=archive(tmp_path)
+    lines=(mission/'execution.jsonl').read_text().splitlines()
+    (mission/'execution.jsonl').write_text(lines[0]+'\n'+lines[-1]+'\n')
+    report=audit_capture(mission,nav,tmp_path/'trace_hole',p,c)
+    assert report['status']=='NEEDS_RESCAN' and report['inputs'][0]['motion_quality_excluded']
+    assert any('EXECUTION_TRACE_GAP' in x['reason'] for x in report['issues'])
+    assert report['execution_trace_gaps'] and report['execution_trace_gaps'][0]['span_s']>3
+
+
+def test_a_slow_control_step_is_evidence_not_a_hole(tmp_path):
+    # Every record declares how long its own step took, so a slow tick still
+    # proves what happened. accept_rated_5 contained exactly one 0.352 s step
+    # whose record declared 0.352 s; a fixed threshold would have rejected that
+    # run's blocks for being thorough rather than for missing anything.
+    mission,nav,raw,p,c=archive(tmp_path)
+    records=[json.loads(v) for v in (mission/'execution.jsonl').read_text().splitlines()]
+    dropped=records.pop(40)
+    records[40]['control_dt_s']=round(records[40]['time_s']-records[39]['time_s'],6)
+    assert records[40]['control_dt_s']>.03 and dropped
+    (mission/'execution.jsonl').write_text('\n'.join(json.dumps(v) for v in records)+'\n')
+    report=audit_capture(mission,nav,tmp_path/'slow_step',p,c)
+    assert report['status']=='ESTIMATED_COMPLETE' and not report['execution_trace_gaps']
+    assert not report['inputs'][0]['motion_quality_excluded']
 
 
 def test_missing_pixels_and_navigation_gap_do_not_bridge_coverage(tmp_path):

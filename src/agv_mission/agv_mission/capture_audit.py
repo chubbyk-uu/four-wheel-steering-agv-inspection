@@ -8,7 +8,7 @@ from PIL import Image
 from scipy.spatial.transform import Rotation,Slerp
 from .coverage import estimate,rescan_requests
 from .planner import plan as make_plan,Vehicle
-from .capture_quality import reconfiguration_windows,affected
+from .capture_quality import reconfiguration_windows,affected,trace_gaps
 
 
 class Navigation:
@@ -79,6 +79,9 @@ def audit_capture(mission,navigation,output,platform,camera,uncertainty=.10):
     records=[json.loads(line) for line in execution.splitlines()]
     if not records:raise ValueError('missing execution quality evidence')
     quality_windows=reconfiguration_windows(records)
+    # The first and last record only bound the trace; a hole inside it hides whatever
+    # happened there, including a steering reconfiguration during an open shutter.
+    missing=trace_gaps(records)
     spans=[];issues=[];inputs=[];seen=set();scenes=set()
     for interval in intervals:
         if 'disabled_ack_time_s' not in interval:
@@ -128,6 +131,9 @@ def audit_capture(mission,navigation,output,platform,camera,uncertainty=.10):
                 if records[0]['time_s']>first['time_s'] or records[-1]['time_s']<last['time_s']:
                     inputs[-1]['motion_quality_excluded']=True
                     raise ValueError('EXECUTION_TRACE_INCOMPLETE: raw block retained; motion quality unknown')
+                if any(g['start_s']<last['time_s'] and g['end_s']>first['time_s'] for g in missing):
+                    inputs[-1]['motion_quality_excluded']=True
+                    raise ValueError('EXECUTION_TRACE_GAP: raw block retained; motion quality unknown')
                 for tag in tags:
                     try:
                         point=nav.footprint(tag,camera,source,uncertainty)
@@ -146,6 +152,7 @@ def audit_capture(mission,navigation,output,platform,camera,uncertainty=.10):
         provenance=dict(plan_sha256=hashlib.sha256((mission/'plan.json').read_bytes()).hexdigest(),navigation_sha256=nav.digest,
             navigation_calibration_sha256=hashlib.sha256((navigation/'calibration.json').read_bytes()).hexdigest()))
     report['motion_quality_windows']=quality_windows
+    report['execution_trace_gaps']=missing
     report['provenance']['execution_sha256']=hashlib.sha256(execution).hexdigest()
     candidates=rescan_requests(source,report,vehicle)
     report['rescan_candidates']=[{k:v for k,v in c.items() if k!='plan'} for c in candidates]
