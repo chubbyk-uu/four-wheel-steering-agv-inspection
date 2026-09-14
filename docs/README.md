@@ -17,10 +17,11 @@
 | 三维地表、双天线和未来条带拼接 | [后续设计](SURFACE_HEADING_STRIP_DESIGN.md)，其中研究方案不等于已实现 |
 | WSL私有Mesa源码构建与回退 | [恢复指南](MESA_SETUP.md) |
 | GitHub恢复和分发边界 | [仓库说明](REPOSITORY.md) |
+| 查项目踩过的坑，避免重犯 | [坑与教训](LESSONS.md) |
 
 ## 重要问题保留入口
 
-- [采集进程内存增长](issues/CAPTURE_MEMORY_GROWTH.md)：Mesa D3D12命令签名缓存的`&key`错误已确认，附独立复现、源码补丁和上游报告；源码版独立构建、启动切换与最小复现通过，GUI/整车验收待完成。
+- [采集进程内存增长](issues/CAPTURE_MEMORY_GROWTH.md)：Mesa D3D12命令签名缓存的`&key`错误已确认，附独立复现、源码补丁和上游报告；私有源码修复版已投入运行并据此关闭第6节，系统Mesa与上游均未修复。
 - [仿真关闭段错误与C盘转储](issues/GZ_SHUTDOWN_CRASH_DUMPS.md)：Gazebo退出时卸载库与存活线程竞争导致段错误，WSL把约等于RSS的整份core写进C盘；`ulimit -c 0`与`maxCrashDumpCount=0`实测均无效，源码确认只有负值才关闭采集。
 - [转向恢复直行、8°机械余量](issues/STEERING_SPIN_RECOVERY.md)：保留旧126°动作的原因、8°配置实测，以及静止起步另加20°段余量的取舍。
 - [控制回路停顿](issues/CONTROL_LOOP_STALL.md)：全系统I/O停顿击穿实时回路的三层根因、把自身停摆误报成定位失效的判据缺陷，以及WSLg图形上下文偶发失败的现状。
@@ -32,6 +33,6 @@
 
 ## 历史资料
 
-[归档索引](archive/README.md)保留早期底盘、CUDA/Ogre/OptiX路线比较、选材、标定、性能和阶段交付记录。旧模型数据不能作为550 kg版本的性能承诺。图片统一位于`images/`，数值报告保留在仓库`results/`。
+[归档索引](archive/README.md)保留早期底盘、CUDA/Ogre/OptiX路线比较、选材、标定、性能和阶段交付记录，以及[状态流水存档](archive/status/STATUS_LOG_2026-09.md)。旧模型数据不能作为550 kg版本的性能承诺。图片统一位于`images/`，数值报告保留在仓库`results/`。
 
 维护时优先更新现行指南与当前状态；阶段实验放入archive，影响现行行为的重要问题放入issues。保留证据和来源，不在README末尾不断追加相互矛盾的阶段状态。

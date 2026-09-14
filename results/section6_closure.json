@@ -437,5 +437,21 @@
     "decided_by": "project owner, 2026-09-14",
     "basis": "every gate bullet met on the final configuration; four residual issues recorded with scope",
     "residuals_are_low_priority": true
+  },
+  "data_retention": {
+    "date": "2026-09-14",
+    "policy": "run directories under local_data are working data, ignored by Git; the records in results/ are the evidence",
+    "kept": {
+      "raw_images": "accept_rated_6 only, 710 blocks, about 12 GB, carried forward for the stitching phase",
+      "metadata": "all six acceptance runs keep results.json, latest.json, slip_audit.json, resources, navigation and mission records"
+    },
+    "deleted": [
+      "the raw images and generated RViz road of the other five acceptance runs",
+      "every superseded run directory, about 80 GB, whose numbers are already recorded under results/",
+      "local_data/mesa-reproducible, the fresh-directory rebuild test recorded in results/mesa_portable_build.json",
+      "the colcon log directory"
+    ],
+    "freed_gib": 133,
+    "note": "two tracked files asserted that older raw archives were retained; both were amended rather than left false."
   }
 }

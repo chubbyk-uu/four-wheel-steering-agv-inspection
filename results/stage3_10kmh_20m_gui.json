@@ -142,7 +142,7 @@
   "notes": "OptiX shared static mesh plus thirteen robot links with per-exposure transforms and configured LED shadow samples; ROS images and PGM archive. Sampling rate excludes physics/ROS/archive. Not the independent durable-write throughput acceptance.",
   "full_block_delivery_lines_per_wall_second": 7522.889182389375,
   "full_acceptance_passed": false,
-  "archive_retention": "local_data/10kmh_20m_large_v7/session; ignored by Git",
+  "archive_retention": "local_data/10kmh_20m_large_v7/session, ignored by Git and deleted in the 2026-09-14 cleanup. The numbers in this record stand on their own; the pixels are gone.",
   "demo_scene": "tools/prepare_speed_demo_scene.py: original 20m road shifted +10m with acceleration/braking aprons",
   "startup_failure": "Initial apron mesh lacked normals and caused DART crash; normals corrected before successful run"
 }

@@ -1,8 +1,11 @@
 # 100×10 m场景与采集验收
 
+**状态：该验收已于2026-09-14通过**，判定依据与六次全区跑的逐项数据见[第6节收尾](../results/section6_closure.json)，门槛条文见[实施计划第6节](MISSION_IMPLEMENTATION_PLAN.md)。
+本页保留场景预算、存储路线与材质试片的**原始推算过程**，各节按日期记录，其中的“当前/下一项”均指当时阶段。
+
 ## 空间和资源预算（2026-09-10）
 
-当前完成预算，尚未完成大场景生成或全区域实跑。可复算入口：
+当时完成预算，尚未生成大场景或实跑全区域。可复算入口：
 
 ```bash
 python3 tools/budget_full_road.py --output results/full_road_budget.json \
