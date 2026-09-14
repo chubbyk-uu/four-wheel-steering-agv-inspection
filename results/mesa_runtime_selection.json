@@ -1,0 +1,33 @@
+{
+  "scope": "Dynamic loader checks only, no GUI or rendering",
+  "cases": {
+    "mesa_then_optix": {
+      "private": true,
+      "libraries": [
+        "libEGL_mesa.so.0.0.0",
+        "libGLX_mesa.so.0.0.0",
+        "libgallium-25.2.8.so",
+        "libgbm.so.1.0.0"
+      ]
+    },
+    "optix_then_mesa": {
+      "private": true,
+      "libraries": [
+        "libEGL_mesa.so.0.0.0",
+        "libGLX_mesa.so.0.0.0",
+        "libgallium-25.2.8.so",
+        "libgbm.so.1.0.0"
+      ]
+    },
+    "nested_system": {
+      "private": false,
+      "libraries": [
+        "libEGL_mesa.so.0.0.0",
+        "libGLX_mesa.so.0.0.0",
+        "libgallium-25.2.8-0ubuntu0.24.04.2.so",
+        "libgbm.so.1.0.0"
+      ]
+    }
+  },
+  "unit_tests_passed": 4
+}

@@ -104,6 +104,23 @@ ros2 service call /linescan/set_enabled std_srvs/srv/SetBool '{data: false}'
 
 采集目录默认 `/tmp/agv_linescan`，可用 `capture_dir:=/path/to/capture` 修改。原图 `/linescan/image_raw`，显示用 `/linescan/image_preview`。正式 GZ 场景参考后端为 `linescan_backend:=render`。
 
+## WSL项目专用Mesa修复版
+
+本机已独立构建Mesa 25.2.8命令签名缓存修复版。源码、安装步骤及验证边界见[内存问题记录](docs/issues/CAPTURE_MEMORY_GROWTH.md)。独立库不上传Git，干净检出需先按该文档构建；缺失时脚本明确报错，不静默使用旧版。
+
+加载ROS和项目环境后，从项目根目录运行：
+
+```bash
+# 默认使用项目修复版；作用仅限这条命令及其子进程
+python3 tools/with_mesa_runtime.py ros2 launch agv_bringup inspection.launch.py
+# 切回系统版：同一命令增加 --system
+python3 tools/with_mesa_runtime.py --system ros2 launch agv_bringup inspection.launch.py
+```
+
+退出当前实例再切换，不同时启动两套仿真。需要实验性OptiX运行库时，可组合为
+`python3 tools/with_mesa_runtime.py bash tools/with_optix_runtime.sh COMMAND ...`。
+普通`ros2 launch`不会自动启用修复版；原生Linux继续使用原启动方式，不启用这个仅构建D3D12的专用包。
+
 ## 图块尺寸与离线校正
 
 相机默认输出线性Mono8灰度图。RViz的`/linescan/image_preview`及文档样片使用sRGB显示转换提亮中间调；原图与离线校正PGM保持线性。`linescan.yaml`中的`preview_srgb: false`可关闭预览转换，曝光和补光不随显示设置改变。

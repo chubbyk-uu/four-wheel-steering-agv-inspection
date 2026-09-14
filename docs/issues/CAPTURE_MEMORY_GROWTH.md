@@ -54,7 +54,7 @@ Ogre GL3PlusVaoManager::_update → glFenceSync
 [源码补丁](../../tools/patches/mesa-d3d12-command-signature-key.patch)和[实测结果](../../results/mesa_d3d12_signature_root_cause.json)。用户已在上游[#14802](https://gitlab.freedesktop.org/mesa/mesa/-/work_items/14802)发布简短英文根因说明（用户截图确认）；完整代码与补丁尚未发布。
 根因确认不等于完整验收：仍须部署正式修正版并重跑GUI/RViz、行驶采图和长任务，检查是否另有独立增长。
 
-## 独立源码构建（已完成第1项，停在启用前）
+## 独立源码构建（第1项）
 
 使用Ubuntu源码包`25.2.8-0ubuntu0.24.04.2`，保留其发行版补丁，再应用项目的一行修复；不是直接用上游裸源码替代Ubuntu版本，也没有升级整个系统Mesa。
 下载来自`https://archive.ubuntu.com/ubuntu/pool/main/m/mesa/`，通过HTTPS取得`.dsc`，逐个核对其中的SHA256与文件大小；未声称完成维护者PGP签名验证。
@@ -93,7 +93,15 @@ meson install -C "$MESA_BUILD_ROOT/build" --no-rebuild
 
 本机环境脚本保留为`configure.sh`和`compile.sh`；完整日志保留为`prepare.log`、`configure.log`、`build-install.log`，均在该独立目录。
 编译和安装成功；已核对目标源码仅有这一行变化、安装ELF的链接依赖可解析、安装符号链接完整、系统Gallium哈希与诊断前一致。
-**未运行源码构建版的三角形复现、GUI或采集测试**，也未修改启动脚本。前文内存改善数据仍仅属于早期二进制副本实验，不能当成本次源码构建版的测试结果。按用户要求完成第1项后停止，后续先做独立加载/回退，再运行验证。
+第1项结束时**未运行源码构建版的三角形复现、GUI或采集测试**，也未修改启动脚本。前文内存改善数据仍仅属于早期二进制副本实验，不能当成本次源码构建版的测试结果。
+
+## 项目启动选择（第2项）
+
+`python3 tools/with_mesa_runtime.py COMMAND ...`为子进程选择独立Mesa，增加`--system`回到原环境；`--prefix`可指定另一处同结构安装。只修改子进程环境，不改系统库或用户全局配置。直接执行普通`ros2 launch`仍使用原环境。
+
+脚本同时选择Gallium、GBM、GLX/EGL库和对应DRI/EGL路径，避免旧loader加载另一套Gallium。绝对路径预加载可兼容OptiX脚本重设`LD_LIBRARY_PATH`；修复版缺失时明确失败。嵌套调用通过环境快照恢复脚本首次介入前的图形加载环境；不要把嵌套回退理解为保留中途第三方脚本对这些变量的修改。
+
+4项环境回归通过；`/proc/self/maps`实际检查修复版、系统版、两种OptiX组合顺序及嵌套切回，四个相关库均来自预期来源。见[加载检查](../../results/mesa_runtime_selection.json)。这一步只检查动态加载，不声称GUI画面或泄漏验收通过。
 
 ---
 
