@@ -43,8 +43,14 @@ def environment(mode, prefix, inherited):
             raise ValueError(f'Missing private Mesa component: {item}; use --system to revert')
     env[SNAPSHOT] = json.dumps({key: env.get(key) for key in KEYS})
     env['LD_LIBRARY_PATH'] = str(lib) + (':' + env['LD_LIBRARY_PATH'] if env.get('LD_LIBRARY_PATH') else '')
+    # Ubuntu Gallium has a distro-suffixed SONAME; our source build does not.
+    # LD_LIBRARY_PATH alone cannot substitute differently named libraries and may
+    # silently retain system Mesa. Preload the matching GLX/EGL/GBM frontends too.
     # Absolute preloads also survive with_optix_runtime.sh resetting library paths.
+    # This is inherited by ALL subprocesses, including non-rendering Python nodes.
+    # Do not simplify to library-path-only selection without checking actual maps.
     env['LD_PRELOAD'] = ':'.join(map(str, libraries)) + (':' + env['LD_PRELOAD'] if env.get('LD_PRELOAD') else '')
+    # D3D12-only build: no swrast/llvmpipe fallback in this private directory.
     env['LIBGL_DRIVERS_PATH'] = str(lib / 'dri')
     env['GBM_BACKENDS_PATH'] = str(lib / 'gbm')
     env['__EGL_VENDOR_LIBRARY_FILENAMES'] = str(vendor)

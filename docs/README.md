@@ -15,6 +15,7 @@
 | 原生Linux / WSL的OptiX安装区别 | [OptiX安装](OPTIX_SETUP.md) |
 | 核对回归覆盖及人工检查范围 | [验收约定](VISUAL_ACCEPTANCE.md) |
 | 三维地表、双天线和未来条带拼接 | [后续设计](SURFACE_HEADING_STRIP_DESIGN.md)，其中研究方案不等于已实现 |
+| WSL私有Mesa源码构建与回退 | [恢复指南](MESA_SETUP.md) |
 | GitHub恢复和分发边界 | [仓库说明](REPOSITORY.md) |
 
 ## 重要问题保留入口

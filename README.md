@@ -106,7 +106,7 @@ ros2 service call /linescan/set_enabled std_srvs/srv/SetBool '{data: false}'
 
 ## WSL项目专用Mesa修复版
 
-本机已独立构建Mesa 25.2.8命令签名缓存修复版。源码、安装步骤及验证边界见[内存问题记录](docs/issues/CAPTURE_MEMORY_GROWTH.md)。独立库不上传Git，干净检出需先按该文档构建；缺失时脚本明确报错，不静默使用旧版。
+本机已独立构建Mesa 25.2.8命令签名缓存修复版。新机器构建和切换见[私有Mesa恢复指南](docs/MESA_SETUP.md)，验证边界见[内存问题记录](docs/issues/CAPTURE_MEMORY_GROWTH.md)。独立库不上传Git，干净检出需先按该文档构建；缺失时脚本明确报错，不静默使用旧版。
 
 加载ROS和项目环境后，从项目根目录运行：
 

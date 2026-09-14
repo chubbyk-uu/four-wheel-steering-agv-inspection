@@ -1,0 +1,75 @@
+{
+  "date": "2026-09-14",
+  "scope": "Fresh-directory rebuild on existing Ubuntu 24.04 WSL host; not a clean OS installation or GUI/mission acceptance",
+  "builder": "tools/build_private_mesa.py",
+  "inputs": "Verified source/dependency download cache; separately tested HTTPS dsc and APT pinned package download",
+  "build_passed": true,
+  "linked_dependencies_resolve": true,
+  "mapped_libraries": [
+    "libEGL_mesa.so.0.0.0",
+    "libGLX_mesa.so.0.0.0",
+    "libgallium-25.2.8.so",
+    "libgbm.so.1.0.0"
+  ],
+  "draws": 24000,
+  "steady_rss_range_kib": [
+    118092,
+    118092
+  ],
+  "image_fnv1a64": "23b38e4559434925",
+  "matches_previous_system_and_patched_image": true,
+  "system_library_unchanged": true,
+  "launcher_unit_tests_passed": 4,
+  "bad_hash_rejected": true,
+  "existing_build_root_rejected": true,
+  "samples": [
+    {
+      "draws": 1,
+      "rss_kib": 118092
+    },
+    {
+      "draws": 2001,
+      "rss_kib": 118092
+    },
+    {
+      "draws": 4001,
+      "rss_kib": 118092
+    },
+    {
+      "draws": 6001,
+      "rss_kib": 118092
+    },
+    {
+      "draws": 8001,
+      "rss_kib": 118092
+    },
+    {
+      "draws": 10001,
+      "rss_kib": 118092
+    },
+    {
+      "draws": 12001,
+      "rss_kib": 118092
+    },
+    {
+      "draws": 14001,
+      "rss_kib": 118092
+    },
+    {
+      "draws": 16001,
+      "rss_kib": 118092
+    },
+    {
+      "draws": 18001,
+      "rss_kib": 118092
+    },
+    {
+      "draws": 20001,
+      "rss_kib": 118092
+    },
+    {
+      "draws": 22001,
+      "rss_kib": 118092
+    }
+  ]
+}

@@ -56,6 +56,8 @@ Ogre GL3PlusVaoManager::_update → glFenceSync
 
 ## 独立源码构建（第1项）
 
+新机器请使用[可移植构建与切换指南](../MESA_SETUP.md)，下文保留最初构建记录。新增脚本已在独立目录完整重建并通过24,000次渲染复现，见[恢复验证](../../results/mesa_portable_build.json)。
+
 使用Ubuntu源码包`25.2.8-0ubuntu0.24.04.2`，保留其发行版补丁，再应用项目的一行修复；不是直接用上游裸源码替代Ubuntu版本，也没有升级整个系统Mesa。
 下载来自`https://archive.ubuntu.com/ubuntu/pool/main/m/mesa/`，通过HTTPS取得`.dsc`，逐个核对其中的SHA256与文件大小；未声称完成维护者PGP签名验证。
 源码包、依赖包、构建选项和安装库的哈希见[构建记录](../../results/mesa_d3d12_source_build.json)。
