@@ -1,0 +1,28 @@
+{
+  "schema": "agv.camera_residual_trials_validation.v1",
+  "date": "2026-09-14",
+  "scope": "Camera-only fixed estimated-extrinsic sensitivity configurations and production archive/label interfaces. No new physical camera motion or vibration.",
+  "configurations": {
+    "count": 37,
+    "baseline": "Zero camera residual, retaining the input configuration's other noise and calibration settings",
+    "translation_mm": [1, 3, 5],
+    "rotation_deg": [0.05, 0.1, 0.2],
+    "axes": ["body X forward", "body Y left", "body Z up"],
+    "signs": [-1, 1],
+    "combination": "one component at a time; rotation vectors about the optical origin",
+    "storage": "existing right optical-frame perturbation convention"
+  },
+  "validation": {
+    "production_calibration_archive": "All 37 cases call MeasurementAdapter.publish_calibration with a captured TF sink; independent body-axis checks verify translation/rotation magnitudes and signs. All calibration IDs distinct; non-camera frames and input baseline unchanged.",
+    "production_capture_labels": "0 and 180 degree body yaw: a +3 mm camera lever-arm residual produces opposite map-X shifts. Replacing raw truth camera positions does not change estimated labels.",
+    "generator": "Two fresh output directories are byte-identical. Reusing an output directory fails without overwriting existing files.",
+    "standard_colcon": {"tests": 380, "errors": 0, "failures": 0, "skipped": 0}
+  },
+  "build_note": "The initial targeted test could not import the newly added module from the stale installed package. Rebuilt agv_localization before the final passing standard test run.",
+  "not_claimed": [
+    "new GUI or moving-vehicle capture validation",
+    "measured real-camera mounting tolerances",
+    "current 20 mm optical calibration",
+    "strip registration or stitching accuracy"
+  ]
+}

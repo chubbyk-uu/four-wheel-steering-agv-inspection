@@ -11,6 +11,42 @@ from agv_localization.core import (EncoderOdometry, DeliveryQueue, delay_sample,
 ROOT=Path(__file__).resolve().parents[1]
 
 
+def test_camera_trials_keep_other_measurements_and_archive_body_axis_residuals(config,platform,tmp_path):
+    import json
+    from types import SimpleNamespace
+    from agv_localization.camera_residuals import cases
+    from agv_localization.measurement_adapter import MeasurementAdapter
+    original=copy.deepcopy(config);trials=list(cases(config));assert len(trials)==37
+    camera=yaml.safe_load((ROOT.parent/'agv_description/config/linescan.yaml').read_text())
+    baseline=None;ids=set()
+    for name,cfg,description in trials:
+        unchanged=copy.deepcopy(cfg)
+        for key in ('camera_translation_m','camera_rotvec_rad'):
+            unchanged['calibration'][key]=original['calibration'][key]
+        assert unchanged==original
+        output=tmp_path/name;output.mkdir();sent=[]
+        adapter=SimpleNamespace(config=cfg,camera=camera,platform=platform,output=output,
+            mounts=calibrated_antennas(platform,cfg['calibration']),rotation=np.eye(3),
+            encoder=EncoderOdometry(platform,cfg),static=SimpleNamespace(sendTransform=sent.extend))
+        MeasurementAdapter.publish_calibration(adapter)
+        archive=json.loads((output/'calibration.json').read_text());ids.add(archive['calibration_id'])
+        assert all(t.child_frame_id.endswith('_calibrated') for t in sent)
+        frames={f['frame_id']:f for f in archive['estimated_frames']}
+        if baseline is None:baseline=frames;continue
+        key='camera_optical_calibrated';frame=frames.pop(key);reference=baseline[key]
+        assert frames=={k:v for k,v in baseline.items() if k!=key}
+        expected=np.zeros(3);expected['xyz'.index(description['axis'])]=description['value']
+        position=np.array(frame['translation_m'])-reference['translation_m']
+        rotation=(Rotation.from_quat(frame['orientation_xyzw'])*Rotation.from_quat(reference['orientation_xyzw']).inv()).as_rotvec()
+        if description['kind']=='translation_mm':
+            np.testing.assert_allclose(position,expected*.001,atol=1e-12)
+            np.testing.assert_allclose(rotation,0,atol=1e-12)
+        else:
+            np.testing.assert_allclose(position,0,atol=1e-12)
+            np.testing.assert_allclose(rotation,np.deg2rad(expected),atol=1e-12)
+    assert len(ids)==37 and config==original
+
+
 @pytest.fixture
 def config():return yaml.safe_load((ROOT/'config/measurements.yaml').read_text())
 

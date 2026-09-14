@@ -36,6 +36,27 @@ def test_labels_reject_pose_extrapolation(tmp_path):
     with pytest.raises(ValueError,match='bracket'):module.label(mission,nav)
 
 
+@pytest.mark.parametrize('yaw',[0.,3.141592653589793])
+def test_fixed_camera_residual_rotates_with_vehicle_and_ignores_truth(tmp_path,yaw):
+    import numpy as np
+    from scipy.spatial.transform import Rotation
+    mission,nav=fixture(tmp_path)
+    path=nav/'navigation.jsonl';rows=[json.loads(v) for v in path.read_text().splitlines()]
+    for row in rows:row['orientation_xyzw']=Rotation.from_euler('z',yaw).as_quat().tolist()
+    path.write_text('\n'.join(json.dumps(v) for v in rows))
+    before=module.label(mission,nav)['blocks'][0]['pose_tags']
+    calpath=nav/'calibration.json';cal=json.loads(calpath.read_text())
+    cal['estimated_frames'][0]['translation_m'][0]+=.003;write(calpath,cal)
+    after=module.label(mission,nav)['blocks'][0]['pose_tags']
+    for a,b in zip(before,after):
+        np.testing.assert_allclose(np.array(b['camera_position_map_m'])-a['camera_position_map_m'],
+                                   [.003 if yaw==0 else -.003,0,0],atol=1e-12)
+    raw=tmp_path/'raw/block_000000.json';metadata=json.loads(raw.read_text())
+    for tag in metadata['pose_tags']:tag['camera_position_world_m']=[-12345,67890,-999]
+    write(raw,metadata)
+    assert module.label(mission,nav)['blocks'][0]['pose_tags']==after
+
+
 def test_cross_pause_tags_use_actual_exposure_times_not_uniform_block_time(tmp_path):
     mission,nav=fixture(tmp_path)
     intervals=json.loads((mission/'capture_intervals.json').read_text());intervals[0]['disabled_ack_time_s']=3.1
