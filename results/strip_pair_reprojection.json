@@ -1,0 +1,158 @@
+{
+  "schema": "agv.strip_pair_reprojection.v1",
+  "date": "2026-09-14",
+  "capture": {
+    "region_m": [
+      3.0,
+      2.0
+    ],
+    "requested_speed_m_s": 0.5,
+    "blocks": 6,
+    "rows": 20762,
+    "steady_rtf": 0.9992683256517161,
+    "ros_archive_identical": true,
+    "coverage_status": "ESTIMATED_COMPLETE",
+    "final_state": "ACQUIRED",
+    "final_motion": "HOLD",
+    "wheel_steering_range_rad": {
+      "fl": [
+        -1.572694338181489,
+        0.04579147519423865
+      ],
+      "fr": [
+        -3.126612689386723,
+        0.033750750683263504
+      ],
+      "rl": [
+        -3.126612689398861,
+        0.0026524311728922238
+      ],
+      "rr": [
+        -1.603065192223102,
+        0.0396064086897433
+      ]
+    }
+  },
+  "optical_profile": "camera_20mm_measured_profile.json",
+  "baseline": {
+    "schema": "agv.strip_projection.diagnostic.v1",
+    "tracks": [
+      {
+        "track_id": 0,
+        "blocks": 3,
+        "rows": 10422,
+        "covered_pixels": 28249242,
+        "mean_injected_map_shift_m": [
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "track_id": 1,
+        "blocks": 3,
+        "rows": 10340,
+        "covered_pixels": 26979853,
+        "mean_injected_map_shift_m": [
+          0.0,
+          0.0
+        ]
+      }
+    ],
+    "shape": [
+      8192,
+      5462
+    ],
+    "resolution_m": 0.0003662109375,
+    "origin_xy_m": [
+      6.0,
+      -1.0
+    ],
+    "image_axes": "rows road +X, columns road +Y; pixel centers at half-cell",
+    "camera_x_residual_mm": 0.0,
+    "navigation_calibration_id": "agv-cal-4606e2573f487b9c",
+    "optical_profile_id": "measured-a226066547387f3d",
+    "scope": "Independent track rasters from fused navigation and calibrated rays. Bilinear forward splat, no gap filling, matching or stitching. Sparse line-time interpolation; fixed-plane nominal-height optics. Raw truth poses are not read."
+  },
+  "residual": {
+    "schema": "agv.strip_projection.diagnostic.v1",
+    "tracks": [
+      {
+        "track_id": 0,
+        "blocks": 3,
+        "rows": 10422,
+        "covered_pixels": 28249846,
+        "mean_injected_map_shift_m": [
+          0.002999887191567997,
+          2.4401825076675322e-05
+        ]
+      },
+      {
+        "track_id": 1,
+        "blocks": 3,
+        "rows": 10340,
+        "covered_pixels": 26978751,
+        "mean_injected_map_shift_m": [
+          -0.0029990471467254936,
+          7.473285768292205e-05
+        ]
+      }
+    ],
+    "shape": [
+      8192,
+      5462
+    ],
+    "resolution_m": 0.0003662109375,
+    "origin_xy_m": [
+      6.0,
+      -1.0
+    ],
+    "image_axes": "rows road +X, columns road +Y; pixel centers at half-cell",
+    "camera_x_residual_mm": 3.0,
+    "navigation_calibration_id": "agv-cal-4606e2573f487b9c",
+    "optical_profile_id": "measured-a226066547387f3d",
+    "scope": "Independent track rasters from fused navigation and calibrated rays. Bilinear forward splat, no gap filling, matching or stitching. Sparse line-time interpolation; fixed-plane nominal-height optics. Raw truth poses are not read."
+  },
+  "independent_pixel_shift": [
+    {
+      "track_id": 0,
+      "shift_columns_rows_px": [
+        0.047518798296579234,
+        8.15716247885905
+      ],
+      "map_shift_xy_mm": [
+        2.9872421187227967,
+        0.017401903673063684
+      ],
+      "response": 0.9865409331396222
+    },
+    {
+      "track_id": 1,
+      "shift_columns_rows_px": [
+        0.1421091718592038,
+        -8.207062677114322
+      ],
+      "map_shift_xy_mm": [
+        -3.005516117107296,
+        0.05204193305390764
+      ],
+      "response": 0.9878633706975961
+    }
+  ],
+  "pixel_check_method": "OpenCV phaseCorrelate with Hanning window on 512x1024 crops: rows 2000:3024, columns 1200:1712 for track 0 and 4200:4712 for track 1; independent output pixel comparison, not between the two different tracks.",
+  "visual_inspection": "Viewed two projected track rasters in common road coordinates. Surface and lane markings visible; residual waviness remains. No cross-track registration or seam blending yet.",
+  "gui_scope": "GUI and RViz ran during capture. Screenshot access failed; no new manual vehicle appearance or camera interaction acceptance claimed.",
+  "experiment": "Same six source blocks and same fused navigation replayed with additional estimated camera body-X offset of 3 mm. No new physical capture for perturbed case, no renderer truth poses consumed.",
+  "limits": [
+    "Fixed-plane nominal-height ray interpretation of measured horizontal mapping",
+    "Sparse line-time interpolation",
+    "Short-region in-memory diagnostic capped at 100 million output pixels",
+    "No feature registration, defect-size accuracy or full 100 m raster acceptance"
+  ],
+  "tests": {
+    "total": 382,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0
+  },
+  "retention": "Calibration source images, six road blocks and projected rasters retained under ignored local_data; portable profile and aggregate results tracked."
+}

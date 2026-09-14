@@ -16,6 +16,33 @@ def fixture_profile():
     return make_profile(f, g, dict(exposure_s=.00002, source_calibration_id='source'), {})
 
 
+def test_flat_strip_projection_analytic_reverse_and_partition():
+    from scipy.spatial.transform import Rotation
+    from agv_linescan.strip_projection import project_flat
+    p=np.column_stack([np.linspace(0,1,9),np.zeros(9),np.ones(9)])
+    body=Rotation.from_euler('z',np.zeros(9));mount=Rotation.from_euler('x',np.pi)
+    rays=np.array([[-.5,0,1],[0,0,1],[.5,0,1]])
+    actual=project_flat(p,body,[0,0,0],mount,rays)
+    np.testing.assert_allclose(actual[:,:,0],p[:,0,None]+rays[None,:,0],atol=1e-12)
+    np.testing.assert_allclose(actual[:,:,1],0,atol=1e-12)
+    split=np.concatenate([project_flat(p[:4],body[:4],[0,0,0],mount,rays),project_flat(p[4:],body[4:],[0,0,0],mount,rays)])
+    np.testing.assert_array_equal(actual,split)
+    for yaw,sign in ((0,1),(np.pi,-1)):
+        r=Rotation.from_euler('z',np.full(9,yaw))
+        before=project_flat(p,r,[0,0,0],mount,rays)
+        after=project_flat(p,r,[.003,0,0],mount,rays)
+        np.testing.assert_allclose(after-before,np.broadcast_to([sign*.003,0],after.shape),atol=1e-12)
+
+
+def test_row_times_keep_pause_anchors_and_reject_bad_order():
+    from agv_linescan.strip_projection import line_times
+    tags=[dict(global_line=n,time_s=t) for n,t in ((10,1.),(12,1.2),(13,5.),(15,5.2))]
+    m=dict(first=tags[0],last=tags[-1],pose_tags=tags,rows=6)
+    np.testing.assert_allclose(line_times(m),[1,1.1,1.2,5,5.1,5.2])
+    tags[2]['time_s']=.5
+    with pytest.raises(ValueError):line_times(m)
+
+
 def test_flat_rejects_saturated_and_insufficient_reference():
     with pytest.raises(ValueError):
         flat_field(np.zeros((256, 64), np.uint8), np.full((256, 64), 255, np.uint8))
