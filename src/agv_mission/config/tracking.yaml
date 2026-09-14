@@ -38,6 +38,13 @@ max_control_step_s: 0.1
 archive_drain_timeout_s: 10.0
 max_tracking_error_m: 0.6
 max_heading_error_rad: 0.35
+# Heading error the sensor's lateral gate is sized for, enforced while a scan
+# window is open. At speed the body's lateral velocity is mostly the forward
+# command projected through this angle -- 2.778 m/s at 0.05 rad is 0.139 m/s,
+# more than the whole position-feedback authority -- so leaving it at the 0.35
+# fault threshold would need a lateral gate of 1.07 m/s, which is three metres
+# of shear across one block.
+max_capture_heading_error_rad: 0.05
 # Segment watchdog scales with the planned time profile: a fixed budget either
 # starves a 100 m pass or lets a short one stall. The margin covers wheel
 # alignment, brake waits and the terminal settle, which do not scale with length.

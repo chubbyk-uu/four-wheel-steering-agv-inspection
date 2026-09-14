@@ -15,7 +15,17 @@ class Navigation:
     def __init__(self,directory):
         self.cal=json.loads((directory/'calibration.json').read_text())
         content=(directory/'navigation.jsonl').read_text();self.digest=hashlib.sha256(content.encode()).hexdigest()
-        rows=[json.loads(v) for v in content.splitlines()]
+        lines=[v for v in content.splitlines() if v.strip()];rows=[];self.torn_tail=False
+        for index,line in enumerate(lines):
+            try:rows.append(json.loads(line))
+            except ValueError:
+                # The adapter appends to this file from another process while the
+                # audit reads it, so the final line can be half a record. The
+                # readiness check already tolerates that; parsing has to agree, or
+                # the audit is refused for a race the caller was told was over.
+                # Any earlier line failing is corruption, not a race.
+                if index!=len(lines)-1:raise ValueError('corrupt navigation record %d'%index)
+                self.torn_tail=True
         if len(rows)<2:raise ValueError('not enough navigation samples')
         if any(r['frame_id']!='map' or r['child_frame_id']!='base_link' or r['calibration_id']!=self.cal['calibration_id'] for r in rows):raise ValueError('navigation frame/calibration changes')
         self.times=np.array([r['time_s'] for r in rows]);self.positions=np.array([r['position_m'] for r in rows])

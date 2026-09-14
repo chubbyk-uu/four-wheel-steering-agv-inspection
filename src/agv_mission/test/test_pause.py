@@ -25,8 +25,9 @@ class Harness:
         self.health={}
         self.probe=PhaseTrace(self.cfg['control_stall_threshold_s']);self.ticks=0
         # Writes stay synchronous here so a test can read the record it just made.
-        self.archive=NS(errors=0,peak=0,submit=lambda action:action(),
-                        append=lambda handle,text:handle.write(text))
+        self.archive=NS(errors=0,peak=0,submit=lambda action:action(),idle=True,
+                        sync=lambda:None,append=lambda handle,text:handle.write(text))
+        self.archive_settled=False
     def get_clock(self):return NS(now=lambda:NS(nanoseconds=round(self.now*1e9)))
     def valid(self,now):return self.healthy
     def count_publishers(self,topic):return 1
@@ -171,3 +172,30 @@ def test_a_lost_navigation_record_is_not_reported_as_stale_localization():
     # Without an archive failure the reason is unchanged.
     q=Harness();park(q);q.pause_tick(1.,False,.02,1.)
     assert q.reason=='STALE_OR_UNREADY_LOCALIZATION'
+
+
+def test_a_cancel_or_fault_reports_its_archive_separately_from_its_state():
+    # Mission end can wait for the queue before it claims success. A fault cannot:
+    # it has to stop the vehicle on the tick it is raised. So the terminal state
+    # stops meaning "the evidence is written", and a separate flag says that.
+    import io
+    def harness(state):
+        h=Harness();h.state=state;h.reason='CANCELED' if state=='CANCELING' else ''
+        h.last_sim=h.now-.02;h.core=None;h.steps=[];h.arrivals={};h.health={'state':'READY'}
+        h.execution_id='test';h.ready_since=None;h.mode='HOLD'
+        h.last_command=[0,0,0];h.motion_reason='';h.log=io.StringIO()
+        h.odom.header=NS(stamp=NS(sec=0,nanosec=900000000))
+        h.capture=NS(error='',poll=lambda:None,enabled=True,active=False,future=None,
+                     heartbeat={},close_failed=False,request=lambda *a,**k:True)
+        h.published=[];h.status_stream=NS(offer=h.published.append,dropped=0,errors=0)
+        return h
+    h=harness('CANCELING');h.archive.idle=False
+    Executor.tick(h)
+    assert h.state=='CANCELED','the state still goes terminal at once'
+    assert h.archive_settled is False,'but it must not claim the archive is down'
+    h.archive.idle=True;Executor.tick(h)
+    assert h.archive_settled is True
+    # A write that failed is not a settled archive either.
+    f=harness('FAULT');f.archive.idle=True;f.archive.errors=1
+    Executor.tick(f)
+    assert f.state=='FAULT' and f.archive_settled is False

@@ -164,6 +164,12 @@ class Operator(Node):
                     self.last_image=None;self.block_keys=set();self.captured_rows=0;self.coverage=None;self.message='任务已准备；定位连续就绪后可开始'
             elif action=='audit':
                 if not self.child or self.child.state not in TERMINAL:raise ValueError('请等待本任务结束或取消后再审计')
+                # Reaching a terminal state is not the same as having written the
+                # evidence: a cancel or a fault enters one immediately, by design.
+                # A worker that has exited cannot set the flag, and nothing more
+                # will be written to its files, so it is allowed through.
+                if not self.child.failure and not self.child.snapshot.get('archive_settled'):
+                    raise ValueError('归档尚未落盘完成；稍候再审计')
                 directory=self.child.output;output=directory.parent/('audit_'+uuid.uuid4().hex[:6])
                 self.job=self.pool.submit(audit_when_archived,directory,self.navigation,output,
                                           self.platform,self.camera,.1,self.child.snapshot.get('time_s'))

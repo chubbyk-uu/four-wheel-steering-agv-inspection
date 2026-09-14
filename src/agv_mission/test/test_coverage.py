@@ -187,3 +187,25 @@ def test_no_saved_tail_keeps_scene_identity_without_claiming_pixels(tmp_path):
     report=audit_capture(mission,nav,tmp_path/'empty',p,c)
     assert report['scene_contract_sha256']==[hashlib.sha256(json.dumps(scene,sort_keys=True,separators=(',',':')).encode()).hexdigest()]
     assert not report['inputs'] and report['status']=='NEEDS_RESCAN'
+
+
+def test_navigation_tolerates_a_torn_last_line_but_not_a_corrupt_middle(tmp_path):
+    # The readiness check the operator uses tolerates a half-written final line,
+    # because the adapter appends from another process. If the parser does not
+    # agree, the audit is refused for a race the caller was told was over.
+    import json as _json
+    from agv_mission.capture_audit import Navigation
+    d=tmp_path/'nav';d.mkdir()
+    (d/'calibration.json').write_text(_json.dumps(dict(calibration_id='c',optical_intrinsic_id='o',
+        estimated_frames=[dict(frame_id='camera_optical_calibrated',translation_m=[0.,0.,0.],orientation_xyzw=[0.,0.,0.,1.])])))
+    def row(t):
+        return _json.dumps(dict(time_s=t,frame_id='map',child_frame_id='base_link',calibration_id='c',
+            position_m=[t,0.,1.],orientation_xyzw=[0.,0.,0.,1.],pose_covariance=[0.]*36))
+    (d/'navigation.jsonl').write_text(row(1.)+'\n'+row(2.)+'\n'+row(3.)+'\n'+'{"time_s": 4.')
+    nav=Navigation(d)
+    assert nav.torn_tail is True and len(nav.times)==3
+    (d/'navigation.jsonl').write_text(row(1.)+'\n'+'{"time_s": 2.'+'\n'+row(3.)+'\n')
+    try:
+        Navigation(d);assert False,'a corrupt line that is not the last is not a race'
+    except ValueError as exc:
+        assert 'corrupt navigation record 1' in str(exc)

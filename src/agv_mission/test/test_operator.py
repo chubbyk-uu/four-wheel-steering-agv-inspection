@@ -1,4 +1,5 @@
 from copy import deepcopy
+import math
 import json
 from pathlib import Path
 from types import SimpleNamespace as NS
@@ -162,11 +163,18 @@ def test_the_scan_gates_sit_above_what_the_tracker_may_command():
     camera=yaml.safe_load((p/'linescan.yaml').read_text());platform=yaml.safe_load((p/'platform.yaml').read_text())
     tracking=yaml.safe_load((Path(__file__).resolve().parents[1]/'config/tracking.yaml').read_text())
     result=inspection_camera_config(camera,platform)
-    assert tracking['max_position_feedback_m_s']<result['max_scan_lateral_m_s'],(
-        tracking['max_position_feedback_m_s'],result['max_scan_lateral_m_s'])
+    # The controller caps its feedback in the track frame and rotates the whole
+    # command, feedforward included, into the body frame. A heading error psi
+    # therefore leaks rated*sin(psi) into the axis the sensor gates, and at the
+    # rated speed that term is larger than the entire feedback authority. An
+    # assertion against the feedback cap alone -- which is what this test used to
+    # do -- passes while a legal command of 0.209 m/s trips the gate.
+    budget=(platform['rated_scan_speed']*math.sin(tracking['max_capture_heading_error_rad'])
+            +tracking['max_position_feedback_m_s'])
+    assert budget<=result['max_scan_lateral_m_s'],(budget,result['max_scan_lateral_m_s'])
+    assert result['max_scan_lateral_m_s']>=1.05*budget,'keep margin over the legal envelope'
+    # Yaw has no feedforward to project: an in-place rotation is its own segment
+    # and never scans, so ordering the two rates is enough there.
     assert tracking['max_heading_feedback_rad_s']<result['max_yaw_rate_rad_s'],(
         tracking['max_heading_feedback_rad_s'],result['max_yaw_rate_rad_s'])
-    # Not just ordered: a fifth of the gate is kept back, so a run does not pass
-    # on the luck of never reaching its own authority.
-    assert result['max_scan_lateral_m_s']>=1.2*tracking['max_position_feedback_m_s']
     assert result['max_yaw_rate_rad_s']>=1.2*tracking['max_heading_feedback_rad_s']

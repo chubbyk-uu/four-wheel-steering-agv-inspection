@@ -23,6 +23,9 @@ from .callback_trace import TracedExecutor,PhaseTrace,StallWatch
 from .offload import TelemetryPublisher,ArchiveWriter
 
 
+TERMINAL={'COMPLETED','ACQUIRED','CANCELED','FAULT'}
+
+
 class Executor(Node):
     def __init__(self, **node_kwargs):
         super().__init__('rectangle_executor', **node_kwargs)
@@ -50,7 +53,7 @@ class Executor(Node):
         self.state='READY';self.reason='';self.ready_since=None;self.steps=[];self.index=0;self.core=None
         self.last_sim=None;self.last_clock=time.monotonic();self.step_attempts=0;self.stopped_since=None;self.ticks=0
         self.pause_pose=None;self.pause_started=None;self.pause_events=[];self.active_kind=''
-        self.archive_since=None
+        self.archive_since=None;self.archive_settled=False
         self.cmd=self.create_publisher(TwistStamped,'/cmd_vel',10)
         # Telemetry is periodically refreshed and fully archived locally. A slow
         # display must not back-pressure the control loop, and best-effort QoS
@@ -150,6 +153,19 @@ class Executor(Node):
     def cancel(self,request,response):
         if self.state not in ('COMPLETED','ACQUIRED','FAULT','CANCELED'):self.state='CANCELING';self.reason='CANCELED'
         self.command([0,0,0]);response.success=True;response.message='braking requested';return response
+    def check_scan_heading(self):
+        """Stop for a heading the scan gate will not accept, and say so.
+
+        The sensor rejects a scan whose body lateral velocity is too high, and at
+        speed that velocity is mostly the forward command projected through the
+        heading error, not cross-track correction. Left to the sensor it arrives
+        asynchronously as CAMERA_unsupported_scan_motion, from a component that
+        cannot say which of its four conditions failed or why.
+        """
+        if not self.capture.active or self.core is None:return
+        error=self.core.diagnostic.get('reference_heading_error_rad')
+        if error is not None and abs(error)>self.cfg['max_capture_heading_error_rad']:
+            self.fault('SCAN_HEADING_EXCEEDS_GATE')
     def localization_reason(self):
         """Name the localization failure. A lost navigation record is not staleness,
         and reporting it as one sends the search in the wrong direction."""
@@ -194,15 +210,26 @@ class Executor(Node):
             elif dt<0 or dt>self.cfg['max_control_step_s']:self.fault('INVALID_CONTROL_TIMESTEP')
             elif not valid:self.fault(self.localization_reason())
             elif wall-self.last_clock>self.cfg['wall_timeout_s']:self.fault('SIM_CLOCK_STALLED')
-            elif dt>0:self.run_step(dt)
+            elif dt>0:
+                self.run_step(dt)
+                self.check_scan_heading()
         else:
             self.command([0,0,0])
             self.capture.request(False,reason=self.reason or self.state.lower())
             if self.state=='CANCELING' and self.mode=='HOLD' and self.capture.active is False and self.capture.future is None:self.state='CANCELED'
+            # A fault has to stop the vehicle on the tick it is raised, so unlike
+            # the mission-end path it cannot wait for the queue before entering a
+            # terminal state. The terminal state is therefore not the signal that
+            # the evidence reached the file; this flag is, and the operator gates
+            # its audit on it.
+            if self.state in TERMINAL:
+                self.archive.sync()
+                self.archive_settled=bool(self.archive.idle) and not self.archive.errors
         self.probe.mark('control')
         record={'time_s':now,'state':self.state,'reason':self.reason,'motion_state':self.mode,
                 'step_index':self.index,'step_count':len(self.steps),'capture_integrated':self.capture.enabled,'capture_active':self.capture.active,'capture_sensor_enabled':self.capture.heartbeat.get('enabled') if self.capture.heartbeat else None,'capture_close_failed':self.capture.close_failed,'command_body':self.last_command,'motion_reason':self.motion_reason}
         record.update(execution_id=self.execution_id,capture_pending=self.capture.future is not None,
+            archive_settled=self.archive_settled,
             ready_to_start=self.state=='READY' and self.ready_since is not None and wall-self.ready_since>=self.cfg['initial_ready_hold_s'])
         if self.steps and self.index<len(self.steps):record.update(kind=self.steps[self.index]['kind'],track_id=self.steps[self.index]['track_id'])
         # The compiled step merges accelerate/scan/brake, so the tracker's own
@@ -256,6 +283,7 @@ class Executor(Node):
                         self.fault('ARCHIVE_DRAIN_TIMEOUT')
                     return
                 if self.archive.errors:self.fault('ARCHIVE_WRITE_FAILED');return
+                self.archive_settled=True
                 self.state='ACQUIRED' if self.capture.enabled else 'COMPLETED'
             return
         step=self.steps[self.index]
