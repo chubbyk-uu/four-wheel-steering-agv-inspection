@@ -27,7 +27,7 @@
       }
     ],
     "host_rss_budget_gib": 20,
-    "host_rss_verdict": "within, 19.53 to 19.75 GiB, a margin of 1.3 to 2.4 percent",
+    "host_rss_verdict": "within for the rated mission length, 19.53 to 19.75 GiB, a margin of 1.3 to 2.4 percent -- but see amended_2026_09_14: the budget is exceeded by any mission longer than about fifteen minutes",
     "device_budget_gib": 10,
     "device_verdict": "within, 9.72 to 9.78 GiB whole device including an 899 MiB desktop baseline, a margin of 2.2 to 2.8 percent",
     "drift": "none: peak RSS 19.66 / 19.75 / 19.53 GiB and peak device 9.78 / 9.72 / 9.78 GiB across three consecutive missions"
@@ -88,5 +88,16 @@
     "the declared table also reserves 512 MiB for camera, queues and robot and 3 GiB for driver, window and GZ overhead; those were reserved for long-run measurement and are still not separately attributed",
     "whole-device VRAM cannot be attributed per process here, so the desktop baseline of 899 MiB is inside the measured figure",
     "disk: the 164.82 GB figure budgets three captures plus a full rescan, which this workspace has not run in one sitting"
-  ]
+  ],
+  "amended_2026_09_14": {
+    "what_changed": "the conclusion below is scoped to the twelve-minute rated missions it was measured on, and does not survive longer ones",
+    "evidence": {
+      "tier_2778 (374 s)": 14.7,
+      "repeat_a (835 s)": 19.66,
+      "tier_1000 (1398 s)": 25.4,
+      "tier_0500 (1862 s)": 30.07
+    },
+    "reading": "process tree RSS grows with mission duration at roughly 10 to 16 MiB per second and crosses the 20 GiB budget after about fifteen minutes. The three rated runs came in under budget because they are 12.7 minutes long, not because the budget is respected. The 0.5 m/s full-area run reached 30.07 GiB on a 31 GiB host and the mission faulted.",
+    "see": "results/speed_tier_closure_attempt.json"
+  }
 }

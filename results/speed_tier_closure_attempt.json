@@ -1,0 +1,134 @@
+{
+  "schema": "agv.speed_tier_closure_attempt.v1",
+  "goal": "close the last two acceptance items: the 0.5 and 1.0 m/s full-area tiers, and a full-area real-time factor measured in a freshly restarted WSL instance",
+  "instance": {
+    "restarted": true,
+    "uptime_at_first_run_s": 144,
+    "order": "rated first, then 1.0, then 0.5, so the tier with the least real-time margin met the least decayed instance",
+    "guest_cpu_probe_s": [
+      0.1793,
+      0.1708,
+      0.1748
+    ],
+    "guest_cpu_note": "flat within three percent across the sequence; the guest never lost single-thread speed"
+  },
+  "outcome": "the gate cannot be closed. One tier of three passed, and the two failures are separate defects, both previously unseen.",
+  "tiers": [
+    {
+      "name": "tier_2778",
+      "speed_m_s": 2.777777777777778,
+      "instance_run": 1,
+      "result": "FAULT",
+      "reason": "CAMERA_unsupported_scan_motion at t=335.3 s, step 13 of 29, track 4, capture open",
+      "resources": {
+        "wall_seconds": 374,
+        "rss_gib_quartiles": [
+          0.0,
+          10.5,
+          11.9,
+          13.2,
+          14.7
+        ],
+        "peak_rss_gib": 14.68,
+        "peak_device_gib": 8.87
+      }
+    },
+    {
+      "name": "tier_1000",
+      "speed_m_s": 1.0,
+      "instance_run": 2,
+      "result": "PASSED",
+      "coverage_status": "ESTIMATED_COMPLETE",
+      "steady_rtf": 0.9993463763577174,
+      "observed_rtf": 0.9978099937377655,
+      "blocks": 680,
+      "rows": 2765123,
+      "final_state": "ACQUIRED",
+      "final_motion": "HOLD",
+      "unverified_tracks": 0,
+      "quality_flagged_tracks": 0,
+      "discarded_tail_rows": [],
+      "resources": {
+        "wall_seconds": 1398,
+        "rss_gib_quartiles": [
+          0.0,
+          14.6,
+          19.9,
+          25.4,
+          22.7
+        ],
+        "peak_rss_gib": 30.11,
+        "peak_device_gib": 8.87
+      }
+    },
+    {
+      "name": "tier_0500",
+      "speed_m_s": 0.5,
+      "instance_run": 3,
+      "result": "FAULT",
+      "reason": "CAMERA_STATE_TIMEOUT at t=1818.6 s, step 22 of 29, capture open, a camera service call outstanding past capture_state_timeout_s of 0.5 s",
+      "resources": {
+        "wall_seconds": 1862,
+        "rss_gib_quartiles": [
+          0.0,
+          16.2,
+          23.4,
+          30.0,
+          30.0
+        ],
+        "peak_rss_gib": 30.07,
+        "peak_device_gib": 8.96
+      }
+    }
+  ],
+  "defect_lateral_authority": {
+    "title": "the tracker may command more lateral velocity than the sensor will scan through",
+    "measurement": {
+      "max_position_feedback_m_s": 0.12,
+      "source_a": "src/agv_mission/config/tracking.yaml",
+      "max_scan_lateral_m_s": 0.1,
+      "source_b": "src/agv_mission/agv_mission/camera_limits.py",
+      "fault_condition": {
+        "vx": 2.8549625061472996,
+        "vy": -0.10002028479048197,
+        "wz": -0.004401034900631575,
+        "residual": 1.6183101829065417e-05
+      },
+      "exceeded_by_m_s": 2.028479048197e-05
+    },
+    "observed_peaks_during_capture": {
+      "repeat_a": 0.08394,
+      "repeat_b": 0.07895,
+      "repeat_c": 0.0394,
+      "tier_2778": 0.10301
+    },
+    "reading": "the two limits are not ordered. The controller is permitted 0.12 m/s of lateral authority and the sensor rejects motion above 0.10 m/s, so a mission can be faulted by its own controller doing its job. Three earlier rated runs peaked at 0.084, 0.079 and 0.039 m/s: they passed with as little as 16 percent of margin, which is luck rather than design.",
+    "precedent": "DefaultsMatchShippedPlatformAndPolicy already asserts rated + max_position_feedback <= max_speed across packages. This is the same class of missing relation.",
+    "decision_needed": "lowering the lateral authority below the sensor gate costs cross-track accuracy, which feeds the coverage margin; raising the sensor gate admits more smear. Not a change to make silently."
+  },
+  "defect_memory_growth": {
+    "title": "process tree memory grows with mission duration and passes the declared budget after about fifteen minutes",
+    "budget_gib": 20,
+    "measured": {
+      "tier_2778 (374 s)": 14.7,
+      "repeat_a (835 s)": 19.66,
+      "tier_1000 (1398 s)": 25.4,
+      "tier_0500 (1862 s)": 30.07
+    },
+    "growth_rate_mib_per_second": "about 10 to 16, roughly linear in wall time rather than in captured data: 0.5 m/s archives the same number of lines as the rated run and still grows three times as much",
+    "consequence": "the 0.5 m/s run reached 30.07 GiB on a 31 GiB host, the harness reported host memory pressure, and the mission faulted CAMERA_STATE_TIMEOUT with a camera service call outstanding. The 1.0 m/s run peaked at 25.4 GiB, over budget, and passed anyway.",
+    "amends": "results/resource_budget_reconciliation.json concluded \"within, 19.53 to 19.75 GiB\". That conclusion holds only for the twelve-minute rated missions it was measured on. It does not hold for longer missions, and the three rated runs sat under the budget because of their duration, not because the budget is respected.",
+    "not_yet_known": "what accumulates. Growth is per second of mission rather than per archived block, so the archive path is not the obvious suspect."
+  },
+  "also_recorded": {
+    "tooling_bug": "the runner logged exit=$? inside the same echo as $(date), so the command substitution reset $? and both faults were recorded as exit=0. Two failed tiers looked like successes in the progress log until their results files turned up missing."
+  },
+  "what_this_closes": [
+    "the 1.0 m/s full-area tier, which passed cleanly: ESTIMATED_COMPLETE, ten tracks with no unverified span or quality flag, 680 blocks, 2,765,123 rows, ACQUIRED at HOLD, steady RTF 0.9993"
+  ],
+  "what_remains": [
+    "the 0.5 and rated tiers must be re-run after the two defects are addressed",
+    "no full-area real-time factor from a fresh instance at the rated speed, because that run faulted",
+    "both defects are blocking under the gate clause about known high-priority defects affecting control or capture integrity"
+  ]
+}
