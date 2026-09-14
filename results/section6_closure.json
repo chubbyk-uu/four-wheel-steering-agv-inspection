@@ -1,0 +1,418 @@
+{
+  "schema": "agv.section6_closure.v1",
+  "date": "2026-09-14",
+  "goal": "implementation plan section 6: remaining speed tiers, the repeat criterion, the real-time-factor gate and the resource budget, on the configuration that carries the 0.28 lateral gate, the scan heading gate and the source-built private Mesa",
+  "configuration": {
+    "region_m": [
+      100,
+      10
+    ],
+    "track_spacing_m": 1.0,
+    "tracks": 10,
+    "scene": "assets/road/runtime_fullwidth_100m_v1",
+    "stack": "GUI + RViz + OptiX + both C8 lidars, d3d12/NVIDIA, WSL2",
+    "mesa": "private source-built 25.2.8 with the command-signature fix, selected by tools/with_mesa_runtime.py; verified in the server process maps",
+    "probes": "pause/resume retained-frame probe on; cancel probe off, matching the runs these replace",
+    "seeds_passed_as": "localization_config, so the shipped measurements.yaml is untouched"
+  },
+  "instance": {
+    "restarted": true,
+    "uptime_at_first_run_s": 139,
+    "note": "one freshly restarted WSL instance, runs numbered 1 to 4 in order; crash dump collection disabled beforehand, see gz_shutdown_crash_dumps.json"
+  },
+  "runs": [
+    {
+      "name": "accept_rated_1",
+      "scan_speed_m_s": 2.777777777777778,
+      "noise_seed": 20260908,
+      "instance_run": 1,
+      "instance_uptime_at_start_s": 139,
+      "coverage_status": "ESTIMATED_COMPLETE",
+      "final_state": "ACQUIRED",
+      "final_motion": "HOLD",
+      "steady_rtf": 0.9987809173048743,
+      "observed_rtf": 0.9976445612454635,
+      "steady_wall_s": 373.2350043349999,
+      "startup_to_first_odometry_s": 35.14759145899998,
+      "blocks": 710,
+      "rows": 2880106,
+      "actual_peak_speed_m_s": 2.916534810436068,
+      "pause_retains_frame": true,
+      "discarded_tail_rows": [],
+      "peak_tree_rss_bytes": 11029889024,
+      "peak_device_used_bytes": 10362028032,
+      "capture_peak_lateral_command_m_s": 0.09986224940150974,
+      "capture_peak_heading_error_rad": 0.03873014591224494,
+      "max_lateral_allowance_m": 0.1229629740027943,
+      "tracks_fully_covered": 10,
+      "tracks_with_unverified": 0,
+      "tracks_with_quality_flags": 0,
+      "excluded_footprint_tags": 0
+    },
+    {
+      "name": "accept_rated_2",
+      "scan_speed_m_s": 2.777777777777778,
+      "noise_seed": 20260912,
+      "instance_run": 2,
+      "instance_uptime_at_start_s": 960,
+      "coverage_status": "ESTIMATED_COMPLETE",
+      "final_state": "ACQUIRED",
+      "final_motion": "HOLD",
+      "steady_rtf": 0.9981531706898396,
+      "observed_rtf": 0.9973459055044324,
+      "steady_wall_s": 373.409623838,
+      "startup_to_first_odometry_s": 33.484855908999975,
+      "blocks": 710,
+      "rows": 2880315,
+      "actual_peak_speed_m_s": 2.9159133455002046,
+      "pause_retains_frame": true,
+      "discarded_tail_rows": [],
+      "peak_tree_rss_bytes": 10940968960,
+      "peak_device_used_bytes": 10338959360,
+      "capture_peak_lateral_command_m_s": 0.06527479387284303,
+      "capture_peak_heading_error_rad": 0.02354095236694267,
+      "max_lateral_allowance_m": 0.11971399261501811,
+      "tracks_fully_covered": 10,
+      "tracks_with_unverified": 0,
+      "tracks_with_quality_flags": 0,
+      "excluded_footprint_tags": 0
+    },
+    {
+      "name": "accept_rated_3",
+      "scan_speed_m_s": 2.777777777777778,
+      "noise_seed": 20260913,
+      "instance_run": 3,
+      "instance_uptime_at_start_s": 1777,
+      "coverage_status": "NEEDS_RESCAN",
+      "final_state": "ACQUIRED",
+      "final_motion": "HOLD",
+      "steady_rtf": 0.9984412673490045,
+      "observed_rtf": 0.9974947254058427,
+      "steady_wall_s": 373.26181537900106,
+      "startup_to_first_odometry_s": 34.540175050000016,
+      "blocks": 710,
+      "rows": 2880021,
+      "actual_peak_speed_m_s": 2.9156458651763604,
+      "pause_retains_frame": true,
+      "discarded_tail_rows": [],
+      "peak_tree_rss_bytes": 10924941312,
+      "peak_device_used_bytes": 10334765056,
+      "capture_peak_lateral_command_m_s": 0.10110391513197174,
+      "capture_peak_heading_error_rad": 0.030098147112017616,
+      "max_lateral_allowance_m": 0.1262345156558647,
+      "tracks_fully_covered": 9,
+      "tracks_with_unverified": 1,
+      "tracks_with_quality_flags": 1,
+      "excluded_footprint_tags": 2
+    },
+    {
+      "name": "accept_tier_0500",
+      "scan_speed_m_s": 0.5,
+      "noise_seed": 20260908,
+      "instance_run": 4,
+      "instance_uptime_at_start_s": 2594,
+      "coverage_status": "ESTIMATED_COMPLETE",
+      "final_state": "ACQUIRED",
+      "final_motion": "HOLD",
+      "steady_rtf": 0.9994400582873678,
+      "observed_rtf": 0.9991217351573239,
+      "steady_wall_s": 2073.441006108002,
+      "startup_to_first_odometry_s": 34.70000463699989,
+      "blocks": 670,
+      "rows": 2744320,
+      "actual_peak_speed_m_s": 0.5617587862717075,
+      "pause_retains_frame": true,
+      "discarded_tail_rows": [
+        806,
+        751,
+        770,
+        732,
+        743,
+        712,
+        752,
+        745,
+        739,
+        727
+      ],
+      "peak_tree_rss_bytes": 11583864832,
+      "peak_device_used_bytes": 10289676288,
+      "capture_peak_lateral_command_m_s": 0.02123199128010305,
+      "capture_peak_heading_error_rad": 0.0331929841911695,
+      "max_lateral_allowance_m": 0.1,
+      "tracks_fully_covered": 10,
+      "tracks_with_unverified": 0,
+      "tracks_with_quality_flags": 0,
+      "excluded_footprint_tags": 0
+    },
+    {
+      "name": "accept_rated_5",
+      "scan_speed_m_s": 2.777777777777778,
+      "noise_seed": 20260913,
+      "instance_run": 5,
+      "instance_uptime_at_start_s": 5772,
+      "coverage_status": "ESTIMATED_COMPLETE",
+      "final_state": "ACQUIRED",
+      "final_motion": "HOLD",
+      "steady_rtf": 0.9988484756697205,
+      "observed_rtf": 0.9977112207804074,
+      "steady_wall_s": 373.16971400500006,
+      "startup_to_first_odometry_s": 35.408819646000666,
+      "blocks": 710,
+      "rows": 2880371,
+      "actual_peak_speed_m_s": 2.915647607072469,
+      "pause_retains_frame": true,
+      "discarded_tail_rows": [],
+      "peak_tree_rss_bytes": 10948894720,
+      "peak_device_used_bytes": 10349445120,
+      "capture_peak_lateral_command_m_s": 0.07014369381609009,
+      "capture_peak_heading_error_rad": 0.010873129934471096,
+      "max_lateral_allowance_m": 0.12246280060220432,
+      "tracks_fully_covered": 10,
+      "tracks_with_unverified": 0,
+      "tracks_with_quality_flags": 0,
+      "excluded_footprint_tags": 0
+    },
+    {
+      "name": "accept_rated_6",
+      "scan_speed_m_s": 2.777777777777778,
+      "noise_seed": 20260912,
+      "instance_run": 7,
+      "instance_uptime_at_start_s": 6712,
+      "coverage_status": "ESTIMATED_COMPLETE",
+      "final_state": "ACQUIRED",
+      "final_motion": "HOLD",
+      "steady_rtf": 0.9983986009335668,
+      "observed_rtf": 0.9974776819026945,
+      "steady_wall_s": 373.2176704290014,
+      "startup_to_first_odometry_s": 33.386102623000625,
+      "blocks": 710,
+      "rows": 2880432,
+      "actual_peak_speed_m_s": 2.915515373298861,
+      "pause_retains_frame": true,
+      "discarded_tail_rows": [],
+      "peak_tree_rss_bytes": 11132223488,
+      "peak_device_used_bytes": 10276044800,
+      "capture_peak_lateral_command_m_s": 0.07552127120719164,
+      "capture_peak_heading_error_rad": 0.03430165398141872,
+      "max_lateral_allowance_m": 0.12047222438300277,
+      "tracks_fully_covered": 10,
+      "tracks_with_unverified": 0,
+      "tracks_with_quality_flags": 0,
+      "excluded_footprint_tags": 0,
+      "note": "retry after a GUI-client abort at instance_run 6"
+    }
+  ],
+  "comparison": {
+    "rated_rss_peak_gib_before": [
+      19.66,
+      19.75,
+      19.53
+    ],
+    "rated_rss_peak_gib_now": [
+      10.27,
+      10.19,
+      10.17
+    ],
+    "tier_0500_before": {
+      "result": "FAULT",
+      "reason": "CAMERA_STATE_TIMEOUT at t=1818.6 s",
+      "peak_rss_gib": 30.07
+    },
+    "tier_0500_now": {
+      "result": "ESTIMATED_COMPLETE",
+      "peak_rss_gib": 10.79
+    },
+    "rated_rtf_before": [
+      0.9588,
+      0.945,
+      0.9439
+    ],
+    "rated_rtf_now": [
+      0.99878,
+      0.99815,
+      0.99844
+    ],
+    "rated_steady_wall_s_before": [
+      388.7,
+      394.5,
+      394.9
+    ],
+    "rated_steady_wall_s_now": [
+      373.2,
+      373.4,
+      373.3
+    ],
+    "reading": "the per-instance real-time-factor decay and the mission-duration memory growth both disappear with the Mesa fix. Three runs are not proof that the decay had a single cause, but nothing in this instance reproduces it."
+  },
+  "open_item": {
+    "title": "run 3 ended NEEDS_RESCAN, so the three consecutive clean rated runs are not yet on the record",
+    "detail": "track 4, along 0 to 0.1011 m, two pose tags excluded with UNCERTAINTY_EXCEEDS_OVERLAP. That flag fires only when the nominal footprint does cover the strip and the padded one does not, so the pixels exist and the guarantee does not.",
+    "margin": {
+      "swath_m": 1.5,
+      "strip_m": 1.0,
+      "slack_per_side_m": 0.25,
+      "declared_uncertainty_m": 0.1,
+      "lateral_offset_allowed_m": 0.15,
+      "max_lateral_allowance_observed": [
+        0.1229629740027943,
+        0.11971399261501811,
+        0.1262345156558647,
+        0.1,
+        0.12246280060220432,
+        0.12047222438300277
+      ],
+      "reading": "the declared uncertainty floor alone consumes 40 percent of the slack; the three rated runs sat within 0.03 m of rejection, so passing is partly luck. The 0.5 m/s tier stayed at the floor, consistent with the attitude gate closing for longer as speed rises."
+    },
+    "hypothesis": "the gap sits at the start of a pass, where the gravity-reference acceleration gate has been closed for the whole ramp and the attitude covariance is largest. Consistent with the evidence, not separately confirmed.",
+    "options": [
+      "run the rescan for run 3 and record three passes including one necessary rescan",
+      "run two more rated runs for three consecutive clean ones"
+    ],
+    "status": "no longer blocking: three consecutive clean runs were obtained afterwards. The margin finding below stays open.",
+    "not_reproducible": "accept_rated_5 repeated seed 20260913 in the same configuration and excluded no tags at all (peak lateral command 0.0701 against 0.1011 in run 3), so the gap is a marginal coincidence of lateral offset and attitude covariance, not a seed-determined or reproducible defect."
+  },
+  "not_covered": [
+    "the rescan for run 3",
+    "whether a positive maxCrashDumpCount is honoured",
+    "GUI panel rescan button, still only validated on 8 x 2 m",
+    "agv_linescan is still copy-installed"
+  ],
+  "aborted_runs": [
+    {
+      "name": "accept_rated_6_gui_abort",
+      "instance_run": 6,
+      "instance_uptime_at_start_s": 6588,
+      "speed_m_s": 2.777777777777778,
+      "noise_seed": 20260912,
+      "outcome": "startup failure, mission never began, no capture data",
+      "cause": "the Gazebo GUI client lost its D3D12 device (\"D3D12: Removing Device\"), fell back to drisw, which the private D3D12-only Mesa does not contain, and aborted with SIGABRT on the Qt OpenGL context",
+      "evidence": "local_data/accept_rated_6_gui_abort/simulation.log",
+      "reading": "the simulation server and RViz both came up on the private Mesa in the same launch, so this is the known intermittent WSLg context failure meeting the deliberate absence of a software fallback. It fails immediately instead of degrading to software rendering. Retried after a 60 s settle and passed.",
+      "kept": "the directory is retained as the first real instance of the no-fallback boundary"
+    }
+  ],
+  "repeat_criterion": {
+    "requirement": "at least three consecutive full-area runs of the final configuration, at least two normal noise seeds, at least one at the rated 10 km/h",
+    "satisfied_by": [
+      "accept_tier_0500",
+      "accept_rated_5",
+      "accept_rated_6"
+    ],
+    "seeds": [
+      20260908,
+      20260913,
+      20260912
+    ],
+    "speeds_m_s": [
+      0.5,
+      2.777777777777778,
+      2.777777777777778
+    ],
+    "met": true,
+    "note": "accept_rated_3 ended NEEDS_RESCAN and stays on the record; the three consecutive runs counted here come after it. The GUI-client abort between runs 5 and 6 carried no mission and is recorded separately."
+  },
+  "rtf_history_this_instance": {
+    "samples": [
+      0.9987809173048743,
+      0.9981531706898396,
+      0.9984412673490045,
+      0.9994400582873678,
+      0.9988484756697205,
+      0.9983986009335668
+    ],
+    "instance_runs": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      7
+    ],
+    "uptime_s": [
+      139,
+      960,
+      1777,
+      2594,
+      5772,
+      6712
+    ],
+    "floor": 0.92,
+    "below_floor": 0,
+    "steady_wall_s": [
+      373.2350043349999,
+      373.409623838,
+      373.26181537900106,
+      2073.441006108002,
+      373.16971400500006,
+      373.2176704290014
+    ],
+    "previous_instance_2026_09_12": [
+      0.9588,
+      0.945,
+      0.9439,
+      0.906,
+      0.8866,
+      0.8669
+    ],
+    "reading": "Six runs across one instance from 139 s to 6712 s of uptime show no decay, against a previous instance that fell from 0.9588 to 0.8669 over about 75 minutes on the same configuration. The Mesa command-signature leak is most likely the cause of that decay: it was the one accumulating state outside our processes, it accumulated per simulation run in the WSL graphics stack, a WSL restart cleared it and restored the factor, and removing it removed the decay. Six runs in one instance are evidence, not proof: the earlier investigation never separated the page cache from the driver state, so a second contributor is not excluded."
+  },
+  "slip_audit": {
+    "tool": "tools/audit_scan_slip.py",
+    "ratio_floor": 0.95,
+    "results": {
+      "accept_tier_0500": {
+        "passed": true,
+        "images": 670,
+        "missing": 0,
+        "slips": 0,
+        "worst": null
+      },
+      "accept_rated_5": {
+        "passed": true,
+        "images": 710,
+        "missing": 0,
+        "slips": 0,
+        "worst": null
+      },
+      "accept_rated_6": {
+        "passed": true,
+        "images": 710,
+        "missing": 0,
+        "slips": 0,
+        "worst": null
+      }
+    },
+    "note": "run with the corrected tool: it now requires at least one located image, pairs each archived block with its own pixels by block identity, and exits non-zero on failure. The version in force before 2026-09-13 passed vacuously on zero images and always exited 0."
+  },
+  "residual_issues": [
+    {
+      "title": "the lateral coverage margin is thin by design, not by accident",
+      "detail": "swath 1.5 m against a 1.0 m strip leaves 0.25 m per side; the declared uncertainty floor of 0.1 m consumes 40 percent of it before any tracking error, so only 0.15 m of lateral offset is available. Observed maximum allowance across six runs: 0.1000 to 0.1262.",
+      "impact": "one rated run in six produced a 0.101 m unverified span. The pixels exist; the guarantee does not. Remedy today is a rescan.",
+      "priority": "low, recorded, not blocking"
+    },
+    {
+      "title": "the Gazebo GUI client can abort at startup when the D3D12 device is removed",
+      "detail": "the private Mesa is D3D12-only with no llvmpipe, so the drisw fallback path is absent and the Qt OpenGL context failure aborts the process. The server and RViz came up normally in the same launch.",
+      "impact": "startup only, no mission or capture data affected; one occurrence in seven launches, cleared by a 60 s settle and retry",
+      "priority": "low, recorded, workaround is retry"
+    },
+    {
+      "title": "the panel rescan button is still validated only on an 8 x 2 m region",
+      "impact": "the full-area rescan loop itself was closed on 2026-09-13 with the headless driver",
+      "priority": "low, recorded"
+    },
+    {
+      "title": "agv_linescan is still copy-installed rather than symlinked",
+      "impact": "editing the source without rebuilding tests the stale copy",
+      "priority": "tooling hazard, unrelated to this gate"
+    }
+  ],
+  "verdict": {
+    "section": "6",
+    "status": "PASSED",
+    "decided_by": "project owner, 2026-09-14",
+    "basis": "every gate bullet met on the final configuration; four residual issues recorded with scope",
+    "residuals_are_low_priority": true
+  }
+}

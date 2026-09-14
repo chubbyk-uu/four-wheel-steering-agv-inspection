@@ -1,0 +1,121 @@
+{
+  "schema": "agv.gz_shutdown_crash_dumps.v1",
+  "date": "2026-09-14",
+  "scope": "Diagnosis only. No suppression has been verified to work; no Gazebo fix attempted.",
+  "environment": {
+    "wsl": "2.7.13.0",
+    "windows": "10.0.26200.9445",
+    "core_pattern": "|/wsl-capture-crash %t %E %p %s",
+    "dump_folder": "%LOCALAPPDATA%/Temp/wsl-crashes"
+  },
+  "producer": {
+    "executable": "/usr/bin/ruby3.2",
+    "explanation": "the gz sim server: gz is a ruby script that rewrites $0, so ps shows \"gz sim -s -r\" while the executable image is ruby",
+    "signal": 11
+  },
+  "crash_site": {
+    "rip_object": "/usr/lib/x86_64-linux-gnu/libgcc_s.so.1",
+    "rip_symbol_window": "between _Unwind_GetTextRelBase and _Unwind_RaiseException",
+    "threads": 80,
+    "stack_vma_bytes": 8388608,
+    "rsp_below_stack_top_bytes": 8192,
+    "gazebo_backtrace": [
+      "#2 libc.so.6 (clone3)",
+      "#1 libc.so.6 (start_thread)",
+      "#0 Object \"[0x7eaab8432b10]\" - address not mapped to object"
+    ],
+    "reading": "a library was unloaded while one of its threads was still running; the core map is a post-unmap snapshot so the library cannot be named from it"
+  },
+  "triggers": [
+    {
+      "case": "manual pkill SIGTERM to the server",
+      "crashed": true,
+      "dump_bytes": 2947420160,
+      "server_rss_kib": 4812700
+    },
+    {
+      "case": "process-group SIGINT, the path tools/validate_rendered_linescan.py:392 uses",
+      "crashed": true,
+      "dump_bytes": 3143376896,
+      "server_rss_kib": 4812700
+    },
+    {
+      "case": "linescan:=false linescan_backend:=render, project plugin not loaded",
+      "crashed": true,
+      "dump_bytes": 3259461632,
+      "server_rss_kib": 4196092
+    }
+  ],
+  "size_relation": {
+    "ratio_dump_over_rss": [
+      0.64,
+      0.76
+    ],
+    "projected_full_area_dump_gb": [
+      16,
+      24
+    ],
+    "projected_from_peak_rss_gib": [
+      20,
+      30
+    ],
+    "c_drive_free_gb_at_discovery": 31
+  },
+  "failed_suppressions": [
+    {
+      "method": "ulimit -c 0",
+      "result": "ineffective",
+      "evidence": "minimal always-segfaulting program under soft RLIMIT_CORE=0 still produced a dump; a pipe core_pattern does not honour the zero limit"
+    },
+    {
+      "method": ".wslconfig [wsl2] maxCrashDumpCount=0 with wsl --shutdown",
+      "result": "ineffective",
+      "evidence": "four consecutive segfaults after the restart accumulated four dumps; no deletion and no cap observed",
+      "not_tested": "whether a positive maxCrashDumpCount enforces its limit"
+    }
+  ],
+  "untested_suppression": {
+    "method": "/etc/sysctl.d kernel.core_pattern=core",
+    "rationale": "without a pipe the default zero soft limit suppresses the dump entirely",
+    "status": "not needed if maxCrashDumpCount=-1 works; kept as a fallback"
+  },
+  "not_covered": [
+    "the specific library unloaded early",
+    "an upstream Gazebo report",
+    "how much C: space was consumed historically"
+  ],
+  "setting_semantics": {
+    "source": "github.com/microsoft/WSL",
+    "key": "wsl2.maxCrashDumpCount",
+    "default": 10,
+    "collection_guard": "WslCoreVm.cpp starts the collection thread and appends WSL_ENABLE_CRASH_DUMP=1 to the kernel command line only when MaxCrashDumpCount >= 0",
+    "linux_side": "linux/init/main.cpp calls EnableCrashDumpCollection(), which installs the pipe core_pattern, only when that variable is present",
+    "enforcement": "wslutil.cpp EnforceFileLimit begins with \"if (Limit <= 0) return;\" and deletes one oldest file per call",
+    "meaning": {
+      "positive": "collection on, folder held at about N files",
+      "zero": "collection on, cleanup skipped entirely - unbounded growth, the worst value",
+      "negative": "collection never enabled; no pipe core_pattern, no dumps"
+    },
+    "related_fix": "https://github.com/microsoft/WSL/pull/13755",
+    "related_report": "https://github.com/microsoft/WSL/issues/41314",
+    "other_key": "wsl2.crashDumpFolder redirects the folder"
+  },
+  "applied": {
+    "value": -1,
+    "file": "%USERPROFILE%/.wslconfig",
+    "effective_after": "wsl --shutdown",
+    "verification": [
+      "/proc/cmdline must no longer contain WSL_ENABLE_CRASH_DUMP=1",
+      "/proc/sys/kernel/core_pattern must no longer be |/wsl-capture-crash ..."
+    ],
+    "verified": true,
+    "verified_date": "2026-09-14",
+    "observed": {
+      "cmdline_contains_switch": false,
+      "core_pattern": "core",
+      "wsl_crashes_files": 0,
+      "core_file_in_cwd": false,
+      "shell_message": "Segmentation fault (was \"Segmentation fault (core dumped)\")"
+    }
+  }
+}

@@ -170,5 +170,19 @@
       "a slower figure means the guest lost CPU, which points at Windows 11 efficiency-core demotion of background work on this hybrid i7-13700F",
       "an unchanged figure means the loss is specific to the GPU submission path"
     ]
+  },
+  "amended_2026_09_14": {
+    "finding": "the per-instance decay is most likely the Mesa D3D12 command-signature leak",
+    "evidence": [
+      "six full-area runs in one freshly restarted instance, uptime 139 s to 6712 s, steady factors 0.99878 0.99815 0.99844 0.99944 0.99885 0.99840, no trend, against 0.9588 falling to 0.8669 over about 75 minutes on the same configuration before the fix",
+      "the leak was the one confirmed state accumulating per simulation run outside our own processes",
+      "a wsl --shutdown cleared it and restored the factor, which is what this record originally observed",
+      "removing the leak removed the decay"
+    ],
+    "limit": "evidence, not proof. The original investigation never separated the page cache from the driver state, so a secondary contributor is not excluded. Six runs in one instance is a single instance.",
+    "see": [
+      "results/section6_closure.json",
+      "docs/issues/CAPTURE_MEMORY_GROWTH.md"
+    ]
   }
 }

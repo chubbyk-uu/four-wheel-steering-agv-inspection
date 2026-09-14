@@ -21,6 +21,7 @@
 ## 重要问题保留入口
 
 - [采集进程内存增长](issues/CAPTURE_MEMORY_GROWTH.md)：Mesa D3D12命令签名缓存的`&key`错误已确认，附独立复现、源码补丁和上游报告；源码版独立构建、启动切换与最小复现通过，GUI/整车验收待完成。
+- [仿真关闭段错误与C盘转储](issues/GZ_SHUTDOWN_CRASH_DUMPS.md)：Gazebo退出时卸载库与存活线程竞争导致段错误，WSL把约等于RSS的整份core写进C盘；`ulimit -c 0`与`maxCrashDumpCount=0`实测均无效，源码确认只有负值才关闭采集。
 - [转向恢复直行、8°机械余量](issues/STEERING_SPIN_RECOVERY.md)：保留旧126°动作的原因、8°配置实测，以及静止起步另加20°段余量的取舍。
 - [控制回路停顿](issues/CONTROL_LOOP_STALL.md)：全系统I/O停顿击穿实时回路的三层根因、把自身停摆误报成定位失效的判据缺陷，以及WSLg图形上下文偶发失败的现状。
 - [扫描道终点过冲](issues/PASS_TERMINAL_OVERSHOOT.md)：执行延迟与舵轮限位分支两个成因、停止距离钳制与段余量。

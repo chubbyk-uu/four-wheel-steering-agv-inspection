@@ -1,0 +1,353 @@
+{
+  "schema": "agv.mesa_source_gazebo_memory.v1",
+  "date": "2026-09-14",
+  "scope": "Stationary 100 m scene, headless, no RViz, no line production. Source-built private Mesa against system Mesa. Not a full-area or GUI acceptance.",
+  "method": {
+    "launch": "tools/with_mesa_runtime.py [--system] bash tools/with_optix_runtime.sh bash -c \"source ROS; ros2 launch agv_bringup sim.launch.py headless:=true rviz:=false linescan:=true linescan_backend:=optix spawn_x:=3 scene_manifest:=assets/road/runtime_fullwidth_100m_v1/manifest.json\"",
+    "isolation": "separate ROS_DOMAIN_ID and GZ_PARTITION per arm; one simulation at a time",
+    "settle": "30 s after the server is up, then /proc/<server>/smaps_rollup every 5 s for about 121 s",
+    "server_selection": "largest-RSS match of \"gz sim\", required to be younger than this arm's launcher; an earlier run of this script sampled the previous arm's dying server and was discarded",
+    "lidar": "both GPU lidars counted for 40 s on the plain system environment, so a flat line cannot come from nothing rendering"
+  },
+  "arms": {
+    "patched": {
+      "window_s": [
+        0.002,
+        120.699
+      ],
+      "rss_start_end_mib": [
+        4703.734,
+        4704.09
+      ],
+      "linear_fit_mib_per_s": -0.0013832260555213267,
+      "mapped_libraries": [
+        "libEGL_mesa.so.0.0.0",
+        "libGLX_mesa.so.0.0.0",
+        "libgallium-25.2.8.so",
+        "libgbm.so.1.0.0"
+      ],
+      "lidar_watch": {
+        "counts": {
+          "left": 400,
+          "right": 399
+        },
+        "sizes": {
+          "left": {
+            "width": 1000,
+            "height": 8,
+            "bytes": 256000
+          },
+          "right": {
+            "width": 1000,
+            "height": 8,
+            "bytes": 256000
+          }
+        },
+        "window_s": 40.0
+      },
+      "samples": [
+        {
+          "wall_s": 0.002,
+          "rss_kib": 4816624,
+          "anonymous_kib": 4176116
+        },
+        {
+          "wall_s": 5.031,
+          "rss_kib": 4817128,
+          "anonymous_kib": 4176248
+        },
+        {
+          "wall_s": 10.059,
+          "rss_kib": 4817196,
+          "anonymous_kib": 4176260
+        },
+        {
+          "wall_s": 15.091,
+          "rss_kib": 4817212,
+          "anonymous_kib": 4176276
+        },
+        {
+          "wall_s": 20.119,
+          "rss_kib": 4817216,
+          "anonymous_kib": 4176280
+        },
+        {
+          "wall_s": 25.148,
+          "rss_kib": 4817224,
+          "anonymous_kib": 4176288
+        },
+        {
+          "wall_s": 30.177,
+          "rss_kib": 4817232,
+          "anonymous_kib": 4176296
+        },
+        {
+          "wall_s": 35.206,
+          "rss_kib": 4817236,
+          "anonymous_kib": 4176300
+        },
+        {
+          "wall_s": 40.235,
+          "rss_kib": 4817236,
+          "anonymous_kib": 4176300
+        },
+        {
+          "wall_s": 45.266,
+          "rss_kib": 4816936,
+          "anonymous_kib": 4176304
+        },
+        {
+          "wall_s": 50.297,
+          "rss_kib": 4816940,
+          "anonymous_kib": 4176308
+        },
+        {
+          "wall_s": 55.326,
+          "rss_kib": 4816944,
+          "anonymous_kib": 4176312
+        },
+        {
+          "wall_s": 60.354,
+          "rss_kib": 4816952,
+          "anonymous_kib": 4176320
+        },
+        {
+          "wall_s": 65.383,
+          "rss_kib": 4816952,
+          "anonymous_kib": 4176320
+        },
+        {
+          "wall_s": 70.411,
+          "rss_kib": 4816952,
+          "anonymous_kib": 4176320
+        },
+        {
+          "wall_s": 75.439,
+          "rss_kib": 4816952,
+          "anonymous_kib": 4176320
+        },
+        {
+          "wall_s": 80.467,
+          "rss_kib": 4816952,
+          "anonymous_kib": 4176320
+        },
+        {
+          "wall_s": 85.497,
+          "rss_kib": 4816960,
+          "anonymous_kib": 4176328
+        },
+        {
+          "wall_s": 90.526,
+          "rss_kib": 4816964,
+          "anonymous_kib": 4176332
+        },
+        {
+          "wall_s": 95.554,
+          "rss_kib": 4816972,
+          "anonymous_kib": 4176340
+        },
+        {
+          "wall_s": 100.584,
+          "rss_kib": 4816972,
+          "anonymous_kib": 4176340
+        },
+        {
+          "wall_s": 105.613,
+          "rss_kib": 4816976,
+          "anonymous_kib": 4176344
+        },
+        {
+          "wall_s": 110.642,
+          "rss_kib": 4816980,
+          "anonymous_kib": 4176348
+        },
+        {
+          "wall_s": 115.67,
+          "rss_kib": 4816984,
+          "anonymous_kib": 4176352
+        },
+        {
+          "wall_s": 120.699,
+          "rss_kib": 4816988,
+          "anonymous_kib": 4176356
+        }
+      ]
+    },
+    "system": {
+      "window_s": [
+        0.002,
+        120.77
+      ],
+      "rss_start_end_mib": [
+        4747.285,
+        5027.605
+      ],
+      "linear_fit_mib_per_s": 2.349930055161117,
+      "mapped_libraries": [
+        "libEGL_mesa.so.0.0.0",
+        "libGLX_mesa.so.0.0.0",
+        "libgallium-25.2.8-0ubuntu0.24.04.2.so",
+        "libgbm.so.1.0.0"
+      ],
+      "lidar_watch": {
+        "counts": {
+          "left": 396,
+          "right": 395
+        },
+        "sizes": {
+          "left": {
+            "width": 1000,
+            "height": 8,
+            "bytes": 256000
+          },
+          "right": {
+            "width": 1000,
+            "height": 8,
+            "bytes": 256000
+          }
+        },
+        "window_s": 40.0
+      },
+      "samples": [
+        {
+          "wall_s": 0.002,
+          "rss_kib": 4861220,
+          "anonymous_kib": 4180780
+        },
+        {
+          "wall_s": 5.031,
+          "rss_kib": 4872020,
+          "anonymous_kib": 4191100
+        },
+        {
+          "wall_s": 10.061,
+          "rss_kib": 4882248,
+          "anonymous_kib": 4201436
+        },
+        {
+          "wall_s": 15.092,
+          "rss_kib": 4892652,
+          "anonymous_kib": 4211732
+        },
+        {
+          "wall_s": 20.123,
+          "rss_kib": 4902856,
+          "anonymous_kib": 4221936
+        },
+        {
+          "wall_s": 25.152,
+          "rss_kib": 4914868,
+          "anonymous_kib": 4233948
+        },
+        {
+          "wall_s": 30.185,
+          "rss_kib": 4927340,
+          "anonymous_kib": 4246420
+        },
+        {
+          "wall_s": 35.215,
+          "rss_kib": 4939564,
+          "anonymous_kib": 4258644
+        },
+        {
+          "wall_s": 40.246,
+          "rss_kib": 4951792,
+          "anonymous_kib": 4270872
+        },
+        {
+          "wall_s": 45.279,
+          "rss_kib": 4963920,
+          "anonymous_kib": 4283356
+        },
+        {
+          "wall_s": 50.31,
+          "rss_kib": 4976172,
+          "anonymous_kib": 4295588
+        },
+        {
+          "wall_s": 55.341,
+          "rss_kib": 4988392,
+          "anonymous_kib": 4307808
+        },
+        {
+          "wall_s": 60.373,
+          "rss_kib": 5000740,
+          "anonymous_kib": 4320256
+        },
+        {
+          "wall_s": 65.408,
+          "rss_kib": 5013100,
+          "anonymous_kib": 4332516
+        },
+        {
+          "wall_s": 70.44,
+          "rss_kib": 5025316,
+          "anonymous_kib": 4344732
+        },
+        {
+          "wall_s": 75.472,
+          "rss_kib": 5037636,
+          "anonymous_kib": 4357172
+        },
+        {
+          "wall_s": 80.504,
+          "rss_kib": 5050004,
+          "anonymous_kib": 4369420
+        },
+        {
+          "wall_s": 85.537,
+          "rss_kib": 5062228,
+          "anonymous_kib": 4381644
+        },
+        {
+          "wall_s": 90.568,
+          "rss_kib": 5074452,
+          "anonymous_kib": 4393972
+        },
+        {
+          "wall_s": 95.605,
+          "rss_kib": 5086916,
+          "anonymous_kib": 4406332
+        },
+        {
+          "wall_s": 100.637,
+          "rss_kib": 5099144,
+          "anonymous_kib": 4418560
+        },
+        {
+          "wall_s": 105.67,
+          "rss_kib": 5111460,
+          "anonymous_kib": 4430900
+        },
+        {
+          "wall_s": 110.705,
+          "rss_kib": 5123828,
+          "anonymous_kib": 4443244
+        },
+        {
+          "wall_s": 115.737,
+          "rss_kib": 5136048,
+          "anonymous_kib": 4455464
+        },
+        {
+          "wall_s": 120.77,
+          "rss_kib": 5148268,
+          "anonymous_kib": 4467788
+        }
+      ]
+    }
+  },
+  "result": {
+    "system_mib_per_s": 2.349930055161117,
+    "patched_mib_per_s": -0.0013832260555213267,
+    "ratio": -1698.8763664341527,
+    "previous_binary_copy_system_mib_per_s": 2.3799637752714404,
+    "reading": "the source-built fix removes the stationary growth in the real scene, not only in the standalone reproducer",
+    "not_covered": [
+      "GUI and RViz",
+      "moving acquisition",
+      "full-area mission",
+      "memory budget over a full mission"
+    ]
+  }
+}
