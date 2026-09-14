@@ -1,0 +1,278 @@
+{
+  "scope": "Post-hoc diagnostic of existing strip_projection_baseline; no solver or source image changes.",
+  "method": "At sparse exact capture timestamps, intersect a ray through world Y=0.15 m using archived camera truth, then replace camera origin or orientation with fused-navigation reconstruction. One-at-a-time component standard deviations are correlated and must not be summed as variances.",
+  "limitations": [
+    "Only 10 truth tags per track inside X=6..9 m; cannot resolve high-frequency truth motion or quantify interpolation error between tags.",
+    "Does not identify separate GNSS, IMU, wheel or delivery-delay causal shares; requires controlled replay.",
+    "This geometric counterfactual uses the true ray at tag time, not the fitted optical polynomial; optical calibration residual is outside its budget.",
+    "Image measurements use 32-row median profiles, threshold 90 DN and dominant marking component; not metrology-grade edge estimates."
+  ],
+  "geometry": [
+    {
+      "track": 0,
+      "truth_tags": 10,
+      "total_lateral_error_mm": {
+        "mean": 7.95286521977287,
+        "std": 5.821126819121465,
+        "peak_to_peak": 19.579313525168118
+      },
+      "total_longitudinal_error_mm": {
+        "mean": -1.931526569152897,
+        "std": 3.0161977549703693,
+        "peak_to_peak": 8.585211907902845
+      },
+      "translation_lateral_mm": {
+        "mean": 8.814227665236402,
+        "std": 5.882741497965235,
+        "peak_to_peak": 20.060191140763905
+      },
+      "rotation_lateral_mm": {
+        "mean": -0.8595643053439739,
+        "std": 0.12791561493136658,
+        "peak_to_peak": 0.4559485375743577
+      },
+      "one_component_lateral_mm": {
+        "origin_x": {
+          "mean": 0.0,
+          "std": 0.0,
+          "peak_to_peak": 0.0
+        },
+        "origin_y": {
+          "mean": 7.598251215809465,
+          "std": 5.47716973664833,
+          "peak_to_peak": 16.057334857537242
+        },
+        "origin_z": {
+          "mean": 1.2159764494269365,
+          "std": 6.096757575780323,
+          "peak_to_peak": 24.00994791415001
+        },
+        "roll": {
+          "mean": -0.8333131224926295,
+          "std": 0.12987507399137088,
+          "peak_to_peak": 0.4594205412327135
+        },
+        "pitch": {
+          "mean": -0.0035686310895122197,
+          "std": 0.0011957165253541212,
+          "peak_to_peak": 0.003944455943871716
+        },
+        "yaw": {
+          "mean": -0.019179799546631404,
+          "std": 0.010027208485280955,
+          "peak_to_peak": 0.027866134626353123
+        }
+      },
+      "body_position_error_mm": [
+        {
+          "mean": 1.2455941050323105,
+          "std": 2.676172490320408,
+          "peak_to_peak": 5.925123561000056
+        },
+        {
+          "mean": 2.7253214958508236,
+          "std": 4.3251966311175005,
+          "peak_to_peak": 11.209615647783387
+        },
+        {
+          "mean": 2.9389983662557073,
+          "std": 9.874107945992273,
+          "peak_to_peak": 39.2418299854419
+        }
+      ],
+      "body_attitude_error_deg": [
+        {
+          "mean": -0.033150556805504196,
+          "std": 0.005198085893111919,
+          "peak_to_peak": 0.018280657508709792
+        },
+        {
+          "mean": 0.04800911904707096,
+          "std": 0.0169974860809044,
+          "peak_to_peak": 0.05625124995243306
+        },
+        {
+          "mean": 0.2311984494631989,
+          "std": 0.09658421016422057,
+          "peak_to_peak": 0.26984907600749514
+        }
+      ],
+      "true_camera_y_mm": {
+        "mean": -493.51542120708456,
+        "std": 3.8810229413499218,
+        "peak_to_peak": 11.20103095602741
+      },
+      "true_body_attitude_deg": [
+        {
+          "mean": 0.00014997123957228886,
+          "std": 3.505335989681378e-05,
+          "peak_to_peak": 0.0001186479937334356
+        },
+        {
+          "mean": 0.01634409712503259,
+          "std": 0.0012368478938925985,
+          "peak_to_peak": 0.004315353531236148
+        },
+        {
+          "mean": 0.260190533190234,
+          "std": 3.2071065372057145e-05,
+          "peak_to_peak": 9.810831339990278e-05
+        }
+      ]
+    },
+    {
+      "track": 1,
+      "truth_tags": 10,
+      "total_lateral_error_mm": {
+        "mean": 6.689280575078382,
+        "std": 8.033118193978552,
+        "peak_to_peak": 26.719232233639808
+      },
+      "total_longitudinal_error_mm": {
+        "mean": -0.7152463429866529,
+        "std": 5.793576022718223,
+        "peak_to_peak": 18.130188191005203
+      },
+      "translation_lateral_mm": {
+        "mean": 6.378755481130666,
+        "std": 7.872803676065776,
+        "peak_to_peak": 26.47264571199537
+      },
+      "rotation_lateral_mm": {
+        "mean": 0.3023570824352284,
+        "std": 1.399364176986334,
+        "peak_to_peak": 4.825038181847208
+      },
+      "one_component_lateral_mm": {
+        "origin_x": {
+          "mean": 0.0,
+          "std": 0.0,
+          "peak_to_peak": 0.0
+        },
+        "origin_y": {
+          "mean": 4.492840695865408,
+          "std": 6.876485082055441,
+          "peak_to_peak": 21.800150920064596
+        },
+        "origin_z": {
+          "mean": 1.885914785265258,
+          "std": 4.058754988632235,
+          "peak_to_peak": 15.77360870399691
+        },
+        "roll": {
+          "mean": 0.32578123474535925,
+          "std": 1.3618129770710488,
+          "peak_to_peak": 4.712763989751679
+        },
+        "pitch": {
+          "mean": -0.03864706866114065,
+          "std": 0.031509657604297095,
+          "peak_to_peak": 0.11581316037811984
+        },
+        "yaw": {
+          "mean": 0.017017991722895198,
+          "std": 0.019195205903689363,
+          "peak_to_peak": 0.0626232516329206
+        }
+      },
+      "body_position_error_mm": [
+        {
+          "mean": -1.0432362391621375,
+          "std": 5.214380825476665,
+          "peak_to_peak": 14.362182590307526
+        },
+        {
+          "mean": 2.475512414979503,
+          "std": 5.352709450381017,
+          "peak_to_peak": 16.50201441243493
+        },
+        {
+          "mean": -3.479384994694013,
+          "std": 9.917384586557652,
+          "peak_to_peak": 37.87940945334534
+        }
+      ],
+      "body_attitude_error_deg": [
+        {
+          "mean": -0.015962410384695966,
+          "std": 0.06539217317498912,
+          "peak_to_peak": 0.22652870831524996
+        },
+        {
+          "mean": 0.08293508478696834,
+          "std": 0.0572284334261779,
+          "peak_to_peak": 0.21013044971169692
+        },
+        {
+          "mean": -0.10528470946673743,
+          "std": 0.10800009644701788,
+          "peak_to_peak": 0.36701194482393507
+        }
+      ],
+      "true_camera_y_mm": {
+        "mean": 534.2066361382084,
+        "std": 8.946232509173138,
+        "peak_to_peak": 22.396338971043747
+      },
+      "true_body_attitude_deg": [
+        {
+          "mean": -0.00047363913510317787,
+          "std": 0.00014012961583884613,
+          "peak_to_peak": 0.0003730557682519616
+        },
+        {
+          "mean": 0.015847441543944633,
+          "std": 0.0013046092415506143,
+          "peak_to_peak": 0.005047623685776069
+        },
+        {
+          "mean": 178.62236728067055,
+          "std": 0.1585388990636145,
+          "peak_to_peak": 0.43265101227567015
+        }
+      ]
+    }
+  ],
+  "image_measurements": [
+    {
+      "track": 0,
+      "valid": 256,
+      "centers_mm": [
+        {
+          "mean": -143.16940307617188,
+          "std": 5.438737653132321,
+          "p95_minus_p5": 16.9830322265625
+        },
+        {
+          "mean": 156.45194053649902,
+          "std": 7.49864369192253,
+          "p95_minus_p5": 26.7333984375
+        }
+      ],
+      "separation_mm": {
+        "mean": 299.6213436126709,
+        "std": 3.72200111140832
+      }
+    },
+    {
+      "track": 1,
+      "valid": 256,
+      "centers_mm": [
+        {
+          "mean": -136.69347763061523,
+          "std": 9.41465747944444,
+          "p95_minus_p5": 27.374267578125
+        },
+        {
+          "mean": 155.93481063842773,
+          "std": 8.39257943000368,
+          "p95_minus_p5": 25.1312255859375
+        }
+      ],
+      "separation_mm": {
+        "mean": 292.62828826904297,
+        "std": 4.447777415629975
+      }
+    }
+  ]
+}
