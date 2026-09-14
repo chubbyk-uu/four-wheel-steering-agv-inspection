@@ -1,6 +1,21 @@
 # Draft: d3d12 command-signature cache searches with a pointer-to-pointer, leaking signatures on repeated indirect draws
 
-Status: prepared locally; not submitted upstream.
+Status: prepared locally; not submitted upstream. Prefer a follow-up to existing issue [#14802](https://gitlab.freedesktop.org/mesa/mesa/-/work_items/14802), not a duplicate report.
+
+## Upstream check (2026-09-14)
+
+The installed Ubuntu package is `25.2.8-0ubuntu0.24.04.2`, which is also the candidate in the local APT index; this does not establish that the index is current. It is not the latest upstream release. The [latest announced stable release](https://mesa3d.org/news/) is 26.2.2, released September 2, 2026.
+
+Direct inspection of the official repository found the same erroneous `&key` lookup in:
+
+- [Mesa 26.2.2, commit 3281a69a8bfd9f997e91c15ed0e6290cae12dd32](https://gitlab.freedesktop.org/mesa/mesa/-/blob/3281a69a8bfd9f997e91c15ed0e6290cae12dd32/src/gallium/drivers/d3d12/d3d12_cmd_signature.cpp#L68).
+- [Development main, commit a655bee9ba8de9ddc1a0a4e861ee67c47d13cf55](https://gitlab.freedesktop.org/mesa/mesa/-/blob/a655bee9ba8de9ddc1a0a4e861ee67c47d13cf55/src/gallium/drivers/d3d12/d3d12_cmd_signature.cpp#L68).
+
+These are source inspections, not runtime tests of those versions. Runtime measurements below concern the installed 25.2.8 library and its private single-site correction only.
+
+Issue #14802, “GLon12: Command Signature leak with indirect dispatches,” was opened on February 5, 2026, and remains open. It reports command-signature accumulation on Windows Server 2022 / Intel Arc B580 / Mesa 25.3.4 using indirect compute dispatch. This closely matches the shared cache defect found here, although we have not run that reporter's application. The related-MR API returned no entries; public MR searches did not identify this fix. The notes endpoint required authentication, so discussion comments were not inspected and an unlinked proposal cannot be ruled out.
+
+Following [Mesa's reporting guidelines](https://docs.mesa3d.org/bugs.html), the next contribution should add the standalone indirect-draw reproducer, pointer diagnosis and before/after evidence to #14802 in English. A source-built fix can then be submitted as a [merge request](https://docs.mesa3d.org/submittingpatches.html) referencing the existing issue, after checking its current discussion. No issue, comment or MR has been posted.
 
 ## Environment and scope
 
