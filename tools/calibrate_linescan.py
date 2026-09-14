@@ -32,7 +32,8 @@ def main():
     centers = stripe_centers(board)
     target = json.loads(a.target.read_text())
     g = geometry(centers, target['across_m'], board.shape[1], target['output_width_m'])
-    sources = {key: dict(path=str(path.resolve()), sha256=hashlib.sha256(path.read_bytes()).hexdigest())
+    # Content hashes identify references without leaking machine-specific paths.
+    sources = {key: dict(path=path.name, sha256=hashlib.sha256(path.read_bytes()).hexdigest())
                for key, path in [('dark', a.dark), ('flat', a.flat), ('board', a.board), ('target', a.target), ('conditions', a.conditions)]}
     profile = make_profile(f, g, json.loads(a.conditions.read_text()), sources)
     a.output.write_text(json.dumps(profile, indent=2)+'\n')

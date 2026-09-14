@@ -15,7 +15,9 @@ python3 tools/correct_linescan_session.py \
   --output /path/to/new_corrected_directory
 ```
 
-不需要ROS/Gazebo/GPU。输出目录必须新建，保留原图及行数、时间和稀疏标签；缺块、尺寸或标定不匹配会拒绝处理。当前20 mm/v7及0.30 m/15°条光的标定仍待重做，旧16 mm profile不能用于当前原图。均匀标定板用于平场，不能拿水泥纹理当仪器响应消除。
+不需要ROS/Gazebo/GPU。输出目录必须新建，保留原图及行数、时间和稀疏标签；缺块、尺寸或标定不匹配会拒绝处理。当前20 mm/v7及0.30 m/15°条光已有[固定平面实测标定](../results/camera_20mm_measured_profile.json)，独立平场列均值CV为0.000498、移位验证靶最大误差0.720像素，见[记录](../results/camera_20mm_calibration.json)。该模型标定的是固定高度下横向映射，不独立解算焦距、相机高度及安装姿态，也不代表运动几何已校正；旧16 mm profile不能用于当前原图。均匀标定板用于平场，不能拿水泥纹理当仪器响应消除。
+
+重新采集标定参考：在WSL先运行`bash tools/with_optix_runtime.sh bash`，在该子shell内加载ROS和工作区环境，再执行`python3 tools/with_mesa_runtime.py python3 tools/validate_optix_calibration.py --output 新目录 --grid-scene assets/road/runtime_fullwidth_20m_v1/manifest.json`。工具依次直行采集暗场、平场、条纹靶、移位验证靶和路面，并确认停车；先前环境若只加载Mesa而没有OptiX运行库，会在采集前启动失败。标定场宽4 m满足大车出生包络。
 
 短尾丢弃造成的块号跳跃，仅在原始`events.jsonl`有合法`tail_discarded`事件时允许。离线工具核验事件行数、首末行号及有限时间戳，并将事件与保存图块一起检查块号、相邻行范围、时间和段号顺序；最终尾图同样检查。输出`summary.json`的`discarded_tail_blocks`保留完整原始尾图事件（含`first`、`last`及标签），不能只凭`block_id_gaps`判断末端缺口，该字段只列保存图块之间的跳号。其它原始事件仍留在源目录，不复制为校正后的事件日志。
 

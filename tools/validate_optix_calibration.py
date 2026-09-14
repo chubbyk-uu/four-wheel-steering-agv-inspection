@@ -20,7 +20,7 @@ def main():
     p.add_argument('--grid-scene',type=Path,required=True);a=p.parse_args()
     out=a.output.resolve();out.mkdir(parents=True,exist_ok=False)
     config=yaml.safe_load((ROOT/'src/agv_description/config/linescan.yaml').read_text())
-    worlds={name:calibration_scene(out/(name+'_scene'),ROOT/'src/agv_bringup/worlds/flat.sdf',phase)
+    worlds={name:calibration_scene(out/(name+'_scene'),ROOT/'src/agv_bringup/worlds/flat.sdf',phase,width=4.)
             for name,phase in [('flat',None),('board',0.),('holdout',.025)]}
     sessions={}
     for name in ('dark','flat','board','holdout','grid'):
@@ -32,7 +32,7 @@ def main():
         with log.open('w') as f:
             subprocess.run([sys.executable,str(ROOT/'tools/validate_rendered_linescan.py'),
                 '--backend','optix','--scene',str(scene),'--camera-config',str(cfg),'--reference-target',
-                '--spawn-x','2','--speed','.5','--warmup','2','--distance','2.5','--domain','94'],
+                '--spawn-x','2','--speed','.5','--warmup','2','--distance','3.5','--domain','94'],
                 stdout=f,stderr=subprocess.STDOUT,check=True,timeout=180)
         report=next(json.loads(line) for line in log.read_text().splitlines() if line.startswith('{"passed":'))
         assert report['passed'] and report['ros_all_blocks_byte_identical']
@@ -46,7 +46,9 @@ def main():
         robot_source_sha256=first['robot_contract']['source_sha256'],
         note='Fixed vertical camera on horizontal diffuse reference; renew after geometry or illumination changes.')
     (out/'conditions.json').write_text(json.dumps(conditions))
-    (out/'target.json').write_text(json.dumps(dict(across_m=(np.arange(-12,13)*.05).tolist(),output_width_m=1.2)))
+    width=config['nominal_width_m'];pixels=config['width'];spacing=width/pixels
+    count=int(round(width/2/.05))
+    (out/'target.json').write_text(json.dumps(dict(across_m=(np.arange(-count,count+1)*.05).tolist(),output_width_m=width)))
     with (out/'fit.log').open('w') as log:
         subprocess.run([sys.executable,str(ROOT/'tools/calibrate_linescan.py'),
             '--dark',str(sessions['dark']/'block_000000.pgm'),'--flat',str(sessions['flat']/'block_000000.pgm'),
@@ -58,10 +60,15 @@ def main():
     raw_cv=float(flat[:,valid].mean(0).std()/flat[:,valid].mean())
     fixed_cv=float(fixed[:,valid].mean(0).std()/fixed[:,valid].mean())
     held=read('holdout',1);corrected,_=corr.apply(held);corrected[:,~valid]=round(profile['flat']['target_signal_dn'])
-    expected=(np.arange(-12,12)*.05+.025)/(1.2/4096)+2047.5
+    expected=(np.arange(-count,count)*.05+.025)/spacing+(pixels-1)/2
     centers=stripe_centers(corrected);assert len(centers)==len(expected),(len(centers),len(expected))
     error=float(max(abs(centers-expected)))
     raw_centers=stripe_centers((held-np.array(profile['flat']['offset']))*np.array(profile['flat']['gain']))
+    # Overscan can expose an extra pair of shifted holdout stripes outside the
+    # corrected swath. Compare only the symmetric interior reference points.
+    extra=len(raw_centers)-len(expected)
+    assert extra>=0 and extra%2==0
+    raw_centers=raw_centers[extra//2:extra//2+len(expected)]
     before=float(max(abs(raw_centers-expected)))
     chunks=[read('grid',i) for i in range(2)];joined=np.concatenate(chunks)
     combined,_=corr.apply(joined);separate=np.concatenate([corr.apply(x)[0] for x in chunks])
@@ -80,7 +87,7 @@ def main():
     import matplotlib;matplotlib.use('Agg')
     import matplotlib.pyplot as plt
     fig,axes=plt.subplots(2,2,figsize=(12,8))
-    for ax,im,title in zip(axes.flat,[chunks[0],separate[:4096],flat,fixed],['OptiX raw grid','Measured correction','Independent flat: raw','Independent flat: corrected']):
+    for ax,im,title in zip(axes.flat,[chunks[0],separate[:4096],flat,fixed],['OptiX raw scene','Measured correction','Independent flat: raw','Independent flat: corrected']):
         ax.imshow(im,cmap='gray',vmin=0,vmax=220,interpolation='antialiased');ax.set_title(title);ax.axis('off')
     fig.tight_layout();fig.savefig(out/'comparison.png',dpi=130);plt.close(fig)
     assert report['passed'],report

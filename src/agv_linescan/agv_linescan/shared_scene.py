@@ -24,17 +24,19 @@ def validate_spawn_position(scene, x, y, radius=1.5):
         raise ValueError('spawn vehicle envelope leaves the declared drivable terrain')
 
 
-def calibration_scene(directory, base_world, phase=None):
+def calibration_scene(directory, base_world, phase=None, width=2.):
     """Coplanar segmented diffuse board, same mesh/material values for GZ and RT.
 
     Stripes are geometry partitions, not raised bars or shader-only targets.
     No optical model is used to construct the known 50 mm target coordinates.
     """
+    if not np.isfinite(width) or width<2:raise ValueError('calibration board width must be at least 2 m')
     directory=Path(directory).resolve();directory.mkdir(parents=True,exist_ok=False)
-    cuts=[-1.,1.]
+    half=width/2;cuts=[-half,half]
     if phase is not None:
-        for center in np.arange(-20,21)*.05+phase:
-            cuts.extend(x for x in (center-.001,center+.001) if -1.<x<1.)
+        count=int(np.ceil(half/.05))+1
+        for center in np.arange(-count,count+1)*.05+phase:
+            cuts.extend(x for x in (center-.001,center+.001) if -half<x<half)
     cuts=sorted(set(cuts));faces={'white':[], 'black':[]}
     for lo,hi in zip(cuts,cuts[1:]):
         dark=phase is not None and abs(((lo+hi)/2-phase+.025)%.05-.025)<.001000001
@@ -59,7 +61,7 @@ def calibration_scene(directory, base_world, phase=None):
                 for tag in ('ambient','diffuse'):ET.SubElement(mat,tag).text=f'{value} {value} {value} 1'
     tree.write(directory/'world.sdf',encoding='unicode')
     m=dict(schema='agv.shared.static_scene.v1',frame='world',units='m',transform='identity_world_baked',
-           profile='calibration_board',length_m=10,width_m=2,assets=assets,world='world.sdf',
+           profile='calibration_board',length_m=10,width_m=width,assets=assets,world='world.sdf',
            world_sha256=digest(directory/'world.sdf'),display_materials={},stripe_phase_m=phase)
     (directory/'manifest.json').write_text(json.dumps(m,indent=2)+'\n')
     validate(directory/'manifest.json')

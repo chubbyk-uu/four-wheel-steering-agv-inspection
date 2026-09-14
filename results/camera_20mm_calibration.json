@@ -1,0 +1,22 @@
+{
+  "passed": true,
+  "backend": "optix_shared_mesh_dynamic_robot",
+  "flat_cv_before": 0.14534680922650248,
+  "flat_cv_after": 0.0004975938105606884,
+  "holdout_error_px_before": 63.23314493172967,
+  "holdout_error_px_after": 0.719883040935656,
+  "fit_error_px_max": 0.4869236340567416,
+  "valid_columns": 4096,
+  "partition_identical": true,
+  "metadata_preserved": true,
+  "full_throughput_acceptance": false,
+  "scope": "Fixed flat diffuse board, nominal installation. Not a full 3D intrinsic/extrinsic calibration or a vibration/stitching accuracy result.",
+  "private_capture_profile_id": "measured-0f1b1e8bb8c4ca15",
+  "calibration_id": "measured-a226066547387f3d",
+  "date": "2026-09-14",
+  "profile": "camera_20mm_measured_profile.json",
+  "source_paths": "Basenames only; content hashes retained; ID recomputed after removing local paths.",
+  "width_m": 1.5,
+  "focal_length_m": 0.02,
+  "actual_image_inspection": "Viewed raw/corrected road and independent flat comparison; edge shading removed, road details retained."
+}
