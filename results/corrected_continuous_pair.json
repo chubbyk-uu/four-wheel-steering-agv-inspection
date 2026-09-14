@@ -1,0 +1,70 @@
+{
+  "tracks": [
+    {
+      "track_id": 0,
+      "blocks": [
+        {
+          "block_id": 0,
+          "rows": 4096,
+          "first_global_line": 0,
+          "last_global_line": 4095
+        },
+        {
+          "block_id": 1,
+          "rows": 4096,
+          "first_global_line": 4096,
+          "last_global_line": 8191
+        },
+        {
+          "block_id": 2,
+          "rows": 2230,
+          "first_global_line": 8192,
+          "last_global_line": 10421
+        }
+      ],
+      "shape": [
+        10422,
+        4096
+      ],
+      "pixel_sha256": "517315b6b72d90c5792b6a5a14a148ecb34f070261462a991feb24a88ed78565",
+      "decoded_png_equals_corrected_blocks": true,
+      "preview_rotation_deg": 0
+    },
+    {
+      "track_id": 1,
+      "blocks": [
+        {
+          "block_id": 3,
+          "rows": 4096,
+          "first_global_line": 10422,
+          "last_global_line": 14517
+        },
+        {
+          "block_id": 4,
+          "rows": 4096,
+          "first_global_line": 14518,
+          "last_global_line": 18613
+        },
+        {
+          "block_id": 5,
+          "rows": 2148,
+          "first_global_line": 18614,
+          "last_global_line": 20761
+        }
+      ],
+      "shape": [
+        10340,
+        4096
+      ],
+      "pixel_sha256": "058f8fa52d85ff6fed3d5c801fd747a3ea9ae1b5be588fcc45c1cd84fb4898d8",
+      "decoded_png_equals_corrected_blocks": true,
+      "preview_rotation_deg": 180
+    }
+  ],
+  "calibration_id": "measured-a226066547387f3d",
+  "scope": "Exact corrected-row concatenation in acquisition order. Preview reversal is display only. Track origins are independent; this is not geographical alignment.",
+  "preview_gray_range": [
+    0,
+    160
+  ]
+}
