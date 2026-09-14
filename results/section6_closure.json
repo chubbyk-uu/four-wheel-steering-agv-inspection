@@ -397,7 +397,26 @@
       "detail": "a pre-existing intermittent WSLg failure, first recorded 2026-09-11 under the system Mesa. The 2026-09-11 server/GUI split was kept because it is free, not because it was shown to help: Fisher exact two-tailed p=0.478.",
       "impact": "startup only, no mission or capture data affected. One occurrence in about 26 GUI launches since the split; cleared by a 60 s settle and retry.",
       "priority": "low, recorded, workaround is retry",
-      "next_step": "the cheapest test is the recorded confound, not more blind trials: launch immediately after a heavy mission against launching after a settle, which would make the cooldown a controlled variable. A significant verdict on the split itself needs about 20 trials per arm."
+      "next_step": {
+        "rejected": {
+          "plan": "A/B the cooldown between a heavy mission and the next launch",
+          "cost": "15 to 20 launches per arm, about 1.5 hours each",
+          "reason": "rejected by the project owner on 2026-09-14: manufacturing failures to measure a quantity already known to be insignificant is not worth the time"
+        },
+        "preferred": [
+          {
+            "plan": "absorb it: have the acceptance driver detect a startup failure with no mission begun and rerun the whole launch once",
+            "cost": "about ten lines",
+            "note": "not the same as degrading to headless. on_exit_shutdown stays true, because a GUI failure must still end the mission; the retry is a fresh full launch."
+          },
+          {
+            "plan": "wait for a natural recurrence but capture evidence: save the dmesg window around startup, since the WSL dxg driver logs why the D3D12 device was removed",
+            "cost": "none, it rides along with the next occurrence",
+            "note": "the removal reason is what an upstream report would need. Waiting for a failure beats manufacturing one."
+          }
+        ],
+        "status": "neither implemented"
+      }
     },
     {
       "title": "the panel rescan button is still validated only on an 8 x 2 m region",
