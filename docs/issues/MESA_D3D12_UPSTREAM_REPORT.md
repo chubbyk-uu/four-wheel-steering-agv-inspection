@@ -19,6 +19,28 @@ Issue #14802, “GLon12: Command Signature leak with indirect dispatches,” was
 
 Following [Mesa's reporting guidelines](https://docs.mesa3d.org/bugs.html), the next contribution should add the standalone indirect-draw reproducer, pointer diagnosis and before/after evidence to #14802 in English. A source-built fix can then be submitted as a [merge request](https://docs.mesa3d.org/submittingpatches.html) referencing the existing issue, after checking its current discussion. No issue, comment or MR has been posted.
 
+## Independent confirmation (2026-09-14)
+
+A second session repeated the experiment from the recorded artefacts rather than reading the report.
+The installed library's sha256 and the seven bytes at offset `0xd83082` match the record. Copying that
+library and writing one byte, `0x8d` to `0x8b`, at `0xd83083` produces a file whose sha256 is
+bit-for-bit identical to the recorded `copy_sha256`.
+
+| Run | RSS over draws 2001 to 10001 | Per draw | Rendered |
+|---|---|---|---|
+| Original, indirect | 169948 → 193552 KiB | 2.95 KiB | true |
+| Original, direct | 163384 → 163384 KiB | 0 | true |
+| Corrected copy, indirect | 167284 → 167268 KiB | 0 | true |
+
+The slope reproduces at the same 2.95 KiB per draw on a separate run, the same geometry drawn
+directly does not grow at all, and the single corrected instruction removes the growth while the
+foreground and background pixel checks still pass.
+
+**Not confirmed here**: the upstream source lines in 26.2.2 and main. `gitlab.freedesktop.org` is
+behind an Anubis challenge from this session, so the claim that the same `&key` call is still present
+upstream rests on the original inspection. It is worth a second look before the follow-up is posted,
+because a line that has since changed would misdirect it.
+
 ## Environment and scope
 
 - Ubuntu 24.04 under WSL2, Mesa package `25.2.8-0ubuntu0.24.04.2`.

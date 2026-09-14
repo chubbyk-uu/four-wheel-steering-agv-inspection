@@ -288,5 +288,66 @@
   "remaining": [
     "Build/install a maintainable source-corrected private Mesa or verify a vendor release contains the fix",
     "GUI/RViz, moving acquisition and long-run regression with the production fix"
-  ]
+  ],
+  "independent_confirmation_2026_09_14": {
+    "by": "a second session on the same machine, repeating the experiment from the recorded artefacts rather than reading the report",
+    "installed_library": {
+      "path": "/usr/lib/x86_64-linux-gnu/libgallium-25.2.8-0ubuntu0.24.04.2.so",
+      "sha256_matches_record": true,
+      "bytes_at_recorded_offset": "48 8d b5 78 ff ff ff",
+      "offset": "0xd83082",
+      "matches_record": true
+    },
+    "corrected_copy": {
+      "method": "copied the installed library and wrote one byte, 0x8d to 0x8b, at 0xd83083",
+      "sha256": "a0ee998b98e9f1acdd925467c1d78b474868a42e30690fca32bddde19dcb52a0",
+      "matches_recorded_copy_sha256": true,
+      "note": "an independently produced correction is bit-for-bit identical to the one in the record"
+    },
+    "reproducer_runs": {
+      "original_indirect": {
+        "rss_kib": {
+          "1": 167428,
+          "2001": 169948,
+          "4001": 175848,
+          "6001": 181748,
+          "8001": 187648,
+          "10001": 193552
+        },
+        "kib_per_draw": 2.95,
+        "rendered": true
+      },
+      "original_direct": {
+        "rss_kib": {
+          "1": 163384,
+          "2001": 163384,
+          "4001": 163384,
+          "6001": 163384,
+          "8001": 163384,
+          "10001": 163384
+        },
+        "kib_per_draw": 0.0,
+        "rendered": true
+      },
+      "corrected_indirect": {
+        "rss_kib": {
+          "1": 167284,
+          "2001": 167284,
+          "4001": 167284,
+          "6001": 167284,
+          "8001": 167268,
+          "10001": 167268
+        },
+        "kib_per_draw": 0.0,
+        "rendered": true,
+        "loading": "LD_PRELOAD of the private corrected copy"
+      }
+    },
+    "reading": "the slope reproduces at 2.95 KiB per draw, the same figure as the record, on a separate run. The same geometry drawn directly does not grow at all, and the single corrected instruction removes the growth while the rendered pixels still pass the foreground and background check. Causality is confirmed here, not taken on report.",
+    "not_confirmed_here": [
+      "the upstream source lines in 26.2.2 and main: gitlab.freedesktop.org is behind an Anubis challenge from this session, so the claim that the same &key call exists in current releases rests on the original inspection, not on a second look. Worth re-checking before the follow-up is posted, since a changed line would misdirect it.",
+      "Mesa's hash-table replacement semantics, taken from the report's reading of hash_table.c. The empirical result does not depend on the precise internal mechanism.",
+      "the Gazebo A/B was not repeated here; the standalone reproducer was enough to confirm the cause."
+    ]
+  }
 }
