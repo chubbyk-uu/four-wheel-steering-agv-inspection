@@ -274,5 +274,6 @@
         "std": 4.447777415629975
       }
     }
-  ]
+  ],
+  "correction_2026_09_14": "Track 1 negative-Y marking is clipped by the valid swath. Its image center and pair-separation statistics below are superseded and invalid. Use strip_pose_modes.json with coverage rejection. Sparse truth geometry counterfactual is unaffected."
 }

@@ -1,0 +1,179 @@
+{
+  "scope": "Same six raw blocks, calibration and fused navigation; only projection height/tilt policy changes. No matching or truth-pose substitution.",
+  "fixed_optical_height_m": 1.0463169642857142,
+  "fixed_body_roll_pitch_rad": [
+    0,
+    0
+  ],
+  "method": "32-row median, Gaussian sigma=2 columns, dominant component >90 DN, center=edge midpoint; 85/95 DN sensitivity. All policies use identical valid rows per marking; null means marking is clipped, not measurable; reject components within eight pixels of invalid coverage. Values describe projected line straightness, not longitudinal or absolute survey accuracy.",
+  "measurements": [
+    {
+      "mode": "strip_projection_baseline",
+      "track": 0,
+      "samples_per_marking": [
+        256,
+        256
+      ],
+      "center_mean_bias_mm": [
+        6.83059692382812,
+        6.451940536499029
+      ],
+      "center_std_mm": [
+        5.438737653132321,
+        7.49864369192253
+      ],
+      "separation_mean_mm": 299.6213436126709,
+      "separation_std_mm": 3.72200111140832,
+      "threshold_sensitivity_center_std_mm": {
+        "85": [
+          5.436648602319775,
+          7.518118585042008
+        ],
+        "95": [
+          5.429177543768676,
+          7.506492217647693
+        ]
+      }
+    },
+    {
+      "mode": "strip_projection_baseline",
+      "track": 1,
+      "samples_per_marking": [
+        0,
+        256
+      ],
+      "center_mean_bias_mm": [
+        null,
+        5.93481063842774
+      ],
+      "center_std_mm": [
+        null,
+        8.39257943000368
+      ],
+      "separation_mean_mm": null,
+      "separation_std_mm": null,
+      "threshold_sensitivity_center_std_mm": {
+        "85": [
+          null,
+          8.378649684808064
+        ],
+        "95": [
+          null,
+          8.377532691217807
+        ]
+      }
+    },
+    {
+      "mode": "strip_fixed_height",
+      "track": 0,
+      "samples_per_marking": [
+        256,
+        256
+      ],
+      "center_mean_bias_mm": [
+        7.058763504028315,
+        6.919717788696294
+      ],
+      "center_std_mm": [
+        5.427822725914166,
+        5.400036200424849
+      ],
+      "separation_mean_mm": 299.86095428466797,
+      "separation_std_mm": 0.5067726969886308,
+      "threshold_sensitivity_center_std_mm": {
+        "85": [
+          5.44145350351072,
+          5.393055152446567
+        ],
+        "95": [
+          5.44496415225326,
+          5.38821886582921
+        ]
+      }
+    },
+    {
+      "mode": "strip_fixed_height",
+      "track": 1,
+      "samples_per_marking": [
+        0,
+        256
+      ],
+      "center_mean_bias_mm": [
+        null,
+        3.182506561279302
+      ],
+      "center_std_mm": [
+        null,
+        7.493915236633979
+      ],
+      "separation_mean_mm": null,
+      "separation_std_mm": null,
+      "threshold_sensitivity_center_std_mm": {
+        "85": [
+          null,
+          7.500901615069858
+        ],
+        "95": [
+          null,
+          7.501540931215987
+        ]
+      }
+    },
+    {
+      "mode": "strip_fixed_height_tilt",
+      "track": 0,
+      "samples_per_marking": [
+        256,
+        256
+      ],
+      "center_mean_bias_mm": [
+        7.500791549682612,
+        7.509803771972662
+      ],
+      "center_std_mm": [
+        5.479731331561549,
+        5.433514955982313
+      ],
+      "separation_mean_mm": 300.00901222229004,
+      "separation_std_mm": 0.4756310826591067,
+      "threshold_sensitivity_center_std_mm": {
+        "85": [
+          5.470099633985871,
+          5.441418952043055
+        ],
+        "95": [
+          5.470502150541425,
+          5.433638438419742
+        ]
+      }
+    },
+    {
+      "mode": "strip_fixed_height_tilt",
+      "track": 1,
+      "samples_per_marking": [
+        0,
+        256
+      ],
+      "center_mean_bias_mm": [
+        null,
+        3.212547302246099
+      ],
+      "center_std_mm": [
+        null,
+        6.523959835167003
+      ],
+      "separation_mean_mm": null,
+      "separation_std_mm": null,
+      "threshold_sensitivity_center_std_mm": {
+        "85": [
+          null,
+          6.538538832196256
+        ],
+        "95": [
+          null,
+          6.538511016974819
+        ]
+      }
+    }
+  ]
+}

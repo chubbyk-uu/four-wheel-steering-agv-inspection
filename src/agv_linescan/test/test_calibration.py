@@ -334,3 +334,21 @@ def test_offline_preserves_extra_sparse_tags_across_pause(tmp_path):
     process_session(source,profile,tmp_path/'corrected')
     corrected=json.loads((tmp_path/'corrected'/path.name).read_text())
     assert corrected['pose_tags']==m['pose_tags'] and corrected['rows']==17
+
+
+def test_projection_pose_fixes_optical_center_not_base_and_keeps_yaw():
+    from agv_linescan.strip_projection import projection_pose
+    from scipy.spatial.transform import Rotation
+    p=np.array([[1.,2.,.63],[3.,4.,.68]])
+    r=Rotation.from_euler('xyz',[[.1,.2,.3],[-.2,.1,3.]])
+    offset=np.array([1.,0.,.4]);original=p.copy()
+    for mode in ['fixed_height','fixed_height_tilt']:
+        pp,rr=projection_pose(p,r,offset,mode,1.0463)
+        np.testing.assert_allclose((pp+rr.apply(offset))[:,2],1.0463)
+        np.testing.assert_array_equal(pp[:,:2],p[:,:2])
+        np.testing.assert_allclose(rr.as_euler('xyz')[:,2],r.as_euler('xyz')[:,2])
+        if mode=='fixed_height_tilt':np.testing.assert_allclose(rr.as_euler('xyz')[:,:2],0,atol=1e-15)
+        else:np.testing.assert_array_equal(rr.as_quat(),r.as_quat())
+    np.testing.assert_array_equal(p,original)
+    pp,rr=projection_pose(p,r,offset,'dynamic',1.0463)
+    assert pp is p and rr is r

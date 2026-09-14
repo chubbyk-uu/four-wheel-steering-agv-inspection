@@ -39,3 +39,17 @@ def navigation_at(navigation,times):
         raise ValueError('navigation gap')
     positions=np.column_stack([np.interp(times,navigation.times,navigation.positions[:,i]) for i in range(3)])
     return positions,navigation.rotations(times)
+
+
+def projection_pose(positions,rotations,offset,mode,height):
+    """Flat-road diagnostic policy; fixed height means optical center clearance."""
+    from scipy.spatial.transform import Rotation
+    if mode not in ('dynamic','fixed_height','fixed_height_tilt'):
+        raise ValueError('unknown projection pose mode')
+    if mode=='dynamic':return positions,rotations
+    if not np.isfinite(height) or height<=0:raise ValueError('invalid optical height')
+    if mode=='fixed_height_tilt':
+        rotations=Rotation.from_euler('z',rotations.as_euler('xyz')[:,2])
+    positions=np.array(positions,dtype=float,copy=True)
+    positions[:,2]=height-rotations.apply(offset)[:,2]
+    return positions,rotations

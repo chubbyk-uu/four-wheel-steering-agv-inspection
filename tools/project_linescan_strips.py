@@ -12,7 +12,7 @@ import yaml
 ROOT=Path(__file__).resolve().parents[1]
 sys.path[:0]=[str(ROOT/'src/agv_linescan'),str(ROOT/'src/agv_mission')]
 from agv_linescan.calibration import Correction
-from agv_linescan.strip_projection import line_times,navigation_at,project_flat
+from agv_linescan.strip_projection import line_times,navigation_at,project_flat,projection_pose
 from agv_mission.capture_audit import Navigation
 
 
@@ -21,6 +21,7 @@ def main():
     for key in ('mission','navigation','profile','output'):p.add_argument('--'+key,type=Path,required=True)
     p.add_argument('--camera-x-residual-mm',type=float,default=0.,help='Additional fixed body-X estimated lever-arm error; replay experiment only')
     p.add_argument('--resolution-m',type=float,default=1.5/4096)
+    p.add_argument('--pose-mode',choices=['dynamic','fixed_height','fixed_height_tilt'],default='dynamic')
     a=p.parse_args();plan=json.loads((a.mission/'plan.json').read_text())
     road=plan['request']['road'];region=plan['request']['region']
     if road['yaw_rad']!=0 or road['origin_xyz_m']!=[0,0,0]:raise ValueError('first diagnostic requires world-aligned z=0 road')
@@ -54,6 +55,7 @@ def main():
             if raw.shape!=(m['rows'],width) or raw.dtype!=np.uint8:raise ValueError('invalid source pixels')
             for start in range(0,len(raw),64):
                 values=raw[start:start+64];positions,rotations=navigation_at(nav,times[start:start+64])
+                positions,rotations=projection_pose(positions,rotations,offset,a.pose_mode,height)
                 points=project_flat(positions,rotations,offset,nav.mount,rays)
                 shift=rotations.apply([a.camera_x_residual_mm*.001,0,0])[:,:2]
                 shift_sum+=shift.sum(0);shift_count+=len(shift)
@@ -76,6 +78,8 @@ def main():
                             mean_injected_map_shift_m=(shift_sum/max(1,shift_count)).tolist()))
     report=dict(schema='agv.strip_projection.diagnostic.v1',tracks=reports,shape=[nr,nc],resolution_m=a.resolution_m,
                 origin_xy_m=[x0,y0],image_axes='rows road +X, columns road +Y; pixel centers at half-cell',
+                pose_mode=a.pose_mode,fixed_optical_height_m=height if a.pose_mode!='dynamic' else None,
+                fixed_body_roll_pitch_rad=[0.,0.] if a.pose_mode=='fixed_height_tilt' else None,
                 camera_x_residual_mm=a.camera_x_residual_mm,navigation_calibration_id=nav.cal['calibration_id'],
                 optical_profile_id=profile['calibration_id'],
                 scope='Independent track rasters from fused navigation and calibrated rays. Bilinear forward splat, no gap filling, matching or stitching. Sparse line-time interpolation; fixed-plane nominal-height optics. Raw truth poses are not read.')
