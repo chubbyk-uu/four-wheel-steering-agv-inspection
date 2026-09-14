@@ -1,0 +1,292 @@
+{
+  "schema": "agv.mesa_d3d12_signature_root_cause.v1",
+  "date": "2026-09-14",
+  "project_head_before_diagnosis": "8da957d",
+  "root_cause": {
+    "component": "Mesa D3D12 Gallium backend",
+    "version": "25.2.8-0ubuntu0.24.04.2",
+    "file": "src/gallium/drivers/d3d12/d3d12_cmd_signature.cpp",
+    "line": 68,
+    "function": "d3d12_get_cmd_signature",
+    "wrong_argument": "&key",
+    "correct_argument": "key",
+    "mechanism": "Lookup hashes the address of a pointer variable instead of the key structure. Repeated indirect draws recreate signatures; insertion with the correct duplicate key replaces old data without releasing the displaced wrapper and ID3D12CommandSignature reference."
+  },
+  "diagnostic_binary": {
+    "elf_build_id": "6ccf17f6a28dda1c4c6e147c8d7503b974a501ba",
+    "original_sha256": "e37486422ecafdad74fb05bbcdcfc35300241a5f46e72b63ca442d4e0c0cca8b",
+    "copy_sha256": "a0ee998b98e9f1acdd925467c1d78b474868a42e30690fca32bddde19dcb52a0",
+    "instruction_file_offset": "0xd83082",
+    "original_bytes": "48 8d b5 78 ff ff ff",
+    "corrected_bytes": "48 8b b5 78 ff ff ff",
+    "loading": "Only diagnostic child uses LD_PRELOAD with a private corrected copy; original system library hash unchanged. LIBGL_DRIVERS_PATH alone did not replace the actual Gallium and that attempt is not counted as corrected.",
+    "scope": "Assembly single-site causality experiment, not a production installation or a source-built Mesa validation."
+  },
+  "minimal_reproducer": {
+    "path": "tools/probe_mesa_indirect_memory.cpp",
+    "original_indirect": {
+      "samples": [
+        {
+          "draws": 1,
+          "rss_kib": 170536
+        },
+        {
+          "draws": 2001,
+          "rss_kib": 173048
+        },
+        {
+          "draws": 4001,
+          "rss_kib": 178948
+        },
+        {
+          "draws": 6001,
+          "rss_kib": 184848
+        },
+        {
+          "draws": 8001,
+          "rss_kib": 190752
+        },
+        {
+          "draws": 10001,
+          "rss_kib": 196648
+        }
+      ],
+      "final_line": "end draws=12000 rss_kib=205388 rendered=true"
+    },
+    "original_direct": {
+      "samples": [
+        {
+          "draws": 1,
+          "rss_kib": 164924
+        },
+        {
+          "draws": 2001,
+          "rss_kib": 164924
+        },
+        {
+          "draws": 4001,
+          "rss_kib": 164924
+        },
+        {
+          "draws": 6001,
+          "rss_kib": 164924
+        },
+        {
+          "draws": 8001,
+          "rss_kib": 164924
+        },
+        {
+          "draws": 10001,
+          "rss_kib": 164924
+        }
+      ],
+      "final_line": "end draws=12000 rss_kib=167256 rendered=true"
+    },
+    "corrected_indirect": {
+      "samples": [
+        {
+          "draws": 1,
+          "rss_kib": 187768
+        },
+        {
+          "draws": 2001,
+          "rss_kib": 187768
+        },
+        {
+          "draws": 4001,
+          "rss_kib": 187768
+        },
+        {
+          "draws": 6001,
+          "rss_kib": 187768
+        },
+        {
+          "draws": 8001,
+          "rss_kib": 187768
+        },
+        {
+          "draws": 10001,
+          "rss_kib": 187768
+        }
+      ],
+      "final_line": "end draws=12000 rss_kib=189200 rendered=true"
+    },
+    "checks": "12,000 completed draws in each run, glFinish every iteration, no GL errors, foreground/background pixels checked. Build with -Wall -Wextra had no warnings.",
+    "additional_controls": "Earlier 24,000-draw indirect tests also grew on the original library, including unmodified-library preloading, and stayed flat on the corrected copy. Correctly paired GL fence tests stayed flat."
+  },
+  "gazebo_stationary_100m": {
+    "common": "D3D12, headless, no RViz, full 100 m shared scene; both GPU lidars and OptiX system enabled, stationary without line production.",
+    "original": {
+      "window_s": [
+        40.09541224300119,
+        90.28329312700043
+      ],
+      "rss_start_end_mib": [
+        4764.359375,
+        4883.87890625
+      ],
+      "linear_fit_mib_per_s": 2.3799637752714404,
+      "samples": [
+        {
+          "wall_s": 40.09541224300119,
+          "rss_kib": 4878704
+        },
+        {
+          "wall_s": 45.10894963100145,
+          "rss_kib": 4890924
+        },
+        {
+          "wall_s": 50.1222451600006,
+          "rss_kib": 4903124
+        },
+        {
+          "wall_s": 55.14634578000005,
+          "rss_kib": 4915352
+        },
+        {
+          "wall_s": 60.17049278900049,
+          "rss_kib": 4927584
+        },
+        {
+          "wall_s": 65.18423193500166,
+          "rss_kib": 4940060
+        },
+        {
+          "wall_s": 70.20718526300152,
+          "rss_kib": 4952292
+        },
+        {
+          "wall_s": 75.23024018700016,
+          "rss_kib": 4964512
+        },
+        {
+          "wall_s": 80.2440807540006,
+          "rss_kib": 4976404
+        },
+        {
+          "wall_s": 85.26957229400068,
+          "rss_kib": 4988632
+        },
+        {
+          "wall_s": 90.28329312700043,
+          "rss_kib": 5001092
+        }
+      ]
+    },
+    "corrected": {
+      "window_s": [
+        40.08159938100107,
+        90.30628705100025
+      ],
+      "rss_start_end_mib": [
+        4746.5078125,
+        4746.25390625
+      ],
+      "linear_fit_mib_per_s": -0.005712874364968922,
+      "samples": [
+        {
+          "wall_s": 40.08159938100107,
+          "rss_kib": 4860424
+        },
+        {
+          "wall_s": 45.10463615899971,
+          "rss_kib": 4860432
+        },
+        {
+          "wall_s": 50.12830626399955,
+          "rss_kib": 4860448
+        },
+        {
+          "wall_s": 55.15107356199951,
+          "rss_kib": 4860452
+        },
+        {
+          "wall_s": 60.17337542399946,
+          "rss_kib": 4860452
+        },
+        {
+          "wall_s": 65.19560219800042,
+          "rss_kib": 4860452
+        },
+        {
+          "wall_s": 70.21798739699989,
+          "rss_kib": 4860456
+        },
+        {
+          "wall_s": 75.23980253900118,
+          "rss_kib": 4860460
+        },
+        {
+          "wall_s": 80.26187446400036,
+          "rss_kib": 4860160
+        },
+        {
+          "wall_s": 85.28411263000089,
+          "rss_kib": 4860160
+        },
+        {
+          "wall_s": 90.30628705100025,
+          "rss_kib": 4860164
+        }
+      ]
+    },
+    "caveat": "Startup differs because of library preloading and cache state; only post-load growth is compared. Not a full-area or GUI acceptance.",
+    "original_lidar_watch": {
+      "counts": {
+        "left": 399,
+        "right": 398
+      },
+      "sizes": {
+        "left": {
+          "width": 1000,
+          "height": 8,
+          "bytes": 256000
+        },
+        "right": {
+          "width": 1000,
+          "height": 8,
+          "bytes": 256000
+        }
+      }
+    },
+    "corrected_lidar_watch": {
+      "counts": {
+        "left": 398,
+        "right": 397
+      },
+      "sizes": {
+        "left": {
+          "width": 1000,
+          "height": 8,
+          "bytes": 256000
+        },
+        "right": {
+          "width": 1000,
+          "height": 8,
+          "bytes": 256000
+        }
+      }
+    },
+    "isolation": "Final repeats use unique ROS domains and GZ partitions, no profiling, both lidar topics observed for 40 s. Earlier shared-partition diagnostics are excluded from this comparison. The corrected run maps only the private Gallium copy."
+  },
+  "allocation_stack": [
+    "glFenceSync",
+    "_mesa_fence_sync (syncobj.c:297)",
+    "tc_flush (u_threaded_context.c:3670)",
+    "_tc_sync (u_threaded_context.c:757)",
+    "tc_batch_execute (u_threaded_context.c:3836)",
+    "d3d12_draw_vbo (d3d12_draw.cpp:1249)",
+    "d3d12_get_cmd_signature / create_cmd_signature (d3d12_cmd_signature.cpp:59)",
+    "ID3D12Device::CreateCommandSignature"
+  ],
+  "gl_sync_control": {
+    "created": 2000,
+    "deleted": 1995,
+    "live": 5
+  },
+  "deployment": "Not installed; Windows/NVIDIA drivers and system Mesa are unchanged. Upstream report prepared but not sent.",
+  "remaining": [
+    "Build/install a maintainable source-corrected private Mesa or verify a vendor release contains the fix",
+    "GUI/RViz, moving acquisition and long-run regression with the production fix"
+  ]
+}

@@ -1,8 +1,58 @@
-# 采集进程内存持续增长（未解决）
+# 采集进程内存持续增长（根因已确认，正式修复待部署）
 
-**状态**：2026-09-14复核已将持续增长定位到 **GPU雷达的 Ogre2 → Mesa D3D12 → WSL 图形驱动分配链路**；原先“属于线阵采集路径”的排他归因撤回。尚未修复，完整长任务验收仍未关闭。
+**状态**：2026-09-14已确认 **Mesa 25.2.8 D3D12后端的命令签名缓存查找参数错误**。独立复现和临时单点修正版的实际100 m场景对照均验证。系统库未修改，正式修复与完整长任务验收尚未完成。
 **影响**：阻断实施计划第6节验收——长任务会耗尽主机内存并导致任务故障。
 **首次记录**：2026-09-14。
+
+---
+
+## 已确认的源码根因
+
+错误位于Mesa的`src/gallium/drivers/d3d12/d3d12_cmd_signature.cpp:68`，不是本项目源码，也不是已经证明的NVIDIA闭源驱动错误：
+
+```diff
+- _mesa_hash_table_search(ctx->cmd_signature_cache, &key)
++ _mesa_hash_table_search(ctx->cmd_signature_cache, key)
+```
+
+`key`本身已经指向签名结构体，哈希/比较按该结构体的16字节内容进行。多一层`&`使查找读取指针变量及其邻接栈字节，
+而插入使用正确的结构体内容。相同间接绘制无法正常命中缓存，反复调用`CreateCommandSignature`；
+重复键插入替换旧entry的数据指针，但不会释放旧的签名包装对象和COM引用，因此旧对象失去回收路径。
+详见[Mesa 25.2.8源码](https://gitlab.freedesktop.org/mesa/mesa/-/blob/mesa-25.2.8/src/gallium/drivers/d3d12/d3d12_cmd_signature.cpp#L68)。
+
+匹配本机ELF Build ID的Ubuntu调试符号将主要栈解码为：
+
+```text
+Ogre GL3PlusVaoManager::_update → glFenceSync
+  → _mesa_fence_sync → tc_flush → _tc_sync → tc_batch_execute
+  → d3d12_draw_vbo → d3d12_get_cmd_signature
+  → ID3D12Device::CreateCommandSignature
+```
+
+同步调用在这里触发此前排队的绘制，不能把分配归咎于fence本身。实际Gazebo计数中创建2000个GL同步对象时已删除1995个，
+存活量只有5个；正确配对的独立fence测试也保持稳定。
+
+验证使用相同系统驱动、同一块GPU：
+
+| 验证 | 原版 | 只修缓存查找参数 |
+|---|---|---|
+| 独立三角形，间接绘制2001→10001次 | RSS增加23,600 KiB，约2.95 KiB/次 | RSS不增长 |
+| 相同三角形改为直接绘制 | RSS不增长 | 无需修改 |
+| 100 m道路，雷达＋OptiX均启用，静止40–90 s | 4764.36→4883.88 MiB，拟合约2.380 MiB/s | 4746.51→4746.25 MiB，基本持平（少量回收） |
+
+独立程序不依赖ROS、Gazebo、OptiX或道路资产，使用固定间接命令，逐次`glFinish`排除无限排队；三种三角形测试均无GL错误，
+最终像素检查`rendered=true`。末尾首次读回另有一次性分配，上表采用读回前相同绘制次数窗口，不把它当泄漏。
+额外使用原版库预加载的控制试验仍增长，不能仅用加载顺序解释修正版持平。
+最终Gazebo对照使用独立ROS域和Gazebo分区，无分析器；40 s内原版收到左右雷达399/398帧，修正版398/397帧，
+每帧1000×8点。修正版的实际映射已确认只有临时Gallium副本，避免误把未加载修正或未运行雷达当成通过。
+
+**临时修正的性质**：没有安装新驱动或覆盖系统文件。对经过SHA256/指令字节核验的库副本，将查找参数的`lea`改为`mov`，
+等价于上述源码单点修改，仅通过诊断子进程的`LD_PRELOAD`加载。它用于验证因果，不是正式部署方式；正式方案应从源码补丁构建独立Mesa或采用已核实包含修复的发行包。
+首次只设置`LIBGL_DRIVERS_PATH`未替换实际加载的Gallium，已识别并排除为修正版；该轮仍可作为原库观测。
+
+已备好[英文上游报告](MESA_D3D12_UPSTREAM_REPORT.md)、[独立复现程序](../../tools/probe_mesa_indirect_memory.cpp)、
+[源码补丁](../../tools/patches/mesa-d3d12-command-signature-key.patch)和[实测结果](../../results/mesa_d3d12_signature_root_cause.json)。尚未向上游发布。
+根因确认不等于完整验收：仍须部署正式修正版并重跑GUI/RViz、行驶采图和长任务，检查是否另有独立增长。
 
 ---
 
@@ -40,7 +90,7 @@ gz::sim::systems::SensorsPrivate::RenderThread / RunOnce
   → libd3d12core.so / libd3d12.so / libnvwgf2umx.so
 ```
 
-**结论边界**：已找到持续增长的渲染调用链，并通过有无线阵、是否启用雷达渲染的同场景对照排除“线阵插件是必要条件”。
+**该轮结论边界（后续已由上节进一步定位）**：找到持续增长的渲染调用链，并通过有无线阵、是否启用雷达渲染的同场景对照排除“线阵插件是必要条件”。
 这不是已经证明某个闭源驱动函数缺少一次`free`：heaptrack的未释放量不等于全部RSS，驱动直接分配/映射及分配器保留页也须区分。
 尚不能把历史行驶任务的全部增长速率都归给同一处，更不能据此宣称长任务已经修好。
 后续应对这条图形资源创建/回收链做最小复现与后端对照，再决定修复或隔离方案；不能以禁用避障雷达作为正式验收通过。
