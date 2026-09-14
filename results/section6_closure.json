@@ -285,10 +285,11 @@
       "speed_m_s": 2.777777777777778,
       "noise_seed": 20260912,
       "outcome": "startup failure, mission never began, no capture data",
-      "cause": "the Gazebo GUI client lost its D3D12 device (\"D3D12: Removing Device\"), fell back to drisw, which the private D3D12-only Mesa does not contain, and aborted with SIGABRT on the Qt OpenGL context",
+      "cause": "the Gazebo GUI client failed to create its Qt OpenGL context after \"D3D12: Removing Device\". This is the intermittent WSLg context failure already recorded in docs/issues/CONTROL_LOOP_STALL.md, with the same QT_OPENGL signature seen on 2026-09-11 under the system Mesa.",
       "evidence": "local_data/accept_rated_6_gui_abort/simulation.log",
-      "reading": "the simulation server and RViz both came up on the private Mesa in the same launch, so this is the known intermittent WSLg context failure meeting the deliberate absence of a software fallback. It fails immediately instead of degrading to software rendering. Retried after a 60 s settle and passed.",
-      "kept": "the directory is retained as the first real instance of the no-fallback boundary"
+      "reading": "not caused by the private Mesa. The same QT_OPENGL failure occurred under the system Mesa, where drisw is present, so the missing software fallback removed at most a chance of recovery for which there is no evidence. The server and RViz both came up on the private Mesa in this same launch. The server/GUI split adopted on 2026-09-11 was explicitly recorded as not proven to fix this (Fisher exact two-tailed p=0.478 at 12 trials per arm), and its recorded confound was that the baseline failures fell minutes after a long GPU-heavy mission. This run started 20 s after a 13-minute full-area mission, which is that condition. Retried after a 60 s settle and passed, n=1.",
+      "kept": "the directory is retained as the first real instance of the no-fallback boundary",
+      "rate_so_far": "about 1 failure in 26 GUI launches since the split, against a point estimate of 2 in 12 before it. The intervals overlap; the two rates are still not separable."
     }
   ],
   "repeat_criterion": {
@@ -392,10 +393,11 @@
       "priority": "low, recorded, not blocking"
     },
     {
-      "title": "the Gazebo GUI client can abort at startup when the D3D12 device is removed",
-      "detail": "the private Mesa is D3D12-only with no llvmpipe, so the drisw fallback path is absent and the Qt OpenGL context failure aborts the process. The server and RViz came up normally in the same launch.",
-      "impact": "startup only, no mission or capture data affected; one occurrence in seven launches, cleared by a 60 s settle and retry",
-      "priority": "low, recorded, workaround is retry"
+      "title": "the Gazebo GUI client can fail to create its OpenGL context at startup",
+      "detail": "a pre-existing intermittent WSLg failure, first recorded 2026-09-11 under the system Mesa. The 2026-09-11 server/GUI split was kept because it is free, not because it was shown to help: Fisher exact two-tailed p=0.478.",
+      "impact": "startup only, no mission or capture data affected. One occurrence in about 26 GUI launches since the split; cleared by a 60 s settle and retry.",
+      "priority": "low, recorded, workaround is retry",
+      "next_step": "the cheapest test is the recorded confound, not more blind trials: launch immediately after a heavy mission against launching after a settle, which would make the cooldown a controlled variable. A significant verdict on the split itself needs about 20 trials per arm."
     },
     {
       "title": "the panel rescan button is still validated only on an 8 x 2 m region",
