@@ -1,0 +1,60 @@
+{
+  "schema": "agv.capture_memory_growth.v1",
+  "goal": "locate the growth that put a 31 minute mission at 30.07 GiB on a 31 GiB host and faulted it",
+  "symptom": {
+    "peak_rss_gib_by_mission_length": {
+      "374 s": 14.7,
+      "835 s": 19.66,
+      "1398 s": 25.4,
+      "1862 s": 30.07
+    },
+    "budget_gib": 20,
+    "rate": "roughly 10 to 16 MiB per second of mission, tracking seconds rather than archived blocks",
+    "consequence": "the 0.5 m/s full-area mission hit host memory pressure and faulted CAMERA_STATE_TIMEOUT with a camera service call outstanding"
+  },
+  "attribution": {
+    "method": "per-process RSS sampled every two seconds through a 3 x 2 m mission, once with the OptiX capture sensor and once without it",
+    "with_capture": {
+      "process": "gz sim",
+      "window": "24 s to 84 s, after the scene load and before shutdown",
+      "rss_mib": [
+        3290,
+        3394,
+        3513,
+        3621,
+        3748,
+        3873
+      ],
+      "slope_mib_per_s": 9.7
+    },
+    "without_capture": {
+      "process": "gz sim",
+      "window": "20 s to 76 s",
+      "rss_mib": [
+        483,
+        511
+      ],
+      "slope_mib_per_s": 0.5
+    },
+    "other_processes": {
+      "rviz": "flat at 324 MiB",
+      "mission_operator": "44 to 98 MiB then flat, plus 41 MiB at the audit",
+      "ekf_node": "+20 MiB",
+      "measurement_adapter": "+37 MiB",
+      "parameter_bridge": "+6 MiB",
+      "note": "none of these grows at a rate that matters next to gz sim"
+    },
+    "verdict": "the growth is in the gz sim process and it belongs to the capture path. With the linescan sensor off the same mission leaves that process essentially flat, a factor of twenty apart."
+  },
+  "ruled_out": [
+    "the sensor pose history, which is trimmed to eight samples per push",
+    "the C++ archive writer queue, bounded to two blocks in flight",
+    "the material tile cache, fixed at 32 slots on the device",
+    "RViz and the ROS bridge, both flat"
+  ],
+  "not_yet_known": "what inside the capture path accumulates. The rate does not scale with pixel production -- the rated mission produces six times the lines per second of the 0.5 m/s one and grows more slowly, not faster -- so retained image buffers are not a sufficient explanation on their own.",
+  "next": [
+    "sample the gz sim heap by allocation site rather than by process",
+    "the per-exposure structures are the first place to look, since they are produced per line rather than per block"
+  ]
+}
