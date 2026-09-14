@@ -1,0 +1,170 @@
+{
+  "passed": true,
+  "method": "two raw image transverse border centers; no truth position used in scale measurement",
+  "cases": [
+    {
+      "actual_diameter_m": 0.39,
+      "calibrated_diameter_m": 0.4,
+      "lines_per_revolution": 3436.241610738255,
+      "rows": 27471,
+      "border_centers_rows": [
+        13820.5,
+        23075.5
+      ],
+      "border_span_rows": 9255.0,
+      "median_camera_height_m_truth": 1.0394281692324214,
+      "longitudinal_spacing_m": 0.00036570101983193683,
+      "measured_scale_vs_040": 1.0255984042553192,
+      "expected_scale_vs_040": 1.0256410256410258,
+      "scale_error": -4.2621385706542725e-05,
+      "capture_checks": {
+        "passed": true,
+        "received_blocks": 7,
+        "real_time_factor": 0.9997337173320104,
+        "gazebo_gui": true,
+        "rviz": true,
+        "pause_interval": [
+          16.021,
+          17.021
+        ],
+        "ros_all_blocks_byte_identical": true,
+        "final_motion_state": "HOLD",
+        "motion_evaluation": {
+          "scope": "ground-truth evaluation only, never command input; each pose uses its own timestamp",
+          "duration_s": 23.0,
+          "displacement_m": [
+            9.67076750678044,
+            -7.85151810234197e-09,
+            1.7904588922590392e-10
+          ],
+          "average_world_velocity_m_s": [
+            0.4204681524687148,
+            -3.4137035227573784e-10,
+            7.784603879387127e-12
+          ]
+        }
+      },
+      "raw_session": "local_data/encoder_diameter_comparison/039/session_cpp_1789390707380950610",
+      "raw_pgms_sha256": {
+        "block_000000.pgm": "573eff38d08c28b994be81d3f5f65c5d9576fbaf8a2cd13c188b003c24ddda69",
+        "block_000001.pgm": "51f2e308cb7d814d5656036be4c8864713414d4c4fa3f125075cf2a06e5961ba",
+        "block_000002.pgm": "a4d698ee4ab5b9bfdabad2b67bb001dc8ed30ed16f78908b91ebc2c0e94603df",
+        "block_000003.pgm": "597b3cbd6ca1c7ff5bc50d5f8b6878ad5763678b5a2b225c3b43f91ac999f6c3",
+        "block_000004.pgm": "bbb55595b04049e2eb64a471092774f7277bb25f04fa982a3ad45eec786481b0",
+        "block_000005.pgm": "88a2cfed6e9d32d8dd236d7f564659e2a85b04091d5e3dda94e6dd47a736362f",
+        "block_000006.pgm": "476a316873f7c9fce26dfd0420a674a4599996de3ab2761c0051454205ad926f"
+      }
+    },
+    {
+      "actual_diameter_m": 0.4,
+      "calibrated_diameter_m": 0.4,
+      "lines_per_revolution": 3436.241610738255,
+      "rows": 27693,
+      "border_centers_rows": [
+        13422.0,
+        22446.0
+      ],
+      "border_span_rows": 9024.0,
+      "median_camera_height_m_truth": 1.0444281692326884,
+      "longitudinal_spacing_m": 0.00036570101983193683,
+      "measured_scale_vs_040": 1.0,
+      "expected_scale_vs_040": 1.0,
+      "scale_error": 0.0,
+      "capture_checks": {
+        "passed": true,
+        "received_blocks": 7,
+        "real_time_factor": 1.0000408739206061,
+        "gazebo_gui": false,
+        "rviz": false,
+        "pause_interval": null,
+        "ros_all_blocks_byte_identical": true,
+        "final_motion_state": "HOLD",
+        "motion_evaluation": {
+          "scope": "ground-truth evaluation only, never command input; each pose uses its own timestamp",
+          "duration_s": 19.98,
+          "displacement_m": [
+            9.989999938163024,
+            -5.999560848124474e-10,
+            1.1777351316411e-09
+          ],
+          "average_world_velocity_m_s": [
+            0.49999999690505625,
+            -3.002783207269507e-11,
+            5.894570228433934e-11
+          ]
+        }
+      },
+      "raw_session": "local_data/encoder_diameter_comparison/040/session_cpp_1789390658983799955",
+      "raw_pgms_sha256": {
+        "block_000000.pgm": "910ded4ca7293d87779c31f6574e92016634f20c0f18e3cdd910de250040928b",
+        "block_000001.pgm": "0dae6ffb543b164dc21784e69df39d4a07546cf2b7cf7608ed226af9da2f5666",
+        "block_000002.pgm": "c6d59bb8d40fb50e9847335adfe01ea6e7d0c506f90763fd9304e17f48649afe",
+        "block_000003.pgm": "5e4d526c56126d35216d9ee402d93ab1b7a46000a0a22958648e385169343054",
+        "block_000004.pgm": "982ae241e18d728a078dc60d872a22bb0ad9a14b379b90e0cadcab24d4cda1c1",
+        "block_000005.pgm": "272793fa0e139a7739073883dca31e4b9e745b2f7ca0d78d527303b6c50469c1",
+        "block_000006.pgm": "9552db5c1b37ea5e4dec09bc41117c9d1862d463f25f8fd2e80cfa3970b19480"
+      }
+    },
+    {
+      "actual_diameter_m": 0.42,
+      "calibrated_diameter_m": 0.4,
+      "lines_per_revolution": 3436.241610738255,
+      "rows": 27693,
+      "border_centers_rows": [
+        12679.5,
+        21273.5
+      ],
+      "border_span_rows": 8594.0,
+      "median_camera_height_m_truth": 1.0544281692331352,
+      "longitudinal_spacing_m": 0.00036570101983193683,
+      "measured_scale_vs_040": 0.9523492907801419,
+      "expected_scale_vs_040": 0.9523809523809524,
+      "scale_error": -3.166160081058411e-05,
+      "capture_checks": {
+        "passed": true,
+        "received_blocks": 7,
+        "real_time_factor": 1.0000397630310476,
+        "gazebo_gui": false,
+        "rviz": false,
+        "pause_interval": null,
+        "ros_all_blocks_byte_identical": true,
+        "final_motion_state": "HOLD",
+        "motion_evaluation": {
+          "scope": "ground-truth evaluation only, never command input; each pose uses its own timestamp",
+          "duration_s": 19.98,
+          "displacement_m": [
+            10.48944300395629,
+            4.706029788081878e-07,
+            0.00046501712383617555
+          ],
+          "average_world_velocity_m_s": [
+            0.5249971473451596,
+            2.3553702643052443e-08,
+            2.327413032213091e-05
+          ]
+        }
+      },
+      "raw_session": "local_data/encoder_diameter_comparison/042/session_cpp_1789390766338283513",
+      "raw_pgms_sha256": {
+        "block_000000.pgm": "1b0e0f2cfcdc5606289f59e4b6a8eebc4dce1f903e328a655b49def867bc417a",
+        "block_000001.pgm": "b42a565bb2140142c3d34a1d7cc8e2685b3c998d13379f30ac014756e9d8a0f9",
+        "block_000002.pgm": "4d9ac8596f47dfd0920c09116675c86cc0b32e4b4a34d385168c8894e75a2921",
+        "block_000003.pgm": "be37c26a09475824519396e29d33b696502c9d5f07ff7e1509b5211152df670d",
+        "block_000004.pgm": "c128cb2205be371548c1d5a8865fb28b23e710ce9db02b23b207411da147be0a",
+        "block_000005.pgm": "d4750bd9c11696682d820af032fcf2f27c506f15c86ae816f6ab8a9183428805",
+        "block_000006.pgm": "2ea933eaf938d906fc0910df0aac0ac05a5068da5bcf69778b6fd5abbf842e09"
+      }
+    }
+  ],
+  "preview": "common raw pixel scale; integer translation; shared fixed grayscale window",
+  "validation": {
+    "colcon_tests": 299,
+    "errors": 0,
+    "failures": 0,
+    "python_targeted_tests": 207,
+    "cpp_sampling_tests": 13,
+    "scope": "three short OptiX runs; 0.39 m GUI/RViz with stationary pause; not full-area/rated-speed recertification",
+    "image_observation": "comparison.png inspected: lower transverse border visibly moves below/above baseline; common raw pixel scale; no geometry correction",
+    "gui_observation": "window presence, preview subscription and synchronized TF checked automatically; mouse interaction not retested"
+  }
+}

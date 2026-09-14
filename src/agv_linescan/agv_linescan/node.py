@@ -29,6 +29,8 @@ class LineScanNode(Node):
         self.declare_parameter('platform', '')
         self.declare_parameter('output_dir', '/tmp/agv_linescan')
         self.c = yaml.safe_load(Path(self.get_parameter('config').value).read_text())
+        if self.c.get('wheel_encoder'):
+            raise ValueError('wheel_encoder requires the C++ sensor backend')
         absolute=self.c.get('wheel_speed_spread_absolute_m_s',.01);relative=self.c.get('wheel_speed_spread_relative',0)
         if not np.isfinite([absolute,relative]).all() or absolute<0 or not 0<=relative<=.05:
             raise ValueError('invalid wheel speed consistency tolerance')

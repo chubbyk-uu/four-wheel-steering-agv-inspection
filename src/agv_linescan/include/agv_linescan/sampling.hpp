@@ -12,6 +12,19 @@ inline double WheelSpeedSpreadLimit(double meanSpeed,double absolute,double rela
     throw std::invalid_argument("invalid wheel speed consistency tolerance");
   return std::max(absolute,relative*std::abs(meanSpeed));
 }
+// Resampled AB phase: fixed lines per shaft revolution. No electrical waveform
+// or integer-count timing jitter is invented; fractional phase is kept by Trigger.
+struct WheelEncoderScale {
+  double linesPerTurn, spacing;
+  WheelEncoderScale(int ppr,int decode,int multiplier,int divider,double calibratedRadius) {
+    if(ppr<=0 || ppr>1000000 || decode!=4 || multiplier<=0 || multiplier>128 ||
+       (multiplier & (multiplier-1)) || divider<=0 || divider>255 ||
+       !std::isfinite(calibratedRadius) || calibratedRadius<=0)
+      throw std::invalid_argument("invalid wheel encoder rescaler");
+    linesPerTurn=double(ppr)*decode*multiplier/divider;
+    spacing=2*std::acos(-1.)*calibratedRadius/linesPerTurn;
+  }
+};
 struct Event { double time, distance; int direction; };
 class Trigger {
  public:
@@ -29,6 +42,7 @@ class Trigger {
     double delta=distance-distance_;
     if (!direction_ && std::abs(distance-origin_)>=spacing_-1e-12) {
       direction_=distance>=origin_ ? 1 : -1;
+      nextIndex_=1;
       next_=origin_+direction_*spacing_;
     }
     if (direction_) {
@@ -45,7 +59,7 @@ class Trigger {
       int direction=direction_;
       while (direction*(distance-next_)>=-1e-12) {
         result.push_back({time_+(next_-distance_)/delta*(time-time_), next_, direction});
-        next_+=direction*spacing_;
+        next_=origin_+double(direction)*(++nextIndex_)*spacing_;
         if (result.size()>10000) throw std::runtime_error("excessive triggers per step");
       }
     }
@@ -54,6 +68,7 @@ class Trigger {
   }
  private:
   double spacing_, time_=0, distance_=0, next_=0, origin_=0, extreme_=0;
+  size_t nextIndex_=1;
   int direction_=0;
   bool valid_=false,positionMode_=false,retracing_=false;
   double maxRetrace_=0;size_t retraceEpisodes_=0;

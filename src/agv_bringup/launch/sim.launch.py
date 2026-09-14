@@ -24,8 +24,19 @@ def setup(context):
         raise ValueError('Large AGV mass must be within validated design range 400 to 700 kg')
     behavior = str(bringup / 'config/motion.yaml')
     camera_config = LaunchConfiguration('camera_config').perform(context)
+    actual_diameter = float(LaunchConfiguration('actual_wheel_diameter').perform(context))
+    if not .38 <= actual_diameter <= .42:
+        raise ValueError('actual_wheel_diameter must be within the small tyre experiment range [0.38, 0.42] m')
+    from agv_linescan.encoder import line_spacing
+    camera_values = yaml.safe_load(Path(camera_config).read_text())
+    effective_spacing = line_spacing(camera_values, config['wheel_radius'])
+    if camera_values['line_spacing_m'] != effective_spacing:
+        camera_values['line_spacing_m'] = effective_spacing
+        with tempfile.NamedTemporaryFile(mode='w', prefix='agv_encoder_', suffix='.yaml', delete=False) as f:
+            yaml.safe_dump(camera_values, f)
+            camera_config = f.name
     robot = xacro.process_file(str(desc / 'urdf/agv.urdf.xacro'), mappings={
-        'platform': platform, 'camera_config': camera_config, 'controllers': str(bringup / 'config/controllers.yaml')}).toxml()
+        'platform': platform, 'actual_wheel_diameter': str(actual_diameter), 'camera_config': camera_config, 'controllers': str(bringup / 'config/controllers.yaml')}).toxml()
     from agv_linescan.robot_scene import split_visual_links
     robot = split_visual_links(robot)
     headless = LaunchConfiguration('headless').perform(context).lower() == 'true'
@@ -69,6 +80,7 @@ def setup(context):
                 name='agv_linescan::GzLineScan')
             for key, value in {'config': camera_config, 'platform': platform, 'backend': backend,
                                'output_dir': LaunchConfiguration('capture_dir').perform(context),
+                               'actual_wheel_diameter': str(actual_diameter),
                                'max_scan_speed': LaunchConfiguration('scan_speed_limit').perform(context)}.items():
                 ET.SubElement(plugin, key).text = value
             if backend == 'optix':
@@ -135,6 +147,8 @@ def setup(context):
             additional_env={} if any(os.environ.get(k) for k in ('FASTRTPS_DEFAULT_PROFILES_FILE','FASTDDS_DEFAULT_PROFILES_FILE')) else
                 {'FASTRTPS_DEFAULT_PROFILES_FILE':str(bringup/'config/fastdds_linescan.xml')},output='screen'))
     if linescan and backend == 'analytic':
+        if yaml.safe_load(Path(camera_config).read_text()).get('wheel_encoder'):
+            raise ValueError('wheel_encoder requires a C++ sensor backend; analytic is a legacy ideal-distance simulator')
         actions.append(Node(package='agv_linescan', executable='linescan_node',
                             parameters=[{'use_sim_time': True, 'config': camera_config,
                                          'platform': platform,
@@ -189,6 +203,7 @@ def generate_launch_description():
         DeclareLaunchArgument('gui_config', default_value=str(Path(get_package_share_directory('agv_bringup'))/'config/gui.config')),
         DeclareLaunchArgument('linescan', default_value='false'),
         DeclareLaunchArgument('correction_profile', default_value='', description='Optional online diagnostic only; normal workflow corrects archived raw images offline'),
+        DeclareLaunchArgument('actual_wheel_diameter', default_value='0.40', description='Physical diameter of all four tyres in metres; calibrated wheel_radius stays unchanged'),
         DeclareLaunchArgument('camera_config', default_value=str(Path(get_package_share_directory('agv_description'))/'config/linescan.yaml')),
         DeclareLaunchArgument('linescan_backend', default_value='render', choices=['render', 'analytic', 'cuda_grid', 'cuda_tiles', 'optix']),
         DeclareLaunchArgument('terrain_manifest', default_value=''),

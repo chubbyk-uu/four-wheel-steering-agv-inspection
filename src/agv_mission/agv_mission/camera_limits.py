@@ -8,6 +8,8 @@ def inspection_camera_config(camera,platform):
     if not math.isfinite(limit) or limit<=0 or not math.isfinite(tolerance) or not 0<tolerance<=.1:
         raise ValueError('invalid platform wheel speed or encoder speed tolerance')
     result=deepcopy(camera)
+    from agv_linescan.encoder import line_spacing
+    result["line_spacing_m"]=line_spacing(camera,platform["wheel_radius"])
     # The lateral gate must cover every body lateral velocity the tracker may
     # legally command, and that is not the position-feedback authority alone.
     # The controller caps its feedback in the track frame and then rotates the

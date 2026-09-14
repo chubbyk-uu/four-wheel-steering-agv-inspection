@@ -117,6 +117,23 @@ class GzLineScan final: public gz::sim::System,
     if(!std::isfinite(maxSampleGap_) || maxSampleGap_<=0)
       throw std::runtime_error("invalid maximum pose sample gap");
     spacing_=config_["line_spacing_m"].as<double>();
+    if(auto encoder=config_["wheel_encoder"]; encoder) {
+      const auto wheel=encoder["wheel"].as<std::string>();
+      const std::array<std::string,4> names={"fl","fr","rl","rr"};
+      auto found=std::find(names.begin(),names.end(),wheel);
+      if(found==names.end())throw std::runtime_error("invalid encoder wheel");
+      encoderWheel_=std::distance(names.begin(),found);
+      WheelEncoderScale scale(encoder["ppr"].as<int>(),encoder["decode"].as<int>(),
+          encoder["multiplier"].as<int>(),encoder["divider"].as<int>(),radius_);
+      spacing_=scale.spacing;
+      config_["line_spacing_m"]=spacing_;
+      encoderContract_={{"model","wheel_ab_resampled_phase_v1"},{"wheel",wheel},
+        {"ppr",encoder["ppr"].as<int>()},{"decode",encoder["decode"].as<int>()},
+        {"multiplier",encoder["multiplier"].as<int>()},{"divider",encoder["divider"].as<int>()},
+        {"lines_per_revolution",scale.linesPerTurn},{"calibrated_diameter_m",2*radius_},
+        {"actual_diameter_m_truth",sdf->Get<double>("actual_wheel_diameter",2*radius_).first},
+        {"timing_model","continuous angular phase interpolation; no AB electrical waveform"}};
+    }
     maxSpeed_=sdf->Get<double>("max_scan_speed",.25).first;
     if (!rows_ || exposure_<=0 || maxSpeed_<=0 || rows_>16384)
       throw std::runtime_error("invalid acquisition configuration");
@@ -287,12 +304,23 @@ class GzLineScan final: public gz::sim::System,
         {"max_abs_steer_rad",maxSteer},{"encoder_yaw_estimate_rad_s",(speeds[1]+speeds[3]-speeds[0]-speeds[2])/(2*track_)},
         {"speed_limit_m_s",maxSpeed_},{"wheel_spread_limit_m_s",spreadLimit},
         {"steer_limit_rad",config_["max_steer_rad"].as<double>()},{"yaw_limit_rad_s",config_["max_yaw_rate_rad_s"].as<double>()}};
+      // Quality gates may use all four wheels; the trigger is one physical
+      // shaft, never a steering-projected or truth-distance virtual encoder.
+      if(encoderWheel_>=0)distance=wheelDistance[encoderWheel_];
       // Start a pass only after initial wheel alignment. Once started, the
       // armed camera keeps its partial frame and encoder phase in HOLD/ALIGN.
       if (enabled_ && (motion_=="DRIVE" || (active_ &&
           (motion_=="BRAKE" || motion_=="HOLD" || motion_=="ALIGN"))) && valid) {
         try {
+          if(encoderWheel_>=0) {
+            const int polarity=std::cos(angles[encoderWheel_])<0 ? -1 : 1;
+            if(active_ && polarity!=encoderPolarity_)
+              throw std::runtime_error("unsupported_scan_motion");
+            encoderPolarity_=polarity;
+          }
           auto events=trigger_->Update(now_,distance);
+          // Existing scan_direction means body forward/backward, not AB polarity.
+          if(encoderWheel_>=0)for(auto& event:events)event.direction*=encoderPolarity_;
           pending_.insert(pending_.end(),events.begin(),events.end());
           active_=true;
           while (!pending_.empty() && pending_.front().time+exposure_<=now_) {
@@ -655,6 +683,10 @@ class GzLineScan final: public gz::sim::System,
       {"radiometry","rendered RGB luminance; three temporal samples; not calibrated irradiance"},
       {"cumulative_sampling_metrics",{{"lines",globalLine_},{"renders",renders_},{"render_seconds",renderSeconds_},
         {"readback_seconds",readSeconds_},{"mapping_seconds",mappingSeconds_},{"scene_update_seconds",sceneSeconds_}}}};
+    if(encoderWheel_>=0) {
+      meta["encoder_distance_model"]="single_wheel_calibrated_arc";
+      meta["wheel_encoder"]=encoderContract_;
+    }
     if(config_["projected_encoder"].as<bool>(false))
       meta["scan_motion_limits"]={{"max_lateral_m_s",config_["max_scan_lateral_m_s"].as<double>()},
         {"max_yaw_rate_rad_s",config_["max_yaw_rate_rad_s"].as<double>()},
@@ -757,6 +789,8 @@ class GzLineScan final: public gz::sim::System,
   YAML::Node config_;
   std::unique_ptr<Optics> optics_;
   std::unique_ptr<Trigger> trigger_;
+  int encoderWheel_=-1,encoderPolarity_=1;
+  Json encoderContract_;
   ProjectedEncoder projectedEncoder_;
   gz::sim::RenderUtil render_;
   std::vector<gz::rendering::CameraPtr> cameras_;

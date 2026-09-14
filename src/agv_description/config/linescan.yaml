@@ -15,7 +15,15 @@ preview_bin: 8
 pixel_pitch_m: 0.000007
 focal_length_m: 0.020
 nominal_width_m: 1.5
-line_spacing_m: 0.0003662109375
+# Nominal longitudinal interpretation, derived from calibrated 0.4 m wheel.
+# The C++ plugin derives this from wheel_encoder + platform.wheel_radius.
+line_spacing_m: 0.0003657010198319368
+wheel_encoder:
+  wheel: fl
+  ppr: 2000
+  decode: 4
+  multiplier: 64
+  divider: 149
 # Signed position frontier (PositionUp/Down): no new lines while retracing.
 encoder_output_mode: position
 exposure_s: 0.00002

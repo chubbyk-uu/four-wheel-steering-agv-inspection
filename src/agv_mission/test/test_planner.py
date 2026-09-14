@@ -97,7 +97,7 @@ def test_runout_contains_the_discardable_sensor_tail(request_data, vehicle):
     # point by that much, and the audit shrinks each span by the declared
     # uncertainty on top. Closing 0.10 m past a 13 m pass against a 0.37 m
     # discardable tail left 0.26-0.31 m of every pass unverified.
-    assert vehicle.discardable_tail_m == pytest.approx(1000*.0003662109375)
+    assert vehicle.discardable_tail_m == pytest.approx(1000*math.pi*.4*149/(8000*64))
     request_data['coverage_error_m']=.1
     request_data['scan_speed_m_s']=1.
     p=plan(request_data,vehicle)

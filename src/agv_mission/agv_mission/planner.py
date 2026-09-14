@@ -72,10 +72,11 @@ class Vehicle:
         # Current optical model must remain monotone, as required by the sensor.
         if polynomial != [0.0, 1.0, 0.0, 0.04]:
             raise PlanningError('raw optical envelope must be revalidated for changed distortion')
+        from agv_linescan.encoder import line_spacing
         # The sensor drops a closing image shorter than min_tail_rows, so the last
         # archived row may trail wherever capture was closed by this much.
         tail = number(camera.get('min_tail_rows', 0), 'min tail rows', 0) * \
-            number(camera['line_spacing_m'], 'line spacing', 0, True)
+            number(line_spacing(camera, platform['wheel_radius']), 'line spacing', 0, True)
         # The vehicle's top speed and the fastest scan it may be asked for are
         # different numbers. Commanding a scan at the top speed would leave the
         # tracker no authority to accelerate, only to brake.

@@ -1,4 +1,6 @@
 """Read archived pixels and estimated navigation; do not read rendered pose truth."""
+from agv_linescan.encoder import line_spacing
+import math
 import hashlib
 import json
 from pathlib import Path
@@ -116,7 +118,7 @@ def audit_capture(mission,navigation,output,platform,camera,uncertainty=.10):
                     pixels.load()
                 if raw['calibration_id']!=raw_camera['calibration_id'] or raw.get('invalid_pixels',0)!=0:raise ValueError('invalid pixels/calibration')
                 if not 1<=raw['rows']<=raw_camera['block_rows'] or last['global_line']-first['global_line']+1!=raw['rows']:raise ValueError('invalid block line range')
-                if raw['line_spacing_m']!=camera['line_spacing_m'] or raw.get('encoding','mono8')!='mono8':raise ValueError('trigger spacing or encoding changed')
+                if not math.isclose(raw['line_spacing_m'],line_spacing(camera,platform['wheel_radius']),rel_tol=0,abs_tol=1e-12) or raw.get('encoding','mono8')!='mono8':raise ValueError('trigger spacing or encoding changed')
                 if any(not first['time_s']<=t['time_s']<=last['time_s'] for t in raw['pose_tags']):raise ValueError('tag time outside frame')
                 tags={t['global_line']:t for t in raw['pose_tags']};tags[first['global_line']]=first;tags[last['global_line']]=last
                 tags=[tags[k] for k in sorted(tags)]

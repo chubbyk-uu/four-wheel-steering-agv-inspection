@@ -2,7 +2,11 @@
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="agv">
   <xacro:arg name="platform" default="$(find agv_description)/config/platform.yaml"/>
   <xacro:arg name="controllers" default="$(find agv_bringup)/config/controllers.yaml"/>
+  <xacro:arg name="actual_wheel_diameter" default="0"/>
   <xacro:property name="p" value="${xacro.load_yaml('$(arg platform)')}"/>
+  <!-- Physical tyre only; control/odometry retain platform.wheel_radius. -->
+  <xacro:property name="actual_diameter" value="${float('$(arg actual_wheel_diameter)')}"/>
+  <xacro:property name="physical_radius" value="${actual_diameter/2 if actual_diameter > 0 else p.wheel_radius}"/>
   <xacro:arg name="camera_config" default="$(find agv_description)/config/linescan.yaml"/>
   <xacro:property name="cam" value="${xacro.load_yaml('$(arg camera_config)')}"/>
   <xacro:property name="camera_height" value="${cam.nominal_width_m*cam.focal_length_m/(cam.width*cam.pixel_pitch_m)}"/>
@@ -100,7 +104,7 @@
   <xacro:lidar name="left" sign="1"/><xacro:lidar name="right" sign="-1"/>
   <xacro:macro name="tread" params="i">
     <xacro:if value="${i &lt; 24}">
-      <visual><origin xyz="${(p.wheel_radius-.004)*sin(i*pi/12)} 0 ${(p.wheel_radius-.004)*cos(i*pi/12)}" rpy="0 ${i*pi/12} 0"/><geometry><box size="0.038 ${p.wheel_width*.86} 0.008"/></geometry><material name="tire"/></visual>
+      <visual><origin xyz="${(physical_radius-.004)*sin(i*pi/12)} 0 ${(physical_radius-.004)*cos(i*pi/12)}" rpy="0 ${i*pi/12} 0"/><geometry><box size="0.038 ${p.wheel_width*.86} 0.008"/></geometry><material name="tire"/></visual>
       <xacro:tread i="${i+1}"/>
     </xacro:if>
   </xacro:macro>
@@ -137,10 +141,10 @@
       <dynamics damping="0.5" friction="0.1"/>
     </joint>
     <link name="${name}_wheel_link">
-      <inertial><mass value="18.0"/><inertia ixx="${18*(3*p.wheel_radius**2+p.wheel_width**2)/12}" iyy="${18*p.wheel_radius**2/2}" izz="${18*(3*p.wheel_radius**2+p.wheel_width**2)/12}" ixy="0" ixz="0" iyz="0"/></inertial>
+      <inertial><mass value="18.0"/><inertia ixx="${18*(3*physical_radius**2+p.wheel_width**2)/12}" iyy="${18*physical_radius**2/2}" izz="${18*(3*physical_radius**2+p.wheel_width**2)/12}" ixy="0" ixz="0" iyz="0"/></inertial>
       <xacro:tread i="${0}"/>
-      <visual><origin rpy="${pi/2} 0 0"/><geometry><cylinder radius="${p.wheel_radius-.006}" length="${p.wheel_width}"/></geometry><material name="tire"/></visual>
-      <collision><origin rpy="${pi/2} 0 0"/><geometry><cylinder radius="${p.wheel_radius}" length="${p.wheel_width}"/></geometry></collision>
+      <visual><origin rpy="${pi/2} 0 0"/><geometry><cylinder radius="${physical_radius-.006}" length="${p.wheel_width}"/></geometry><material name="tire"/></visual>
+      <collision><origin rpy="${pi/2} 0 0"/><geometry><cylinder radius="${physical_radius}" length="${p.wheel_width}"/></geometry></collision>
       <visual><origin xyz="0 ${p.wheel_width/2+0.002} 0" rpy="${pi/2} 0 0"/><geometry><cylinder radius="0.085" length="0.006"/></geometry><material name="metal"/></visual>
       <visual><origin xyz="0 ${-p.wheel_width/2-0.002} 0" rpy="${pi/2} 0 0"/><geometry><cylinder radius="0.085" length="0.006"/></geometry><material name="metal"/></visual>
     </link>

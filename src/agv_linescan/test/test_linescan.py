@@ -23,7 +23,7 @@ def test_nominal_optics(config):
     assert config['focal_length_m'] == .020
     assert config['width'] == 4096
     assert config['nominal_width_m'] == 1.5
-    assert config['line_spacing_m'] == pytest.approx(1.5/4096)
+    assert config['line_spacing_m'] == pytest.approx(math.pi*.4*149/(8000*64))
     assert camera.height*(camera.ray_x[-1]-camera.ray_x[0]) == pytest.approx(1.5-1.5/4096)
 
 
@@ -170,3 +170,14 @@ def test_position_encoder_retreat_resumes_same_4096_line_frame(config,direction)
     assert len(last)==2096 and last[0][0]>4
     np.testing.assert_allclose(np.diff([e[1] for e in first+last]),direction*pitch,atol=1e-12)
     assert tr.max_retrace==pytest.approx(20*pitch)
+
+
+def test_encoder_ratio_derives_spacing_without_changing_optics(config):
+    from agv_linescan.encoder import line_spacing
+    old = line_spacing(config,.2)
+    assert old == pytest.approx(math.pi*.4*149/512000)
+    config['wheel_encoder']['multiplier'] = 128
+    assert line_spacing(config,.2) == pytest.approx(old/2)
+    assert config['nominal_width_m'] == 1.5
+    config['wheel_encoder']['divider'] = 0
+    with pytest.raises(ValueError):line_spacing(config,.2)

@@ -105,3 +105,32 @@ TEST(Trigger, PositionModeRetraceDoesNotDuplicateOrClosePartialImage) {
     trigger.Reset();EXPECT_EQ(trigger.RetraceEpisodes(),0u);
   }
 }
+
+TEST(WheelEncoder, FractionalPhaseSurvivesTurnsPauseAndReverseScan) {
+  WheelEncoderScale scale(2000,4,64,149,.2);
+  EXPECT_NEAR(scale.linesPerTurn,3436.241610738255,1e-9);
+  for(double sign:{-1.,1.}) {
+    Trigger t(scale.spacing,true); t.Update(0,0);
+    size_t lines=0;
+    for(int i=1;i<=149;++i) {
+      const double distance=sign*i*2*std::acos(-1.)*.2;
+      lines+=t.Update(2*i-1,distance).size();
+      EXPECT_TRUE(t.Update(2*i,distance).empty()); // stationary pause, no reset
+    }
+    EXPECT_EQ(lines,512000u); // no per-revolution rounding loss
+  }
+}
+TEST(WheelEncoder, PhysicalDiameterChangesRawRowsNotCountsPerTurn) {
+  WheelEncoderScale scale(2000,4,64,149,.2);
+  for(double actualDiameter:{.39,.4,.42}) {
+    Trigger t(scale.spacing,true);t.Update(0,0);
+    size_t lines=0;
+    // One metre of independent pure-rolling ground motion, integrated in steps.
+    for(int i=1;i<=1000;++i)
+      lines+=t.Update(i*.001,(i*.001)/(actualDiameter/2)*.2).size();
+    EXPECT_NEAR(double(lines),scale.linesPerTurn/(std::acos(-1.)*actualDiameter),1.);
+  }
+  EXPECT_THROW(WheelEncoderScale(0,4,64,149,.2),std::invalid_argument);
+  EXPECT_THROW(WheelEncoderScale(2000,4,63,149,.2),std::invalid_argument);
+  EXPECT_THROW(WheelEncoderScale(2000,4,64,0,.2),std::invalid_argument);
+}

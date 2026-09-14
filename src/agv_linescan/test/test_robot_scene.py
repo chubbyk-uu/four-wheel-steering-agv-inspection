@@ -63,3 +63,24 @@ def test_split_material_links_preserves_baked_geometry_and_dynamics(tmp_path):
     before=json.loads(export(urdf,tmp_path/'before').read_text())
     after=json.loads(export(converted,tmp_path/'after').read_text())
     assert before['groups']==after['groups']
+
+@pytest.mark.parametrize('diameter', [.39, .40, .42])
+def test_physical_tyres_change_without_recalibrating_control(diameter):
+    from pathlib import Path
+    import xacro
+    import yaml
+    root = Path(__file__).resolve().parents[3]
+    platform = root/'src/agv_description/config/platform.yaml'
+    config = yaml.safe_load(platform.read_text())
+    xml = xacro.process_file(str(root/'src/agv_description/urdf/agv.urdf.xacro'), mappings={
+        'platform': str(platform), 'actual_wheel_diameter': str(diameter),
+        'camera_config': str(root/'src/agv_description/config/linescan.yaml'),
+        'controllers': str(root/'src/agv_bringup/config/controllers.yaml')}).toxml()
+    robot = ET.fromstring(xml)
+    for wheel in ('fl','fr','rl','rr'):
+        link=robot.find(f"link[@name='{wheel}_wheel_link']")
+        assert float(link.find('collision/geometry/cylinder').get('radius')) == diameter/2
+        assert float(link.find('inertial/inertia').get('iyy')) == pytest.approx(18*(diameter/2)**2/2)
+        limit=robot.find(f"joint[@name='{wheel}_drive_joint']/limit")
+        assert float(limit.get('velocity')) == pytest.approx(config['max_speed']/.2)
+    assert config['wheel_radius'] == .2

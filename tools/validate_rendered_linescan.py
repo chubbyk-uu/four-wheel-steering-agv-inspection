@@ -36,7 +36,8 @@ def evaluate(args):
     rclpy.init()
     node=Evaluator()
     source_config=yaml.safe_load(Path(args.camera_config or "src/agv_description/config/linescan.yaml").read_text())
-    spacing=source_config["line_spacing_m"]
+    from agv_linescan.encoder import line_spacing
+    spacing=line_spacing(source_config,.2)
     platform_config=yaml.safe_load(Path("src/agv_description/config/platform.yaml").read_text())
     braking_wait=abs(args.speed)/platform_config["drive_decel"]+1
     def run_for(seconds, command):
@@ -155,7 +156,17 @@ def evaluate(args):
         odom_start=node.odom
         wall_start=time.monotonic()
         sim_start=node.get_clock().now().nanoseconds*1e-9
-        run_for(args.distance/abs(args.speed),(args.speed,0,0))
+        pause_interval=None
+        if args.pause_once:
+            run_for(args.distance/abs(args.speed)/2,(args.speed,0,0))
+            run_for(max(2,braking_wait),(0,0,0))
+            assert node.state=='HOLD'
+            pause_start=node.get_clock().now().nanoseconds*1e-9
+            run_for(1,(0,0,0))
+            pause_interval=[pause_start,node.get_clock().now().nanoseconds*1e-9]
+            run_for(args.distance/abs(args.speed)/2,(args.speed,0,0))
+        else:
+            run_for(args.distance/abs(args.speed),(args.speed,0,0))
         wall_end=time.monotonic()
         elapsed=wall_end-wall_start
         simulated=node.get_clock().now().nanoseconds*1e-9-sim_start
@@ -180,6 +191,10 @@ def evaluate(args):
         session=next(Path(args.archive).glob('session_cpp_*'))
         blocks=[json.loads(p.read_text()) for p in sorted(session.glob('block_*.json'))]
         config=yaml.safe_load((session/'calibration.yaml').read_text())
+        if pause_interval:
+            assert any(b['first']['time_s']<pause_interval[0] and b['last']['time_s']>pause_interval[1]
+                       and b['rows']==args.block_rows for b in blocks), 'pause did not preserve partial frame'
+
         geometry_checks=[]
         if args.backend == 'optix':
             from collections import Counter
@@ -298,7 +313,7 @@ def evaluate(args):
         displacement=position(odom_end)-position(odom_start)
         motion_evaluation=dict(scope='ground-truth evaluation only, never command input; each pose uses its own timestamp',
             duration_s=odom_dt,displacement_m=displacement.tolist(),average_world_velocity_m_s=(displacement/odom_dt).tolist())
-        report=dict(passed=True,motion_evaluation=motion_evaluation,correction=correction_status,corrected_received_blocks=len(corrected_payloads),gazebo_gui=args.gui,rviz=args.rviz,rviz_world_start=tf_start,rviz_world_end=tf_end,display_sync=display_status,backend=blocks[0]['scene_backend'],archive=str(session),
+        report=dict(passed=True,pause_interval=pause_interval,motion_evaluation=motion_evaluation,correction=correction_status,corrected_received_blocks=len(corrected_payloads),gazebo_gui=args.gui,rviz=args.rviz,rviz_world_start=tf_start,rviz_world_end=tf_end,display_sync=display_status,backend=blocks[0]['scene_backend'],archive=str(session),
                     rows=[b['rows'] for b in blocks],speed_m_s=args.speed,
                     steady_wall_start_s=wall_start,steady_wall_end_s=wall_end,display_frames=display_frames,display_bad_stamps=display_bad_stamps,
                     simulation_seconds=simulated,wall_seconds=elapsed,real_time_factor=simulated/elapsed,
@@ -337,6 +352,8 @@ def evaluate(args):
 def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--archive')
+    parser.add_argument('--pause-once',action='store_true')
+    parser.add_argument('--actual-wheel-diameter',type=float,default=.4)
     parser.add_argument('--camera-config',default='')
     parser.add_argument('--correction-profile',default='')
     parser.add_argument('--reference-target',action='store_true')
@@ -366,7 +383,7 @@ def main():
     env=dict(os.environ,ROS_DOMAIN_ID=str(args.domain),GZ_PARTITION=tag,ROS_LOG_DIR=archive+'_ros')
     with open(archive+'_sim.log','w') as log:
         sim=subprocess.Popen(['ros2','launch','agv_bringup','sim.launch.py','headless:='+str(not args.gui).lower(),'rviz:='+str(args.rviz).lower(),
-            'linescan:=true','linescan_backend:='+args.backend,'capture_dir:='+archive,
+            'actual_wheel_diameter:='+str(args.actual_wheel_diameter),'linescan:=true','linescan_backend:='+args.backend,'capture_dir:='+archive,
             *(['correction_profile:='+args.correction_profile] if args.correction_profile else []),*(['camera_config:='+args.camera_config] if args.camera_config else []),'scan_probe:='+str(args.probe).lower(),'spawn_x:='+str(args.spawn_x),
             'scan_block_rows:='+str(args.block_rows),'spawn_y:='+str(args.spawn_y),
             'scan_speed_limit:='+str(max(.25,abs(args.speed)*1.1))]+(['terrain_manifest:='+args.terrain] if args.terrain else [])+(['scene_manifest:='+args.scene] if args.scene else []),env=env,stdout=log,stderr=log,start_new_session=True)
@@ -375,6 +392,7 @@ def main():
                      '--distance',str(args.distance),'--block-rows',str(args.block_rows),'--backend',args.backend,'--warmup',str(args.warmup),'--terrain',args.terrain,'--spawn-x',str(args.spawn_x)]
             command.extend(['--view-hold',str(args.view_hold)])
             if args.correction_profile: command.extend(['--correction-profile',args.correction_profile])
+            if args.pause_once: command.append('--pause-once')
             if args.reference_target: command.append('--reference-target')
             if args.stop_capture_before_brake: command.append('--stop-capture-before-brake')
             if args.camera_config: command.extend(['--camera-config',args.camera_config])
