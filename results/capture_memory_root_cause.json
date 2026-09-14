@@ -1,0 +1,496 @@
+{
+  "schema": "agv.capture_memory_root_cause.v1",
+  "date": "2026-09-14",
+  "reviewed_head": "a4b201d",
+  "scope": "Review and diagnostics; no production code or graphics backend changes. This is not full-road acceptance.",
+  "method": {
+    "common": "sim.launch.py headless:=true rviz:=false linescan:=true linescan_backend:=optix spawn_x:=3 with validated shared road, Mesa D3D12 and experimental OptiX runtime. Separate launches; no simultaneous simulations. Variants edit only generated temporary SDF after launch preparation.",
+    "no_linescan": "Remove only world plugin agv_linescan::GzLineScan; keep same road and robot.",
+    "no_sensors": "Remove only world plugin gz::sim::systems::Sensors; OptiX remains. This disables GPU lidar rendering, unsuitable as a production acceptance configuration.",
+    "roads": [
+      "assets/road/runtime_fullwidth_20m_v1/manifest.json",
+      "assets/road/runtime_fullwidth_100m_v1/manifest.json"
+    ],
+    "measurement": "/proc/<server-pid>/smaps_rollup every five seconds. Only selected post-startup samples used.",
+    "profiling": "Extract heaptrack/GDB packages into temporary directory. Owned diagnostic process explicitly permits attachment via prctl; system ptrace policy unchanged. Attach heaptrack after initialization.",
+    "timing_limits": "baseline uses only 35-60 s before debugger attachment. 100 m uses only short 35-45 s pre-debugger window; later debugger pauses invalidate uninstrumented rate comparison."
+  },
+  "cases": {
+    "no_sensors_idle": {
+      "window_wall_s": [
+        35.0368,
+        115.1878
+      ],
+      "rss_start_end_mib": [
+        858.56640625,
+        858.59765625
+      ],
+      "rss_range_mib": [
+        858.56640625,
+        858.59765625
+      ],
+      "linear_fit_mib_per_s": 0.000386018310944569,
+      "samples": [
+        {
+          "wall_s": 35.0368,
+          "rss_kib": 879172,
+          "anonymous_kib": 334708
+        },
+        {
+          "wall_s": 40.0504,
+          "rss_kib": 879176,
+          "anonymous_kib": 334712
+        },
+        {
+          "wall_s": 45.0546,
+          "rss_kib": 879176,
+          "anonymous_kib": 334712
+        },
+        {
+          "wall_s": 50.0679,
+          "rss_kib": 879180,
+          "anonymous_kib": 334716
+        },
+        {
+          "wall_s": 55.0816,
+          "rss_kib": 879180,
+          "anonymous_kib": 334716
+        },
+        {
+          "wall_s": 60.0858,
+          "rss_kib": 879192,
+          "anonymous_kib": 334728
+        },
+        {
+          "wall_s": 65.0994,
+          "rss_kib": 879192,
+          "anonymous_kib": 334728
+        },
+        {
+          "wall_s": 70.1129,
+          "rss_kib": 879192,
+          "anonymous_kib": 334728
+        },
+        {
+          "wall_s": 75.1171,
+          "rss_kib": 879192,
+          "anonymous_kib": 334728
+        },
+        {
+          "wall_s": 80.1305,
+          "rss_kib": 879196,
+          "anonymous_kib": 334732
+        },
+        {
+          "wall_s": 85.1438,
+          "rss_kib": 879196,
+          "anonymous_kib": 334732
+        },
+        {
+          "wall_s": 90.1574,
+          "rss_kib": 879196,
+          "anonymous_kib": 334732
+        },
+        {
+          "wall_s": 95.171,
+          "rss_kib": 879196,
+          "anonymous_kib": 334732
+        },
+        {
+          "wall_s": 100.1753,
+          "rss_kib": 879200,
+          "anonymous_kib": 334736
+        },
+        {
+          "wall_s": 105.1795,
+          "rss_kib": 879204,
+          "anonymous_kib": 334740
+        },
+        {
+          "wall_s": 110.1836,
+          "rss_kib": 879204,
+          "anonymous_kib": 334740
+        },
+        {
+          "wall_s": 115.1878,
+          "rss_kib": 879204,
+          "anonymous_kib": 334740
+        }
+      ]
+    },
+    "no_linescan": {
+      "window_wall_s": [
+        35.0587,
+        115.2689
+      ],
+      "rss_start_end_mib": [
+        1427.078125,
+        1509.21875
+      ],
+      "rss_range_mib": [
+        1427.078125,
+        1509.21875
+      ],
+      "linear_fit_mib_per_s": 1.0230320806846347,
+      "samples": [
+        {
+          "wall_s": 35.0587,
+          "rss_kib": 1461328,
+          "anonymous_kib": 1093888
+        },
+        {
+          "wall_s": 40.0649,
+          "rss_kib": 1466632,
+          "anonymous_kib": 1099192
+        },
+        {
+          "wall_s": 45.0708,
+          "rss_kib": 1471824,
+          "anonymous_kib": 1104384
+        },
+        {
+          "wall_s": 50.0862,
+          "rss_kib": 1477120,
+          "anonymous_kib": 1109680
+        },
+        {
+          "wall_s": 55.0921,
+          "rss_kib": 1482256,
+          "anonymous_kib": 1114816
+        },
+        {
+          "wall_s": 60.098,
+          "rss_kib": 1487596,
+          "anonymous_kib": 1120156
+        },
+        {
+          "wall_s": 65.1138,
+          "rss_kib": 1492732,
+          "anonymous_kib": 1125292
+        },
+        {
+          "wall_s": 70.129,
+          "rss_kib": 1498076,
+          "anonymous_kib": 1130636
+        },
+        {
+          "wall_s": 75.1446,
+          "rss_kib": 1503316,
+          "anonymous_kib": 1135876
+        },
+        {
+          "wall_s": 80.1602,
+          "rss_kib": 1508500,
+          "anonymous_kib": 1141060
+        },
+        {
+          "wall_s": 85.1755,
+          "rss_kib": 1513896,
+          "anonymous_kib": 1146456
+        },
+        {
+          "wall_s": 90.1909,
+          "rss_kib": 1519032,
+          "anonymous_kib": 1151592
+        },
+        {
+          "wall_s": 95.2064,
+          "rss_kib": 1524324,
+          "anonymous_kib": 1156884
+        },
+        {
+          "wall_s": 100.222,
+          "rss_kib": 1529620,
+          "anonymous_kib": 1162180
+        },
+        {
+          "wall_s": 105.2376,
+          "rss_kib": 1534808,
+          "anonymous_kib": 1167368
+        },
+        {
+          "wall_s": 110.2532,
+          "rss_kib": 1540100,
+          "anonymous_kib": 1172660
+        },
+        {
+          "wall_s": 115.2689,
+          "rss_kib": 1545440,
+          "anonymous_kib": 1178000
+        }
+      ]
+    },
+    "baseline": {
+      "window_wall_s": [
+        35.0471,
+        60.0912
+      ],
+      "rss_start_end_mib": [
+        1823.140625,
+        1848.703125
+      ],
+      "rss_range_mib": [
+        1823.140625,
+        1848.703125
+      ],
+      "linear_fit_mib_per_s": 1.0214865721741153,
+      "samples": [
+        {
+          "wall_s": 35.0471,
+          "rss_kib": 1866896,
+          "anonymous_kib": 1186464
+        },
+        {
+          "wall_s": 40.054,
+          "rss_kib": 1872088,
+          "anonymous_kib": 1191656
+        },
+        {
+          "wall_s": 45.0607,
+          "rss_kib": 1877396,
+          "anonymous_kib": 1196964
+        },
+        {
+          "wall_s": 50.0676,
+          "rss_kib": 1882636,
+          "anonymous_kib": 1202204
+        },
+        {
+          "wall_s": 55.0743,
+          "rss_kib": 1887832,
+          "anonymous_kib": 1207400
+        },
+        {
+          "wall_s": 60.0912,
+          "rss_kib": 1893072,
+          "anonymous_kib": 1212640
+        }
+      ]
+    },
+    "no_linescan_100": {
+      "window_wall_s": [
+        35.072,
+        45.1051
+      ],
+      "rss_start_end_mib": [
+        4356.80078125,
+        4380.64453125
+      ],
+      "rss_range_mib": [
+        4356.80078125,
+        4380.64453125
+      ],
+      "linear_fit_mib_per_s": 2.3765285425330958,
+      "samples": [
+        {
+          "wall_s": 35.072,
+          "rss_kib": 4461364,
+          "anonymous_kib": 4093752
+        },
+        {
+          "wall_s": 40.0932,
+          "rss_kib": 4473572,
+          "anonymous_kib": 4105960
+        },
+        {
+          "wall_s": 45.1051,
+          "rss_kib": 4485780,
+          "anonymous_kib": 4118168
+        }
+      ]
+    },
+    "no_sensors": {
+      "window_wall_s": [
+        45.0572,
+        155.2687
+      ],
+      "rss_start_end_mib": [
+        904.96484375,
+        904.8515625
+      ],
+      "rss_range_mib": [
+        904.76171875,
+        905.05078125
+      ],
+      "linear_fit_mib_per_s": -0.0022874083634974794,
+      "samples": [
+        {
+          "wall_s": 45.0572,
+          "rss_kib": 926684,
+          "anonymous_kib": 381788
+        },
+        {
+          "wall_s": 50.0616,
+          "rss_kib": 926716,
+          "anonymous_kib": 381820
+        },
+        {
+          "wall_s": 55.066,
+          "rss_kib": 926736,
+          "anonymous_kib": 381840
+        },
+        {
+          "wall_s": 60.0795,
+          "rss_kib": 926748,
+          "anonymous_kib": 381852
+        },
+        {
+          "wall_s": 65.0842,
+          "rss_kib": 926752,
+          "anonymous_kib": 381856
+        },
+        {
+          "wall_s": 70.0977,
+          "rss_kib": 926764,
+          "anonymous_kib": 381868
+        },
+        {
+          "wall_s": 75.1022,
+          "rss_kib": 926768,
+          "anonymous_kib": 381872
+        },
+        {
+          "wall_s": 80.1068,
+          "rss_kib": 926768,
+          "anonymous_kib": 381872
+        },
+        {
+          "wall_s": 85.1208,
+          "rss_kib": 926772,
+          "anonymous_kib": 381876
+        },
+        {
+          "wall_s": 90.1253,
+          "rss_kib": 926604,
+          "anonymous_kib": 381884
+        },
+        {
+          "wall_s": 95.1391,
+          "rss_kib": 926476,
+          "anonymous_kib": 381884
+        },
+        {
+          "wall_s": 100.1528,
+          "rss_kib": 926492,
+          "anonymous_kib": 381900
+        },
+        {
+          "wall_s": 105.1573,
+          "rss_kib": 926500,
+          "anonymous_kib": 381908
+        },
+        {
+          "wall_s": 110.1619,
+          "rss_kib": 926512,
+          "anonymous_kib": 381920
+        },
+        {
+          "wall_s": 115.1758,
+          "rss_kib": 926524,
+          "anonymous_kib": 381932
+        },
+        {
+          "wall_s": 120.1804,
+          "rss_kib": 926532,
+          "anonymous_kib": 381940
+        },
+        {
+          "wall_s": 125.1941,
+          "rss_kib": 926536,
+          "anonymous_kib": 381944
+        },
+        {
+          "wall_s": 130.2081,
+          "rss_kib": 926544,
+          "anonymous_kib": 381952
+        },
+        {
+          "wall_s": 135.2222,
+          "rss_kib": 926544,
+          "anonymous_kib": 381952
+        },
+        {
+          "wall_s": 140.2363,
+          "rss_kib": 926548,
+          "anonymous_kib": 381956
+        },
+        {
+          "wall_s": 145.2502,
+          "rss_kib": 926552,
+          "anonymous_kib": 381960
+        },
+        {
+          "wall_s": 150.264,
+          "rss_kib": 926560,
+          "anonymous_kib": 381968
+        },
+        {
+          "wall_s": 155.2687,
+          "rss_kib": 926568,
+          "anonymous_kib": 381976
+        }
+      ]
+    }
+  },
+  "heaptrack": {
+    "reported_runtime_s": 56.11,
+    "total_outstanding_decimal_mb": 31.48,
+    "libd3d12_outstanding_decimal_mb": 23.07,
+    "nvidia_wsl_graphics_outstanding_decimal_mb": 7.9,
+    "primary_stack": [
+      "SensorsPrivate::RenderThread/RunOnce",
+      "GpuLidarSensor::Update",
+      "RenderingSensor::Render",
+      "Ogre2Scene::FlushGpuCommandsAndStartNewFrame",
+      "CompositorManager2::_updateImplementation",
+      "GL3PlusVaoManager::_update",
+      "libgallium",
+      "libd3d12core.so/libd3d12.so",
+      "libnvwgf2umx.so"
+    ],
+    "caveat": "Outstanding allocations while process lives are not proof of unreachable objects; they are not all RSS. Combined with time growth and same-world ablations they localize sustained growth to the lidar graphics chain, not a particular missing free in closed-source driver code."
+  },
+  "active_capture_without_sensors": {
+    "command": "Eight alternating +1/-1 m/s requests, four seconds each, separated by three-second zero requests; open/close camera each pass. TwistStamped uses current simulation stamp and base_link.",
+    "blocks": 23,
+    "full_blocks": 16,
+    "rows": 80482,
+    "pgm_bytes": 329654663,
+    "caveat": "Bounded short diagnostic. Does not rule out every other long-run allocation problem and does not replace full-area/GUI acceptance. Earlier interrupted diagnostic excluded.",
+    "final_zero_requested": true,
+    "external_hold_observation": null,
+    "external_hold_observation_note": "Late independent subscription timed out around scheduled launch shutdown; do not claim an observed HOLD. All diagnostic simulation processes exited."
+  },
+  "review_tests": {
+    "colcon_tests": 360,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0
+  },
+  "additional_review_reproductions": {
+    "scan_gate": {
+      "position_error_m": 0.15,
+      "heading_error_rad": 0.04,
+      "speed_m_s": 2.7777777777777777,
+      "tracker_state": "RUNNING",
+      "command_body": [
+        2.77163689708576,
+        -0.2090030943045374,
+        -0.018000000000000002
+      ],
+      "lateral_gate_m_s": 0.15,
+      "reason": "Reference-frame feedforward rotates into body lateral velocity; position feedback limit alone is not the bound."
+    },
+    "navigation_partial_tail": {
+      "input": "two complete time_s records followed by an incomplete JSON record",
+      "archived_through_returns": true,
+      "Navigation_reader_raises": "JSONDecodeError"
+    }
+  },
+  "conclusion": "GPU lidar graphics processing is sufficient to reproduce sustained growth without the linescan plugin; removing it eliminates measured growth with OptiX idle and produces a bounded plateau during short active capture. Earlier exclusive capture-path attribution is withdrawn.",
+  "not_proved": [
+    "Exact defective ownership operation inside Mesa/D3D12/closed-source NVIDIA code",
+    "That every historical moving-run growth byte has the same source",
+    "Any deployed fix or full 100x10 m long-run acceptance"
+  ]
+}
