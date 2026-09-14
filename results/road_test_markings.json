@@ -1,0 +1,132 @@
+{
+  "date": "2026-09-14",
+  "scene": "independent 20 x 10 m Concrete047A arrows_box_v1",
+  "paint_polygons": 29,
+  "cuda": {
+    "passed": true,
+    "scope": "Actual CUDA tile bake vs independent CPU polygon masks; unpainted pixels including normals bit-identical. Not end-to-end throughput.",
+    "tiles": [
+      {
+        "tile": [
+          8,
+          7
+        ],
+        "paint_pixels": 1456640,
+        "max_color_dn": 1,
+        "bake_readback_s": 0.0058921859999827575
+      },
+      {
+        "tile": [
+          12,
+          7
+        ],
+        "paint_pixels": 2628905,
+        "max_color_dn": 1,
+        "bake_readback_s": 0.004249777999575599
+      },
+      {
+        "tile": [
+          13,
+          16
+        ],
+        "paint_pixels": 2683688,
+        "max_color_dn": 1,
+        "bake_readback_s": 0.0034603539988893317
+      },
+      {
+        "tile": [
+          19,
+          4
+        ],
+        "paint_pixels": 1861687,
+        "max_color_dn": 1,
+        "bake_readback_s": 0.004531165001026238
+      },
+      {
+        "tile": [
+          21,
+          7
+        ],
+        "paint_pixels": 1223024,
+        "max_color_dn": 1,
+        "bake_readback_s": 0.004975363999619731
+      },
+      {
+        "tile": [
+          25,
+          10
+        ],
+        "paint_pixels": 1916938,
+        "max_color_dn": 1,
+        "bake_readback_s": 0.004791379999005585
+      },
+      {
+        "tile": [
+          29,
+          7
+        ],
+        "paint_pixels": 2626560,
+        "max_color_dn": 1,
+        "bake_readback_s": 0.004352717000074335
+      },
+      {
+        "tile": [
+          2,
+          12
+        ],
+        "paint_pixels": 0,
+        "max_color_dn": 0,
+        "bake_readback_s": 0.003088723000473692
+      },
+      {
+        "tile": [
+          37,
+          17
+        ],
+        "paint_pixels": 0,
+        "max_color_dn": 0,
+        "bake_readback_s": 0.0037668719996872824
+      }
+    ],
+    "baseline_median_s": 0.005314490999808186,
+    "paint_median_s": 0.004352717000074335
+  },
+  "ogre": {
+    "passed": true,
+    "yellow_centers_world_y_m": [
+      0.1514874361328033,
+      -0.14660074464464837
+    ],
+    "meters_per_pixel": 0.009773382976309891,
+    "expected_yellow_centers_m": [
+      -0.15,
+      0.15
+    ],
+    "camera_world_xyz_m": [
+      7.5,
+      0,
+      10
+    ],
+    "box_mask_iou": 0.9769136799387126,
+    "paint_coordinates_checked": "Independent overhead pinhole projection of actual Ogre2 image; box mask IoU"
+  },
+  "capture": {
+    "passed": true,
+    "rows": [
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      4096,
+      3078
+    ],
+    "speed_m_s": 0.5,
+    "real_time_factor": 1.0000418825040662,
+    "ros_all_blocks_byte_identical": true,
+    "final_motion_state": "HOLD"
+  },
+  "visual_review": "Actual Ogre2 overhead and seven actual OptiX raw-block thumbnails inspected: opposite arrows, yellow box, slab joints and underlying crack geometry visible. Raw Mono8 means yellow paint is grayscale.",
+  "limits": "Headless rendering/capture only; no new GUI interaction or 11 kHz throughput acceptance. This trial adds evaluation landmarks, not a matching algorithm.",
+  "tests": "384 colcon result tests: zero failures; 2 road-marking Python tests passed"
+}

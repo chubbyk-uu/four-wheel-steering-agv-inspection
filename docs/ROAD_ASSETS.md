@@ -116,3 +116,24 @@ OPENBLAS_NUM_THREADS=1 python3 tools/check_runtime_recipe.py \
 ```
 
 它只临时生成代表瓦片，不将整条道路展开。当前首尾/外侧缓冲区、黄白标线、两种翻转裂缝的所有对比字节一致。旧`baked_*`目录不是紧凑版运行依赖；旧压缩/全瓦片对照工具仍需要显式恢复旧基准，不能把配方目录冒充旧瓦片目录。
+
+## 箭头和禁停网格标识试片
+
+在恢复20 m紧凑资产后生成独立试片：
+
+```bash
+python3 tools/generate_marked_road.py --output local_data/road_markings_probe_v1
+```
+
+输出目录必须不存在。复用原资产不可变文件的硬链接，修改配方、SDF及显示PNG前先断开链接，因此原道路保持不变，避免复制近GB源纹理。不要手动覆写试片内共享的`.raw`、网格或quilt文件。删除试片不影响原道路。跨文件系统不支持硬链接，需在同一文件系统生成。
+
+试片manifest可传给已有`--scene`采集工具。标识几何与用途见[SURFACE_HEADING_STRIP_DESIGN.md](SURFACE_HEADING_STRIP_DESIGN.md)。显示4 mm纹素、采样0.25 mm纹素仍沿用原配置。新增标识仅在缓存烘焙时计算，不在每根扫描线的射线命中路径中计算；不能把单次烘焙计时当成整车11 kHz验收。
+
+实际显示检查：`tools/render_road_alignment.py --manifest local_data/road_markings_probe_v1/manifest.json --output local_data/road_markings_ogre_v1`（使用当前Mesa/ROS运行环境）。除原双黄线坐标外，新增实际Ogre2禁停框像素与独立俯视投影的重合率检查。
+
+高清烘焙检查工具`tools/validate_road_test_markings.py`接受`--source`原recipe.json、`--trial`试片recipe.json、`--library`暴露recipe C接口的共享库、`--output`结果JSON。可将构建产物包装为测试共享库：
+
+```bash
+g++ -shared -o /tmp/libagv_recipe_probe.so -Wl,--whole-archive build/agv_linescan/libagv_runtime_material.a -Wl,--no-whole-archive -L/usr/local/cuda/lib64 -lcudart -lcrypto
+LD_LIBRARY_PATH=/usr/local/cuda/lib64 python3 tools/validate_road_test_markings.py --source assets/road/runtime_fullwidth_20m_v1/recipe.json --trial local_data/road_markings_probe_v1/recipe.json --library /tmp/libagv_recipe_probe.so --output local_data/road_markings_probe_v1/cuda_validation.json
+```

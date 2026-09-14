@@ -58,3 +58,13 @@ TEST_F(RecipeTest,ConcurrentBakeIsRejectedNeverCorrupted){agv_linescan::RuntimeM
  EXPECT_EQ(wrong.load(),0);EXPECT_EQ(unexpected.load(),0);
  RecordProperty("concurrent_rejections",rejected.load());
  std::vector<unsigned char> final(108);EXPECT_NO_THROW(material.BakeHost(0,0,final.data()));EXPECT_EQ(final,expected);}
+TEST_F(RecipeTest,OptionalPaintUsesWorldCoordinatesAndDoesNotAccumulateOverlaps){
+ Json polygon={{"vertices",{{1.,1.},{1.5,1.},{1.5,1.5},{1.,1.5}}},{"color","white"}};
+ m["inspection_paint"]={polygon,polygon};Save();agv_linescan::RuntimeMaterial material(root/"recipe.json");
+ std::vector<unsigned char> a(108);material.BakeHost(0,0,a.data());
+ for(int y=0;y<6;++y)for(int x=0;x<6;++x)EXPECT_EQ(a[y*6+x],(x>=1&&x<=2&&y>=1&&y<=2)?199:128);
+}
+TEST_F(RecipeTest,RejectsNonConvexOrClockwisePaint){
+ m["inspection_paint"]={{{"vertices",{{1.,1.},{1.,2.},{2.,2.},{2.,1.}}},{"color","white"}}};Save();
+ EXPECT_THROW(agv_linescan::RuntimeMaterial material(root/"recipe.json"),std::runtime_error);
+}

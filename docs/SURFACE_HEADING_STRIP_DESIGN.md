@@ -98,3 +98,11 @@ MVTec HALCON有专用线阵模型，包含按米/行描述的运动向量；其�
 4. [NovAtel CPT7安装手册：基线与航向精度示例](https://docs.novatel.com/OEM7/Content/PDFs/CPT7_Installation_Operation_Manual.pdf)
 5. [MVTec：线阵多视图标定模型](https://www.mvtec.com/doc/halcon/1905/en/toc_calibration_multiview.html)
 6. [NASA ASP：jitter_solve模型与可观测性限制](https://stereopipeline.readthedocs.io/en/stable/tools/jitter_solve.html)
+
+### 2026-09-14：道路标识试片（先于条带匹配）
+
+独立20×10 m试片增加四个白色直行箭头、一个黄色禁停交叉网格。箭头长2.4 m、最大宽1.2 m，中心坐标为(4.5,−2.4)、(14.2,−2.4)，指向+X；(5.8,2.4)、(15.5,2.4)，指向−X。禁停框位于X=8.8–12.2 m、Y=−4.05–−0.60 m，边框及斜线宽0.10 m。标识避开中线与白色边线；这是测试道路示例，不是交通设施合规图纸。
+
+这些纵向变化丰富的标识用于观察局部伸缩、剪切及条带连续性。真实位置保存在试片manifest的`inspection_paint`中，**仅供独立评估，不输入匹配优化器**。正式道路与之前无标识采集基线保留；不增加支架振动。
+
+生成方式见[道路资产](ROAD_ASSETS.md)“标识试片”。Gazebo低清材质与CUDA高清配方读取同一组米制凸多边形；在原有纹理上混合颜料并减弱标识处法线。无额外几何、碰撞或光源，涂漆不填平裂缝沟槽。未启用该配方字段时原场景行为保持不变。

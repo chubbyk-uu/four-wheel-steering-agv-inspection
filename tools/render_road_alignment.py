@@ -55,6 +55,18 @@ def main():
             matched=len(centers)==2 and max(abs(x-y) for x,y in zip(sorted(centers),[-.15,.15]))<2*scale
             report=dict(passed=matched,yellow_centers_world_y_m=centers,meters_per_pixel=scale,
                         expected_yellow_centers_m=[-.15,.15],camera_world_xyz_m=[7.5,0,10])
+            if m.get('inspection_paint'):
+                from road_test_markings import masks
+                xs=7.5+(msg.height/2-np.arange(msg.height)-.5)*scale
+                ys=(msg.width/2-np.arange(msg.width)-.5)*scale
+                yellow_mask,_=masks(xs,ys,m['inspection_paint']['polygons'])
+                actual=(rgb[:,:,0]>rgb[:,:,2]*2)&(rgb[:,:,1]>rgb[:,:,2]*1.8)&(rgb[:,:,0]>100)
+                roi=(xs[:,None]>8.5)&(xs[:,None]<12.5)&(ys[None,:]>-4.3)&(ys[None,:]<-.4)
+                expected=yellow_mask.T&roi;actual&=roi
+                iou=float((actual&expected).sum()/max(1,(actual|expected).sum()))
+                report['box_mask_iou']=iou
+                report['passed']=matched and iou>.93
+                assert iou>.93 or a.allow_mismatch,'rendered box differs from metric paint polygons'
             (a.output/'report.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report))
             node.destroy_node();rclpy.shutdown()
             assert matched or a.allow_mismatch, 'rendered yellow lines do not match shared road coordinates'

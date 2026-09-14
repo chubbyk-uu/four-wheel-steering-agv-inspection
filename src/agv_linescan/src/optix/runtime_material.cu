@@ -11,7 +11,8 @@ using Json=nlohmann::json;
 namespace agv_linescan {
 namespace {
 void Check(cudaError_t e){if(e!=cudaSuccess)throw std::runtime_error(cudaGetErrorString(e));}
-struct Inputs {unsigned char *color,*normal,*alpha;float *pigment,*strength,*lut;int4* patches;float4* cracks;int w,h,patch,fw,fh,ncracks;double ratio,length;};
+struct PaintPolygon { double2 points[8]; double xmin,xmax,ymin,ymax; int count,color; };
+struct Inputs {PaintPolygon* paint; int npaint;unsigned char *color,*normal,*alpha;float *pigment,*strength,*lut;int4* patches;float4* cracks;int w,h,patch,fw,fh,ncracks;double ratio,length;};
 __device__ unsigned char interp8(const unsigned char* p,int w,int h,int channels,int c,float x,float y){
  int u=__float2int_rn(x*32),v=__float2int_rn(y*32);int x0=u>>5,y0=v>>5,fx=u&31,fy=v&31;
  int sum=0;
@@ -56,6 +57,19 @@ __global__ void Generate(Inputs in,const double* coordinates,const int* ids,int 
   float x=float((wx-ox)/.00025-.5),y=float((wy-oy)/.00025-.5);
   float pigment=interpField(in.pigment,in.fw,in.fh,x,y,p.z!=0,p.w!=0),strength=interpField(in.strength,in.fw,in.fh,x,y,p.z!=0,p.w!=0);
   rgb.x*=pigment;rgb.y*=pigment;rgb.z*=pigment;normal.x*=strength;normal.y*=strength;
+ }
+ // Optional test markings use the same metric polygons as the display generator.
+ bool extra=false;int paintColor=0;
+ for(int k=0;k<in.npaint;++k){const auto& p=in.paint[k];
+  if(wx<p.xmin||wx>p.xmax||wy<p.ymin||wy>p.ymax)continue;
+  bool inside=true;for(int j=0;j<p.count;++j){auto a=p.points[j],b=p.points[(j+1)%p.count];
+   if((b.x-a.x)*(wy-a.y)-(b.y-a.y)*(wx-a.x)<-1e-12){inside=false;break;}}
+  if(inside){extra=true;paintColor=max(paintColor,p.color);}
+ }
+ if(extra){
+  if(paintColor==2)rgb=make_float3(.72f+.12f*rgb.x,.72f+.12f*rgb.y,.72f+.12f*rgb.z);
+  else rgb=make_float3(.80f+.06f*rgb.x,.56f+.06f*rgb.y,.015f+.06f*rgb.z);
+  normal.x*=.25f;normal.y*=.25f;
  }
  normal=unit(normal);size_t index=size_t(row)*stride+col,plane=size_t(stride)*stride;
  output[index]=quant((rgb.x*.2126f+rgb.y*.7152f)+rgb.z*.0722f);
@@ -113,6 +127,20 @@ RuntimeMaterial::RuntimeMaterial(const std::filesystem::path& path,const std::st
  in.alpha=(unsigned char*)s.Load(root,m.at("alpha"),s.patches.size()*in.patch*in.patch);
  in.pigment=(float*)s.Load(root,m.at("pigment"),size_t(in.fw)*in.fh*4);in.strength=(float*)s.Load(root,m.at("strength"),size_t(in.fw)*in.fh*4);in.lut=(float*)s.Load(root,m.at("lut"),256*4);
  std::vector<float4> cracks;for(auto p:m.at("cracks"))cracks.push_back(make_float4(p[0],p[1],p[2],p[3]));in.ncracks=cracks.size();if(!cracks.empty())in.cracks=(float4*)s.Allocate(cracks.size()*sizeof(float4),cracks.data());
+ std::vector<PaintPolygon> paint;
+ for(const auto& item:m.value("inspection_paint",Json::array())){
+  PaintPolygon p={};auto points=item.at("vertices");p.count=points.size();
+  if(p.count<3||p.count>8||paint.size()>=128)throw std::runtime_error("invalid paint polygon size");
+  auto color=item.at("color").get<std::string>();if(color!="white"&&color!="yellow")throw std::runtime_error("invalid paint color");p.color=color=="white"?2:1;
+  p.xmin=p.ymin=1e100;p.xmax=p.ymax=-1e100;
+  for(int j=0;j<p.count;++j){double x=points[j].at(0),y=points[j].at(1);
+   if(!std::isfinite(x)||!std::isfinite(y))throw std::runtime_error("nonfinite paint polygon");
+   p.points[j]=make_double2(x,y);p.xmin=std::min(p.xmin,x);p.xmax=std::max(p.xmax,x);p.ymin=std::min(p.ymin,y);p.ymax=std::max(p.ymax,y);}
+  double area=0;for(int j=0;j<p.count;++j){auto a=p.points[j],b=p.points[(j+1)%p.count];area+=a.x*b.y-a.y*b.x;
+   for(int k=0;k<p.count;++k){auto c=p.points[k];if((b.x-a.x)*(c.y-a.y)-(b.y-a.y)*(c.x-a.x)<-1e-9)throw std::runtime_error("paint polygon must be convex CCW");}}
+  if(area<=1e-12)throw std::runtime_error("degenerate paint polygon");paint.push_back(p);
+ }
+ in.npaint=paint.size();if(!paint.empty())in.paint=(PaintPolygon*)s.Allocate(paint.size()*sizeof(PaintPolygon),paint.data());
  s.coordinates=(double*)s.Allocate(4*s.stride*sizeof(double));s.ids=(int*)s.Allocate(16*sizeof(int));s.output=(unsigned char*)s.Allocate(size_t(s.stride)*s.stride*3);s.invalid=(unsigned*)s.Allocate(sizeof(unsigned));
 }
 void RuntimeMaterial::CheckLayout(const Json& m)const{auto& s=*impl_;
