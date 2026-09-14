@@ -405,7 +405,9 @@
     {
       "title": "agv_linescan is still copy-installed rather than symlinked",
       "impact": "editing the source without rebuilding tests the stale copy",
-      "priority": "tooling hazard, unrelated to this gate"
+      "priority": "resolved",
+      "resolved": "2026-09-14",
+      "resolution": "the value was pinned by CMake cache, not by a missing command line flag: AMENT_CMAKE_SYMLINK_INSTALL was OFF in build/agv_linescan and stayed OFF on every incremental build. Removing the package build and install directories and rebuilding with the README arguments flipped it. Verified by 135 package tests and a 3 x 2 m mission that reached ESTIMATED_COMPLETE with 6 blocks, which only happens if the system plugin and the OptiX PTX both resolve through the symlinks."
     }
   ],
   "verdict": {
