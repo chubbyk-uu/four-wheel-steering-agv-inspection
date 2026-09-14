@@ -2,6 +2,8 @@
 
 Status: prepared locally; not submitted upstream. Prefer a follow-up to existing issue [#14802](https://gitlab.freedesktop.org/mesa/mesa/-/work_items/14802), not a duplicate report.
 
+Posting is authorized by the project owner, but remains blocked on an authenticated freedesktop GitLab account. A [self-contained English comment](MESA_D3D12_14802_COMMENT.md) is ready to paste, including the reproducer source; review the existing discussion before posting. No credentials are stored in this repository.
+
 ## Upstream check (2026-09-14)
 
 The installed Ubuntu package is `25.2.8-0ubuntu0.24.04.2`, which is also the candidate in the local APT index; this does not establish that the index is current. It is not the latest upstream release. The [latest announced stable release](https://mesa3d.org/news/) is 26.2.2, released September 2, 2026.
