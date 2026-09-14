@@ -150,3 +150,23 @@ def test_the_audit_still_runs_if_navigation_never_catches_up(tmp_path, monkeypat
     # A missing tail must not strand the operator with a job that never returns;
     # the audit reports whatever evidence exists and its own issues say so.
     assert node.audit_when_archived('m',navigation,'o','p','c',.1,99.,timeout=.2)=='report'
+
+
+def test_the_scan_gates_sit_above_what_the_tracker_may_command():
+    # A gate below the controller's authority faults the mission for doing its
+    # job. On 2026-09-14 the lateral pair was 0.10 against 0.12 and a rated
+    # full-area run tripped it at 0.10002 m/s. max_position_feedback_m_s caps the
+    # norm of the two-dimensional feedback, so it bounds the lateral command too.
+    from agv_mission.camera_limits import inspection_camera_config
+    p=Path(__file__).resolve().parents[2]/'agv_description/config'
+    camera=yaml.safe_load((p/'linescan.yaml').read_text());platform=yaml.safe_load((p/'platform.yaml').read_text())
+    tracking=yaml.safe_load((Path(__file__).resolve().parents[1]/'config/tracking.yaml').read_text())
+    result=inspection_camera_config(camera,platform)
+    assert tracking['max_position_feedback_m_s']<result['max_scan_lateral_m_s'],(
+        tracking['max_position_feedback_m_s'],result['max_scan_lateral_m_s'])
+    assert tracking['max_heading_feedback_rad_s']<result['max_yaw_rate_rad_s'],(
+        tracking['max_heading_feedback_rad_s'],result['max_yaw_rate_rad_s'])
+    # Not just ordered: a fifth of the gate is kept back, so a run does not pass
+    # on the luck of never reaching its own authority.
+    assert result['max_scan_lateral_m_s']>=1.2*tracking['max_position_feedback_m_s']
+    assert result['max_yaw_rate_rad_s']>=1.2*tracking['max_heading_feedback_rad_s']
