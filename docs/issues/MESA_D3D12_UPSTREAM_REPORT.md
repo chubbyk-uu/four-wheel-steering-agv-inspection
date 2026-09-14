@@ -1,8 +1,10 @@
 # Draft: d3d12 command-signature cache searches with a pointer-to-pointer, leaking signatures on repeated indirect draws
 
-Status: prepared locally; not submitted upstream. Prefer a follow-up to existing issue [#14802](https://gitlab.freedesktop.org/mesa/mesa/-/work_items/14802), not a duplicate report.
+Status: the owner posted a short English root-cause follow-up to existing issue [#14802](https://gitlab.freedesktop.org/mesa/mesa/-/work_items/14802), confirmed by their screenshot on 2026-09-14. This full report, source reproducer and patch have not been posted.
 
-Posting is authorized by the project owner, but remains blocked on an authenticated freedesktop GitLab account. A [self-contained English comment](MESA_D3D12_14802_COMMENT.md) is ready to paste, including the reproducer source; review the existing discussion before posting. No credentials are stored in this repository.
+The owner posted from their browser after the long comment was rejected by the spam filter. The [self-contained English comment](MESA_D3D12_14802_COMMENT.md) remains supporting material, not a published comment. No credentials are stored in this repository. The screenshot used “private diagnostic build”; the owner was advised to change that to “private diagnostic copy of the library” to accurately describe the experiment.
+
+A subsequent source build of Ubuntu 25.2.8 with the one-line fix has now completed into a private prefix. It has not been runtime-tested or enabled for the application. All numerical runtime evidence below still concerns the earlier private binary-copy experiment; see the [source-build record](../../results/mesa_d3d12_source_build.json).
 
 ## Upstream check (2026-09-14)
 
@@ -17,7 +19,7 @@ These are source inspections, not runtime tests of those versions. Runtime measu
 
 Issue #14802, “GLon12: Command Signature leak with indirect dispatches,” was opened on February 5, 2026, and remains open. It reports command-signature accumulation on Windows Server 2022 / Intel Arc B580 / Mesa 25.3.4 using indirect compute dispatch. This closely matches the shared cache defect found here, although we have not run that reporter's application. The related-MR API returned no entries; public MR searches did not identify this fix. The notes endpoint required authentication, so discussion comments were not inspected and an unlinked proposal cannot be ruled out.
 
-Following [Mesa's reporting guidelines](https://docs.mesa3d.org/bugs.html), the next contribution should add the standalone indirect-draw reproducer, pointer diagnosis and before/after evidence to #14802 in English. A source-built fix can then be submitted as a [merge request](https://docs.mesa3d.org/submittingpatches.html) referencing the existing issue, after checking its current discussion. No issue, comment or MR has been posted.
+Following [Mesa's reporting guidelines](https://docs.mesa3d.org/bugs.html), further contribution should provide the standalone indirect-draw reproducer and before/after evidence to #14802 when requested. After runtime validation, the source-built fix can be submitted as a [merge request](https://docs.mesa3d.org/submittingpatches.html) referencing the existing issue, after checking its current discussion. No new issue or MR has been posted.
 
 ## Independent confirmation (2026-09-14)
 

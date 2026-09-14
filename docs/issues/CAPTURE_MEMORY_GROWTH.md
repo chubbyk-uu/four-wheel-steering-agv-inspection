@@ -1,6 +1,6 @@
 # 采集进程内存持续增长（根因已确认，正式修复待部署）
 
-**状态**：2026-09-14已确认 **Mesa 25.2.8 D3D12后端的命令签名缓存查找参数错误**。独立复现和临时单点修正版的实际100 m场景对照均验证。系统库未修改，正式修复与完整长任务验收尚未完成。
+**状态**：2026-09-14已确认 **Mesa 25.2.8 D3D12后端的命令签名缓存查找参数错误**。独立复现和临时单点修正版的实际100 m场景对照均验证。对应Ubuntu源码已应用修复并完成独立构建安装；尚未接入启动或运行验证，系统库未修改，完整长任务验收尚未完成。
 **影响**：阻断实施计划第6节验收——长任务会耗尽主机内存并导致任务故障。
 **首次记录**：2026-09-14。
 
@@ -51,8 +51,49 @@ Ogre GL3PlusVaoManager::_update → glFenceSync
 首次只设置`LIBGL_DRIVERS_PATH`未替换实际加载的Gallium，已识别并排除为修正版；该轮仍可作为原库观测。
 
 已备好[英文上游报告](MESA_D3D12_UPSTREAM_REPORT.md)、[独立复现程序](../../tools/probe_mesa_indirect_memory.cpp)、
-[源码补丁](../../tools/patches/mesa-d3d12-command-signature-key.patch)和[实测结果](../../results/mesa_d3d12_signature_root_cause.json)。尚未向上游发布。
+[源码补丁](../../tools/patches/mesa-d3d12-command-signature-key.patch)和[实测结果](../../results/mesa_d3d12_signature_root_cause.json)。用户已在上游[#14802](https://gitlab.freedesktop.org/mesa/mesa/-/work_items/14802)发布简短英文根因说明（用户截图确认）；完整代码与补丁尚未发布。
 根因确认不等于完整验收：仍须部署正式修正版并重跑GUI/RViz、行驶采图和长任务，检查是否另有独立增长。
+
+## 独立源码构建（已完成第1项，停在启用前）
+
+使用Ubuntu源码包`25.2.8-0ubuntu0.24.04.2`，保留其发行版补丁，再应用项目的一行修复；不是直接用上游裸源码替代Ubuntu版本，也没有升级整个系统Mesa。
+下载来自`https://archive.ubuntu.com/ubuntu/pool/main/m/mesa/`，通过HTTPS取得`.dsc`，逐个核对其中的SHA256与文件大小；未声称完成维护者PGP签名验证。
+源码包、依赖包、构建选项和安装库的哈希见[构建记录](../../results/mesa_d3d12_source_build.json)。
+
+所有本机产物在已被Git忽略的`local_data/mesa-source-build/`：
+
+| 子目录 | 用途/本次约占空间 |
+|---|---|
+| `downloads/` | Ubuntu `.dsc`、原始源码和Debian补丁包，约43 MB |
+| `source/` | `dpkg-source -x`展开并应用Ubuntu补丁的源码，约311 MB |
+| `deps/`、`sysroot/` | 下载的构建依赖包及私有解包目录；sysroot约19 MB |
+| `build/` | Meson/Ninja编译产物，约123 MB |
+| `install/` | 本次独立安装前缀，约22 MB |
+
+缺少的工具/头文件通过`apt-get download`下载、`dpkg-deb -x`解包进`sysroot`，**没有安装系统包**。依赖包完整版本见构建记录。
+包括Meson 1.7、Mako/MarkupSafe、DirectX-Headers 1.614.1、Flex/Bison以及XCB/Wayland开发文件。
+私有`.pc`文件的`prefix=/usr`重定位到`sysroot/usr`；构建进程单独设置`PATH`、`PYTHONPATH`、`PKG_CONFIG_PATH`、头文件路径和`BISON_PKGDATADIR`，未写入用户全局环境。
+
+构建选择D3D12图形后端，保留X11/Wayland、EGL/GLX、GBM、GLVND及GLES2；不构建其它Gallium/Vulkan驱动、视频编解码、LLVM或Microsoft CLC。
+这是面向本项目的独立图形库，**不具有Ubuntu完整Mesa包的全部驱动功能**。运行时库名为`libgallium-25.2.8.so`，与Ubuntu库的发行版后缀不同，后续加载步骤必须核验实际映射，不能直接照搬之前二进制副本的路径。
+
+Meson配置如下（`MESA_BUILD_ROOT`表示本次独立目录，环境准备见前段）：
+
+```sh
+meson setup "$MESA_BUILD_ROOT/build" "$MESA_BUILD_ROOT/source" \
+  --prefix="$MESA_BUILD_ROOT/install" --libdir=lib --buildtype=release --wrap-mode=nofallback \
+  -Dgallium-drivers=d3d12 -Dvulkan-drivers= -Dplatforms=x11,wayland \
+  -Dglx=dri -Degl=enabled -Dgbm=enabled -Dglvnd=enabled \
+  -Dgles1=disabled -Dgles2=enabled -Dllvm=disabled \
+  -Dgallium-va=disabled -Dgallium-vdpau=disabled -Dgallium-d3d12-video=disabled \
+  -Dmicrosoft-clc=disabled -Dbuild-tests=false
+ninja -C "$MESA_BUILD_ROOT/build" -j8
+meson install -C "$MESA_BUILD_ROOT/build" --no-rebuild
+```
+
+本机环境脚本保留为`configure.sh`和`compile.sh`；完整日志保留为`prepare.log`、`configure.log`、`build-install.log`，均在该独立目录。
+编译和安装成功；已核对目标源码仅有这一行变化、安装ELF的链接依赖可解析、安装符号链接完整、系统Gallium哈希与诊断前一致。
+**未运行源码构建版的三角形复现、GUI或采集测试**，也未修改启动脚本。前文内存改善数据仍仅属于早期二进制副本实验，不能当成本次源码构建版的测试结果。按用户要求完成第1项后停止，后续先做独立加载/回退，再运行验证。
 
 ---
 
