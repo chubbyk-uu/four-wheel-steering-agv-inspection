@@ -17,7 +17,7 @@
 | 三维地表、双天线和未来条带拼接 | [后续设计](SURFACE_HEADING_STRIP_DESIGN.md)，其中研究方案不等于已实现 |
 | WSL私有Mesa源码构建与回退 | [恢复指南](MESA_SETUP.md) |
 | GitHub恢复和分发边界 | [仓库说明](REPOSITORY.md) |
-| 查项目踩过的坑，避免重犯 | [坑与教训](LESSONS.md) |
+| 查关键技术问题、根因与解决方案 | [问题与解决方案](LESSONS.md) |
 
 ## 重要问题保留入口
 
@@ -36,3 +36,11 @@
 [归档索引](archive/README.md)保留早期底盘、CUDA/Ogre/OptiX路线比较、选材、标定、性能和阶段交付记录，以及[状态流水存档](archive/status/STATUS_LOG_2026-09.md)。旧模型数据不能作为550 kg版本的性能承诺。图片统一位于`images/`，数值报告保留在仓库`results/`。
 
 维护时优先更新现行指南与当前状态；阶段实验放入archive，影响现行行为的重要问题放入issues。保留证据和来源，不在README末尾不断追加相互矛盾的阶段状态。
+
+
+## 文档维护分工
+
+- PROJECT_SPEC只定义目标/约束；CURRENT_STATUS只记录当前状态和下一步。
+- 操作指南保留当前恢复/运行命令；issues保留关键故障的根因、修复和证据，页首先给最新状态。
+- 数值细节以results为据，日期流水和已替代方案放archive，不覆盖旧实验参数。
+- 本次整理移出的[规范进展](archive/maintenance/SPEC_PROGRESS_SNAPSHOT_2026-09-14.md)、[全区预算历史](archive/maintenance/FULL_ROAD_BUDGET_HISTORY.md)、[条带试验](archive/maintenance/STRIP_EXPERIMENTS_2026-09-14.md)、[复核流水](archive/maintenance/REVIEW_FIXES_2026-09-14.md)、[材质路线](archive/maintenance/ROAD_MATERIAL_EVOLUTION.md)和[旧版LESSONS](archive/maintenance/LESSONS_BEFORE_REWRITE_2026-09-14.md)均保留追溯，不作为默认阅读入口。
