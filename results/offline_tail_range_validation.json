@@ -1,0 +1,31 @@
+{
+  "schema": "agv.offline_tail_range_validation.v1",
+  "date": "2026-09-14",
+  "scope": "Offline archive validation and preservation of discarded-tail evidence; no renderer, control or pixel-correction algorithm changes.",
+  "change": "Validate integer block/segment/line identities, row ranges and finite ordered timestamps. Merge saved blocks and discarded events to validate numbering, temporal and segment ordering, nonoverlap and continuity adjacent to discards, including terminal discards. Preserve complete discarded events in the corrected summary.",
+  "tests": {
+    "calibration_pytest": {"passed": 27},
+    "standard_colcon": {"packages": 7, "tests": 377, "errors": 0, "failures": 0, "skipped": 0},
+    "new_cases": [
+      "missing first/last range",
+      "row count inconsistent with last line",
+      "line overlap with preceding saved block",
+      "line gap adjacent to discarded block",
+      "timestamp overlap",
+      "nonfinite timestamp",
+      "reversed segment order",
+      "unexplained terminal block-id gap",
+      "final discarded tail preservation and rejection of shifted final range"
+    ]
+  },
+  "retained_full_area_metadata": {
+    "run": "accept_tier_0500",
+    "saved_blocks": 670,
+    "discarded_tails": 10,
+    "final_tail_id": 679,
+    "combined_sequence_valid": true,
+    "scope": "Read retained capture_blocks.jsonl and capture_events.jsonl; this run's raw images were previously deleted. Not a full-image calibration run."
+  },
+  "output_contract": "summary.json discarded_tail_blocks contains each full tail_discarded event, including first, last, segment_id and any original pose labels. Other source events remain in the raw archive.",
+  "limits": "Current 20 mm calibration remains pending. No GUI or vehicle run was needed for this metadata-only correction; no new visual acceptance claim."
+}

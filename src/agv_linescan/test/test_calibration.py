@@ -211,10 +211,14 @@ def discarded_tail_fixture(tmp_path,rows=3,minimum=1000,block_id=1):
     source,profile=offline_fixture(tmp_path)
     old=source/'block_000001.json';m=json.loads(old.read_text())
     m['block_id']=2;m['segment_id']=2
+    for key in ('first','last'):
+        m[key]['global_line']+=rows;m[key]['time_s']+=rows*.001
+    for tag in m['pose_tags']:tag['global_line']+=rows
     (source/'block_000002.json').write_text(json.dumps(m));old.unlink()
     (source/'block_000001.pgm').rename(source/'block_000002.pgm')
     (source/'events.jsonl').write_text(json.dumps(dict(reason='tail_discarded',end_reason='capture_toggle',
-        rows=rows,minimum_rows=minimum,block_id=block_id,segment_id=0,simulation_time_s=.02))+'\n')
+        rows=rows,minimum_rows=minimum,block_id=block_id,segment_id=0,simulation_time_s=(16+rows)*.001,
+        first=dict(global_line=17,time_s=.017),last=dict(global_line=16+rows,time_s=(16+rows)*.001)))+'\n')
     return source,profile
 
 
@@ -229,6 +233,8 @@ def test_offline_accepts_block_ids_spent_by_a_discarded_short_tail(tmp_path):
     assert r['block_id_gaps']==[1]
     assert [d['block_id'] for d in r['discarded_tail_blocks']]==[1]
     assert r['discarded_tail_blocks'][0]['rows']==3
+    import json
+    assert r['discarded_tail_blocks']==[json.loads((source/'events.jsonl').read_text())]
 
 
 @pytest.mark.parametrize('fault',['no_evidence','tail_not_short','discarded_block_present'])
@@ -246,6 +252,47 @@ def test_offline_still_rejects_gaps_without_honest_evidence(tmp_path,fault):
         source,profile=discarded_tail_fixture(tmp_path,block_id=2)
     with pytest.raises(ValueError):process_session(source,profile,tmp_path/'corrected')
     assert not (tmp_path/'corrected').exists()
+
+
+@pytest.mark.parametrize('fault',['missing_range','wrong_rows','overlap','line_gap',
+                                 'time_overlap','nan_time','reversed_segment','terminal_id_gap'])
+def test_discard_evidence_range_and_neighbors_are_checked(tmp_path,fault):
+    import json
+    from agv_linescan.offline_correction import process_session
+    source,profile=discarded_tail_fixture(tmp_path)
+    path=source/'events.jsonl';event=json.loads(path.read_text())
+    if fault=='missing_range':del event['first']
+    elif fault=='wrong_rows':event['last']['global_line']=9999
+    elif fault in ('overlap','line_gap'):
+        shift=-1 if fault=='overlap' else 1
+        for key in ('first','last'):event[key]['global_line']+=shift
+    elif fault=='time_overlap':event['first']['time_s']=.016
+    elif fault=='nan_time':event['last']['time_s']=float('nan')
+    elif fault=='reversed_segment':event['segment_id']=3
+    else:
+        extra=dict(event,block_id=4)
+        path.write_text(json.dumps(event)+'\n'+json.dumps(extra)+'\n')
+    if fault!='terminal_id_gap':path.write_text(json.dumps(event)+'\n')
+    with pytest.raises(ValueError):process_session(source,profile,tmp_path/'corrected')
+    assert not (tmp_path/'corrected').exists()
+
+
+def test_final_discard_keeps_full_range_and_checks_previous_image(tmp_path):
+    import json
+    from agv_linescan.offline_correction import process_session
+    source,profile=discarded_tail_fixture(tmp_path)
+    event=json.loads((source/'events.jsonl').read_text())
+    final=dict(event,block_id=3,segment_id=2,first=dict(global_line=23,time_s=.023),
+               last=dict(global_line=25,time_s=.025),simulation_time_s=.025)
+    (source/'events.jsonl').write_text(json.dumps(event)+'\n'+json.dumps(final)+'\n')
+    out=tmp_path/'corrected';process_session(source,profile,out)
+    report=json.loads((out/'summary.json').read_text())
+    assert report['discarded_tail_blocks']==[event,final]
+    assert report['block_id_gaps']==[1]  # Final discard is retained even without a following image.
+    final['first']['global_line']+=1;final['last']['global_line']+=1
+    (source/'events.jsonl').write_text(json.dumps(event)+'\n'+json.dumps(final)+'\n')
+    with pytest.raises(ValueError):process_session(source,profile,tmp_path/'bad_final')
+    assert not (tmp_path/'bad_final').exists()
 
 
 def test_offline_preserves_extra_sparse_tags_across_pause(tmp_path):

@@ -1,6 +1,7 @@
 """Post-process a complete raw capture session without ROS or a running simulator."""
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import time
@@ -17,6 +18,49 @@ def _write(path, data):
     temporary.rename(path)
 
 
+def validate_block_range(record):
+    """Validate saved and discarded ranges with the same units and ordering."""
+    try:
+        for key in ('block_id','segment_id','rows'):
+            if type(record[key]) is not int or record[key] < (1 if key=='rows' else 0):
+                raise ValueError('invalid block identity or row count')
+        first,last=record['first'],record['last']
+        for tag in (first,last):
+            if type(tag['global_line']) is not int or tag['global_line']<0:
+                raise ValueError('invalid global line')
+            if type(tag['time_s']) not in (int,float) or not math.isfinite(tag['time_s']):
+                raise ValueError('invalid line timestamp')
+        if last['global_line']-first['global_line']+1!=record['rows']:
+            raise ValueError('line count differs from metadata')
+        if first['time_s']>last['time_s']:
+            raise ValueError('reversed timestamps')
+    except (KeyError,TypeError) as exc:
+        raise ValueError('missing or invalid block range') from exc
+
+
+def validate_capture_sequence(saved,discarded):
+    """Include terminal discards, not just events between two saved images."""
+    records={}
+    for record in [*saved,*discarded.values()]:
+        validate_block_range(record)
+        key=record['block_id']
+        if key in records:raise ValueError('saved and discarded block ids overlap')
+        records[key]=record
+    previous=None
+    for expected,key in enumerate(sorted(records)):
+        if key!=expected:raise ValueError('missing or misnumbered image block')
+        current=records[key]
+        if previous:
+            if current['segment_id']<previous['segment_id']:raise ValueError('reversed segment ordering')
+            if current['first']['time_s']<=previous['last']['time_s']:raise ValueError('nonmonotonic block timestamp')
+            line=current['first']['global_line'];end=previous['last']['global_line']
+            if line<=end:raise ValueError('overlapping block line ranges')
+            if (key in discarded or previous['block_id'] in discarded or
+                    current['segment_id']==previous['segment_id']) and line!=end+1:
+                raise ValueError('line discontinuity around block or discarded tail')
+        previous=current
+
+
 def discarded_tails(source):
     """Block ids the sensor discarded as short tails, from its own event log.
 
@@ -30,12 +74,13 @@ def discarded_tails(source):
         if not line.strip():continue
         try:event=json.loads(line)
         except ValueError:raise ValueError('corrupt capture event record %d'%index)
-        if event.get('reason')!='tail_discarded' or 'block_id' not in event:continue
+        if not isinstance(event,dict):raise ValueError('invalid capture event record')
+        if event.get('reason')!='tail_discarded':continue
+        validate_block_range(event)
         rows,minimum=event.get('rows',0),event.get('minimum_rows',0)
-        if not 0<rows<minimum:raise ValueError('tail discard event does not justify a missing block')
+        if type(minimum) is not int or not 0<rows<minimum:raise ValueError('tail discard event does not justify a missing block')
         if event['block_id'] in found:raise ValueError('duplicate tail discard for one block id')
-        found[event['block_id']]=dict(block_id=event['block_id'],rows=rows,minimum_rows=minimum,
-                                      segment_id=event.get('segment_id'),end_reason=event.get('end_reason'))
+        found[event['block_id']]=event
     return found
 
 
@@ -47,24 +92,17 @@ def process_session(source, profile, output):
     if not paths:raise ValueError('raw capture contains no image metadata')
     if {p.stem for p in paths}!={p.stem for p in source.glob('block_*.pgm')}:raise ValueError('raw image / metadata pairs are incomplete')
     discarded=discarded_tails(source)
-    entries=[];previous=None;expected=0
+    entries=[]
     for path in paths:
         m=json.loads(path.read_text());correction.metadata(m)
-        # A short tail is discarded by policy and still consumes its block id, so the
-        # numbering is allowed to skip exactly those ids and nothing else.
-        while expected in discarded:expected+=1
-        if m['block_id']!=expected or path.stem!=f'block_{expected:06d}':raise ValueError('missing or misnumbered image block')
-        expected+=1
+        validate_block_range(m)
+        if path.stem!=f"block_{m['block_id']:06d}":raise ValueError('misnumbered image block')
         if m.get('encoding')!='mono8' or not 1<=m['rows']<=config['block_rows']:raise ValueError('invalid raw block dimensions/encoding')
         first,last=m['first'],m['last']
-        if last['global_line']-first['global_line']+1!=m['rows']:raise ValueError('line count differs from metadata')
-        if first['time_s']>last['time_s']:raise ValueError('reversed timestamps')
-        if previous:
-            if first['time_s']<=previous['last']['time_s']:raise ValueError('nonmonotonic block timestamp')
-            if m['segment_id']==previous['segment_id'] and first['global_line']!=previous['last']['global_line']+1:raise ValueError('line discontinuity within segment')
         tags=m['pose_tags']
         if not 1<=len(tags)<=m['rows'] or any(not first['global_line']<=t['global_line']<=last['global_line'] for t in tags):raise ValueError('invalid sparse pose tags')
-        entries.append((path,m));previous=m
+        entries.append((path,m))
+    validate_capture_sequence([m for _,m in entries],discarded)
     output.mkdir(parents=True,exist_ok=False)
     (output/'calibration.json').write_bytes(profile.read_bytes())
     start=time.monotonic();rows=0;raw_saturated=0;clipped=0;per_block=[]
