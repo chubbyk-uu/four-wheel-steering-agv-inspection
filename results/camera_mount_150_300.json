@@ -1,0 +1,58 @@
+{
+  "schema": "agv.camera_mount_stiffness_comparison.v1",
+  "date": "2026-09-15",
+  "scene": "20 m marked concrete, 0.10 m heightfield grid, +/-0.003 m",
+  "request": "4 m single pass, 10 km/h requested, normal localization",
+  "independent_runs": true,
+  "cases": {
+    "150": {
+      "stiffness_nm_rad": 150.0,
+      "damping_nms_rad": 2.5,
+      "roi_mount_roll_p2p_deg": 0.3653176375118057,
+      "roi_mount_pitch_p2p_deg": 0.3021357021475366,
+      "roi_mount_roll_std_deg": 0.07649259728224973,
+      "roi_mount_pitch_std_deg": 0.08446384741525732,
+      "roi_rtf": 0.9995483861910068,
+      "tag_fk_max_position_error_mm": 0.04085040939898107,
+      "tag_fk_max_rotation_error_deg": 0.0030735877420298256,
+      "passed": true
+    },
+    "300": {
+      "stiffness_nm_rad": 300.0,
+      "damping_nms_rad": 3.5355339059327378,
+      "roi_mount_roll_p2p_deg": 0.20460762640870145,
+      "roi_mount_pitch_p2p_deg": 0.16629167195664407,
+      "roi_mount_roll_std_deg": 0.04355387887429098,
+      "roi_mount_pitch_std_deg": 0.04209630861180649,
+      "roi_rtf": 0.9939376185999802,
+      "tag_fk_max_position_error_mm": 0.042598647794073706,
+      "tag_fk_max_rotation_error_deg": 0.0020981939448990986,
+      "passed": true
+    }
+  },
+  "selected_default": {
+    "stiffness_nm_rad": 300.0,
+    "damping_nms_rad": 3.5355339059327378,
+    "reason": "Retains visible passive response while reducing the measured ROI roll and pitch excursions to about 56% and 55% of the 150 Nm/rad case."
+  },
+  "two_track_300": {
+    "profile": "normal",
+    "gui_rviz_optix": true,
+    "final_state": "ACQUIRED",
+    "final_motion": "HOLD",
+    "capture_rows": [25585, 19468],
+    "continuous_roi": true,
+    "pass_reverse_command_samples": 0,
+    "second_pass_alignment_yaw_change_deg": -3.207266664488096,
+    "second_pass_heading_at_drive_rad": 0.05666420244902158,
+    "second_pass_capture_delay_s": 2.3689999999999998,
+    "second_pass_first_capture_heading_error_rad": 0.02484598693449559,
+    "mount_all_peak_abs_roll_pitch_deg": [0.6013315423768228, 0.3945277999848563],
+    "passed": true
+  },
+  "limitations": [
+    "The runs are independent physical and localization realizations; this is not a sample-by-sample replay.",
+    "The fixed calibration profile is an experimental geometry-checked transfer, not a fresh reference-board calibration.",
+    "The short single- and two-pass probes do not replace 100 m full-area acceptance."
+  ]
+}

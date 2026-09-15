@@ -98,5 +98,5 @@ sampling:
 # Two physical passive axes, pitch/roll, gravity-balanced at level. Not measured hardware.
 mount_flex:
   enabled: true
-  stiffness_nm_rad: 150.0
-  damping_nms_rad: 2.5
+  stiffness_nm_rad: 300.0
+  damping_nms_rad: 3.5355339059327378
