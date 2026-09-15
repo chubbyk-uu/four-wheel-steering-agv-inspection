@@ -26,7 +26,7 @@ def height(x,y):
     taper=np.sin(np.clip((np.asarray(x)-2)/3,0,1)*np.pi/2)**2
     return .001*np.tanh(z/.001)*taper
 
-def generate(out,step):
+def generate(out,step,peak_mm=None):
     from agv_linescan.shared_scene import digest,validate
     assert np.isfinite(step) and (step==0 or .05<=step<=.5)
     out=out.resolve();out.mkdir(parents=True,exist_ok=True)
@@ -34,6 +34,11 @@ def generate(out,step):
         x,y=np.meshgrid([0,50],[-2,2]);z=np.zeros_like(x)
     else:
         x,y=np.meshgrid(np.linspace(0,50,round(50/step)+1),np.linspace(-2,2,round(4/step)+1));z=height(x,y)
+    scale=1.
+    if peak_mm is not None:
+        if step==0 or not np.isfinite(peak_mm) or not 0<peak_mm<=5:
+            raise ValueError('peak-mm requires rough mesh and a finite value in (0, 5]')
+        scale=peak_mm*.001/np.max(np.abs(z));z*=scale
     ny,nx=x.shape
     i,j=np.meshgrid(np.arange(ny-1),np.arange(nx-1),indexing='ij');a=(i*nx+j).ravel()
     faces=np.concatenate((np.stack((a,a+1,a+nx+1),1),np.stack((a,a+nx+1,a+nx),1)))+1
@@ -56,7 +61,7 @@ def generate(out,step):
     tree.write(out/'world.sdf',encoding='unicode')
     manifest=dict(schema='agv.shared.static_scene.v1',units='m',frame='world',transform='identity_world_baked',profile='rough_road_probe',length_m=50,width_m=4,world='world.sdf',world_sha256=digest(out/'world.sdf'),display_materials={},assets=[dict(name='terrain',mesh=mesh.name,sha256=digest(mesh),triangles=len(faces),linear_reflectance=.5)])
     (out/'manifest.json').write_text(json.dumps(manifest,indent=2));validate(out/'manifest.json')
-    (out/'geometry.json').write_text(json.dumps(dict(step_m=step,triangles=len(faces),mesh_bytes=mesh.stat().st_size,height_rms_m=float(np.std(z)),height_min_m=float(z.min()),height_max_m=float(z.max()),seed=20260915,nominal_wavelength_m=[1,6],same_mesh_visual_collision_optix=True),indent=2))
+    (out/'geometry.json').write_text(json.dumps(dict(step_m=step,requested_abs_peak_mm=peak_mm,height_scale=scale,triangles=len(faces),mesh_bytes=mesh.stat().st_size,height_rms_m=float(np.std(z)),height_min_m=float(z.min()),height_max_m=float(z.max()),seed=20260915,nominal_wavelength_m=[1,6],same_mesh_visual_collision_optix=True),indent=2))
     return out/'manifest.json'
 
 def evaluate(out):
@@ -86,16 +91,26 @@ def evaluate(out):
             a=data[:,col]*scale;f,p=welch(a,fs=1/np.median(dt),nperseg=200)
             result['signals'][name]=dict(std=float(np.std(a)),peak_to_peak=float(np.ptp(a)),max_deviation_from_mean=float(np.max(abs(a-a.mean()))),dominant_hz=float(f[1:][np.argmax(p[1:])]))
         result['max_suspension_abs_m']=float(np.abs(data[:,7:11]).max());assert result['max_suspension_abs_m']<.045
-        assert max(result['signals'][n]['max_deviation_from_mean'] for n in ('roll_deg','pitch_deg'))<.2
+        result['small_vibration_target_deg']=.2
+        result['small_vibration_target_met']=max(result['signals'][axis]['max_deviation_from_mean'] for axis in ('roll_deg','pitch_deg'))<.2
+        moving=np.array([r[:-1] for r in n.rows if r[-1]!='rest'],float)
+        result['all_motion_max_suspension_abs_m']=float(np.abs(moving[:,7:11]).max())
+        assert result['all_motion_max_suspension_abs_m']<.045
+        rot=Rotation.from_euler('xyz',moving[:,4:7]).as_matrix()
+        corners=np.array([[x,y,-.3984] for x in (-.36,.36) for y in (-.55,.55)])
+        result['all_motion_min_battery_height_above_z0_m']=float((np.einsum('nij,kj->nki',rot,corners)[:,:,2]+moving[:,2,None]).min())
+        geometry=json.loads((out/'geometry.json').read_text())
+        result['all_motion_battery_clearance_lower_bound_m']=result['all_motion_min_battery_height_above_z0_m']-max(abs(geometry['height_min_m']),abs(geometry['height_max_m']))
+        assert result['all_motion_battery_clearance_lower_bound_m']>.15
         result['odom_gap_max_s']=float(dt.max())
         (out/'samples.json').write_text(json.dumps(n.rows));(out/'summary.json').write_text(json.dumps(result,indent=2))
         print(json.dumps(result))
     finally:n.command((0,0,0));n.destroy_node();rclpy.shutdown()
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--output',type=Path,required=True);p.add_argument('--step',type=float,default=.2);p.add_argument('--evaluate',action='store_true');p.add_argument('--generate-only',action='store_true');a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--output',type=Path,required=True);p.add_argument('--step',type=float,default=.2);p.add_argument('--evaluate',action='store_true');p.add_argument('--generate-only',action='store_true');p.add_argument('--peak-mm',type=float);a=p.parse_args()
     if a.evaluate:evaluate(a.output);return
-    manifest=generate(a.output,a.step)
+    manifest=generate(a.output,a.step,a.peak_mm)
     if a.generate_only:print(manifest);return
     env=dict(os.environ,ROS_DOMAIN_ID='98',GZ_PARTITION='rough_'+str(os.getpid()))
     with (a.output/'sim.log').open('w') as log:

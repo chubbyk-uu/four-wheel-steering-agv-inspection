@@ -1,0 +1,216 @@
+{
+  "schema": "agv.rough_amplitude.v1",
+  "scope": "Same 50x4 m field, 10 cm mesh, seed 20260915, 550 kg soft suspension; 10 km/h, 8 s steady truth at 50 Hz; one run per amplitude; no production-road acceptance.",
+  "cases": {
+    "baseline_0.784mm": {
+      "passed": true,
+      "final_state": "HOLD",
+      "samples": 400,
+      "speed_m_s": 2.7777885595253933,
+      "rtf": 1.0000163018948038,
+      "signals": {
+        "z_mm": {
+          "std": 0.16341817428756197,
+          "peak_to_peak": 0.8809594499027753,
+          "max_deviation_from_mean": 0.477033041095865,
+          "dominant_hz": 0.5000000000000107
+        },
+        "roll_deg": {
+          "std": 0.019038282903615512,
+          "peak_to_peak": 0.078563659055991,
+          "max_deviation_from_mean": 0.03981174809733701,
+          "dominant_hz": 0.25000000000000533
+        },
+        "pitch_deg": {
+          "std": 0.01975900861015731,
+          "peak_to_peak": 0.0981994434103361,
+          "max_deviation_from_mean": 0.06030507970441781,
+          "dominant_hz": 0.5000000000000107
+        }
+      },
+      "max_suspension_abs_m": 0.0009425367198523052,
+      "odom_gap_max_s": 0.020000000000003126,
+      "geometry": {
+        "step_m": 0.1,
+        "triangles": 40000,
+        "mesh_bytes": 3958385,
+        "height_rms_m": 0.0002733996468753748,
+        "height_min_m": -0.0007835426516880934,
+        "height_max_m": 0.0007749188766604205,
+        "seed": 20260915,
+        "nominal_wavelength_m": [
+          1,
+          6
+        ],
+        "same_mesh_visual_collision_optix": true
+      }
+    },
+    "peak_1.5mm": {
+      "passed": true,
+      "final_state": "HOLD",
+      "samples": 400,
+      "speed_m_s": 2.7779019490719072,
+      "rtf": 1.0000082360327176,
+      "signals": {
+        "z_mm": {
+          "std": 0.3132335241678095,
+          "peak_to_peak": 1.6867538119653318,
+          "max_deviation_from_mean": 0.9161141562410648,
+          "dominant_hz": 0.5000000000000107
+        },
+        "roll_deg": {
+          "std": 0.03708519931846582,
+          "peak_to_peak": 0.14538597160427752,
+          "max_deviation_from_mean": 0.0800800143680079,
+          "dominant_hz": 0.25000000000000533
+        },
+        "pitch_deg": {
+          "std": 0.037590989256788825,
+          "peak_to_peak": 0.18959236153773784,
+          "max_deviation_from_mean": 0.11617560152553448,
+          "dominant_hz": 0.5000000000000107
+        }
+      },
+      "max_suspension_abs_m": 0.0015251898858968972,
+      "small_vibration_target_deg": 0.2,
+      "small_vibration_target_met": true,
+      "all_motion_max_suspension_abs_m": 0.01857857370272225,
+      "odom_gap_max_s": 0.020000000000003126,
+      "geometry": {
+        "step_m": 0.1,
+        "requested_abs_peak_mm": 1.5,
+        "height_scale": 1.9143820655689188,
+        "triangles": 40000,
+        "mesh_bytes": 3958385,
+        "height_rms_m": 0.000523391380711093,
+        "height_min_m": -0.0015,
+        "height_max_m": 0.0014834907997495219,
+        "seed": 20260915,
+        "nominal_wavelength_m": [
+          1,
+          6
+        ],
+        "same_mesh_visual_collision_optix": true
+      },
+      "all_motion_min_battery_height_above_z0_m": 0.24109705050858832,
+      "all_motion_battery_clearance_lower_bound_m": 0.23959705050858832
+    },
+    "peak_3mm": {
+      "passed": true,
+      "final_state": "HOLD",
+      "samples": 400,
+      "speed_m_s": 2.778027069796714,
+      "rtf": 1.0000010942367803,
+      "signals": {
+        "z_mm": {
+          "std": 0.6266886608705395,
+          "peak_to_peak": 3.380415394982151,
+          "max_deviation_from_mean": 1.8416746777119215,
+          "dominant_hz": 0.5000000000000107
+        },
+        "roll_deg": {
+          "std": 0.07513746961757534,
+          "peak_to_peak": 0.34237956472719655,
+          "max_deviation_from_mean": 0.1882135832462386,
+          "dominant_hz": 0.25000000000000533
+        },
+        "pitch_deg": {
+          "std": 0.07557693021314763,
+          "peak_to_peak": 0.38185908473566244,
+          "max_deviation_from_mean": 0.23268899944632163,
+          "dominant_hz": 0.5000000000000107
+        }
+      },
+      "max_suspension_abs_m": 0.002748373741870113,
+      "small_vibration_target_deg": 0.2,
+      "small_vibration_target_met": false,
+      "all_motion_max_suspension_abs_m": 0.019933968050368935,
+      "odom_gap_max_s": 0.020000000000003126,
+      "geometry": {
+        "step_m": 0.1,
+        "requested_abs_peak_mm": 3.0,
+        "height_scale": 3.8287641311378375,
+        "triangles": 40000,
+        "mesh_bytes": 3958385,
+        "height_rms_m": 0.001046782761422186,
+        "height_min_m": -0.003,
+        "height_max_m": 0.0029669815994990438,
+        "seed": 20260915,
+        "nominal_wavelength_m": [
+          1,
+          6
+        ],
+        "same_mesh_visual_collision_optix": true
+      },
+      "all_motion_min_battery_height_above_z0_m": 0.24025495416149817,
+      "all_motion_battery_clearance_lower_bound_m": 0.23725495416149817
+    }
+  },
+  "same_field_double_amplitude_verified": true,
+  "capture_checks": {
+    "peak15": {
+      "passed": true,
+      "received_blocks": 10,
+      "rows": [
+        4096,
+        4096,
+        4096,
+        4096,
+        4096,
+        4096,
+        4096,
+        4096,
+        4096,
+        1056
+      ],
+      "real_time_factor": 1.0004465979720425,
+      "ros_all_blocks_byte_identical": true,
+      "final_motion_state": "HOLD",
+      "display_sync": {
+        "frames": 799,
+        "dropped_pending": 0,
+        "pending": 0,
+        "max_sim_age_s": 0.005,
+        "mode": "same_stamp_interpolated_display_only"
+      },
+      "realtime_required": true,
+      "realtime_target_met": true,
+      "realtime_floor": 0.92
+    },
+    "peak30": {
+      "passed": true,
+      "received_blocks": 10,
+      "rows": [
+        4096,
+        4096,
+        4096,
+        4096,
+        4096,
+        4096,
+        4096,
+        4096,
+        4096,
+        1062
+      ],
+      "real_time_factor": 1.0002277224010672,
+      "ros_all_blocks_byte_identical": true,
+      "final_motion_state": "HOLD",
+      "display_sync": {
+        "frames": 799,
+        "dropped_pending": 0,
+        "pending": 0,
+        "max_sim_age_s": 0.005,
+        "mode": "same_stamp_interpolated_display_only"
+      },
+      "realtime_required": true,
+      "realtime_target_met": true,
+      "realtime_floor": 0.92
+    }
+  },
+  "limitations": [
+    "Uniform material, no road texture or defect feature-distortion validation",
+    "RTF capped near 1 does not quantify remaining CPU/GPU capacity or actual memory delta",
+    "0.2 degree steady deviation is an observation target, not a mechanical safety limit; passed denotes completed measurement, not that amplitude meets this target",
+    "Sampled suspension travel and battery clearance do not prove tyre contact forces or absence of brief liftoff"
+  ]
+}
