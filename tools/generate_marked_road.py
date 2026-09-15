@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create an independent 20 m arrow/box-junction paint trial from compact assets."""
+"""Layer distributed arrow/box road paint onto a compact recipe scene."""
 import argparse
 import hashlib
 import json
@@ -9,15 +9,16 @@ import shutil
 import numpy as np
 from PIL import Image
 from bake_concrete_road import LUT,srgb
-from road_test_markings import polygons,paint
+from road_test_markings import polygons,paint,seam_crossings
 
 
-def generate(source,out):
+def generate(source,out,block_length_m=1.5):
     source=source.resolve();out=out.resolve()
     m=json.loads((source/'manifest.json').read_text())
-    if m['length_m']!=20 or m['width_m']!=10 or m['ground_material']['schema']!='agv.ground_material.recipe.v1':
-        raise ValueError('requires the compact 20 x 10 m recipe scene')
-    items=polygons()
+    if m.get('ground_material',{}).get('schema')!='agv.ground_material.recipe.v1':
+        raise ValueError('requires a compact recipe scene')
+    length=float(m['length_m']);width=float(m['width_m'])
+    items=polygons(length,width);crossings=seam_crossings(items,length,block_length_m)
     # Immutable payloads share disk blocks. Every modified file is unlinked first.
     shutil.copytree(source,out,copy_function=os.link)
     def write(path,data):
@@ -40,7 +41,9 @@ def generate(source,out):
     rp=out/m['ground_material']['recipe']['file'];recipe=json.loads(rp.read_text());recipe['inspection_paint']=items
     write(rp,json.dumps(recipe,indent=2)+'\n');m['ground_material']['recipe']['sha256']=digest(rp)
     world=out/m['world'];text=world.read_text().replace(str(source),str(out));write(world,text);m['world_sha256']=digest(world)
-    m['inspection_paint']=dict(profile='arrows_box_v1',polygons=items,
+    m['inspection_paint']=dict(profile='distributed_arrows_box_v2',polygons=items,
+        distribution=dict(period_m=20.,road_length_m=length,road_width_m=width,
+                          capture_block_length_m=block_length_m,seam_crossings=crossings),
         purpose='Independent geometry reference for longitudinal scale and shear evaluation; not a solver input',
         scope='Example road paint, not a regulatory traffic layout; zero added geometry')
     write(out/'manifest.json',json.dumps(m,indent=2)+'\n')
@@ -52,4 +55,5 @@ def generate(source,out):
 
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--source',type=Path,default=Path('assets/road/runtime_fullwidth_20m_v1'))
-    p.add_argument('--output',type=Path,required=True);a=p.parse_args();print(generate(a.source,a.output))
+    p.add_argument('--output',type=Path,required=True);p.add_argument('--block-length-m',type=float,default=1.5)
+    a=p.parse_args();print(generate(a.source,a.output,a.block_length_m))

@@ -29,3 +29,14 @@ def test_trial_markings_geometry_and_lane_clearance():
     y,w=trial_masks([3.5,5.6,5.8,8.85],[-2.4,2.4,-4.0],items)
     assert w[0,0] and w[0,1] and not w[0,2] and w[1,2]
     assert y[2,3]
+
+
+def test_markings_distribute_over_100m_and_cross_both_track_seams():
+    from road_test_markings import polygons,seam_crossings
+    one=polygons();full=polygons(100,10)
+    assert len(full)==5*len(one)
+    assert min(v[0] for item in full for v in item['vertices'])>=0
+    assert max(v[0] for item in full for v in item['vertices'])<=100
+    crossings=seam_crossings(full,100,1.5)
+    assert {c['direction'] for c in crossings}=={'forward','reverse'}
+    assert len({c['polygon_index'] for c in crossings})>=20

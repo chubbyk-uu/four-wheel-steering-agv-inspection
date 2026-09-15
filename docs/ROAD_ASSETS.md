@@ -82,17 +82,28 @@ python3 tools/create_rough_textured_scene.py \
 
 完整GUI＋RViz＋OptiX静止对照在90 s预热后连续测量30 s：原场景RTF为0.99958，当前起伏场景为0.75349，相对下降24.62%；首个里程计由33.94 s延至40.66 s。进程树RSS峰值增加约176 MiB，整卡显存峰值增加约39 MiB，说明主要代价来自36.5万碰撞三角形的物理计算。短预热会同时低估两者RTF，不能用作稳态数字。当前起伏碰撞表示因此仍是待优化试验资产，不作为100 m正式采集基线；详见[`results/full_road_rough_runtime.json`](../results/full_road_rough_runtime.json)。
 
-## 箭头和禁停网格标识试片
+## 箭头和禁停网格标识
 
-在恢复20 m紧凑资产后生成独立试片：
+标识生成器按20 m周期沿任意长度的紧凑配方道路分布两向箭头和单车道禁停网格。横向位置由道路宽度计算，标识物理尺寸保持不变。20 m独立试片命令为：
 
 ```bash
 python3 tools/generate_marked_road.py --output local_data/road_markings_probe_v1
 ```
 
+在100 m、±3 mm起伏资产上叠加标识：
+
+```bash
+python3 tools/generate_marked_road.py \
+  --source assets/road/runtime_fullwidth_100m_rough_3mm_v1 \
+  --output assets/road/runtime_fullwidth_100m_rough_marked_3mm_v1 \
+  --block-length-m 1.5
+```
+
+现行100 m布局含20个方向箭头和5个禁停网格区。生成器在manifest中记录与正、反向1.5 m采集帧边界相交的多边形，保证条带拼接有真实接缝检验对象。标识只修改显示颜色/法线贴图和运行时材质配方，起伏视觉网格、碰撞网格和高度场均与输入资产硬链接复用，因此不会改变物理性能。生成与校验记录见[`results/full_road_marked_asset.json`](../results/full_road_marked_asset.json)。
+
 输出目录必须不存在。复用原资产不可变文件的硬链接，修改配方、SDF及显示PNG前先断开链接，因此原道路保持不变，避免复制近GB源纹理。不要手动覆写试片内共享的`.raw`、网格或quilt文件。删除试片不影响原道路。跨文件系统不支持硬链接，需在同一文件系统生成。
 
-试片manifest可传给已有`--scene`采集工具。标识几何与用途见[SURFACE_HEADING_STRIP_DESIGN.md](SURFACE_HEADING_STRIP_DESIGN.md)。显示4 mm纹素、采样0.25 mm纹素仍沿用原配置。新增标识仅在缓存烘焙时计算，不在每根扫描线的射线命中路径中计算；不能把单次烘焙计时当成整车11 kHz验收。
+输出manifest可传给已有`--scene`采集工具。标识几何与用途见[SURFACE_HEADING_STRIP_DESIGN.md](SURFACE_HEADING_STRIP_DESIGN.md)。显示4 mm纹素、采样0.25 mm纹素仍沿用原配置。新增标识仅在缓存烘焙时计算，不在每根扫描线的射线命中路径中计算；不能把单次烘焙计时当成整车11 kHz验收。
 
 实际显示检查：`tools/render_road_alignment.py --manifest local_data/road_markings_probe_v1/manifest.json --output local_data/road_markings_ogre_v1`（使用当前Mesa/ROS运行环境）。除原双黄线坐标外，新增实际Ogre2禁停框像素与独立俯视投影的重合率检查。
 

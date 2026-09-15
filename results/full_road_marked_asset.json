@@ -1,0 +1,37 @@
+{
+  "date": "2026-09-15",
+  "source": "assets/road/runtime_fullwidth_100m_rough_3mm_v1",
+  "output": "assets/road/runtime_fullwidth_100m_rough_marked_3mm_v1",
+  "source_manifest_sha256": "39b0697d624377f1603ff4789eeb07bf623d95de22112e790084b126b444e575",
+  "output_manifest_sha256": "2e314adf3b680c6101be27164a453562efa6abf6582e49592378a01478803090",
+  "command": "python3 tools/generate_marked_road.py --source assets/road/runtime_fullwidth_100m_rough_3mm_v1 --output assets/road/runtime_fullwidth_100m_rough_marked_3mm_v1 --block-length-m 1.5",
+  "passed": true,
+  "layout": {
+    "road_length_m": 100.0,
+    "road_width_m": 10.0,
+    "period_m": 20.0,
+    "capture_block_length_m": 1.5,
+    "direction_arrows": 20,
+    "no_stopping_boxes": 5,
+    "paint_polygons": 145,
+    "forward_seam_crossings": 158,
+    "reverse_seam_crossings": 146
+  },
+  "preserved_scene": {
+    "roughness_peak_mm": 3.0,
+    "visual_optix_triangles": 7712280,
+    "collision_triangles": 364672,
+    "visual_collision_and_heightfield_files_hardlinked": true
+  },
+  "generation": {
+    "wall_seconds": 70.45,
+    "max_rss_kib": 205320,
+    "swaps": 0,
+    "incremental_disk_mib": 556
+  },
+  "validation": {
+    "manifest_seconds": 42.17,
+    "manifest_max_rss_kib": 460464,
+    "unit_tests": "3 passed"
+  }
+}
