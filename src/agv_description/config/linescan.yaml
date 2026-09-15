@@ -94,9 +94,9 @@ sampling:
   queue_max_wait_s: 0.15
   prefetch_distance_m: 4.0
 
-# Experimental equivalent upper-bracket bending; default remains a fixed joint.
+# Equivalent upper-bracket bending; selected simulation baseline, not measured hardware.
 # Two physical passive axes, pitch/roll, gravity-balanced at level. Not measured hardware.
 mount_flex:
-  enabled: false
-  stiffness_nm_rad: 600.0
-  damping_nms_rad: 5.0
+  enabled: true
+  stiffness_nm_rad: 150.0
+  damping_nms_rad: 2.5

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Conservative planar sweep bound from visual AND collision URDF geometry.
 
-Joint rotations are bounded over a full revolution, not sampled angles.
+Limited joint arcs use a conservative analytic bound; continuous joints use a full orbit.
 Prismatic motion includes both travel endpoints. This is a base-frame planar
 bound, not a roll/pitch or obstacle clearance certificate.
 """
@@ -47,10 +47,22 @@ def envelope(urdf):
                     axis = np.array(list(map(float, element.get('xyz', '1 0 0').split()))) if element is not None else np.array([1., 0., 0.])
                     axis /= np.linalg.norm(axis)
                     if kind in ('revolute', 'continuous'):
-                        # Each orbit fits a sphere about its axis projection.
                         projected = np.outer(centers@axis, axis)
-                        radii += np.linalg.norm(centers-projected, axis=1)
-                        centers = projected
+                        radial = centers-projected
+                        orbit_radius = np.linalg.norm(radial, axis=1)
+                        limit = joint.find('limit') if kind == 'revolute' else None
+                        lower, upper = (float(limit.get(k)) for k in ('lower','upper')) if limit is not None else (-np.pi,np.pi)
+                        if not np.isfinite([lower,upper]).all() or upper < lower:
+                            raise ValueError('invalid angular joint limits')
+                        if upper-lower < 2*np.pi:
+                            # Ball centred on the arc midpoint. The farthest point
+                            # is an endpoint chord: 2*r*sin(total_angle/4).
+                            middle=(lower+upper)/2
+                            centers=projected+radial*np.cos(middle)+np.cross(axis,radial)*np.sin(middle)
+                            radii += 2*orbit_radius*np.sin((upper-lower)/4)
+                        else:
+                            radii += orbit_radius
+                            centers = projected
                     elif kind == 'prismatic':
                         limit = joint.find('limit')
                         centers = np.vstack([centers+float(limit.get(k))*axis for k in ('lower','upper')])
