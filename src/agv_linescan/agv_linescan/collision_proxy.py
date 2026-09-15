@@ -30,6 +30,8 @@ def shallow_rectangle(v,f,z,limit):
 
 def validate_proxy(root,asset,arrays=None):
     proxy=asset['collision_proxy']
+    if proxy.get('method')=='layered_heightfield_shallow_v1':
+        return validate_layered_proxy(root,asset,arrays)
     if proxy.get('method')!='shallow_horizontal_rectangle_v1':
         raise ValueError('unknown collision proxy policy')
     path=(root/proxy['mesh']).resolve()
@@ -42,4 +44,35 @@ def validate_proxy(root,asset,arrays=None):
     expected=np.array([[lo[0],lo[1],z],[hi[0],lo[1],z],[hi[0],hi[1],z],[lo[0],hi[1],z]])
     if pv.shape!=(4,3) or not np.allclose(pv,expected,rtol=0,atol=1e-9) or not np.array_equal(pf,[[0,1,2],[0,2,3]]):
         raise ValueError('collision proxy footprint/plane mismatch')
+    return path
+
+
+def validate_layered_proxy(root,asset,arrays=None):
+    """Keep source shallow defects while adding a checked common heightfield.
+
+    Exact at optical vertices. Face-interior approximation is separately sampled;
+    it is not claimed that two different triangulations coincide everywhere.
+    """
+    from .heightfield import Heightfield
+    proxy=asset['collision_proxy']
+    def checked(entry):
+        path=(root/entry['mesh']).resolve()
+        if path.parent!=root or hashlib.sha256(path.read_bytes()).hexdigest()!=entry['sha256']:raise ValueError('layered proxy source checksum mismatch')
+        return path
+    source=checked(proxy['reference_surface']);field=Heightfield(checked(proxy['heightfield']))
+    reference,faces=mesh_arrays(source)
+    lo,hi,_=shallow_rectangle(reference,faces,proxy['reference_plane_z_m'],proxy['max_surface_deviation_m'])
+    v,f=mesh_arrays(root/asset['mesh']) if arrays is None else arrays
+    expected=reference.copy();expected[:,2]+=field.sample(expected[:,:2])
+    if v.shape!=expected.shape or not np.array_equal(f,faces) or not np.allclose(v,expected,atol=1.1e-9,rtol=0):raise ValueError('optical surface does not preserve source plus heightfield')
+    path=checked(proxy);pv,pf=mesh_arrays(path);ev,ef=field.mesh(lo,hi)
+    ev[:,2]+=proxy['reference_plane_z_m']
+    if pv.shape!=ev.shape or not np.allclose(pv,ev,atol=1.1e-9,rtol=0) or not np.array_equal(pf,ef):raise ValueError('collision mesh differs from checked heightfield')
+    # Check the base displacement interpolation (defect depth is preserved separately).
+    displacement=v[:,2]-reference[:,2];max_error=0.
+    for weights in ((.5,.5,0),(.5,0,.5),(0,.5,.5),(1/3,1/3,1/3)):
+        xy=np.einsum('nki,k->ni',reference[f,:2],weights)
+        predicted=displacement[f]@np.asarray(weights)
+        max_error=max(max_error,float(np.max(abs(predicted-field.sample(xy)))))
+    if max_error>.00015:raise ValueError('optical heightfield interpolation discrepancy exceeds 0.15 mm sample budget')
     return path
