@@ -1,0 +1,303 @@
+{
+  "scope": "Investigation only; production geometry and thresholds unchanged",
+  "source_runs": [
+    "rough100_full_rated_1",
+    "rough100_full_rated_4"
+  ],
+  "excluded_run": "rough100_full_rated_2: user identified concurrent external experiment",
+  "capture_fault": {
+    "simulation_time_s": 428.201,
+    "track_id": 5,
+    "reason": "unsupported_scan_motion",
+    "velocity_fit": {
+      "vx": 2.792488795578931,
+      "vy": 0.0667886827554782,
+      "wz": 0.010703889717047008,
+      "residual": 0.04250109615597626
+    },
+    "residual_limit_m_s": 0.03,
+    "root_cause_status": "Trigger established; original archive lacks per-wheel speed and suspension time series; mechanical origin not proven"
+  },
+  "stationary_collision_ab": {
+    "dense": {
+      "case": "server",
+      "stationary": true,
+      "samples_mib": [
+        4062,
+        4063,
+        4067,
+        4105,
+        4103,
+        4104,
+        4104,
+        4100,
+        4063,
+        4063,
+        4115,
+        4114,
+        4114,
+        4114,
+        4114,
+        4075,
+        4075,
+        4075,
+        4060,
+        4111
+      ],
+      "median_mib": 4101.5,
+      "first_odometry_wall_s": 27.8241202240024,
+      "steady_rtf": 0.9066753675253764,
+      "sim_time": 51.96,
+      "wall_s": 85.96241342200665
+    },
+    "coarse": {
+      "case": "server",
+      "stationary": true,
+      "samples_mib": [
+        4069,
+        4069,
+        4068,
+        4068,
+        4067,
+        4068,
+        4096,
+        4096,
+        4096,
+        4096,
+        4096,
+        4059,
+        4059,
+        4062,
+        4062,
+        4099,
+        4100,
+        4100,
+        4100,
+        4064
+      ],
+      "median_mib": 4069.0,
+      "first_odometry_wall_s": 27.618458848002774,
+      "steady_rtf": 0.9991687036040573,
+      "sim_time": 58.36,
+      "wall_s": 85.97950893700181
+    },
+    "spawn_x_m": -3,
+    "gui": false,
+    "rviz": false,
+    "linescan": false,
+    "changed_tiles": [
+      "terrain_0",
+      "terrain_1",
+      "terrain_2",
+      "terrain_3"
+    ],
+    "old_triangle_count": 28644,
+    "new_triangle_count": 8,
+    "geometry_equivalence": "All vertices in the four replaced collision meshes have z=0; identical XY bounds, original checked flat proxy reused; optical meshes unchanged"
+  },
+  "limitations": [
+    "One stationary A/B pair, not repeated performance acceptance",
+    "No direct contact count or physics solver stack profiling",
+    "Receiver-clock window RTF includes middleware scheduling",
+    "Latest complete run does not close intermittent capture faults"
+  ],
+  "short_gui_probe": {
+    "passed": true,
+    "blocks": 61,
+    "rows": 245568,
+    "final_state": "ACQUIRED",
+    "final_motion": "HOLD",
+    "steady_rtf": 0.9373092827761267,
+    "observed_rtf": 0.8329822769993891,
+    "region_m": [
+      40,
+      2
+    ],
+    "speed_m_s": 2.7777777777777777,
+    "joint_analysis": {
+      "samples": 3455,
+      "percentiles": [
+        2.6087047661832205e-07,
+        0.0005161752978904055,
+        0.001099427909443139,
+        0.00227383823181487
+      ],
+      "exceed": 0,
+      "top": [
+        {
+          "t": 40.1,
+          "max_residual": 0.00227383823181487,
+          "per_wheel_residual": [
+            0.00227383823181487,
+            0.0004209776109503918,
+            0.0015982704165061765,
+            0.0004205620638191916
+          ],
+          "speed": [
+            2.7807498643727118,
+            2.7777264087192846,
+            2.7769100200091827,
+            2.7777264089691736
+          ],
+          "steer": [
+            -0.0006730210975172218,
+            -0.0006730685357766297,
+            -0.0006406375942314904,
+            -0.0006406836041145241
+          ],
+          "suspension_velocity": [
+            0.038530368320392624,
+            0.0030717166949174868,
+            0.02878021278135348,
+            -0.001864943197715345
+          ],
+          "position": [
+            8.1017461230763,
+            0.49281358503507544,
+            0.6451023142915536
+          ]
+        },
+        {
+          "t": 98.97,
+          "max_residual": 0.0019956617868653057,
+          "per_wheel_residual": [
+            0.0005330478350440821,
+            0.0011515885028281177,
+            0.0005364067351829501,
+            0.0019956617868653057
+          ],
+          "speed": [
+            2.7795411051061882,
+            -2.779320485324524,
+            -2.7795411053926125,
+            2.78240117871131
+          ],
+          "steer": [
+            -0.0043139862324938424,
+            -3.1459066398117335,
+            -3.145906639806049,
+            -0.00431398626426611
+          ],
+          "suspension_velocity": [
+            -0.010313980782413024,
+            0.00022375881329739222,
+            0.00032343200133430616,
+            0.027628965534167854
+          ],
+          "position": [
+            10.577313783409682,
+            1.5245979232815388,
+            0.6281091318147368
+          ]
+        },
+        {
+          "t": 100.8,
+          "max_residual": 0.0019457907368828783,
+          "per_wheel_residual": [
+            0.0005872790207905182,
+            0.0019457907368828783,
+            0.0005284850300562837,
+            0.0010657366501608111
+          ],
+          "speed": [
+            2.7775252099418055,
+            -2.780877864606138,
+            -2.777598400816238,
+            2.7779455204964965
+          ],
+          "steer": [
+            -0.00020456238347045134,
+            -3.141797277155641,
+            -3.1420332324883837,
+            -0.0004405977402482554
+          ],
+          "suspension_velocity": [
+            0.005777542043484421,
+            -0.0005651353731304029,
+            -0.0026176322365158017,
+            0.004008385230584721
+          ],
+          "position": [
+            5.511383460316748,
+            1.4993805766626536,
+            0.6398696351549504
+          ]
+        },
+        {
+          "t": 92.19,
+          "max_residual": 0.0018963676495019914,
+          "per_wheel_residual": [
+            0.000567833232302112,
+            0.0010050514207463333,
+            0.0005736198622748598,
+            0.0018963676495019914
+          ],
+          "speed": [
+            2.777762772587149,
+            -2.777762772700079,
+            -2.777762772489106,
+            2.7749456554713685
+          ],
+          "steer": [
+            -0.006944977580846755,
+            -3.1485376311522213,
+            -3.1485376311697326,
+            -0.006944977574386248
+          ],
+          "suspension_velocity": [
+            -0.009701353233576994,
+            0.01457384356903503,
+            -0.010071938154471632,
+            0.010939630758076854
+          ],
+          "position": [
+            29.411008199669585,
+            1.5300175629892065,
+            0.6102509128475972
+          ]
+        },
+        {
+          "t": 50.54,
+          "max_residual": 0.0018842759473523246,
+          "per_wheel_residual": [
+            0.001026176341004932,
+            0.0005473676524156682,
+            0.0018842759473523246,
+            0.00054073677402125
+          ],
+          "speed": [
+            2.777999440468137,
+            2.77773391429381,
+            2.7751668847837596,
+            2.7777257883001343
+          ],
+          "steer": [
+            -1.2142527579674456e-05,
+            -1.2210991897108049e-05,
+            8.546065659388323e-05,
+            8.540201630950458e-05
+          ],
+          "suspension_velocity": [
+            0.022841020715823217,
+            0.030116965495929307,
+            0.01550051889561855,
+            -0.009734948277012656
+          ],
+          "position": [
+            37.11448454674955,
+            0.4856501712951456,
+            0.662189992095314
+          ]
+        }
+      ]
+    },
+    "sampling_rate_hz": 100,
+    "negative_x_rtf_median": 0.6657960499654387,
+    "positive_x_rtf_median": 0.979138534335037,
+    "limitations": "100 Hz joint observations cannot exclude 1 ms spikes; different preceding trajectory and second-track Y from original fault; original dense collision asset used"
+  },
+  "probe_setup_failures": [
+    "First probe rejected a rounded-up speed above rated limit before motion",
+    "Second probe rejected prepare while broker had not observed HOLD; added settle wait to diagnostic harness only"
+  ]
+}

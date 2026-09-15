@@ -25,6 +25,8 @@
 
 ## 重要问题保留入口
 
+- [起伏道路RTF与采集残差](issues/ROUGH_ROAD_RUNTIME.md)：近端共面密网格的等几何对照与偶发残差保护调查，尚未关闭。
+
 - [采集进程内存增长](issues/CAPTURE_MEMORY_GROWTH.md)：Mesa D3D12命令签名缓存的`&key`错误已确认，附独立复现、源码补丁和上游报告；私有源码修复版已投入运行并据此关闭第6节，系统Mesa与上游均未修复。
 - [仿真关闭段错误与C盘转储](issues/GZ_SHUTDOWN_CRASH_DUMPS.md)：Gazebo退出时卸载库与存活线程竞争导致段错误，WSL把约等于RSS的整份core写进C盘；`ulimit -c 0`与`maxCrashDumpCount=0`实测均无效，源码确认只有负值才关闭采集。
 - [转向恢复直行、8°机械余量](issues/STEERING_SPIN_RECOVERY.md)：保留旧126°动作的原因、8°配置实测，以及静止起步另加20°段余量的取舍。
