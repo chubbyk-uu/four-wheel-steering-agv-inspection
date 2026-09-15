@@ -110,6 +110,7 @@ if(BUILD_TESTING)
   ament_add_pytest_test(obj_arrays test/test_obj_arrays.py TIMEOUT 120
     APPEND_ENV "PYTHONPATH=$<TARGET_FILE_DIR:_obj_arrays>")
   ament_add_pytest_test(linescan test/test_linescan.py TIMEOUT 120)
+  ament_add_pytest_test(mount_probe_transfer test/test_mount_probe_transfer.py TIMEOUT 120)
   ament_add_pytest_test(robot_scene test/test_robot_scene.py TIMEOUT 120)
   ament_add_pytest_test(shared_scene test/test_shared_scene.py TIMEOUT 120)
   ament_add_pytest_test(heightfield_proxy test/test_heightfield_proxy.py TIMEOUT 120)

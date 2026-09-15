@@ -1,0 +1,246 @@
+{
+  "rigid": {
+    "mount_capture_peak_abs_deg": [
+      0.0,
+      0.0
+    ],
+    "passed": true,
+    "mount": {
+      "damping_nms_rad": 5,
+      "enabled": false,
+      "stiffness_nm_rad": 600
+    },
+    "roi_samples": 57,
+    "rtf": 0.9953711358451499,
+    "mount_roi_std_deg": [
+      0.0,
+      0.0
+    ],
+    "mount_roi_p2p_deg": [
+      0.0,
+      0.0
+    ],
+    "mount_all_peak_abs_deg": [
+      0.0,
+      0.0
+    ],
+    "body_roi_std_deg": [
+      0.042786878948470816,
+      0.12845227446709817
+    ],
+    "tag_fk_max_position_error_mm": 0.06090342818481728,
+    "tag_fk_max_rotation_error_deg": 0.002298705481238784,
+    "tag_fk_samples": 30,
+    "blocks": 6,
+    "rows": 24576,
+    "image_center_p2p_px": [
+      22.0,
+      46.0
+    ],
+    "image_center_detrended_p2p_px": [
+      15.189459093925507,
+      32.22232401323163
+    ],
+    "image_center_windows": 310,
+    "image_rows_window": [
+      14000,
+      24000
+    ]
+  },
+  "600": {
+    "mount_capture_peak_abs_deg": [
+      0.09549270017561205,
+      0.12750211176376225
+    ],
+    "passed": true,
+    "mount": {
+      "damping_nms_rad": 5,
+      "enabled": true,
+      "stiffness_nm_rad": 600
+    },
+    "roi_samples": 57,
+    "rtf": 0.9918206086407496,
+    "mount_roi_std_deg": [
+      0.026996498809187926,
+      0.0135626303420314
+    ],
+    "mount_roi_p2p_deg": [
+      0.148308835036341,
+      0.06424806693952889
+    ],
+    "mount_all_peak_abs_deg": [
+      0.14293729778217396,
+      0.16011118596171134
+    ],
+    "body_roi_std_deg": [
+      0.04065497720115391,
+      0.1083331382910669
+    ],
+    "tag_fk_max_position_error_mm": 0.04283189790475686,
+    "tag_fk_max_rotation_error_deg": 0.001275534200555531,
+    "tag_fk_samples": 30,
+    "blocks": 6,
+    "rows": 24576,
+    "image_center_p2p_px": [
+      22.5,
+      45.0
+    ],
+    "image_center_detrended_p2p_px": [
+      12.769198715236598,
+      26.116269257789554
+    ],
+    "image_center_windows": 310,
+    "image_rows_window": [
+      14000,
+      24000
+    ]
+  },
+  "150": {
+    "mount_capture_peak_abs_deg": [
+      0.20402911614786354,
+      0.6042455424421915
+    ],
+    "passed": true,
+    "mount": {
+      "damping_nms_rad": 2.5,
+      "enabled": true,
+      "stiffness_nm_rad": 150
+    },
+    "roi_samples": 57,
+    "rtf": 0.9926650437738642,
+    "mount_roi_std_deg": [
+      0.07398896440386203,
+      0.08079300684631907
+    ],
+    "mount_roi_p2p_deg": [
+      0.3468922032544808,
+      0.3328592316363676
+    ],
+    "mount_all_peak_abs_deg": [
+      0.40678533097162145,
+      0.6042455424421915
+    ],
+    "body_roi_std_deg": [
+      0.038964920278039564,
+      0.12205631467484933
+    ],
+    "tag_fk_max_position_error_mm": 0.04697224611968257,
+    "tag_fk_max_rotation_error_deg": 0.0011628619775481928,
+    "tag_fk_samples": 30,
+    "blocks": 6,
+    "rows": 24576,
+    "image_center_p2p_px": [
+      23.5,
+      47.0
+    ],
+    "image_center_detrended_p2p_px": [
+      17.673902421148796,
+      30.51785510422087
+    ],
+    "image_center_windows": 310,
+    "image_rows_window": [
+      14000,
+      24000
+    ]
+  },
+  "40": {
+    "mount_capture_peak_abs_deg": [
+      0.48151987797427453,
+      2.84834425259415
+    ],
+    "passed": true,
+    "mount": {
+      "damping_nms_rad": 1.291,
+      "enabled": true,
+      "stiffness_nm_rad": 40
+    },
+    "roi_samples": 57,
+    "rtf": 0.9859366315782531,
+    "mount_roi_std_deg": [
+      0.23543976911583828,
+      0.25554693684756097
+    ],
+    "mount_roi_p2p_deg": [
+      0.898415817884305,
+      0.8628023505094999
+    ],
+    "mount_all_peak_abs_deg": [
+      0.9288509097231312,
+      2.9547946579787787
+    ],
+    "body_roi_std_deg": [
+      0.04231514812197297,
+      0.0862925393569372
+    ],
+    "tag_fk_max_position_error_mm": 0.04122456380970399,
+    "tag_fk_max_rotation_error_deg": 0.003021684642532778,
+    "tag_fk_samples": 33,
+    "blocks": 7,
+    "rows": 25624,
+    "image_center_p2p_px": [
+      27.5,
+      47.0
+    ],
+    "image_center_detrended_p2p_px": [
+      26.839217583781192,
+      42.30684540251423
+    ],
+    "image_center_windows": 309,
+    "image_rows_window": [
+      14000,
+      24000
+    ]
+  },
+  "150_normal": {
+    "mount_capture_peak_abs_deg": [
+      0.23803443535728075,
+      0.47940292544112245
+    ],
+    "passed": true,
+    "mount": {
+      "damping_nms_rad": 2.5,
+      "enabled": true,
+      "stiffness_nm_rad": 150
+    },
+    "roi_samples": 57,
+    "rtf": 0.9995483861910068,
+    "mount_roi_std_deg": [
+      0.07649259728224973,
+      0.08446384741525732
+    ],
+    "mount_roi_p2p_deg": [
+      0.3653176375118057,
+      0.3021357021475366
+    ],
+    "mount_all_peak_abs_deg": [
+      0.4388419658187182,
+      0.6107189436436867
+    ],
+    "body_roi_std_deg": [
+      0.04224608721657749,
+      0.14885183775934285
+    ],
+    "tag_fk_max_position_error_mm": 0.04085040939898107,
+    "tag_fk_max_rotation_error_deg": 0.0030735877420298256,
+    "tag_fk_samples": 32,
+    "blocks": 7,
+    "rows": 25596
+  },
+  "two_track_failures": {
+    "run600": {
+      "state": "FAULT",
+      "reason": "SCAN_HEADING_EXCEEDS_GATE",
+      "motion_state": "HOLD",
+      "track_id": 1,
+      "reference_heading_error_rad": 0.05201113536872883
+    },
+    "rigid_zero": {
+      "state": "FAULT",
+      "reason": "SCAN_HEADING_EXCEEDS_GATE",
+      "motion_state": "HOLD",
+      "track_id": 1,
+      "reference_heading_error_rad": 0.07425771996154355
+    }
+  },
+  "scope": "Single straight closed-loop pass, zero localization noise, GUI/RViz; not a multi-track or full-road acceptance. FK check uses coarser independent body/joint recordings."
+}
