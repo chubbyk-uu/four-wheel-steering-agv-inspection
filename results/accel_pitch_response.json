@@ -1,0 +1,353 @@
+{
+  "schema": "agv.accel_pitch.v1",
+  "passed": true,
+  "final_state": "HOLD",
+  "stop_definition": "First forward velocity <= 0.02 m/s; settle until pitch stays within 0.01 degree of rest",
+  "scope": "Headless flat road, unchanged suspension, actual tyre 0.40 m; no imaging or GUI acceptance. Joint spring forces are estimates, not measured tyre contact loads.",
+  "cases": [
+    {
+      "name": "ramp6_0",
+      "static_pitch_deg": 0.015682687034681383,
+      "phases": {
+        "accel": {
+          "measured_accel_median_m_s2": 0.4629626653589014,
+          "pitch_offset_min_deg": -0.16115171950794183,
+          "pitch_offset_max_deg": 0.0,
+          "active_pitch_median_deg": -0.08036523555723639,
+          "z_range_mm": 0.010859026243426051,
+          "suspension_min_mm": [
+            -0.08864029027974825,
+            -0.08864029027303662,
+            1.3946407022442497,
+            1.3946407022441745
+          ],
+          "suspension_max_mm": [
+            1.7515667662121746,
+            1.7515667662121133,
+            3.226331868163828,
+            3.22633186817054
+          ]
+        },
+        "cruise": {
+          "measured_accel_median_m_s2": null,
+          "pitch_offset_min_deg": -0.08016160716086153,
+          "pitch_offset_max_deg": 0.01605817083262673,
+          "active_pitch_median_deg": null,
+          "z_range_mm": 0.004455349661980357,
+          "suspension_min_mm": [
+            0.8403665735675835,
+            0.8403665735704148,
+            1.2140333170209443,
+            1.214033317022501
+          ],
+          "suspension_max_mm": [
+            1.935818690416285,
+            1.9358186904189807,
+            2.3047011278925686,
+            2.304701127894163
+          ]
+        },
+        "brake": {
+          "measured_accel_median_m_s2": -0.4629623083866079,
+          "pitch_offset_min_deg": 0.0017412443376161608,
+          "pitch_offset_max_deg": 0.0945045156134897,
+          "active_pitch_median_deg": 0.08041926248989079,
+          "z_range_mm": 0.0030551357326213946,
+          "suspension_min_mm": [
+            1.7705918323324015,
+            1.7705918323327212,
+            0.32266354534908853,
+            0.3226635453491781
+          ],
+          "suspension_max_mm": [
+            2.822989198969914,
+            2.822989198971772,
+            1.3752561518992754,
+            1.3752561518991866
+          ]
+        },
+        "settle": {
+          "measured_accel_median_m_s2": null,
+          "pitch_offset_min_deg": -0.015827977942271435,
+          "pitch_offset_max_deg": 0.07961866693839748,
+          "active_pitch_median_deg": null,
+          "z_range_mm": 0.0034930799166499327,
+          "suspension_min_mm": [
+            1.5671212453199117,
+            1.56712124532055,
+            0.49028642379836135,
+            0.49028642379677406
+          ],
+          "suspension_max_mm": [
+            2.6526056417648203,
+            2.652605641765459,
+            1.5757887384116827,
+            1.5757887384123694
+          ]
+        }
+      },
+      "settle_after_vx_below_0_02_to_0_01deg_s": 0.28000000000000114,
+      "minimum_vx_during_braking_m_s": -0.010216947567268849,
+      "max_actual_steer_deg": 2.773147518945942e-16
+    },
+    {
+      "name": "ramp6_1",
+      "static_pitch_deg": 0.015793730609291914,
+      "phases": {
+        "accel": {
+          "measured_accel_median_m_s2": 0.46296266534589847,
+          "pitch_offset_min_deg": -0.16076205428598775,
+          "pitch_offset_max_deg": 0.0,
+          "active_pitch_median_deg": -0.08047478671176435,
+          "z_range_mm": 0.010864472194449526,
+          "suspension_min_mm": [
+            -0.08541281712361577,
+            -0.0854128171273961,
+            1.3946407022463205,
+            1.3946407022453202
+          ],
+          "suspension_max_mm": [
+            1.7515667662109435,
+            1.7515667662103482,
+            3.2230617370109327,
+            3.223061737008341
+          ]
+        },
+        "cruise": {
+          "measured_accel_median_m_s2": null,
+          "pitch_offset_min_deg": -0.07888280082775576,
+          "pitch_offset_max_deg": 0.015950150854296078,
+          "active_pitch_median_deg": null,
+          "z_range_mm": 0.004485211377747156,
+          "suspension_min_mm": [
+            0.8566577329856868,
+            0.8566577329861336,
+            1.2133480021191456,
+            1.2133480021194991
+          ],
+          "suspension_max_mm": [
+            1.9364777762650995,
+            1.9364777762654273,
+            2.2881026592080844,
+            2.288102659208333
+          ]
+        },
+        "brake": {
+          "measured_accel_median_m_s2": -0.4629623083389376,
+          "pitch_offset_min_deg": 0.0016302007632346305,
+          "pitch_offset_max_deg": 0.09439347203834483,
+          "active_pitch_median_deg": 0.08030899170233542,
+          "z_range_mm": 0.003055135729845837,
+          "suspension_min_mm": [
+            1.7705918323352061,
+            1.7705918323354368,
+            0.3226635453550983,
+            0.3226635453563818
+          ],
+          "suspension_max_mm": [
+            2.8229891990692946,
+            2.822989199071707,
+            1.3752561518971282,
+            1.3752561518962418
+          ]
+        },
+        "settle": {
+          "measured_accel_median_m_s2": null,
+          "pitch_offset_min_deg": -0.015939021516831076,
+          "pitch_offset_max_deg": 0.07950762336378694,
+          "active_pitch_median_deg": null,
+          "z_range_mm": 0.0034930799157617543,
+          "suspension_min_mm": [
+            1.5671212453187675,
+            1.5671212453225851,
+            0.4902864237969571,
+            0.4902864237969715
+          ],
+          "suspension_max_mm": [
+            2.652605641765223,
+            2.6526056417657,
+            1.5757887384093345,
+            1.5757887384138294
+          ]
+        }
+      },
+      "settle_after_vx_below_0_02_to_0_01deg_s": 0.28000000000000114,
+      "minimum_vx_during_braking_m_s": -0.010216947566558308,
+      "max_actual_steer_deg": 2.884433143541722e-16
+    },
+    {
+      "name": "controller_limit_0",
+      "static_pitch_deg": 0.01579373060931736,
+      "phases": {
+        "accel": {
+          "measured_accel_median_m_s2": 0.79999813658333,
+          "pitch_offset_min_deg": -0.1650296108372718,
+          "pitch_offset_max_deg": 0.027819885275691934,
+          "active_pitch_median_deg": -0.13897652531976884,
+          "z_range_mm": 0.009748331811776367,
+          "suspension_min_mm": [
+            -0.1259175821986422,
+            -0.1259175822014042,
+            1.0815792128767756,
+            1.0815792128781783
+          ],
+          "suspension_max_mm": [
+            2.071138215633334,
+            2.071138215633593,
+            3.2601419141910166,
+            3.2601419141889925
+          ]
+        },
+        "cruise": {
+          "measured_accel_median_m_s2": null,
+          "pitch_offset_min_deg": -9.159412171498009e-05,
+          "pitch_offset_max_deg": -9.159408886621132e-05,
+          "active_pitch_median_deg": null,
+          "z_range_mm": 5.218048215738236e-12,
+          "suspension_min_mm": [
+            1.7512417639951277,
+            1.7512417639938955,
+            1.3949723491292163,
+            1.3949723491287573
+          ],
+          "suspension_max_mm": [
+            1.7512417643802387,
+            1.751241764379646,
+            1.3949723495076969,
+            1.394972349506458
+          ]
+        },
+        "brake": {
+          "measured_accel_median_m_s2": -0.9999945203739724,
+          "pitch_offset_min_deg": -0.034781969813623644,
+          "pitch_offset_max_deg": 0.20501864201065648,
+          "active_pitch_median_deg": 0.17331245041949941,
+          "z_range_mm": 0.007913827259398154,
+          "suspension_min_mm": [
+            1.3545278045982534,
+            1.354527804600612,
+            -0.9361222702013359,
+            -0.9361222702016001
+          ],
+          "suspension_max_mm": [
+            4.073972154241009,
+            4.073972154239623,
+            1.7853586451740109,
+            1.785358645174402
+          ]
+        },
+        "settle": {
+          "measured_accel_median_m_s2": null,
+          "pitch_offset_min_deg": -8.139118573515612e-05,
+          "pitch_offset_max_deg": -8.139118573515612e-05,
+          "active_pitch_median_deg": null,
+          "z_range_mm": 0.0,
+          "suspension_min_mm": [
+            1.7515667662053847,
+            1.7515667662056797,
+            1.3946407022439897,
+            1.3946407022449268
+          ],
+          "suspension_max_mm": [
+            1.7515667662127477,
+            1.7515667662123553,
+            1.3946407022518443,
+            1.3946407022520126
+          ]
+        }
+      },
+      "settle_after_vx_below_0_02_to_0_01deg_s": 0.28000000000000114,
+      "minimum_vx_during_braking_m_s": -0.021560403003154753,
+      "max_actual_steer_deg": 3.2337988476381427e-16
+    },
+    {
+      "name": "controller_limit_1",
+      "static_pitch_deg": 0.015712339423582203,
+      "phases": {
+        "accel": {
+          "measured_accel_median_m_s2": 0.7999981365785978,
+          "pitch_offset_min_deg": -0.16494821965153666,
+          "pitch_offset_max_deg": 0.027901276460867312,
+          "active_pitch_median_deg": -0.1388951341362346,
+          "z_range_mm": 0.009748331811221256,
+          "suspension_min_mm": [
+            -0.1259175821997165,
+            -0.12591758219828109,
+            1.0815792128815862,
+            1.08157921288202
+          ],
+          "suspension_max_mm": [
+            2.0711382156258638,
+            2.071138215627692,
+            3.2601419141893913,
+            3.260141914191139
+          ]
+        },
+        "cruise": {
+          "measured_accel_median_m_s2": null,
+          "pitch_offset_min_deg": -1.020293277382485e-05,
+          "pitch_offset_max_deg": -1.0202903029277469e-05,
+          "active_pitch_median_deg": null,
+          "z_range_mm": 5.218048215738236e-12,
+          "suspension_min_mm": [
+            1.7512417640383058,
+            1.751241764034934,
+            1.3949723491229509,
+            1.3949723491287196
+          ],
+          "suspension_max_mm": [
+            1.7512417643801474,
+            1.7512417643853484,
+            1.3949723494658488,
+            1.394972349462536
+          ]
+        },
+        "brake": {
+          "measured_accel_median_m_s2": -0.9999945203739724,
+          "pitch_offset_min_deg": -0.03470057862786304,
+          "pitch_offset_max_deg": 0.20510003319449602,
+          "active_pitch_median_deg": 0.17339384160520913,
+          "z_range_mm": 0.00791382725873202,
+          "suspension_min_mm": [
+            1.3545278046008913,
+            1.3545278045981837,
+            -0.9361222701766889,
+            -0.9361222701788439
+          ],
+          "suspension_max_mm": [
+            4.0739721542186205,
+            4.073972154215427,
+            1.785358645175522,
+            1.7853586451727423
+          ]
+        },
+        "settle": {
+          "measured_accel_median_m_s2": null,
+          "pitch_offset_min_deg": 2.5444437451708134e-14,
+          "pitch_offset_max_deg": 2.5444437451708134e-14,
+          "active_pitch_median_deg": null,
+          "z_range_mm": 0.0,
+          "suspension_min_mm": [
+            1.7515667662063679,
+            1.7515667662063346,
+            1.3946407022442529,
+            1.3946407022443452
+          ],
+          "suspension_max_mm": [
+            1.7515667662123702,
+            1.7515667662125398,
+            1.3946407022504204,
+            1.394640702250387
+          ]
+        }
+      },
+      "settle_after_vx_below_0_02_to_0_01deg_s": 0.28000000000000114,
+      "minimum_vx_during_braking_m_s": -0.02156040300315474,
+      "max_actual_steer_deg": 1.7559303781745442e-16
+    }
+  ],
+  "configuration_sha256": {
+    "src/agv_description/config/platform.yaml": "441c5c6a3d96ab31372c2b0838038974158ed7828c6d4e46f4975e66e483459b",
+    "src/agv_description/urdf/agv.urdf.xacro": "aa8978846ca2f0b07749d7ab8e0160515a3a1e5f7dabb490111fc64183b98c4a"
+  }
+}

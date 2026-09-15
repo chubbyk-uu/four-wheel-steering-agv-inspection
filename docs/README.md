@@ -7,6 +7,7 @@
 | 查车体、相机、雷达和安装参数 | [550 kg模型基线](LARGE_AGV_REBUILD.md) |
 | 规划下一步与确认尚未实现的功能 | [实施计划](MISSION_IMPLEMENTATION_PLAN.md) |
 | 使用RViz任务面板、载入区域和采图 | [规划器](../src/agv_mission/README.md) → [任务执行](RECTANGLE_EXECUTION.md) → [采集与标签](RECTANGLE_CAPTURE.md) |
+| 平地加减速俯仰与悬挂是否调软 | [响应实测](ACCEL_PITCH_RESPONSE.md) |
 | 编码器、实际轮径与原图尺度误差 | [编码器模型](ENCODER_MODEL.md) |
 | 定位、噪声、延时与外参 | [定位包](../src/agv_localization/README.md)、[误差基线](LOCALIZATION_NOISE_BASELINE.md) |
 | GUI跟车和缩放 | [GUI操作](GUI_CAMERA.md) |
