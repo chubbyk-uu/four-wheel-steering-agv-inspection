@@ -80,7 +80,7 @@ python3 tools/create_rough_textured_scene.py \
 
 该产物只有±3 mm起伏，没有箭头、禁停区等新增检验标识；原有道路底纹、板缝、裂缝和车道线保持不变。输出目录不纳入Git，需先按本页恢复源资产，再运行上述确定性命令。2026-09-15生成结果为48个分区、7712280个视觉/OptiX三角形、364672个碰撞三角形，耗时118.21 s，生成进程RSS峰值约457 MiB，新增磁盘约1020 MiB；完整记录见[`results/full_road_rough_asset.json`](../results/full_road_rough_asset.json)。
 
-完整GUI＋RViz＋OptiX静止对照中，原场景RTF为0.883，当前起伏场景为0.664，相对下降24.8%；首个里程计由34.43 s延至40.86 s。进程树RSS峰值只增加约123 MiB，整卡显存峰值只增加9 MiB，说明主要代价来自36.5万碰撞三角形的物理计算。当前起伏碰撞表示因此仍是待优化试验资产，不作为100 m正式采集基线；详见[`results/full_road_rough_runtime.json`](../results/full_road_rough_runtime.json)。
+完整GUI＋RViz＋OptiX静止对照在90 s预热后连续测量30 s：原场景RTF为0.99958，当前起伏场景为0.75349，相对下降24.62%；首个里程计由33.94 s延至40.66 s。进程树RSS峰值增加约176 MiB，整卡显存峰值增加约39 MiB，说明主要代价来自36.5万碰撞三角形的物理计算。短预热会同时低估两者RTF，不能用作稳态数字。当前起伏碰撞表示因此仍是待优化试验资产，不作为100 m正式采集基线；详见[`results/full_road_rough_runtime.json`](../results/full_road_rough_runtime.json)。
 
 ## 箭头和禁停网格标识试片
 

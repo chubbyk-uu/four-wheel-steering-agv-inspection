@@ -30,16 +30,17 @@ def receive(m):
 n.create_subscription(Odometry,'/ground_truth/odom',receive,10)
 log=(out/'launch.log').open('w');p=subprocess.Popen(['ros2','launch','agv_bringup',*args],stdout=log,stderr=log,start_new_session=True);monitor=ResourceMonitor(p.pid,out/'resources.jsonl');start=time.monotonic();samples=[]
 try:
- while time.monotonic()-start<180:
+ while time.monotonic()-start<max(180,a.settle_wall_s+60):
   assert p.poll() is None,'launch exited'
   rclpy.spin_once(n,timeout_sec=.1)
   if odom and odom[-1]>=10 and time.monotonic()-start>=a.settle_wall_s:break
  else:raise RuntimeError('startup timeout')
  steady_wall=time.monotonic();steady_sim=odom[-1]
  for i in range(a.sample_count):
-  rclpy.spin_once(n,timeout_sec=.1)
   samples.append(int(subprocess.check_output(['nvidia-smi','--query-gpu=memory.used','--format=csv,noheader,nounits'],text=True).strip()))
-  time.sleep(1)
+  deadline=time.monotonic()+1
+  while time.monotonic()<deadline:
+   rclpy.spin_once(n,timeout_sec=min(.05,deadline-time.monotonic()))
  assert speed[-1]<.01,'robot is not stationary'
  end=time.monotonic()
  result=dict(case=case,stationary=True,samples_mib=samples,median_mib=statistics.median(samples),
