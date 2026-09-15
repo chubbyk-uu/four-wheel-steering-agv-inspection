@@ -1,0 +1,38 @@
+{
+  "schema": "agv.static_light_alignment.v1",
+  "passed": true,
+  "source": "Recorded final 2 s after braking in flat_valid; no new simulation launch",
+  "samples": 100,
+  "relative_sample_path": "local_data/rough_road_probe/flat_valid/samples.json",
+  "sample_sha256": "75a05c99204072bb0d378f42d9091088df2481c73f65d87aa9a86f37d5c3aa2f",
+  "measured_base_height_m": 0.6497038094524281,
+  "measured_rpy_deg": [
+    1.4520582161300557e-14,
+    -0.003763673838079023,
+    -1.0908416006414459e-11
+  ],
+  "camera_optical_height_m": 1.0460963146585507,
+  "scan_center_xy_m": [
+    1.1500426805501511,
+    -2.1878939280744412e-13
+  ],
+  "gz_center_spot_xy_m": [
+    1.1499835572247201,
+    -2.187781364500201e-13
+  ],
+  "center_separation_mm": 0.05912332543100973,
+  "optix_max_longitudinal_envelope_offset_mm": 0.05912228466313007,
+  "optix_half_depth_mm": [
+    79.94116070127414,
+    79.94116070127427
+  ],
+  "optix_min_longitudinal_profile_factor": 0.9999999999994017,
+  "checked_pixels": 4096,
+  "gz_cone_covered_pixels": 4096,
+  "source_hashes": {
+    "src/agv_description/config/linescan.yaml": "cac73b66830e61f072168ec0f3aae4e8a98b7aeeac2e433f53b5dabb86aae3f4",
+    "src/agv_description/urdf/agv.urdf.xacro": "5c26970b379cb253c906ad4612edb5c475f2473203f6401a216e8c63b29ca191",
+    "src/agv_description/config/platform.yaml": "53c6efb5c868905c5b7f19e73575fb6c9c8e5ffab9fcad77ad01e0a7c5df1e82"
+  },
+  "scope": "Flat static geometry using recorded base truth plus fixed mounts; all raw pixel rays checked. Cone/envelope coverage, not calibrated lux, irradiance uniformity, occlusion rendering or dynamic pitch acceptance. Recorded configuration was unchanged during this check."
+}
