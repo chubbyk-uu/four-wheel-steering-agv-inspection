@@ -17,12 +17,14 @@
 #include "agv_linescan/optix_scene.hpp"
 #endif
 #include <array>
+#include <atomic>
 #include <chrono>
 #include <condition_variable>
 #include <iostream>
 #include <deque>
 #include <filesystem>
 #include <fstream>
+#include <functional>
 #include <future>
 #include <iomanip>
 #include <mutex>
@@ -60,30 +62,12 @@ class GzLineScan final: public gz::sim::System,
                        public gz::sim::ISystemPreUpdate,
                        public gz::sim::ISystemPostUpdate {
  public:
-  // A diagnostic that silently failed to reach disk is worse than none, because
-  // the next investigation starts by looking for a file that was never written.
-  void DrainFlightWrites(bool report) {
-    for(auto &write:flightWrites_) {
-      try {write.get();}
-      catch(const std::exception &e) {
-        if(!report)continue;
-        // A lost diagnostic must be loud: the next investigation would otherwise
-        // start by hunting for a file that was never written. The logger may
-        // already be gone during teardown, so stderr is the fallback, not silence.
-        if(node_)RCLCPP_ERROR(node_->get_logger(),"%s",e.what());
-        else std::cerr<<"linescan diagnostic write failed: "<<e.what()<<std::endl;
-        ++flightWriteFailures_;
-      }
-    }
-    flightWrites_.clear();
-  }
-
   ~GzLineScan() override {
     { std::lock_guard<std::mutex> lock(mutex_); quit_=true; }
     wake_.notify_one();
     if (renderThread_.joinable()) renderThread_.join();
     for (auto &write:writes_) { try { write.get(); } catch (...) {} }
-    DrainFlightWrites(true);
+    StopDiagnosticWriter();
     if (context_) context_->shutdown("line-scan system destroyed");
   }
 
@@ -189,6 +173,7 @@ class GzLineScan final: public gz::sim::System,
     output_=std::filesystem::path(sdf->Get<std::string>("output_dir")) /
         ("session_cpp_"+std::to_string(std::chrono::system_clock::now().time_since_epoch().count()));
     std::filesystem::create_directories(output_);
+    diagnosticThread_=std::thread([this]{DiagnosticLoop();});
     if(backend_=="optix") {
       std::filesystem::copy_file(robotPath_,output_/"robot_scene.json");
       std::filesystem::copy_file(std::filesystem::path(robotPath_).parent_path()/"robot.urdf",output_/"robot.urdf");
@@ -432,6 +417,75 @@ class GzLineScan final: public gz::sim::System,
     throw std::runtime_error("pose_outside_history");
   }
 
+  // All diagnostic files share one FIFO writer. In particular, events.jsonl
+  // must never be appended by independent physics and worker threads: append
+  // mode does not make a multi-part C++ stream insertion atomic or ordered.
+  void QueueDiagnostic(std::function<void()> job) {
+    {
+      std::lock_guard<std::mutex> lock(diagnosticMutex_);
+      if(diagnosticQuit_)throw std::runtime_error("diagnostic writer already stopped");
+      diagnosticJobs_.push_back(std::move(job));
+    }
+    diagnosticWake_.notify_one();
+  }
+
+  void ArchiveEvent(Json event) {
+    const auto path=output_/"events.jsonl";
+    QueueDiagnostic([path,event=std::move(event)]() {
+      std::ofstream out(path,std::ios::app);
+      out<<event.dump()<<'\n';
+      if(!out)throw std::runtime_error("diagnostic event write failed: "+path.string());
+    });
+  }
+
+  void DiagnosticLoop() {
+    for(;;) {
+      std::function<void()> job;
+      {
+        std::unique_lock<std::mutex> lock(diagnosticMutex_);
+        diagnosticWake_.wait(lock,[this]{return diagnosticQuit_ || !diagnosticJobs_.empty();});
+        if(diagnosticJobs_.empty()) {
+          if(diagnosticQuit_)return;
+          continue;
+        }
+        job=std::move(diagnosticJobs_.front());diagnosticJobs_.pop_front();
+      }
+      try {job();}
+      catch(const std::exception &e) {
+        ++diagnosticWriteFailures_;
+        std::cerr<<"linescan diagnostic write failed: "<<e.what()<<std::endl;
+      }
+      WriteDiagnosticStatus();
+    }
+  }
+
+  void WriteDiagnosticStatus() {
+    if(output_.empty())return;
+    const auto path=output_/"diagnostic_status.json";
+    const auto temporary=output_/"diagnostic_status.json.tmp";
+    try {
+      std::ofstream out(temporary);
+      out<<Json{{"schema","agv.linescan.diagnostic_status.v1"},
+                {"write_failures",diagnosticWriteFailures_.load()}}.dump(2)<<'\n';
+      out.close();
+      if(!out)throw std::runtime_error("diagnostic status write failed: "+temporary.string());
+      std::filesystem::rename(temporary,path);
+    } catch(const std::exception &e) {
+      std::cerr<<"linescan diagnostic status write failed: "<<e.what()<<std::endl;
+    }
+  }
+
+  void StopDiagnosticWriter() {
+    if(diagnosticThread_.joinable()) {
+      {
+        std::lock_guard<std::mutex> lock(diagnosticMutex_);
+        diagnosticQuit_=true;
+      }
+      diagnosticWake_.notify_one();diagnosticThread_.join();
+    }
+    WriteDiagnosticStatus();
+  }
+
   // Fill one flight sample and fold it into the running statistics. Everything
   // here is arithmetic on preallocated storage: no allocation, no file access.
   void RecordFlight(FlightSample &flight,const ScanVelocity &fitted,bool fitted_ok,
@@ -483,18 +537,13 @@ class GzLineScan final: public gz::sim::System,
       lastHalfEvent_=now_;++halfEvents_;
       // Serialising and appending here would put a file write on the physics
       // thread at the first approach to the gate -- precisely the moment least
-      // able to absorb a disturbance. Hand it to the same async writer.
+      // able to absorb a disturbance. Hand it to the ordered diagnostic writer.
       Json event={{"reason","scan_residual_near_limit"},{"simulation_time_s",now_},
                   {"residual_m_s",fitted.residual},{"limit_m_s",residualStats_->limit()},
                   {"wheel_residual_m_s",fitted.wheelResidual},
                   {"position_m",{flight.bodyX,flight.bodyY,flight.bodyZ}},
                   {"capturing",active_},{"occurrence",halfEvents_}};
-      auto path=output_/"events.jsonl";
-      flightWrites_.push_back(std::async(std::launch::async,[path,event=std::move(event)]() {
-        std::ofstream out(path,std::ios::app);
-        out<<event.dump()<<'\n';
-        if(!out)throw std::runtime_error("near-limit event write failed: "+path.string());
-      }));
+      ArchiveEvent(std::move(event));
     }
   }
 
@@ -504,8 +553,11 @@ class GzLineScan final: public gz::sim::System,
   }
 
   static uint8_t MotionCode(const std::string &name) {
-    if(name=="DRIVE")return 1; if(name=="BRAKE")return 2; if(name=="HOLD")return 3;
-    if(name=="ALIGN")return 4; if(name=="FEEDBACK_HOLD")return 5;
+    if(name=="DRIVE")return 1;
+    if(name=="BRAKE")return 2;
+    if(name=="HOLD")return 3;
+    if(name=="ALIGN")return 4;
+    if(name=="FEEDBACK_HOLD")return 5;
     return name.empty()?0:6;
   }
 
@@ -520,7 +572,7 @@ class GzLineScan final: public gz::sim::System,
                 {"over_limit",residualStats_->overLimit()},
                 {"near_limit_events",halfEvents_},
                 {"flight_dumps",flightDumps_},{"flight_dumps_suppressed",flightDumpsSuppressed_},
-                {"flight_write_failures",flightWriteFailures_},
+                {"diagnostic_write_failures",diagnosticWriteFailures_.load()},
                 {"histogram_bin_width_m_s",2*residualStats_->limit()/(ResidualStats::kBins-1)},
                 {"histogram",residualStats_->histogram()}};
   }
@@ -538,8 +590,7 @@ class GzLineScan final: public gz::sim::System,
     const auto index=++flightDumps_;
     const double when=now_;
     auto path=output_/("flight_"+std::to_string(index)+"_"+reason+".json");
-    flightWrites_.push_back(std::async(std::launch::async,
-        [path,rows=std::move(rows),summary=std::move(summary),reason,when]() {
+    QueueDiagnostic([path,rows=std::move(rows),summary=std::move(summary),reason,when]() {
       Json doc={{"schema","agv.linescan.flight_recorder.v1"},{"reason",reason},
                 {"fault_simulation_time_s",when},{"samples",rows.size()},
                 {"window_s",rows.empty()?0.:rows.back().simTime-rows.front().simTime},
@@ -560,7 +611,7 @@ class GzLineScan final: public gz::sim::System,
       std::ofstream out(path);
       out<<doc.dump();
       if(!out)throw std::runtime_error("flight recorder write failed: "+path.string());
-    }));
+    });
   }
 
   void Reset(const std::string &reason) {
@@ -577,7 +628,7 @@ class GzLineScan final: public gz::sim::System,
     event["encoder_output_mode"]=config_["encoder_output_mode"].as<std::string>("strict");
     event["encoder_max_retrace_m"]=trigger_->MaxRetrace();
     event["encoder_retrace_episodes"]=trigger_->RetraceEpisodes();
-    std::ofstream(output_/"events.jsonl",std::ios::app)<<event.dump()<<'\n';
+    ArchiveEvent(event);
     std_msgs::msg::String message; message.data=event.dump(); statusPub_->publish(message);
     pending_.clear(); trigger_->Reset(); active_=false; holding_=false;
   }
@@ -605,7 +656,7 @@ class GzLineScan final: public gz::sim::System,
     {std::lock_guard<std::mutex> lock(mutex_);
       Json event={{"reason","sampler_recovery"},{"simulation_time_s",now_},
         {"discarded_queued_lines",queueBudget_->lines},{"next_capture_line",nextCaptureLine_}};
-      std::ofstream(output_/"events.jsonl",std::ios::app)<<event.dump()<<'\n';
+      ArchiveEvent(std::move(event));
       queuedJobs_.clear();queueBudget_->Clear();error_=nullptr;terrainFailed_=false;busy_=false;ready_=false;
       buffer_.clear();tags_=Json::array();++segment_;
     }
@@ -872,7 +923,7 @@ class GzLineScan final: public gz::sim::System,
     if(DiscardShortTail(count,reason=="full",minTailRows_)) {
       Json event={{"reason","tail_discarded"},{"end_reason",reason},{"rows",count},{"minimum_rows",minTailRows_},
         {"block_id",block_++},{"segment_id",segment_},{"first",first_},{"last",last_},{"simulation_time_s",lastSceneTime_}};
-      std::ofstream(output_/"events.jsonl",std::ios::app)<<event.dump()<<'\n';
+      ArchiveEvent(event);
       std_msgs::msg::String message;message.data=event.dump();statusPub_->publish(message);
       buffer_.clear();tags_=Json::array();invalidPixels_=0;return;
     }
@@ -1004,9 +1055,14 @@ class GzLineScan final: public gz::sim::System,
   std::array<gz::sim::Entity,4> drive_{},steer_{},suspension_{};
   std::unique_ptr<FlightRecorder> flight_;
   std::unique_ptr<ResidualStats> residualStats_;
-  std::vector<std::future<void>> flightWrites_;
   double residualHalfCooldown_=10.,lastHalfEvent_=-1e9;
-  std::uint64_t halfEvents_=0,flightDumps_=0,flightDumpLimit_=20,flightDumpsSuppressed_=0,flightWriteFailures_=0;
+  std::uint64_t halfEvents_=0,flightDumps_=0,flightDumpLimit_=20,flightDumpsSuppressed_=0;
+  std::atomic<std::uint64_t> diagnosticWriteFailures_{0};
+  std::thread diagnosticThread_;
+  std::mutex diagnosticMutex_;
+  std::condition_variable diagnosticWake_;
+  std::deque<std::function<void()>> diagnosticJobs_;
+  bool diagnosticQuit_=false;
   bool bodyPrevValid_=false;double bodyPrevTime_=0;gz::math::Pose3d bodyPrevPose_;
   std::deque<Sample> history_;
   std::deque<Event> pending_;

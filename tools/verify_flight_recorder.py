@@ -10,8 +10,8 @@ import argparse
 import glob
 import json
 import os
-import shutil
 import signal
+import shlex
 import subprocess
 import sys
 import tempfile
@@ -53,10 +53,15 @@ def main():
     p.add_argument('--stop-latency-limit-s', type=float, default=5.0)
     a = p.parse_args()
 
-    work = a.output or tempfile.mkdtemp(prefix='agv_flight_verify_')
-    shutil.rmtree(work, ignore_errors=True)
-    os.makedirs(work)
-    scene = a.scene or build_scene(work)
+    require(a.max_dumps > 0, '--max-dumps must be positive')
+    require(a.stop_latency_limit_s > 0, '--stop-latency-limit-s must be positive')
+    if a.output:
+        work = os.path.abspath(a.output)
+        require(not os.path.lexists(work), '--output must name a new directory: ' + work)
+        os.makedirs(work)
+    else:
+        work = tempfile.mkdtemp(prefix='agv_flight_verify_')
+    scene = os.path.abspath(a.scene) if a.scene else build_scene(work)
     log('scene', scene)
 
     camera = yaml.safe_load(open(os.path.join(ROOT, 'src/agv_description/config/linescan.yaml')))
@@ -72,13 +77,26 @@ def main():
     isolated = dict(os.environ,
                     ROS_DOMAIN_ID=str(100 + os.getpid() % 80),
                     GZ_PARTITION='agv_flight_verify_%d' % os.getpid())
-    launch = subprocess.Popen(['bash', '-c',
-        'cd %s && source /opt/ros/jazzy/setup.bash && source install/setup.bash && '
-        'exec python3 tools/with_mesa_runtime.py -- ros2 launch agv_bringup sim.launch.py '
-        'headless:=true linescan:=true linescan_backend:=optix scene_manifest:=%s spawn_x:=2 '
-        'camera_config:=%s capture_dir:=%s' % (ROOT, scene, camera_path, work)],
+    launch_args = ['ros2', 'launch', 'agv_bringup', 'sim.launch.py',
+                   'headless:=true', 'linescan:=true', 'linescan_backend:=optix',
+                   'scene_manifest:=' + scene, 'spawn_x:=2',
+                   'camera_config:=' + camera_path, 'capture_dir:=' + work]
+    osrelease = open('/proc/sys/kernel/osrelease').read().lower()
+    if 'microsoft' in osrelease:
+        # with_optix_runtime deliberately resets LD_LIBRARY_PATH. Reload ROS and
+        # the workspace inside it; with_mesa uses absolute preloads that survive.
+        inner = ('source /opt/ros/jazzy/setup.bash && source ' +
+                 shlex.quote(os.path.join(ROOT, 'install/setup.bash')) +
+                 ' && exec ' + shlex.join(launch_args))
+        command = [sys.executable, os.path.join(ROOT, 'tools/with_mesa_runtime.py'), '--',
+                   'bash', os.path.join(ROOT, 'tools/with_optix_runtime.sh'),
+                   'bash', '-c', inner]
+    else:
+        launch_args.append('gpu_backend:=native')
+        command = launch_args
+    launch = subprocess.Popen(command,
         stdout=open(os.path.join(work, 'sim.log'), 'w'), stderr=subprocess.STDOUT,
-        preexec_fn=os.setsid, env=isolated)
+        preexec_fn=os.setsid, env=isolated, cwd=ROOT)
     os.environ.update(ROS_DOMAIN_ID=isolated['ROS_DOMAIN_ID'],
                       GZ_PARTITION=isolated['GZ_PARTITION'])
 
@@ -177,7 +195,9 @@ def main():
         # Let the capped dumps accumulate so suppression can be checked too.
         for _ in range(60):
             node.drive(1.0, .5)
-            if len(glob.glob(os.path.join(session, 'flight_*.json'))) >= a.max_dumps:
+            capped = len(glob.glob(os.path.join(session, 'flight_*.json'))) >= a.max_dumps
+            suppressed = any('flight_recorder_suppressed' in e for e in events())
+            if capped and suppressed:
                 break
     finally:
         try:
@@ -192,8 +212,9 @@ def main():
     files = sorted(glob.glob(os.path.join(work, 'session_cpp_*', 'flight_*.json')))
     require(files, 'no flight recorder file was written')
     log('flight files:', len(files))
-    require(len(files) <= a.max_dumps,
-            'wrote %d files against a cap of %d' % (len(files), a.max_dumps))
+    require(len(files) == a.max_dumps,
+            'wrote %d files, expected to reach the configured cap of %d'
+            % (len(files), a.max_dumps))
 
     doc = json.load(open(files[0]))
     require(doc['schema'] == 'agv.linescan.flight_recorder.v1', 'unexpected schema ' + doc['schema'])
@@ -223,19 +244,29 @@ def main():
 
     stats = doc['residual_statistics']
     for key in ('samples', 'limit_m_s', 'max_m_s', 'p95_m_s', 'p99_m_s', 'over_limit',
-                'histogram', 'flight_dumps', 'flight_dumps_suppressed', 'flight_write_failures'):
+                'histogram', 'flight_dumps', 'flight_dumps_suppressed',
+                'diagnostic_write_failures'):
         require(key in stats, 'missing statistic ' + key)
-    require(stats['flight_write_failures'] == 0,
-            'the recorder reported %d failed writes' % stats['flight_write_failures'])
+    require(stats['diagnostic_write_failures'] == 0,
+            'the recorder had already reported %d failed writes'
+            % stats['diagnostic_write_failures'])
+
+    status_path = os.path.join(os.path.dirname(files[0]), 'diagnostic_status.json')
+    require(os.path.isfile(status_path), 'the ordered writer did not publish diagnostic_status.json')
+    status = json.load(open(status_path))
+    require(status['schema'] == 'agv.linescan.diagnostic_status.v1',
+            'unexpected final diagnostic status schema')
+    require(status['write_failures'] == 0,
+            'the ordered writer reported %d failed writes'
+            % status['write_failures'])
 
     suppressed = [e.get('flight_recorder_suppressed') for e in
                   [json.loads(l) for l in
                    open(glob.glob(os.path.join(work, 'session_cpp_*', 'events.jsonl'))[0])
                    if l.strip()]
                   if 'flight_recorder_suppressed' in e]
-    if len(files) >= a.max_dumps:
-        require(suppressed, 'the cap was reached but no suppression was reported')
-        log('suppressed reported, last =', suppressed[-1])
+    require(suppressed, 'the dump cap was reached but no suppression was reported')
+    log('suppressed reported, last =', suppressed[-1])
 
     log('OK: recorder fires, window and fields are complete, stopping is not delayed')
     log('    this verifies the recorder only; it is not a reproduction of the real fault')

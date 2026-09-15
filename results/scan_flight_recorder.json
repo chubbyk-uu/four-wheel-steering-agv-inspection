@@ -13,7 +13,7 @@
    "max_dumps": 20
   },
   "memory": "about 0.25 KB per sample, so the default window costs well under 1 MB",
-  "dump": "on rejection the ring is copied synchronously, capture reset and braking proceed immediately, and the copy is serialised by an async writer. Shutdown drains those writers and logs any write failure rather than discarding it.",
+  "dump": "on rejection the ring is copied synchronously and queued to one FIFO diagnostic writer shared by flight dumps and events; no diagnostic file is written on the physics thread. The writer updates diagnostic_status.json atomically after every completed job and drains on a graceful shutdown.",
   "window_meaning": "the record ends at the rejected step. It is the two seconds BEFORE the fault, deliberately: nothing is delayed to collect data after it."
  },
  "per_sample_fields": [
@@ -37,13 +37,13 @@
  "statistics_instead_of_writes": {
   "why": "writing a sample every time the residual passes half the gate would become heavy I/O if it ever runs near that level",
   "kept_in_memory": "sample count, over-half and over-limit counts, maximum, 32-bin histogram, P95/P99 from the histogram",
-  "events": "one event on first crossing half the limit, then only after a cooldown",
+  "events": "one event on first crossing half the limit, then only after a cooldown; all events use the same FIFO writer so events.jsonl has one writer and preserves enqueue order",
   "block_metadata": "every captured block carries the running distribution, so normal runs answer how close to the gate the system actually operates -- a question there is currently no data for at all"
  },
  "dump_cap": "at most max_dumps files per session; further rejections increment flight_recorder_suppressed, which is reported in the event, so a throttled run is never mistaken for one that faulted only that many times",
  "verification": {
   "tool": "tools/verify_flight_recorder.py",
-  "method": "the residual gate is lowered to 1e-9 so rejection is certain; headless, OptiX backend on a prepared scene",
+  "method": "the residual gate is lowered to 1e-9 so rejection is certain; a recoverable scene is generated. On WSL the verifier composes the project Mesa and OptiX wrappers itself; native Linux uses the installed driver runtime.",
   "not_a_reproduction": "this proves the recorder fires and is complete. It says nothing about why the real 0.0425 m/s residual occurred.",
   "results": {
    "file_written": true,
@@ -70,12 +70,12 @@
     ],
     "reading": "front and rear moving in opposite directions, i.e. pitch, is legible directly from the record"
    },
-   "stop_latency_after_fault_s": 1.64,
-   "stop_latency_check": "consistent with decelerating 1.0 m/s at the configured 1.0 m/s^2, so the async write does not hold the stop",
-   "dump_cap": "with max_dumps 3 the session wrote 3 files and reported flight_recorder_suppressed 9",
+   "stop_latency_after_fault_s": 1.84,
+   "stop_latency_check": "below the explicit 5.0 s bound; the verifier fails nonzero if stopping or the diagnostic writer exceeds its contract",
+   "dump_cap": "with max_dumps 3 the session wrote exactly 3 files and reported 2 further suppressed dumps",
    "tests": "448 pass"
   },
-  "negative_test": "--stop-latency-limit-s 0.1 fails with a named assertion and exit code 1"
+  "negative_test": "--stop-latency-limit-s 0.1 fails with exit code 1; an existing --output directory is rejected without deleting its contents"
  },
  "unrelated_defect_encountered": "the first verification attempt used headless with linescan_backend:=render and the server segfaulted in Ogre::GL3PlusBufferInterface::_firstUpload during startup, with no project code on the stack. This is the same already-recorded failure as in gui_startup_abort.json and is not caused by this change; the verification uses the optix path the real captures use.",
  "next": "deploy and wait. No attempt should be made to provoke the fault; the recorder exists so that its next natural occurrence is enough to settle the cause.",
@@ -113,5 +113,13 @@
    "problem": "found while running the negative test: a leftover simulator collided on the controller manager and the failure surfaced as 'the simulator did not start', which would misdirect an investigation",
    "fix": "the verifier runs in its own ROS_DOMAIN_ID and GZ_PARTITION derived from its pid"
   }
+ },
+ "review_fixes_followup_2026_09_15": {
+  "single_ordered_writer": "Near-limit, reset, recovery and tail events plus flight dumps are queued to one FIFO worker. Independent ofstream appenders no longer race on events.jsonl.",
+  "observable_write_failures": "diagnostic_status.json is atomically refreshed after every writer job, rather than being created only during plugin destruction. This survives the already-known Gazebo shutdown fault and makes late writer failures externally checkable.",
+  "safe_output": "--output must name a nonexistent directory; the verifier never recursively deletes a caller-owned directory.",
+  "wsl_launch": "WSL detection automatically composes with_mesa_runtime.py and with_optix_runtime.sh, then reloads ROS and the workspace inside the OptiX environment. A direct invocation from a sourced workspace completed.",
+  "strict_cap_gate": "verification now requires exactly max_dumps files and at least one reported suppression, not merely a file count below the cap.",
+  "latest_run": "direct WSL invocation generated its own scene, wrote 3 dumps, reported 2 suppressions, parsed all 11 ordered event records, reported zero writer failures and stopped in 1.84 s."
  }
 }
