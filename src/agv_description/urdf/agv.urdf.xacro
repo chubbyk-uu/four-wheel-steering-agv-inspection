@@ -12,6 +12,9 @@
   <xacro:property name="camera_height" value="${cam.nominal_width_m*cam.focal_length_m/(cam.width*cam.pixel_pitch_m)}"/>
   <xacro:property name="flex" value="${cam.get('mount_flex', dict(enabled=False))}"/>
   <xacro:property name="flexible" value="${flex.get('enabled',False)}"/>
+  <xacro:property name="camera_mass" value="${1.0}"/>
+  <xacro:property name="camera_carrier_mass" value="${2.9}"/>
+  <xacro:property name="camera_carrier_com_x" value="${0.07}"/>
   <xacro:property name="lid" value="${xacro.load_yaml('$(find agv_description)/config/lidar.yaml')}"/>
   <material name="orange"><color rgba="1 0.23 0.025 1"/></material>
   <material name="white"><color rgba="0.85 0.87 0.89 1"/></material>
@@ -154,19 +157,19 @@
   <xacro:wheel name="rl" x="${-p.wheelbase/2}" y="${p.track/2}"/>
   <xacro:wheel name="rr" x="${-p.wheelbase/2}" y="${-p.track/2}"/>
   <!-- Nominal optics geometry; the visible LED uses overlapping, shadow-casting spot lights. -->
-  <link name="camera_link"><xacro:box_inertia m="1.0" x="0.10" y="0.12" z="0.08"/><xacro:box_visual x="0.10" y="0.12" z="0.08" xyz="0 0 0" rpy="0 0 0" color="metal"/><collision><geometry><box size="0.10 0.12 0.08"/></geometry></collision></link>
+  <link name="camera_link"><xacro:box_inertia m="${camera_mass}" x="0.10" y="0.12" z="0.08"/><xacro:box_visual x="0.10" y="0.12" z="0.08" xyz="0 0 0" rpy="0 0 0" color="metal"/><collision><geometry><box size="0.10 0.12 0.08"/></geometry></collision></link>
   <!-- Two equivalent bending modes of the upper bracket. Physical springs,
        no prescribed pose/noise. LED arms and lower mounting blocks stay rigid. -->
     <link name="camera_roll_link"><xacro:box_inertia m="0.1" x="0.08" y="0.54" z="0.02"/></link>
     <joint name="camera_roll_joint" type="${'revolute' if flexible else 'fixed'}">
-      <parent link="base_link"/><child link="camera_roll_link"/><origin xyz="1.005 0 0.14"/><axis xyz="1 0 0"/>
+      <parent link="base_link"/><child link="camera_roll_link"/><origin xyz="${flex['pivot_x_m']} 0 ${flex['pivot_z_m']}"/><axis xyz="1 0 0"/>
       <limit lower="-0.0872664626" upper="0.0872664626" effort="1000" velocity="5"/>
       <dynamics damping="${flex.get('damping_nms_rad',5.0)}"/>
     </joint>
     <xacro:if value="${flexible}"><gazebo reference="camera_roll_joint"><springStiffness>${flex['stiffness_nm_rad']}</springStiffness><springReference>0</springReference></gazebo></xacro:if>
     <link name="camera_carrier_link">
-      <inertial><origin xyz="0.07 0 0.15"/><mass value="2.9"/>
-        <inertia ixx="${2.9*(.54**2+.30**2)/12}" iyy="${2.9*(.17**2+.30**2)/12}" izz="${2.9*(.17**2+.54**2)/12}" ixy="0" ixz="0" iyz="0"/>
+      <inertial><origin xyz="${camera_carrier_com_x} 0 0.15"/><mass value="${camera_carrier_mass}"/>
+        <inertia ixx="${camera_carrier_mass*(.54**2+.30**2)/12}" iyy="${camera_carrier_mass*(.17**2+.30**2)/12}" izz="${camera_carrier_mass*(.17**2+.54**2)/12}" ixy="0" ixz="0" iyz="0"/>
       </inertial>
       <xacro:macro name="moving_arm" params="y">
         <xacro:box_visual x="0.04" y="0.04" z="0.30" xyz="0 ${y} 0.15" rpy="0 0 0" color="white"/>
@@ -183,9 +186,9 @@
       <dynamics damping="${flex.get('damping_nms_rad',5.0)}"/>
     </joint>
     <!-- Balance gravity at the nominal level pose, not an added oscillation.
-         Camera mass 1 kg + carrier 2.9 kg; roll has symmetric loading. -->
-    <xacro:if value="${flexible}"><gazebo reference="camera_pitch_joint"><springStiffness>${flex['stiffness_nm_rad']}</springStiffness><springReference>${-9.81*(2.9*.07+cam.camera_x_m-1.005)/flex['stiffness_nm_rad']}</springReference></gazebo></xacro:if>
-    <joint name="camera_mount" type="fixed"><parent link="camera_carrier_link"/><child link="camera_link"/><origin xyz="${cam.camera_x_m-1.005} 0 ${camera_height-cam.base_nominal_height_m+0.04-.14}"/></joint>
+         Camera and carrier mass properties above also define this preload. -->
+    <xacro:if value="${flexible}"><gazebo reference="camera_pitch_joint"><springStiffness>${flex['stiffness_nm_rad']}</springStiffness><springReference>${-9.81*(camera_carrier_mass*camera_carrier_com_x+camera_mass*(cam.camera_x_m-flex['pivot_x_m']))/flex['stiffness_nm_rad']}</springReference></gazebo></xacro:if>
+    <joint name="camera_mount" type="fixed"><parent link="camera_carrier_link"/><child link="camera_link"/><origin xyz="${cam.camera_x_m-flex['pivot_x_m']} 0 ${camera_height-cam.base_nominal_height_m+0.04-flex['pivot_z_m']}"/></joint>
   <link name="camera_optical_frame"/>
   <joint name="camera_optical_joint" type="fixed"><parent link="camera_link"/><child link="camera_optical_frame"/><origin xyz="0 0 -0.04" rpy="${pi} 0 ${pi/2}"/></joint>
   <link name="led_link"><xacro:box_inertia m="1.0" x="0.035" y="${cam.led_length_m}" z="0.035"/><xacro:box_visual x="0.035" y="${cam.led_length_m}" z="0.035" xyz="0 0 0" rpy="0 0 0" color="white"/><collision><geometry><box size="0.035 ${cam.led_length_m} 0.035"/></geometry></collision></link>

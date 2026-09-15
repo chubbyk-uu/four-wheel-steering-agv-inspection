@@ -5,6 +5,7 @@
 #include "agv_linescan/sampling.hpp"
 #include "agv_linescan/scan_motion.hpp"
 #include "agv_linescan/queue_budget.hpp"
+#include "agv_linescan/mount_geometry.hpp"
 #include "agv_linescan/preview.hpp"
 #include "agv_linescan/tail_policy.hpp"
 #ifdef AGV_HAS_CUDA
@@ -147,7 +148,10 @@ class GzLineScan final: public gz::sim::System,
     offset_=gz::math::Pose3d(config_["camera_x_m"].as<double>(),0,
         optics_->height-config_["base_nominal_height_m"].as<double>(),0,0,0);
     flexible_=config_["mount_flex"] && config_["mount_flex"]["enabled"].as<bool>(false);
-    if(flexible_)offset_.Pos()-=gz::math::Vector3d(1.005,0,.14);
+    if(flexible_) {
+      const auto pivot=LoadMountPivot(config_);
+      offset_.Pos()-=gz::math::Vector3d(pivot.x,0,pivot.z);
+    }
     output_=std::filesystem::path(sdf->Get<std::string>("output_dir")) /
         ("session_cpp_"+std::to_string(std::chrono::system_clock::now().time_since_epoch().count()));
     std::filesystem::create_directories(output_);

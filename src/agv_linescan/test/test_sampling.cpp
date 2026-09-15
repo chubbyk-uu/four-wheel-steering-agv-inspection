@@ -1,6 +1,14 @@
 #include <gtest/gtest.h>
+#include "agv_linescan/mount_geometry.hpp"
 #include "agv_linescan/sampling.hpp"
 using namespace agv_linescan;
+TEST(MountGeometry, ReadsSharedPivotAndRejectsMissingValues) {
+  auto config=YAML::Load("mount_flex: {pivot_x_m: 1.025, pivot_z_m: 0.16}");
+  auto pivot=LoadMountPivot(config);
+  EXPECT_DOUBLE_EQ(pivot.x,1.025);
+  EXPECT_DOUBLE_EQ(pivot.z,.16);
+  EXPECT_THROW(LoadMountPivot(YAML::Load("mount_flex: {pivot_x_m: 1.0}")),std::runtime_error);
+}
 TEST(Trigger, MultipleLinesPerPhysicsStep) {
   Trigger trigger(1.2/4096);
   trigger.Update(0,0);

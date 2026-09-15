@@ -94,6 +94,8 @@ def test_camera_bracket_flex_preserves_mass_geometry_and_uses_dynamic_group(tmp_
     repo=Path(__file__).resolve().parents[3]
     cfg=yaml.safe_load((repo/'src/agv_description/config/linescan.yaml').read_text())
     masses=[];inertias=[];bounds=[]
+    cfg['mount_flex']['pivot_x_m']=1.025
+    cfg['mount_flex']['pivot_z_m']=.16
     for enabled in (False,True):
         cfg['mount_flex']['enabled']=enabled
         path=tmp_path/f'camera_{enabled}.yaml';path.write_text(yaml.safe_dump(cfg))
@@ -111,6 +113,11 @@ def test_camera_bracket_flex_preserves_mass_geometry_and_uses_dynamic_group(tmp_
                 vertices.append(p@t[:3,:3].T+t[:3,3])
         bounds.append(np.concatenate(vertices))
         group=json.loads(export(xml,tmp_path/str(enabled)).read_text())['groups']
+        pivot=np.fromstring(root.find("joint[@name='camera_roll_joint']/origin").get('xyz'),sep=' ')
+        np.testing.assert_allclose(pivot,[cfg['mount_flex']['pivot_x_m'],0,cfg['mount_flex']['pivot_z_m']])
+        optical=world('camera_optical_frame')[:3,3]
+        assert optical[0]==pytest.approx(cfg['camera_x_m'])
+        assert optical[2]==pytest.approx(cfg['nominal_width_m']*cfg['focal_length_m']/(cfg['width']*cfg['pixel_pitch_m'])-cfg['base_nominal_height_m'])
         assert ('camera_carrier_link' in [g['name'] for g in group]) == enabled
         assert root.find("joint[@name='camera_pitch_joint']").get('type') == ('revolute' if enabled else 'fixed')
         states=root.findall("ros2_control/joint[@name='camera_pitch_joint']")
@@ -118,7 +125,8 @@ def test_camera_bracket_flex_preserves_mass_geometry_and_uses_dynamic_group(tmp_
         if enabled:
             assert not states[0].findall('command_interface')
             rest=float(root.find("gazebo[@reference='camera_pitch_joint']/springReference").text)
-            assert rest*cfg['mount_flex']['stiffness_nm_rad']==pytest.approx(-9.81*(2.9*.07+.145))
+            camera_lever=cfg['camera_x_m']-cfg['mount_flex']['pivot_x_m']
+            assert rest*cfg['mount_flex']['stiffness_nm_rad']==pytest.approx(-9.81*(2.9*.07+camera_lever))
     assert masses==pytest.approx([550,550])
     assert inertias[0]==inertias[1]
     np.testing.assert_allclose(bounds[0],bounds[1],atol=1e-12)

@@ -46,8 +46,11 @@ def setup(context):
     from agv_linescan.encoder import line_spacing
     camera_values = yaml.safe_load(Path(camera_config).read_text())
     flex = camera_values.get('mount_flex', {})
+    for key, lo, hi in [('pivot_x_m', .8, 1.1), ('pivot_z_m', .05, .3)]:
+        value = flex.get(key, float('nan'))
+        if not isinstance(value, (int, float)) or not math.isfinite(value) or not lo <= value <= hi:
+            raise ValueError('mount_flex '+key+' outside validated bracket geometry')
     if flex.get('enabled', False):
-        import math
         for key, lo, hi in [('stiffness_nm_rad', 40, 2000), ('damping_nms_rad', .1, 30)]:
             value = flex.get(key, float('nan'))
             if not isinstance(value, (int, float)) or not math.isfinite(value) or not lo <= value <= hi:

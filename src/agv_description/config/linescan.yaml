@@ -98,5 +98,8 @@ sampling:
 # Two physical passive axes, pitch/roll, gravity-balanced at level. Not measured hardware.
 mount_flex:
   enabled: true
+  # Pitch/roll pivot in base_link. URDF and the acquisition plugin share it.
+  pivot_x_m: 1.005
+  pivot_z_m: 0.14
   stiffness_nm_rad: 300.0
   damping_nms_rad: 3.5355339059327378
