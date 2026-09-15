@@ -28,13 +28,22 @@ def test_gui_retry_is_limited_to_d3d12_startup_abort():
 def test_gui_options_are_bounded():
     sim.validate_gui_options(6., 10., 2)
     for values in ((float('nan'), 10., 2), (-1., 10., 2),
-                   (6., 121., 2), (6., 10., 6)):
+                   (6., 121., 2), (6., 10., 6), (6., 120., 3)):
         try:
             sim.validate_gui_options(*values)
         except ValueError:
             pass
         else:
             raise AssertionError(f'accepted invalid GUI options {values}')
+
+
+def test_readiness_timeout_covers_the_same_retry_budget():
+    assert sim.gui_readiness_timeout(10., 2) == 90.
+    assert sim.gui_readiness_timeout(120., 2) == 300.
+    assert sim.gui_readiness_timeout(30., 5) == 255.
+    # gui_start_delay is absent intentionally: probe and first GUI start together
+    # after that delay, so it consumes neither process's runtime budget.
+    sim.validate_gui_options(120., 120., 2)
 
 
 def test_follow_status_acceptance_modes():

@@ -146,6 +146,7 @@ gz sim -g 退出 134（SIGABRT），on_exit_shutdown 连带终止整个任务
 1. **真正错开**：`gui_start_delay`（默认6.0 s）让GUI在RViz那个事件之后再等一段。已验证RViz（pid 70881）报出`OpenGl 4.6`之后GUI（pid 70919）才启动，相隔38个pid而非连号。
 2. **重试仅限D3D12启动阶段**：GUI改为自己的`ExecuteProcess`（不再是第三个`gz_sim.launch.py`include，那个include在本工作区算出的模型/插件路径都是空串，唯一让出的只是它无条件的`Shutdown`）。只有D3D12、GUI尚未确认就绪、退出码134且仍有预算时才重试；GUI一旦就绪，之后任何退出都立即`Shutdown`。原实现只判断134，会把任务运行中的GUI abort也伪装成可恢复启动故障，已纠正。原生Linux不启用该重试，6 s错开也只用于D3D12＋RViz组合。
 3. **GUI就绪是运动许可条件**：`follow_camera.py`随首个GUI启动并跨重试等待，要求`/gui/currently_tracked`连续稳定3 s，再原子写入就绪证据；默认模式同时确认`FOLLOW_LOOK_AT`及两个AGV目标，`follow_camera:=false`只确认GUI插件存在，不改变自由视角。`swerve_controller`在证据出现前不启动，因此启动失败、错开窗口或重试等待期间车辆都不可能先行运动。探针超时或异常同样终止整个launch。
+4. **就绪超时与重试共用预算**：探针原固定90 s，而校验曾允许5次、每次间隔120 s的组合，导致合法配置会由探针先错误地报就绪失败。现按“全部重试等待＋每次GUI启动15 s＋15 s传输余量”推导探针超时，最低90 s、最高300 s；超出300 s的组合在启动时拒绝。`gui_start_delay`不计入，因为探针和首个GUI都在该延迟结束后才启动。
 
 **为什么不把软件驱动加回去**：它确实能救——系统Mesa那一栏就是证明——但救回来的是一个跑在`llvmpipe`上的GUI，正是本项目明确拒绝的静默降级（验收要求GUI＋RViz＋OptiX真机渲染），而且软件渲染还会去抢物理步需要的CPU。有了重试之后，一次abort的代价是十秒而不是一整跑，回退能买到的东西已经没有价值。
 

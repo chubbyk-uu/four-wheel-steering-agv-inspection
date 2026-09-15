@@ -17,6 +17,20 @@ from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
 
+GUI_ATTEMPT_BUDGET_S = 15.
+GUI_READINESS_MARGIN_S = 15.
+GUI_READINESS_MINIMUM_S = 90.
+GUI_READINESS_MAXIMUM_S = 300.
+
+
+def gui_readiness_timeout(retry_delay, retries):
+    # The probe starts with the first GUI, after gui_start_delay. Budget each
+    # attempted GUI plus every inter-attempt wait and a final transport margin.
+    return max(GUI_READINESS_MINIMUM_S,
+               retries*retry_delay+(retries+1)*GUI_ATTEMPT_BUDGET_S
+               + GUI_READINESS_MARGIN_S)
+
+
 def validate_gui_options(delay, retry_delay, retries):
     if not math.isfinite(delay) or not 0 <= delay <= 120:
         raise ValueError('gui_start_delay must be within [0, 120] seconds')
@@ -24,6 +38,9 @@ def validate_gui_options(delay, retry_delay, retries):
         raise ValueError('gui_retry_delay must be within [0, 120] seconds')
     if not 0 <= retries <= 5:
         raise ValueError('gui_abort_retries must be within [0, 5]')
+    timeout=gui_readiness_timeout(retry_delay,retries)
+    if timeout>GUI_READINESS_MAXIMUM_S:
+        raise ValueError('GUI retry budget requires %.1f s, exceeding the 300 s readiness limit' % timeout)
 
 
 def should_retry_gui(returncode, ready, remaining, d3d12):
@@ -220,6 +237,7 @@ def setup(context):
         # The graphics-context race was observed only between WSL D3D12 and RViz.
         gui_delay = configured_gui_delay if d3d12 and rviz_enabled else 0.
         gui_retries = configured_gui_retries if d3d12 else 0
+        readiness_timeout=gui_readiness_timeout(gui_retry_delay,gui_retries)
         requested_ready_file = LaunchConfiguration('gui_ready_file').perform(context)
         if requested_ready_file:
             ready_file = Path(requested_ready_file).expanduser().resolve()
@@ -229,7 +247,8 @@ def setup(context):
             ready_file = Path(tempfile.mkdtemp(prefix='agv_gui_ready_')) / 'ready.json'
         follow_enabled = LaunchConfiguration('follow_camera').perform(context).lower() == 'true'
         readiness_probe = Node(package='agv_bringup', executable='follow_camera.py',
-            arguments=['--ready-file', str(ready_file)] + ([] if follow_enabled else ['--ready-only']),
+            arguments=['--ready-file', str(ready_file), '--timeout', f'{readiness_timeout:g}']
+                      + ([] if follow_enabled else ['--ready-only']),
             output='screen')
         delayed_controller = True
 
