@@ -127,7 +127,7 @@
       <limit lower="${-p.suspension_travel}" upper="${p.suspension_travel}" effort="15000" velocity="1"/>
       <dynamics damping="${p.suspension_damping}" friction="0"/>
     </joint>
-    <gazebo reference="${name}_suspension_joint"><springStiffness>${p.suspension_stiffness}</springStiffness><springReference>${p.suspension_preload}</springReference></gazebo>
+    <gazebo reference="${name}_suspension_joint"><springStiffness>${p.suspension_stiffness}</springStiffness><springReference>${p.get('suspension_preload_front' if x > 0 else 'suspension_preload_rear', p.suspension_preload)}</springReference></gazebo>
     <link name="${name}_steer_link">
       <xacro:box_inertia m="12" x="0.16" y="0.20" z="0.20"/>
       <xacro:box_visual x="0.15" y="0.19" z="0.09" xyz="0 0 0" rpy="0 0 0" color="metal"/>

@@ -45,9 +45,14 @@ body_top_height: 1.1
 # 150 Nm allowed passive rolling during loaded steering; 300 Nm holds in the flat-road probe.
 drive_effort: 300.0
 steer_effort: 180.0
-suspension_stiffness: 65000.0
-suspension_damping: 2800.0
-suspension_preload: -0.016
+# Provisional 550 kg response fit: sustained pitch ~1.2/1.5 deg at +0.8/-1 m/s2.
+# Separate axle references retain loaded ride height; these are joint reference
+# positions of a preloaded effective spring, not extra mechanical travel.
+suspension_stiffness: 8000.0
+suspension_damping: 750.0
+suspension_preload: -0.141208364106175
+suspension_preload_front: -0.1330988637734549
+suspension_preload_rear: -0.13034084459464826
 suspension_travel: 0.05
 gnss_baseline: 1.1
 gnss_top_height: 1.2

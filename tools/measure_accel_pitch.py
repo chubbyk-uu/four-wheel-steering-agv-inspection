@@ -2,6 +2,7 @@
 """Flat-road acceleration response; diagnostic truth never enters control."""
 import argparse
 import json
+import hashlib
 import os
 from pathlib import Path
 import signal
@@ -10,8 +11,7 @@ import sys
 import time
 
 
-def evaluate(output):
-    import numpy as np
+def evaluate(output, platform, modes, repeats):
     import rclpy
     from scipy.spatial.transform import Rotation
     from validate_motion import Evaluator
@@ -58,8 +58,8 @@ def evaluate(output):
             assert time.monotonic() < deadline, 'feedback missing'
             rclpy.spin_once(n, timeout_sec=.1)
         vmax = 10/3.6
-        for mode in ('ramp6', 'controller_limit'):
-            for repeat in range(2):
+        for mode in modes:
+            for repeat in range(repeats):
                 prefix = f'{mode}_{repeat}'
                 n.phase_run(prefix+'_rest', 6, 0)
                 assert n.state == 'HOLD'
@@ -73,24 +73,27 @@ def evaluate(output):
         (output/'samples.json').write_text(json.dumps(dict(
             odom_columns=['time','x','z','vx','roll','pitch','yaw','phase'], odom=n.rows,
             joint_columns=['time','fl','fr','rl','rr','fl_steer','fr_steer','rl_steer','rr_steer','phase'],
-            joints=n.joint_rows)))
-        analyze(output, n.rows, n.joint_rows, n.state)
+            joints=n.joint_rows, final_state=n.state, modes=modes, repeats=repeats,
+            configuration=__import__('yaml').safe_load(platform.read_text()),
+            source_sha256=hashlib.sha256(Path('src/agv_description/urdf/agv.urdf.xacro').read_bytes()).hexdigest())))
+        analyze(output, n.rows, n.joint_rows, n.state, modes, repeats, __import__('yaml').safe_load(platform.read_text()))
     finally:
         n.command((0,0,0)); n.destroy_node(); rclpy.shutdown()
 
 
-def analyze(output, odom_rows, joint_rows, final_state):
+def analyze(output, odom_rows, joint_rows, final_state, modes, repeats, config):
     import numpy as np
     vmax = 10/3.6
     report = dict(schema='agv.accel_pitch.v1', passed=True, final_state=final_state,
                   stop_definition='First forward velocity <= 0.02 m/s; settle until pitch stays within 0.01 degree of rest',
-                  scope='Headless flat road, unchanged suspension, actual tyre 0.40 m; no imaging or GUI acceptance. Joint spring forces are estimates, not measured tyre contact loads.', cases=[])
+                  configuration=config,
+                  scope='Headless flat road, specified suspension, actual tyre 0.40 m; no imaging or GUI acceptance. Joint spring forces are estimates, not measured tyre contact loads.', cases=[])
     import matplotlib
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
-    fig, axes = plt.subplots(3, 2, figsize=(12,9), sharex='col')
-    for col, mode in enumerate(('ramp6','controller_limit')):
-        for repeat in range(2):
+    fig, axes = plt.subplots(3, len(modes), figsize=(6*len(modes),9), sharex='col', squeeze=False)
+    for col, mode in enumerate(modes):
+        for repeat in range(repeats):
             prefix=f'{mode}_{repeat}'
             rows=np.array([r[:-1] for r in odom_rows if r[-1].startswith(prefix)],float)
             phases=np.array([r[-1] for r in odom_rows if r[-1].startswith(prefix)])
@@ -100,7 +103,36 @@ def analyze(output, odom_rows, joint_rows, final_state):
             pitch=np.degrees(rows[:,5]-reference)
             # Gradient of measured truth velocity, not the commanded slope.
             accel=np.gradient(rows[:,3],rows[:,0])
-            case=dict(name=prefix, static_pitch_deg=float(np.degrees(reference)), phases={})
+            from scipy.spatial.transform import Rotation
+            rotation=Rotation.from_euler('xyz',rows[:,4:7]).as_matrix()
+            def clearance(points):
+                return (np.einsum('nij,kj->nki',rotation,np.array(points))[:,:,2]+rows[:,2,None]).min(axis=1)
+            battery=clearance([[x,y,-.3984] for x in (-.36,.36) for y in (-.55,.55)])
+            # Conservative LED bounding box; actual tilted lamp is inside this box.
+            import yaml
+            camera=yaml.safe_load(Path('src/agv_description/config/linescan.yaml').read_text())
+            lx=camera['camera_x_m']+camera['led_forward_offset_m']
+            led=clearance([[x,y,camera['led_height_m']-camera['base_nominal_height_m']-.03] for x in (lx-.03,lx+.03) for y in (-camera['led_length_m']/2,camera['led_length_m']/2)])
+            wheel_gaps=[]
+            for i,(x,y) in enumerate(((config['wheelbase']/2,config['track']/2),(config['wheelbase']/2,-config['track']/2),(-config['wheelbase']/2,config['track']/2),(-config['wheelbase']/2,-config['track']/2))):
+                q=np.interp(rows[:,0],jr[:,0],jr[:,i+1])
+                center=np.column_stack((np.full(len(rows),x),np.full(len(rows),y),q-.45))
+                wz=(rotation@center[:,:,None])[:,2,0]+rows[:,2]
+                axis_z=rotation[:,2,1]
+                support=.2*np.sqrt(1-axis_z**2)+config['wheel_width']/2*np.abs(axis_z)
+                wheel_gaps.append(wz-support)
+            evaluation=rows[:,0]>=rest[0,0]
+            # Exclude initial spawn settlement, retain all commanded motion.
+            case=dict(name=prefix, static_pitch_deg=float(np.degrees(reference)), static_base_height_m=float(rest[:,2].mean()),
+                      minimum_battery_clearance_m=float(battery[evaluation].min()),
+                      minimum_led_bounding_box_clearance_m=float(led[evaluation].min()),
+                      wheel_bottom_gap_range_m=[float(np.array(wheel_gaps)[:,evaluation].min()),float(np.array(wheel_gaps)[:,evaluation].max())],
+                      max_suspension_abs_m=float(np.abs(jr[jr[:,0]>=rest[0,0],1:5]).max()), phases={})
+            assert case['minimum_battery_clearance_m']>.15
+            assert case['minimum_led_bounding_box_clearance_m']>.15
+            assert case['max_suspension_abs_m']<config['suspension_travel']-.005
+            assert case['wheel_bottom_gap_range_m'][1]<.002
+
             for phase in ('accel','cruise','brake','settle'):
                 mask=phases==prefix+'_'+phase
                 active=mask & (rows[:,3]>.3) & (rows[:,3]<vmax-.3)
@@ -139,24 +171,27 @@ def analyze(output, odom_rows, joint_rows, final_state):
         axes[row,0].set_ylabel(label)
         for ax in axes[row]: ax.grid(alpha=.3)
     fig.tight_layout(); fig.savefig(output/'response.png',dpi=150); plt.close(fig)
-    report['configuration_sha256']={str(p):__import__('hashlib').sha256(p.read_bytes()).hexdigest() for p in (Path('src/agv_description/config/platform.yaml'),Path('src/agv_description/urdf/agv.urdf.xacro'))}
+    report['effective_platform_canonical_sha256']=hashlib.sha256(json.dumps(config,sort_keys=True).encode()).hexdigest()
+    captured=json.loads((output/'samples.json').read_text())
+    report['captured_robot_source_sha256']=captured.get('source_sha256')
     (output/'summary.json').write_text(json.dumps(report,indent=2)+'\n')
-    print('PASS: four acceleration/braking runs, final HOLD; '+str(output/'summary.json'))
+    print('PASS: acceleration/braking runs, final HOLD; '+str(output/'summary.json'))
 
 
 def main():
-    p=argparse.ArgumentParser(); p.add_argument('--output',type=Path,required=True); p.add_argument('--evaluate',action='store_true'); p.add_argument('--analyze',action='store_true'); a=p.parse_args()
+    p=argparse.ArgumentParser(); p.add_argument('--output',type=Path,required=True); p.add_argument('--evaluate',action='store_true'); p.add_argument('--analyze',action='store_true'); p.add_argument('--platform',type=Path,default=Path('src/agv_description/config/platform.yaml')); p.add_argument('--modes',nargs='+',choices=['ramp6','controller_limit'],default=['ramp6','controller_limit']); p.add_argument('--repeats',type=int,default=2); a=p.parse_args()
     if a.analyze:
         data=json.loads((a.output/'samples.json').read_text())
-        final_state=json.loads((a.output/'summary.json').read_text())['final_state']
-        analyze(a.output,data['odom'],data['joints'],final_state); return
-    if a.evaluate: evaluate(a.output); return
+        if 'configuration' not in data:
+            raise ValueError('Legacy samples lack the captured configuration; do not replay against a changed default platform')
+        analyze(a.output,data['odom'],data['joints'],data['final_state'],data['modes'],data['repeats'],data['configuration']); return
+    if a.evaluate: evaluate(a.output, a.platform, a.modes, a.repeats); return
     a.output.mkdir(parents=True,exist_ok=True)
     env=dict(os.environ,ROS_DOMAIN_ID='96',GZ_PARTITION='agv_pitch_'+str(os.getpid()))
     with (a.output/'sim.log').open('w') as log:
-        sim=subprocess.Popen(['ros2','launch','agv_bringup','sim.launch.py','headless:=true','rviz:=false','linescan:=false','actual_wheel_diameter:=0.40'],env=env,stdout=log,stderr=log,start_new_session=True)
+        sim=subprocess.Popen(['ros2','launch','agv_bringup','sim.launch.py','headless:=true','rviz:=false','linescan:=false','actual_wheel_diameter:=0.40','platform:='+str(a.platform.resolve())],env=env,stdout=log,stderr=log,start_new_session=True)
         try:
-            subprocess.run([sys.executable,__file__,'--evaluate','--output',str(a.output)],env=env,check=True,timeout=300)
+            subprocess.run([sys.executable,__file__,'--evaluate','--output',str(a.output),'--platform',str(a.platform),'--repeats',str(a.repeats),'--modes',*a.modes],env=env,check=True,timeout=300)
         finally:
             if sim.poll() is None:
                 os.killpg(sim.pid,signal.SIGINT)

@@ -1,0 +1,640 @@
+{
+  "schema": "agv.suspension_tuning.v1",
+  "target": "Provisional owner-specified sustained pitch 1\u20132 degrees at +0.8/-1.0 m/s2, modest transient overshoot; not a measured real-vehicle calibration",
+  "selected": {
+    "schema": "agv.accel_pitch.v1",
+    "passed": true,
+    "final_state": "HOLD",
+    "stop_definition": "First forward velocity <= 0.02 m/s; settle until pitch stays within 0.01 degree of rest",
+    "configuration": {
+      "base_height": 0.65,
+      "body_length": 1.9,
+      "body_top_height": 1.1,
+      "body_width": 1.1,
+      "drive_accel": 0.8,
+      "drive_decel": 1.0,
+      "drive_effort": 300.0,
+      "gnss_baseline": 1.1,
+      "gnss_top_height": 1.2,
+      "mass": 550.0,
+      "max_lateral_speed": 1.0,
+      "max_speed": 4.166666666666667,
+      "max_yaw_rate": 0.35,
+      "rated_scan_speed": 2.777777777777778,
+      "steer_accel": 1.5,
+      "steer_effort": 180.0,
+      "steer_hard_lower": -4.886921905584122,
+      "steer_hard_upper": 1.7453292519943295,
+      "steer_rate": 0.65,
+      "steer_soft_lower": -4.799655442984406,
+      "steer_soft_upper": 1.6580627893946132,
+      "suspension_damping": 750.0,
+      "suspension_preload": -0.141208364106175,
+      "suspension_preload_front": -0.1330988637734549,
+      "suspension_preload_rear": -0.13034084459464826,
+      "suspension_stiffness": 8000.0,
+      "suspension_travel": 0.05,
+      "track": 0.94,
+      "trajectory_decel": 0.8,
+      "wheel_radius": 0.2,
+      "wheel_width": 0.16,
+      "wheelbase": 1.3
+    },
+    "scope": "Headless flat road, specified suspension, actual tyre 0.40 m; no imaging or GUI acceptance. Joint spring forces are estimates, not measured tyre contact loads.",
+    "cases": [
+      {
+        "name": "controller_limit_0",
+        "static_pitch_deg": -0.0038820060467116167,
+        "static_base_height_m": 0.6497041679343506,
+        "minimum_battery_clearance_m": 0.24184397738805452,
+        "minimum_led_bounding_box_clearance_m": 0.24006263499557168,
+        "wheel_bottom_gap_range_m": [
+          -4.23678397533378e-05,
+          1.032631477076995e-06
+        ],
+        "max_suspension_abs_m": 0.017864561830646344,
+        "phases": {
+          "accel": {
+            "measured_accel_median_m_s2": 0.7998000320007783,
+            "pitch_offset_min_deg": -1.254778271688208,
+            "pitch_offset_max_deg": 0.23491331053113848,
+            "active_pitch_median_deg": -1.2114718911030056,
+            "z_range_mm": 0.30800431789390625,
+            "suspension_min_mm": [
+              -14.312698235668147,
+              -14.312698235668137,
+              -2.276585634108468,
+              -2.2765856341072332
+            ],
+            "suspension_max_mm": [
+              2.965455418627586,
+              2.965455418629858,
+              14.278273292645245,
+              14.278273292645247
+            ]
+          },
+          "cruise": {
+            "measured_accel_median_m_s2": null,
+            "pitch_offset_min_deg": -0.0003517104656012694,
+            "pitch_offset_max_deg": 0.0007226594672173872,
+            "active_pitch_median_deg": null,
+            "z_range_mm": 0.0001801621503094708,
+            "suspension_min_mm": [
+              0.2481458622298404,
+              0.24814586223078,
+              0.3321620848948174,
+              0.33216208489301047
+            ],
+            "suspension_max_mm": [
+              0.2604784710277908,
+              0.26047847102706523,
+              0.3442061431062062,
+              0.3442061431068847
+            ]
+          },
+          "brake": {
+            "measured_accel_median_m_s2": -0.9996226120442024,
+            "pitch_offset_min_deg": -0.2933866649927383,
+            "pitch_offset_max_deg": 1.5679588642907951,
+            "active_pitch_median_deg": 1.5084334801850394,
+            "z_range_mm": 0.3541633522277099,
+            "suspension_min_mm": [
+              -3.0857587447084898,
+              -3.0857587447088535,
+              -17.864561830646185,
+              -17.864561830646345
+            ],
+            "suspension_max_mm": [
+              17.65243038548988,
+              17.652430385489428,
+              3.662029575876595,
+              3.662029575876235
+            ]
+          },
+          "settle": {
+            "measured_accel_median_m_s2": null,
+            "pitch_offset_min_deg": 2.3094541875293082e-08,
+            "pitch_offset_max_deg": 0.00026615269711568925,
+            "active_pitch_median_deg": null,
+            "z_range_mm": 6.534959418047492e-05,
+            "suspension_min_mm": [
+              0.2517290480101554,
+              0.2517290480097907,
+              0.33731946421954573,
+              0.3373194642191858
+            ],
+            "suspension_max_mm": [
+              0.2551071666933102,
+              0.25510716669294475,
+              0.34059454574045533,
+              0.3405945457400965
+            ]
+          }
+        },
+        "settle_after_vx_below_0_02_to_0_01deg_s": 1.759999999999998,
+        "minimum_vx_during_braking_m_s": -0.05915565803244697,
+        "max_actual_steer_deg": 6.734336048835735e-15
+      },
+      {
+        "name": "controller_limit_1",
+        "static_pitch_deg": -0.0038819829521697415,
+        "static_base_height_m": 0.6497038132867526,
+        "minimum_battery_clearance_m": 0.24184397738812258,
+        "minimum_led_bounding_box_clearance_m": 0.24006263499710218,
+        "wheel_bottom_gap_range_m": [
+          -4.2367839751977776e-05,
+          1.0326314763831057e-06
+        ],
+        "max_suspension_abs_m": 0.017864561828744595,
+        "phases": {
+          "accel": {
+            "measured_accel_median_m_s2": 0.7998000319953924,
+            "pitch_offset_min_deg": -1.2547782952068451,
+            "pitch_offset_max_deg": 0.23491328743968812,
+            "active_pitch_median_deg": -1.2114719142757255,
+            "z_range_mm": 0.3080043185870185,
+            "suspension_min_mm": [
+              -14.312698240715566,
+              -14.312698240715866,
+              -2.2765856341521817,
+              -2.2765856341516506
+            ],
+            "suspension_max_mm": [
+              2.9654554186558344,
+              2.9654554186563207,
+              14.278273297559823,
+              14.278273297559558
+            ]
+          },
+          "cruise": {
+            "measured_accel_median_m_s2": null,
+            "pitch_offset_min_deg": -0.0002403523681773997,
+            "pitch_offset_max_deg": 0.0007226363710089014,
+            "active_pitch_median_deg": null,
+            "z_range_mm": 0.00018016214797800245,
+            "suspension_min_mm": [
+              0.24937342903672846,
+              0.24937342903961546,
+              0.33216208491222554,
+              0.3321620849098994
+            ],
+            "suspension_max_mm": [
+              0.26047847100689664,
+              0.2604784710078438,
+              0.34290656008858345,
+              0.3429065600906528
+            ]
+          },
+          "brake": {
+            "measured_accel_median_m_s2": -0.9996226120353064,
+            "pitch_offset_min_deg": -0.2933866880837943,
+            "pitch_offset_max_deg": 1.5679588411163576,
+            "active_pitch_median_deg": 1.5084334570696205,
+            "z_range_mm": 0.3541633522358145,
+            "suspension_min_mm": [
+              -3.0857587446685173,
+              -3.0857587446686,
+              -17.864561828743074,
+              -17.864561828744595
+            ],
+            "suspension_max_mm": [
+              17.652430384962948,
+              17.65243038496146,
+              3.6620295758358616,
+              3.6620295758367725
+            ]
+          },
+          "settle": {
+            "measured_accel_median_m_s2": null,
+            "pitch_offset_min_deg": 2.5444437451708134e-14,
+            "pitch_offset_max_deg": 0.00026612960254836953,
+            "active_pitch_median_deg": null,
+            "z_range_mm": 6.534959484660874e-05,
+            "suspension_min_mm": [
+              0.2517290480112999,
+              0.2517290480100773,
+              0.3373194642196057,
+              0.33731946421937625
+            ],
+            "suspension_max_mm": [
+              0.25510716669243055,
+              0.2551071666934807,
+              0.34059454573872583,
+              0.3405945457407715
+            ]
+          }
+        },
+        "settle_after_vx_below_0_02_to_0_01deg_s": 1.7600000000000051,
+        "minimum_vx_during_braking_m_s": -0.05915565803102624,
+        "max_actual_steer_deg": 6.754984722483381e-15
+      }
+    ],
+    "effective_platform_canonical_sha256": "42115bb80ad998e918508ebc359af513e7325d0bf6756d2818ec9587a3b3a324",
+    "captured_robot_source_sha256": null
+  },
+  "exploration": [
+    {
+      "schema": "agv.accel_pitch.v1",
+      "passed": true,
+      "final_state": "HOLD",
+      "stop_definition": "First forward velocity <= 0.02 m/s; settle until pitch stays within 0.01 degree of rest",
+      "configuration": {
+        "base_height": 0.65,
+        "body_length": 1.9,
+        "body_top_height": 1.1,
+        "body_width": 1.1,
+        "drive_accel": 0.8,
+        "drive_decel": 1.0,
+        "drive_effort": 300.0,
+        "gnss_baseline": 1.1,
+        "gnss_top_height": 1.2,
+        "mass": 550.0,
+        "max_lateral_speed": 1.0,
+        "max_speed": 4.166666666666667,
+        "max_yaw_rate": 0.35,
+        "rated_scan_speed": 2.777777777777778,
+        "steer_accel": 1.5,
+        "steer_effort": 180.0,
+        "steer_hard_lower": -4.886921905584122,
+        "steer_hard_upper": 1.7453292519943295,
+        "steer_rate": 0.65,
+        "steer_soft_lower": -4.799655442984406,
+        "steer_soft_upper": 1.6580627893946132,
+        "suspension_damping": 1400.0,
+        "suspension_preload": -0.0698176301859875,
+        "suspension_stiffness": 16000.0,
+        "suspension_travel": 0.05,
+        "track": 0.94,
+        "trajectory_decel": 0.8,
+        "wheel_radius": 0.2,
+        "wheel_width": 0.16,
+        "wheelbase": 1.3
+      },
+      "scope": "Headless flat road, specified suspension, actual tyre 0.40 m; no imaging or GUI acceptance. Joint spring forces are estimates, not measured tyre contact loads.",
+      "cases": [
+        {
+          "name": "controller_limit_0",
+          "static_pitch_deg": 0.06462663569696095,
+          "static_base_height_m": 0.652128527462651,
+          "minimum_battery_clearance_m": 0.24863363376382913,
+          "minimum_led_bounding_box_clearance_m": 0.2563989908235417,
+          "wheel_bottom_gap_range_m": [
+            -4.00675432152553e-05,
+            7.730323360932712e-06
+          ],
+          "max_suspension_abs_m": 0.011570212270940482,
+          "phases": {
+            "accel": {
+              "measured_accel_median_m_s2": 0.7998428943262432,
+              "pitch_offset_min_deg": -0.621215275089655,
+              "pitch_offset_max_deg": 0.08827401225905525,
+              "active_pitch_median_deg": -0.5622254766999362,
+              "z_range_mm": 0.08903499598122977,
+              "suspension_min_mm": [
+                -8.507011263658475,
+                -8.507011263658594,
+                -3.850585580851737,
+                -3.8505855808585814
+              ],
+              "suspension_max_mm": [
+                -0.37477748063216404,
+                -0.37477748063862937,
+                4.126579755475932,
+                4.126579755475791
+              ]
+            },
+            "cruise": {
+              "measured_accel_median_m_s2": null,
+              "pitch_offset_min_deg": -0.00010156855004399227,
+              "pitch_offset_max_deg": -0.00010128280775190994,
+              "active_pitch_median_deg": null,
+              "z_range_mm": 6.822420406393803e-08,
+              "suspension_min_mm": [
+                -1.3966640187835928,
+                -1.3966640187826795,
+                -2.8606949271881983,
+                -2.8606949271887214
+              ],
+              "suspension_max_mm": [
+                -1.3966608327070724,
+                -1.3966608327082455,
+                -2.8606916299668,
+                -2.8606916299667384
+              ]
+            },
+            "brake": {
+              "measured_accel_median_m_s2": -0.9997649159528947,
+              "pitch_offset_min_deg": -0.10492069807388714,
+              "pitch_offset_max_deg": 0.7593475314966576,
+              "active_pitch_median_deg": 0.706238682081011,
+              "z_range_mm": 0.091788254369507,
+              "suspension_min_mm": [
+                -2.599961790800851,
+                -2.5999617907997887,
+                -11.570212270938466,
+                -11.570212270940482
+              ],
+              "suspension_max_mm": [
+                7.1298239240181935,
+                7.12982392401482,
+                -1.6740634718362337,
+                -1.6740634718344782
+              ]
+            },
+            "settle": {
+              "measured_accel_median_m_s2": null,
+              "pitch_offset_min_deg": -2.9891981357195115e-06,
+              "pitch_offset_max_deg": -2.9891981357195115e-06,
+              "active_pitch_median_deg": null,
+              "z_range_mm": 0.0,
+              "suspension_min_mm": [
+                -1.3959748218964123,
+                -1.3959748218955985,
+                -2.8613944400407116,
+                -2.86139444004013
+              ],
+              "suspension_max_mm": [
+                -1.3959747295393719,
+                -1.3959747295394815,
+                -2.861394347931862,
+                -2.861394347930501
+              ]
+            }
+          },
+          "settle_after_vx_below_0_02_to_0_01deg_s": 0.879999999999999,
+          "minimum_vx_during_braking_m_s": -0.039814257015982624,
+          "max_actual_steer_deg": 1.3363310574850311e-15
+        }
+      ]
+    },
+    {
+      "schema": "agv.accel_pitch.v1",
+      "passed": true,
+      "final_state": "HOLD",
+      "stop_definition": "First forward velocity <= 0.02 m/s; settle until pitch stays within 0.01 degree of rest",
+      "configuration": {
+        "base_height": 0.65,
+        "body_length": 1.9,
+        "body_top_height": 1.1,
+        "body_width": 1.1,
+        "drive_accel": 0.8,
+        "drive_decel": 1.0,
+        "drive_effort": 300.0,
+        "gnss_baseline": 1.1,
+        "gnss_top_height": 1.2,
+        "mass": 550.0,
+        "max_lateral_speed": 1.0,
+        "max_speed": 4.166666666666667,
+        "max_yaw_rate": 0.35,
+        "rated_scan_speed": 2.777777777777778,
+        "steer_accel": 1.5,
+        "steer_effort": 180.0,
+        "steer_hard_lower": -4.886921905584122,
+        "steer_hard_upper": 1.7453292519943295,
+        "steer_rate": 0.65,
+        "steer_soft_lower": -4.799655442984406,
+        "steer_soft_upper": 1.6580627893946132,
+        "suspension_damping": 1000.0,
+        "suspension_preload": -0.141208364106175,
+        "suspension_stiffness": 8000.0,
+        "suspension_travel": 0.05,
+        "track": 0.94,
+        "trajectory_decel": 0.8,
+        "wheel_radius": 0.2,
+        "wheel_width": 0.16,
+        "wheelbase": 1.3
+      },
+      "scope": "Headless flat road, specified suspension, actual tyre 0.40 m; no imaging or GUI acceptance. Joint spring forces are estimates, not measured tyre contact loads.",
+      "cases": [
+        {
+          "name": "controller_limit_0",
+          "static_pitch_deg": 0.13724204673622012,
+          "static_base_height_m": 0.657914071613618,
+          "minimum_battery_clearance_m": 0.24965902462860895,
+          "minimum_led_bounding_box_clearance_m": 0.24693923225838532,
+          "wheel_bottom_gap_range_m": [
+            -3.829898448071134e-05,
+            9.904650571934681e-07
+          ],
+          "max_suspension_abs_m": 0.02692222630561961,
+          "phases": {
+            "accel": {
+              "measured_accel_median_m_s2": 0.7998580058530464,
+              "pitch_offset_min_deg": -1.210785521397925,
+              "pitch_offset_max_deg": 0.13092734852103774,
+              "active_pitch_median_deg": -1.2097944165942718,
+              "z_range_mm": 0.2422465694077447,
+              "suspension_min_mm": [
+                -20.368968691688888,
+                -20.368968691688856,
+                -10.931197825884004,
+                -10.931197825884892
+              ],
+              "suspension_max_mm": [
+                -4.8450400702698415,
+                -4.845040070272322,
+                4.042423633259155,
+                4.042423633258353
+              ]
+            },
+            "cruise": {
+              "measured_accel_median_m_s2": null,
+              "pitch_offset_min_deg": 0.000749354410818341,
+              "pitch_offset_max_deg": 0.018797433380533565,
+              "active_pitch_median_deg": null,
+              "z_range_mm": 0.0002219346466603156,
+              "suspension_min_mm": [
+                -6.3499376375473595,
+                -6.34993763755142,
+                -9.685767384960286,
+                -9.685767384958744
+              ],
+              "suspension_max_mm": [
+                -6.1453355073291975,
+                -6.145335507328418,
+                -9.480868900089197,
+                -9.480868900090824
+              ]
+            },
+            "brake": {
+              "measured_accel_median_m_s2": -0.9996288758852145,
+              "pitch_offset_min_deg": -0.12590537502600735,
+              "pitch_offset_max_deg": 1.4984864200851675,
+              "active_pitch_median_deg": 1.4878884354062962,
+              "z_range_mm": 0.2958694120481775,
+              "suspension_min_mm": [
+                -7.7959896096267345,
+                -7.795989609629618,
+                -26.92222630561961,
+                -26.92222630561912
+              ],
+              "suspension_max_mm": [
+                10.202851399273381,
+                10.202851399274985,
+                -8.05236959364762,
+                -8.052369593650486
+              ]
+            },
+            "settle": {
+              "measured_accel_median_m_s2": null,
+              "pitch_offset_min_deg": -0.0010328434119711064,
+              "pitch_offset_max_deg": 0.00010314774579507279,
+              "active_pitch_median_deg": null,
+              "z_range_mm": 1.1598472071661092e-05,
+              "suspension_min_mm": [
+                -6.369695227738135,
+                -6.369695227741025,
+                -9.474250882771575,
+                -9.474250882771152
+              ],
+              "suspension_max_mm": [
+                -6.356563613930558,
+                -6.356563613929007,
+                -9.461098952704285,
+                -9.461098952707179
+              ]
+            }
+          },
+          "settle_after_vx_below_0_02_to_0_01deg_s": 1.0599999999999987,
+          "minimum_vx_during_braking_m_s": -0.050109125650355926,
+          "max_actual_steer_deg": 7.32368751935136e-15
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "550 kg flat road, 0.40 m tyre only; no rough-road or real damper validation",
+    "Wheel-ground clearance is a sampled geometric check, not a tyre load measurement",
+    "Previous 100 m acceptance was performed with the stiffer suspension and is not automatically renewed",
+    "Initial exploration did not retain a capture-time URDF hash; effective platform values are retained"
+  ],
+  "raw_sample_sha256": {
+    "k16000": "fc494953c42e5103706469a65613a702f78418110e8ae17c409e61b8b0e5316d",
+    "k8000": "e06e0f6ebe61f0f56baed00fe35a19245477b690f6a80e240d28e5220b1fcf3e",
+    "candidate": "1ca0fa6ead943fdc2ed08cd428aabfd1e9a19ebd0b0a715e09da18118ab6176d"
+  },
+  "motion_regression": {
+    "passed": true,
+    "gui_rviz": false,
+    "equilibrium_base_height_m": 0.6497041679343506,
+    "suspension_positions_m": [
+      0.0002526076714411908,
+      0.00025260767144118793,
+      0.0003397474590857259,
+      0.00033974745908572305
+    ],
+    "loaded_battery_clearance_m": 0.25127977748545677,
+    "cases": [
+      {
+        "case": "forward",
+        "position_error_m": 1.3079376248725794e-08,
+        "yaw_error_rad": 2.214486778341036e-18
+      },
+      {
+        "case": "lateral",
+        "position_error_m": 0.0002503408012841723,
+        "yaw_error_rad": 4.724205401873682e-09
+      },
+      {
+        "case": "diagonal",
+        "position_error_m": 4.510694304596739e-06,
+        "yaw_error_rad": 2.696686901559886e-10
+      },
+      {
+        "case": "rotate",
+        "position_error_m": 1.732500437782119e-08,
+        "yaw_error_rad": 0.054413047212466537
+      },
+      {
+        "case": "reverse",
+        "position_error_m": 1.567118811871642e-06,
+        "yaw_error_rad": 1.1108669539794391e-11
+      }
+    ],
+    "max_speed_measured_m_s": 2.777777775246052,
+    "clouds": {
+      "left": {
+        "width": 1000,
+        "height": 8,
+        "frame": "lidar_left_link",
+        "bytes": 256000
+      },
+      "right": {
+        "width": 1000,
+        "height": 8,
+        "frame": "lidar_right_link",
+        "bytes": 256000
+      }
+    },
+    "tf_snapshots": 0,
+    "bad_tf_snapshots": 0,
+    "display_geometry": {
+      "max_attachment_error_m": 0.0,
+      "max_relative_center_step_m": 0.0,
+      "max_snapshot_gap_s": 0.0,
+      "nonmonotonic_stamps": 0
+    },
+    "final_state": "HOLD",
+    "scope": "ideal velocity/position servos, no claim of motor torque saturation or autonomous obstacle avoidance"
+  },
+  "capture_regression": {
+    "passed": true,
+    "gazebo_gui": true,
+    "rviz": true,
+    "display_sync": {
+      "frames": 599,
+      "dropped_pending": 0,
+      "pending": 0,
+      "max_sim_age_s": 0.015000000000000001,
+      "mode": "same_stamp_interpolated_display_only"
+    },
+    "real_time_factor": 1.0006365603989926,
+    "received_blocks": 6,
+    "final_motion_state": "HOLD",
+    "scope": "OptiX marking probe, 10 km/h, warmup 4.5 s, commanded capture distance 4 m plus braking; no full-road acceptance; GUI/RViz automated checks, no renewed mouse/window visual acceptance",
+    "raw_images": [
+      {
+        "file": "block_000000.pgm",
+        "size": [
+          4096,
+          4096
+        ]
+      },
+      {
+        "file": "block_000001.pgm",
+        "size": [
+          4096,
+          4096
+        ]
+      },
+      {
+        "file": "block_000002.pgm",
+        "size": [
+          4096,
+          4096
+        ]
+      },
+      {
+        "file": "block_000003.pgm",
+        "size": [
+          4096,
+          4096
+        ]
+      },
+      {
+        "file": "block_000004.pgm",
+        "size": [
+          4096,
+          4096
+        ]
+      },
+      {
+        "file": "block_000005.pgm",
+        "size": [
+          4096,
+          1113
+        ]
+      }
+    ]
+  }
+}
