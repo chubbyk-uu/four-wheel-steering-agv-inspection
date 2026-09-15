@@ -89,7 +89,7 @@ def main():
         max_suspension_travel=100*(candidate['max_suspension_abs_m']/baseline['max_suspension_abs_m']-1))
     report['candidate_1200_acceleration_check']=acceleration_case(a.input)
     report['candidate_1200_gui_checks']=[gui_case(a.input/name) for name in ('gui_1200','gui_1200_zero_fixed')]
-    report['recommendation']='1200 N s/m is the preferred damping candidate: one prominent post-HOLD extremum instead of three, 18% lower post-HOLD peak and 19% lower maximum suspension travel. It retains the requested 1-2 degree sustained acceleration and braking pitch. GUI/RViz motion was displayed, but both two-track capture attempts stopped loudly at the second-track heading gate; keep 750 N s/m as the default until the user accepts the visual comparison and the separate heading-entry regression is resolved.'
+    report['recommendation']='1200 N s/m was selected as the default after user review: one prominent post-HOLD extremum instead of three, 18% lower post-HOLD peak and 19% lower maximum suspension travel. It retains the requested 1-2 degree sustained acceleration and braking pitch. GUI/RViz motion was displayed, but both two-track capture attempts stopped loudly at the second-track heading gate; that separate heading-entry regression remains open.'
     report['limitations']=['One zero-noise rectangle mission per damping value; two opposite repeats in the isolated test.',
         'The isolated brake trigger uses controller velocity commands and a fixed six-second observation; it is diagnostic rather than the mission position tracker.',
         'The mission starts ROTATE_180 after different STOPPING durations, so stop-to-rotate duration is reported and is not treated as pure damping response.',
