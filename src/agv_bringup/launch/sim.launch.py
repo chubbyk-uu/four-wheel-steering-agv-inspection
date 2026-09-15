@@ -2,12 +2,13 @@
 from pathlib import Path
 import tempfile
 import os
+import shutil
 import xml.etree.ElementTree as ET
 import yaml
 import xacro
 from ament_index_python.packages import get_package_share_directory, get_package_prefix
 from launch import LaunchDescription
-from launch.actions import GroupAction, DeclareLaunchArgument, IncludeLaunchDescription, OpaqueFunction, RegisterEventHandler, EmitEvent, SetEnvironmentVariable
+from launch.actions import GroupAction, DeclareLaunchArgument, IncludeLaunchDescription, OpaqueFunction, RegisterEventHandler, EmitEvent, SetEnvironmentVariable, TimerAction, ExecuteProcess, LogInfo
 from launch.event_handlers import OnProcessExit
 from launch.events import Shutdown
 from launch.launch_description_sources import PythonLaunchDescriptionSource
@@ -116,13 +117,12 @@ def setup(context):
         return IncludeLaunchDescription(PythonLaunchDescriptionSource(str(
             Path(get_package_share_directory('ros_gz_sim')) / 'launch/gz_sim.launch.py')),
             launch_arguments={'gz_args': args, 'on_exit_shutdown': 'true'}.items())
-    # Server and GUI are separate invocations even with a GUI, so that the GUI
-    # does not create its graphics context while the sensor server creates its
-    # own. Both still stop the run when they exit: a mission observed headless
-    # is not the joint GUI acceptance it would be mistaken for.
+    # Server and GUI are separate processes even with a GUI, so that the GUI does not
+    # create its graphics context while the sensor server creates its own. Both still
+    # stop the run when they exit: a mission observed headless is not the joint GUI
+    # acceptance it would be mistaken for. The GUI is built further down rather than
+    # here, because its exit code has to be inspected before that rule is applied.
     gz = gz_sim('-s -r ' + world_path)
-    gz_gui = None if headless else gz_sim(
-        '-g --gui-config ' + LaunchConfiguration('gui_config').perform(context))
     if linescan and not any(os.environ.get(k) for k in ('FASTRTPS_DEFAULT_PROFILES_FILE','FASTDDS_DEFAULT_PROFILES_FILE')):
         gz = GroupAction(actions=[SetEnvironmentVariable('FASTRTPS_DEFAULT_PROFILES_FILE',
                                   str(bringup/'config/fastdds_linescan.xml')), gz])
@@ -177,14 +177,57 @@ def setup(context):
             actions.append(RegisterEventHandler(OnProcessExit(target_action=spawner,
                 on_exit=lambda event,context:[rviz_node] if event.returncode==0 else [])))
         else:actions.append(rviz_node)
-    if not headless and LaunchConfiguration('follow_camera').perform(context).lower() == 'true':
-        actions.append(Node(package='agv_bringup', executable='follow_camera.py', output='screen'))
+    # follow_camera.py gives up 90 s after it starts, so it waits with the GUI rather
+    # than from the beginning of the launch: the stagger and any GUI retry would
+    # otherwise come out of its budget and leave the camera unlocked on a run that
+    # recovered.
+    follow_actions = ([Node(package='agv_bringup', executable='follow_camera.py', output='screen')]
+                      if not headless and LaunchConfiguration('follow_camera').perform(context).lower() == 'true'
+                      else [])
     actions.append(SetEnvironmentVariable('GZ_GUI_PLUGIN_PATH', str(Path(get_package_prefix('agv_bringup'))/'lib') + os.pathsep + os.environ.get('GZ_GUI_PLUGIN_PATH','')))
-    if gz_gui is not None:
-        # Hold the GUI until the controllers are up, the same point RViz waits
-        # for. A failed spawn already shuts the run down through check_spawn.
+    if not headless:
+        # The GUI runs as its own ExecuteProcess rather than a third gz_sim.launch.py
+        # include, so that an abort while it creates its graphics context can be
+        # retried instead of ending the run. That include contributes nothing else
+        # here: its computed model and plugin paths are both empty in this workspace,
+        # so the only behaviour given up is its unconditional Shutdown, reinstated
+        # below for every exit that is not a startup abort.
+        gz_executable = shutil.which('gz')
+        if gz_executable is None:
+            raise ValueError('gz is not on PATH; the Gazebo GUI client cannot be started')
+        gui_config_path = LaunchConfiguration('gui_config').perform(context)
+        gui_delay = float(LaunchConfiguration('gui_start_delay').perform(context))
+        gui_retry_delay = float(LaunchConfiguration('gui_retry_delay').perform(context))
+        gui_retries = int(LaunchConfiguration('gui_abort_retries').perform(context))
+
+        def gui_with_retry(remaining):
+            process = ExecuteProcess(cmd=['ruby', gz_executable, 'sim', '-g',
+                                          '--gui-config', gui_config_path, '--force-version', '8'],
+                                     name='gazebo_gui', output='screen')
+
+            def exited(event, context):
+                # 134 is SIGABRT, which is the only way the Qt context failure has ever
+                # ended: the D3D12 screen is lost and this Mesa has no software driver
+                # to fall back to. A clean close, a signal, or any other code is a real
+                # exit and still stops the run, because a mission observed headless is
+                # not the joint GUI acceptance it would be mistaken for.
+                if event.returncode == 134 and remaining > 0:
+                    return [LogInfo(msg='Gazebo GUI aborted creating its graphics context; '
+                                        'retrying, %d attempt(s) left' % remaining),
+                            TimerAction(period=gui_retry_delay, actions=gui_with_retry(remaining - 1))]
+                return [EmitEvent(event=Shutdown(reason='Gazebo GUI client exited'))]
+
+            return [RegisterEventHandler(OnProcessExit(target_action=process, on_exit=exited)), process]
+
+        # Hold the GUI until the controllers are up, then wait again so that it is not
+        # creating its graphics context while RViz creates its own. Both used to start
+        # on this one event and came up with consecutive pids; all three recorded
+        # startup failures have that shape, with the GUI the one that loses its device.
+        # The delay is the separation the comment above RViz always claimed but never had.
+        # A failed spawn already shuts the run down through check_spawn.
         actions.append(RegisterEventHandler(OnProcessExit(target_action=spawner,
-            on_exit=lambda event,context:[gz_gui] if event.returncode==0 else [])))
+            on_exit=lambda event,context:[TimerAction(period=gui_delay,
+                actions=gui_with_retry(gui_retries) + follow_actions)] if event.returncode==0 else [])))
     return actions + [gz,
         RegisterEventHandler(OnProcessExit(target_action=controller,
             on_exit=[EmitEvent(event=Shutdown(reason='Motion controller exited'))])),
@@ -206,6 +249,9 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument('headless', default_value='false'),
         DeclareLaunchArgument('rviz', default_value='false'),
+        DeclareLaunchArgument('gui_start_delay', default_value='6.0', description='Seconds between the RViz and Gazebo GUI graphics clients; 0 restores the simultaneous start that every recorded context failure shows'),
+        DeclareLaunchArgument('gui_abort_retries', default_value='2', description='Retries when the Gazebo GUI aborts creating its graphics context; 0 restores the previous behaviour of ending the run on the first abort'),
+        DeclareLaunchArgument('gui_retry_delay', default_value='10.0', description='Seconds to let the graphics stack settle before retrying an aborted GUI'),
         DeclareLaunchArgument('follow_camera', default_value='true', choices=['true', 'false']),
         DeclareLaunchArgument('gui_config', default_value=str(Path(get_package_share_directory('agv_bringup'))/'config/gui.config')),
         DeclareLaunchArgument('linescan', default_value='false'),

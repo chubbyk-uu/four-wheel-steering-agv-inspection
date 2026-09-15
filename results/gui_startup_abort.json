@@ -1,0 +1,58 @@
+{
+ "schema": "agv.gui_startup_abort.v1",
+ "date": "2026-09-15",
+ "question": "Why does the Gazebo GUI client intermittently abort at startup, and why did it get worse after the private Mesa was adopted?",
+ "baseline_commit": "d3679450f0ffbaf645c818577d5ccb2ca10acd74",
+ "failure_signature": {
+  "sequence": ["optional: 'D3D12: Removing Device.' from /usr/lib/wsl/lib/libd3d12core.so",
+               "'glx: failed to create drisw screen' from Mesa src/glx/drisw_glx.c:688",
+               "'[QT] Failed to create OpenGL context for format QSurfaceFormat(version 2.0, ...)'",
+               "gz sim -g exits 134 (SIGABRT); on_exit_shutdown ends the whole run"],
+  "occurrences": [
+   {"when": "2026-09-14", "log": "local_data/accept_rated_6_gui_abort/simulation.log",
+    "device_removed": true, "gui_pid": 14455, "rviz_pid": 14456},
+   {"when": "2026-09-15 11:02", "log": "local_data/rough_closed_loop_v1/10mm/simulation.log",
+    "device_removed": false, "gui_pid": 32529, "rviz_pid": 32530},
+   {"when": "2026-09-15 11:08", "log": "local_data/rough_closed_loop_v1/zero/simulation.log",
+    "device_removed": true, "gui_pid": 34794, "rviz_pid": 34795}],
+  "common_shape": "in all three the Gazebo GUI and RViz start in the same instant with consecutive pids, and the GUI is the one that fails. One of the three has no device-removal line at all, so the trigger is not a single mechanism; the ending is.",
+  "recovery": "both 2026-09-15 runs were retried by hand and passed (local_data/rough_closed_loop_v1/{10mm,zero}_retry), as did the 2026-09-14 one after a 60 s settle"
+ },
+ "established": {
+  "no_software_fallback_is_deterministic": {
+   "method": "LIBGL_ALWAYS_SOFTWARE=1 against both Mesa builds, on a purpose-built GLX probe (tools/probe_gl_context.cpp, the GUI's own surface format: window, double buffered, depth 24, stencil 8) and on a real gz sim -g",
+   "system_mesa": "probe returns llvmpipe and exits 0; gz sim -g runs the full 40 s timeout without error",
+   "private_mesa": "probe prints exactly 'glx: failed to create drisw screen' and exits 4",
+   "reading": "the recovery path Mesa attempts after a d3d12 screen failure is present and working in the system build and certain to fail in the private one. This is not the trigger, but it is what turns a recoverable event into an abort, which is the difference the user observed after the switch."
+  },
+  "why_the_private_build_cannot_fall_back": "every *_dri.so is a symlink to libdril_dri.so, a thin loader whose driver code lives in libgallium-*.so. The private build is -Dgallium-drivers=d3d12 -Dllvm=disabled, so no software driver exists in it, and adding the system dri directory to LIBGL_DRIVERS_PATH does not help: the absolute LD_PRELOAD pins the private libgallium, which contains no swrast. Verified by running the probe with both directories on the path.",
+  "removing_device_is_not_mesa": "the string 'D3D12: Removing Device.' does not occur anywhere in the Mesa 25.2.8 source tree; it is in /usr/lib/wsl/lib/libd3d12core.so, the Microsoft D3D12 runtime, alongside 'Removing device due to driver error' and several out-of-memory messages. The trigger is below Mesa and outside this project.",
+  "the_one_line_mesa_patch_is_not_a_suspect": "d3d12_cmd_signature.cpp hashes and compares the key by content (_mesa_hash_data / memcmp over the struct) and inserts &data->key, a copy the entry owns. Looking up with key rather than &key introduces no lifetime or aliasing hazard; the original read sizeof(struct) bytes from the stack slot holding the pointer, which is the bug that was fixed.",
+  "comment_and_code_disagreed": "sim.launch.py carried the comment 'Stagger the two WSLg graphics clients; do not race their startup context creation' above RViz, but RViz and the GUI were both registered on the same OnProcessExit(spawner) and therefore started together. The consecutive pids in all three failures are that."
+ },
+ "excluded": {
+  "plain_concurrency": "1, 2 and 4 simultaneous context creations, 175 launches under the private Mesa: 0 failures",
+  "gpu_memory_pressure": "tools/probe_gl_hog.cpp kept 4.0, 8.2 and 11.5 GiB of device memory (free down to 3.4 GiB); 16 launches at each level at concurrency 2: 0 failures",
+  "note": "neither is sufficient on its own. Both were run on an idle machine, which is exactly the condition under which the real failures do not happen either, so this narrows the mechanism without identifying it."
+ },
+ "fix": {
+  "1_stagger": "gui_start_delay (default 6.0 s) holds the GUI that long after the spawner event RViz already waits for, so the two graphics clients no longer create their contexts together. Verified: RViz pid 70881 reports OpenGl 4.6 before GUI pid 70919 starts, 38 pids apart instead of adjacent.",
+  "2_retry": "the GUI is now its own ExecuteProcess instead of a third gz_sim.launch.py include, so its exit code can be judged. Exit 134 during graphics startup is retried after gui_retry_delay (default 10.0 s), up to gui_abort_retries (default 2). Any other exit still emits Shutdown, so a mission is never silently observed headless.",
+  "3_follow_camera": "follow_camera.py gives up 90 s after it starts, so it now waits with the GUI rather than from the start of the launch; otherwise the stagger and any retry would come out of its budget and leave the camera unlocked on a run that recovered.",
+  "why_not_restore_the_software_driver": "it would work -- the system build proves a software fallback keeps the GUI alive -- but the result is a GUI rendering in llvmpipe, which is the silent degradation this project already refuses: acceptance requires GUI + RViz + OptiX on the real device, and a software GUI would also compete for the CPU the physics step needs. With the retry in place the cost of an abort is ten seconds rather than a whole run, so the fallback buys nothing that is wanted."
+ },
+ "verification": {
+  "normal_start": "full launch with rviz and follow_camera: RViz first, GUI after the delay, 'AGV locked follow enabled' reached, 130 s with no error",
+  "retry_path": "with the GUI command replaced by an injected exit 134, the log shows 'retrying, 2 attempt(s) left', then 'retrying, 1 attempt(s) left', then shutdown on the third abort. Injection removed afterwards and the file diffed against its pre-injection copy.",
+  "clean_exit_path": "with an injected exit 0 the GUI is not retried and the run shuts down immediately, preserving the rule that a GUI exit ends the mission."
+ },
+ "not_claimed": [
+  "that the stagger or the retry lowers the underlying D3D12 failure rate; the trigger is in the Microsoft D3D12 runtime and was not reproduced on demand",
+  "a measured before/after failure rate. Distinguishing rates near 10% needs about 20 GUI startups per arm at a few minutes each, which is the cooldown A/B the user rejected on 2026-09-14 as disproportionate",
+  "that the 2026-09-11 system-Mesa QT_OPENGL failure would have been saved by drisw; that log no longer exists, so whether the fallback was even attempted then is unknown"
+ ],
+ "separate_finding_not_part_of_this_fix": {
+  "what": "a headless server with linescan_backend:=render on runtime_fullwidth_20m_v1 segfaulted at startup 2 times out of 2, in Ogre::GL3PlusBufferInterface::_firstUpload -> Ogre::BufferInterface::upload -> memcpy, 'Address not mapped to object [(nil)]', i.e. a buffer map returned NULL and Ogre did not check it",
+  "status": "not investigated. It may be that this parameter combination is not a supported path rather than a defect; it is recorded so the observation is not lost."
+ }
+}
