@@ -1,5 +1,6 @@
 """AGV simulation; ground truth is reserved for sensor simulation and evaluation."""
 from pathlib import Path
+import math
 import tempfile
 import os
 import shutil
@@ -14,6 +15,20 @@ from launch.events import Shutdown
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+
+
+def validate_gui_options(delay, retry_delay, retries):
+    if not math.isfinite(delay) or not 0 <= delay <= 120:
+        raise ValueError('gui_start_delay must be within [0, 120] seconds')
+    if not math.isfinite(retry_delay) or not 0 <= retry_delay <= 120:
+        raise ValueError('gui_retry_delay must be within [0, 120] seconds')
+    if not 0 <= retries <= 5:
+        raise ValueError('gui_abort_retries must be within [0, 5]')
+
+
+def should_retry_gui(returncode, ready, remaining, d3d12):
+    """Only retry the observed WSL D3D12 graphics-context startup abort."""
+    return d3d12 and returncode == 134 and not ready and remaining > 0
 
 
 def setup(context):
@@ -160,31 +175,27 @@ def setup(context):
                             parameters=[{'use_sim_time': True, 'config': camera_config,
                                          'platform': platform,
                                          'output_dir': LaunchConfiguration('capture_dir')}], output='screen'))
-    if LaunchConfiguration('gpu_backend').perform(context) == 'd3d12':
+    d3d12 = LaunchConfiguration('gpu_backend').perform(context) == 'd3d12'
+    rviz_enabled = LaunchConfiguration('rviz').perform(context).lower() == 'true'
+    if d3d12:
         actions.extend([
             SetEnvironmentVariable('GALLIUM_DRIVER', 'd3d12'),
             SetEnvironmentVariable('MESA_D3D12_DEFAULT_ADAPTER_NAME',
                                    LaunchConfiguration('gpu_adapter'))])
-    if LaunchConfiguration('rviz').perform(context).lower() == 'true':
+    if rviz_enabled:
         actions.append(Node(package='agv_bringup', executable='visualization_tf.py',
                             parameters=[{'use_sim_time': True, 'camera_flex_enabled': bool(flex.get('enabled', False))}], output='screen'))
         rviz_node=Node(package='rviz2', executable='rviz2', name='agv_rviz',
                             arguments=['-d', str(bringup/'config/inspection.rviz')],
                             parameters=[{'use_sim_time': True}], remappings=[('/tf','/visualization/tf')], output='screen')
-        if not headless and LaunchConfiguration('gpu_backend').perform(context)=='d3d12':
+        if not headless and d3d12:
             # Stagger the two WSLg graphics clients; do not race their startup
             # context creation. Controller failure still shuts down the launch.
             actions.append(RegisterEventHandler(OnProcessExit(target_action=spawner,
                 on_exit=lambda event,context:[rviz_node] if event.returncode==0 else [])))
         else:actions.append(rviz_node)
-    # follow_camera.py gives up 90 s after it starts, so it waits with the GUI rather
-    # than from the beginning of the launch: the stagger and any GUI retry would
-    # otherwise come out of its budget and leave the camera unlocked on a run that
-    # recovered.
-    follow_actions = ([Node(package='agv_bringup', executable='follow_camera.py', output='screen')]
-                      if not headless and LaunchConfiguration('follow_camera').perform(context).lower() == 'true'
-                      else [])
     actions.append(SetEnvironmentVariable('GZ_GUI_PLUGIN_PATH', str(Path(get_package_prefix('agv_bringup'))/'lib') + os.pathsep + os.environ.get('GZ_GUI_PLUGIN_PATH','')))
+    delayed_controller = False
     if not headless:
         # The GUI runs as its own ExecuteProcess rather than a third gz_sim.launch.py
         # include, so that an abort while it creates its graphics context can be
@@ -196,9 +207,37 @@ def setup(context):
         if gz_executable is None:
             raise ValueError('gz is not on PATH; the Gazebo GUI client cannot be started')
         gui_config_path = LaunchConfiguration('gui_config').perform(context)
-        gui_delay = float(LaunchConfiguration('gui_start_delay').perform(context))
+        configured_gui_delay = float(LaunchConfiguration('gui_start_delay').perform(context))
         gui_retry_delay = float(LaunchConfiguration('gui_retry_delay').perform(context))
-        gui_retries = int(LaunchConfiguration('gui_abort_retries').perform(context))
+        retries_text = LaunchConfiguration('gui_abort_retries').perform(context)
+        if not retries_text.isdigit():
+            raise ValueError('gui_abort_retries must be an integer within [0, 5]')
+        configured_gui_retries = int(retries_text)
+        validate_gui_options(configured_gui_delay, gui_retry_delay, configured_gui_retries)
+        # The graphics-context race was observed only between WSL D3D12 and RViz.
+        gui_delay = configured_gui_delay if d3d12 and rviz_enabled else 0.
+        gui_retries = configured_gui_retries if d3d12 else 0
+        requested_ready_file = LaunchConfiguration('gui_ready_file').perform(context)
+        if requested_ready_file:
+            ready_file = Path(requested_ready_file).expanduser().resolve()
+            if ready_file.exists():
+                raise ValueError('gui_ready_file already exists; refusing stale readiness evidence')
+        else:
+            ready_file = Path(tempfile.mkdtemp(prefix='agv_gui_ready_')) / 'ready.json'
+        follow_enabled = LaunchConfiguration('follow_camera').perform(context).lower() == 'true'
+        readiness_probe = Node(package='agv_bringup', executable='follow_camera.py',
+            arguments=['--ready-file', str(ready_file)] + ([] if follow_enabled else ['--ready-only']),
+            output='screen')
+        delayed_controller = True
+
+        def readiness_exited(event, context):
+            if event.returncode == 0 and ready_file.is_file():
+                return [LogInfo(msg='Gazebo GUI readiness confirmed; enabling vehicle motion'),
+                        controller]
+            return [EmitEvent(event=Shutdown(reason='Gazebo GUI readiness probe failed'))]
+
+        actions.append(RegisterEventHandler(OnProcessExit(
+            target_action=readiness_probe, on_exit=readiness_exited)))
 
         def gui_with_retry(remaining):
             process = ExecuteProcess(cmd=['ruby', gz_executable, 'sim', '-g',
@@ -211,7 +250,8 @@ def setup(context):
                 # to fall back to. A clean close, a signal, or any other code is a real
                 # exit and still stops the run, because a mission observed headless is
                 # not the joint GUI acceptance it would be mistaken for.
-                if event.returncode == 134 and remaining > 0:
+                ready = ready_file.is_file()
+                if should_retry_gui(event.returncode, ready, remaining, d3d12):
                     return [LogInfo(msg='Gazebo GUI aborted creating its graphics context; '
                                         'retrying, %d attempt(s) left' % remaining),
                             TimerAction(period=gui_retry_delay, actions=gui_with_retry(remaining - 1))]
@@ -219,15 +259,16 @@ def setup(context):
 
             return [RegisterEventHandler(OnProcessExit(target_action=process, on_exit=exited)), process]
 
-        # Hold the GUI until the controllers are up, then wait again so that it is not
+        # Hold the GUI until the joint controllers are up, then wait again so it is not
         # creating its graphics context while RViz creates its own. Both used to start
         # on this one event and came up with consecutive pids; all three recorded
         # startup failures have that shape, with the GUI the one that loses its device.
         # The delay is the separation the comment above RViz always claimed but never had.
-        # A failed spawn already shuts the run down through check_spawn.
+        # A failed spawn already shuts the run down through check_spawn. The motion
+        # controller starts only after the readiness probe has seen a stable GUI.
         actions.append(RegisterEventHandler(OnProcessExit(target_action=spawner,
             on_exit=lambda event,context:[TimerAction(period=gui_delay,
-                actions=gui_with_retry(gui_retries) + follow_actions)] if event.returncode==0 else [])))
+                actions=gui_with_retry(gui_retries) + [readiness_probe])] if event.returncode==0 else [])))
     return actions + [gz,
         RegisterEventHandler(OnProcessExit(target_action=controller,
             on_exit=[EmitEvent(event=Shutdown(reason='Motion controller exited'))])),
@@ -242,7 +283,7 @@ def setup(context):
             '/ground_truth/odom@nav_msgs/msg/Odometry[gz.msgs.Odometry',
             '/lidar/left/points@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked',
             '/lidar/right/points@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked']),
-        spawner, controller]
+        spawner] + ([] if delayed_controller else [controller])
 
 
 def generate_launch_description():
@@ -252,6 +293,7 @@ def generate_launch_description():
         DeclareLaunchArgument('gui_start_delay', default_value='6.0', description='Seconds between the RViz and Gazebo GUI graphics clients; 0 restores the simultaneous start that every recorded context failure shows'),
         DeclareLaunchArgument('gui_abort_retries', default_value='2', description='Retries when the Gazebo GUI aborts creating its graphics context; 0 restores the previous behaviour of ending the run on the first abort'),
         DeclareLaunchArgument('gui_retry_delay', default_value='10.0', description='Seconds to let the graphics stack settle before retrying an aborted GUI'),
+        DeclareLaunchArgument('gui_ready_file', default_value='', description='Optional absent path for atomic GUI readiness evidence'),
         DeclareLaunchArgument('follow_camera', default_value='true', choices=['true', 'false']),
         DeclareLaunchArgument('gui_config', default_value=str(Path(get_package_share_directory('agv_bringup'))/'config/gui.config')),
         DeclareLaunchArgument('linescan', default_value='false'),

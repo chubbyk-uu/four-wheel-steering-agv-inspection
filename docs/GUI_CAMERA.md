@@ -7,6 +7,8 @@
 - `follow_camera:=false`：关闭自动跟车，恢复普通自由相机。
 - `gui_config:=/path/to/gui.config`：自定义初始相机位姿和跟随偏移。
 
+有GUI时，运动控制器会等到CameraTracking插件连续稳定3秒后才启动；启动错开、GUI失败和D3D12重试等待期间车辆不会运动。默认跟车模式同时验证跟随目标与看向目标均为AGV；`follow_camera:=false`仍验证GUI已经就绪，但不改变自由相机。GUI就绪后退出会立即结束整个仿真，不会按启动故障重试。D3D12＋RViz默认错开6秒并允许启动阶段最多重试2次；原生Linux不启用该重试。无头运行不经过GUI门控。
+
 使用CameraTracking的`FOLLOW_LOOK_AT`模式，follow_target和track_target均为agv。辅助脚本要求连续3秒确认，成功后退出；跟车位置增益0.2、看向目标增益1.0。默认`camera_pose`为`-4 -3 3 0 0.35 0.25`，`follow_offset`为`-4 -3 2.6`，偏移随车辆局部坐标旋转。
 
 项目`FollowCameraZoom` GUI插件在同时跟随和看向同一目标时拦截拖动；滚轮按原逻辑更新持久跟随偏移，距离限制0.8～80 m。关闭跟车后恢复原生拖动和缩放。当前验证使用`tools/validate_gui_camera.py`，检查拖动不能改变朝向、滚轮距离能保持以及原地转向后车辆仍在画面中心。

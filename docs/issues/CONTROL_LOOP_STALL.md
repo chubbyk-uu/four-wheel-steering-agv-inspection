@@ -141,15 +141,17 @@ gz sim -g 退出 134（SIGABRT），on_exit_shutdown 连带终止整个任务
 
 **注释与代码原本不符**：RViz上方那句"不要让两个WSLg图形客户端竞争启动时的上下文创建"从未被实现——RViz和GUI都挂在同一个`OnProcessExit(spawner)`上，所以一起启动。三次故障的连号pid就是这件事。
 
-**已实施的修复**（[结果](../../results/gui_startup_abort.json)）：
+**已实施并收严的修复**（[结果](../../results/gui_startup_abort.json)）：
 
 1. **真正错开**：`gui_start_delay`（默认6.0 s）让GUI在RViz那个事件之后再等一段。已验证RViz（pid 70881）报出`OpenGl 4.6`之后GUI（pid 70919）才启动，相隔38个pid而非连号。
-2. **启动期abort自动重试**：GUI改为自己的`ExecuteProcess`（不再是第三个`gz_sim.launch.py`include，那个include在本工作区算出的模型/插件路径都是空串，唯一让出的只是它无条件的`Shutdown`），于是能按退出码判断——**只有134（SIGABRT）**才重试，`gui_retry_delay`（默认10.0 s）后重来，最多`gui_abort_retries`（默认2）次；其余任何退出照旧`Shutdown`，**绝不把任务静默降级成无头**。
-3. **`follow_camera.py`随GUI一起启动**：它自启动起90 s放弃，否则错开与重试会吃掉它的预算，让一次已经恢复的运行反而丢掉锁定跟随。
+2. **重试仅限D3D12启动阶段**：GUI改为自己的`ExecuteProcess`（不再是第三个`gz_sim.launch.py`include，那个include在本工作区算出的模型/插件路径都是空串，唯一让出的只是它无条件的`Shutdown`）。只有D3D12、GUI尚未确认就绪、退出码134且仍有预算时才重试；GUI一旦就绪，之后任何退出都立即`Shutdown`。原实现只判断134，会把任务运行中的GUI abort也伪装成可恢复启动故障，已纠正。原生Linux不启用该重试，6 s错开也只用于D3D12＋RViz组合。
+3. **GUI就绪是运动许可条件**：`follow_camera.py`随首个GUI启动并跨重试等待，要求`/gui/currently_tracked`连续稳定3 s，再原子写入就绪证据；默认模式同时确认`FOLLOW_LOOK_AT`及两个AGV目标，`follow_camera:=false`只确认GUI插件存在，不改变自由视角。`swerve_controller`在证据出现前不启动，因此启动失败、错开窗口或重试等待期间车辆都不可能先行运动。探针超时或异常同样终止整个launch。
 
 **为什么不把软件驱动加回去**：它确实能救——系统Mesa那一栏就是证明——但救回来的是一个跑在`llvmpipe`上的GUI，正是本项目明确拒绝的静默降级（验收要求GUI＋RViz＋OptiX真机渲染），而且软件渲染还会去抢物理步需要的CPU。有了重试之后，一次abort的代价是十秒而不是一整跑，回退能买到的东西已经没有价值。
 
-**不声称**：没有测量修复前后的失败率。要分辨10%上下的两个率，每组约需20次带GUI启动、每次几分钟，那正是用户否决过的那个A/B。这三条改动的依据是确定性证据和一致的故障形状，不是显著性。
+实际回归确认两种正常路径：D3D12＋RViz默认跟车时，RViz先报告OpenGL 4.6，随后GUI启动，跟车连续稳定3 s后才出现`swerve_controller`进程；`rviz:=false follow_camera:=false`时，自由视角就绪后才启动控制器。GUI就绪后手工关闭，launch立即停止且没有重试。GUI策略、边界参数、ROS附加参数、两种就绪语义和原子证据另有5个注册测试保护；全工作区433项测试通过。
+
+**不声称**：没有测量修复前后的失败率。要分辨10%上下的两个率，每组约需20次带GUI启动、每次几分钟，那正是用户否决过的那个A/B。这些改动的依据是确定性证据和一致的故障形状，不是显著性。
 
 **仍未实施**：`D3D12: Removing Device`是设备移除事件，WSL的`dxg`驱动会在`dmesg`里记录原因。在运行脚本里顺带保存启动窗口的`dmesg`，下次自然发生即可拿到移除原因（挂起／驱动内部错误／复位），那才是能向上游提交的材料。**制造故障不如等故障**。
 

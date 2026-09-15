@@ -1,5 +1,5 @@
 {
- "schema": "agv.gui_startup_abort.v1",
+ "schema": "agv.gui_startup_abort.v2",
  "date": "2026-09-15",
  "question": "Why does the Gazebo GUI client intermittently abort at startup, and why did it get worse after the private Mesa was adopted?",
  "baseline_commit": "d3679450f0ffbaf645c818577d5ccb2ca10acd74",
@@ -37,14 +37,16 @@
  },
  "fix": {
   "1_stagger": "gui_start_delay (default 6.0 s) holds the GUI that long after the spawner event RViz already waits for, so the two graphics clients no longer create their contexts together. Verified: RViz pid 70881 reports OpenGl 4.6 before GUI pid 70919 starts, 38 pids apart instead of adjacent.",
-  "2_retry": "the GUI is now its own ExecuteProcess instead of a third gz_sim.launch.py include, so its exit code can be judged. Exit 134 during graphics startup is retried after gui_retry_delay (default 10.0 s), up to gui_abort_retries (default 2). Any other exit still emits Shutdown, so a mission is never silently observed headless.",
-  "3_follow_camera": "follow_camera.py gives up 90 s after it starts, so it now waits with the GUI rather than from the start of the launch; otherwise the stagger and any retry would come out of its budget and leave the camera unlocked on a run that recovered.",
+  "2_retry": "the GUI is now its own ExecuteProcess instead of a third gz_sim.launch.py include, so its exit code can be judged. A retry is allowed only on D3D12, for exit 134 before GUI readiness, after gui_retry_delay (default 10.0 s), up to gui_abort_retries (default 2). Native Linux does not retry. Any exit after readiness and every other exit still emits Shutdown, so a runtime fault cannot be disguised as startup recovery and a mission is never silently observed headless.",
+  "3_readiness_gate": "follow_camera.py persists across startup retries and requires three stable seconds of /gui/currently_tracked before atomically writing readiness evidence. Normal mode verifies FOLLOW_LOOK_AT and both AGV targets; follow_camera:=false verifies the GUI plugin without changing the free camera. swerve_controller starts only after this evidence, so no motion is possible during the stagger, a failed attempt, or retry delay.",
   "why_not_restore_the_software_driver": "it would work -- the system build proves a software fallback keeps the GUI alive -- but the result is a GUI rendering in llvmpipe, which is the silent degradation this project already refuses: acceptance requires GUI + RViz + OptiX on the real device, and a software GUI would also compete for the CPU the physics step needs. With the retry in place the cost of an abort is ten seconds rather than a whole run, so the fallback buys nothing that is wanted."
  },
  "verification": {
-  "normal_start": "full launch with rviz and follow_camera: RViz first, GUI after the delay, 'AGV locked follow enabled' reached, 130 s with no error",
+  "normal_start": "full D3D12 launch with rviz and follow_camera: RViz reported OpenGL 4.6 first, GUI started after the delay, 'AGV locked follow enabled' was sustained for three seconds, and only then did swerve_controller start",
+  "free_camera_start": "rviz:=false follow_camera:=false: the GUI reported free-camera readiness and only then did swerve_controller start; the readiness probe did not alter camera tracking",
   "retry_path": "with the GUI command replaced by an injected exit 134, the log shows 'retrying, 2 attempt(s) left', then 'retrying, 1 attempt(s) left', then shutdown on the third abort. Injection removed afterwards and the file diffed against its pre-injection copy.",
-  "clean_exit_path": "with an injected exit 0 the GUI is not retried and the run shuts down immediately, preserving the rule that a GUI exit ends the mission."
+  "clean_exit_path": "after readiness, closing the real GUI stopped the whole launch immediately with no retry, preserving the rule that a GUI exit ends the mission.",
+  "automated": "5 registered agv_bringup tests cover retry policy, option bounds, launch_ros argument handling, both readiness modes and atomic evidence; the full workspace passes 433 tests"
  },
  "not_claimed": [
   "that the stagger or the retry lowers the underlying D3D12 failure rate; the trigger is in the Microsoft D3D12 runtime and was not reproduced on demand",
