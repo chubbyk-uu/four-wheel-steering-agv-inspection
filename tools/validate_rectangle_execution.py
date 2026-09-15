@@ -80,6 +80,17 @@ def main():
         stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
     rclpy.init();node=Node('rectangle_evaluator',parameter_overrides=[Parameter('use_sim_time',value=True)])
     latest={};records=[];truth=[];run=None;runlog=None;images={};joint_samples=[]
+    owned_children={};last_child_scan=0.
+    def check_simulator():
+        nonlocal last_child_scan
+        assert sim.poll() is None,'simulator launch exited; see simulation.log'
+        now=time.monotonic()
+        if now-last_child_scan>=1.:
+            try:
+                owned_children.update({p.pid:p for p in psutil.Process(sim.pid).children(recursive=True)})
+            except psutil.NoSuchProcess:
+                raise AssertionError('simulator launch exited during process discovery')
+            last_child_scan=now
     pause_client=node.create_client(Trigger,'/mission/pause');resume_client=node.create_client(Trigger,'/mission/resume')
     cancel_client=node.create_client(Trigger,'/mission/cancel');suspended=None;stop_injected=False
     pause_future=None;resume_future=None;paused_at=None;image_count_at_pause=None;pause_report={}
@@ -140,6 +151,7 @@ def main():
     try:
         deadline=time.monotonic()+80
         while latest.get('health',{}).get('state')!='READY':
+            check_simulator()
             assert time.monotonic()<deadline and sim.poll() is None,'startup failed'
             rclpy.spin_once(node,timeout_sec=.05)
         runlog=(a.output/'executor.log').open('w')
@@ -149,6 +161,7 @@ def main():
             (['-p','tracking_config:='+str(a.tracking_config.resolve())] if a.tracking_config else []),stdout=runlog,stderr=subprocess.STDOUT,start_new_session=True)
         deadline=time.monotonic()+700
         while not (latest.get('status',{}).get('state') in ('COMPLETED','ACQUIRED','FAULT','CANCELED') and latest['status'].get('motion_state')=='HOLD' and latest['status'].get('capture_active') is False):
+            check_simulator()
             assert run.poll() is None,'executor exited'
             assert time.monotonic()<deadline,'mission timeout'
             rclpy.spin_once(node,timeout_sec=.02)
@@ -418,7 +431,7 @@ def main():
             except psutil.NoSuchProcess:pass
         if run:stop(run)
         if runlog:runlog.close()
-        node.destroy_node();rclpy.shutdown();stop_tree(sim);log.close()
+        node.destroy_node();rclpy.shutdown();stop_tree(sim,tuple(owned_children.values()));log.close()
 
 
 if __name__=='__main__':main()

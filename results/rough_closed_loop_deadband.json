@@ -1,0 +1,380 @@
+{
+  "cases": {
+    "10 mm": {
+      "motion": [
+        {
+          "track": 0,
+          "samples": 67,
+          "true_cross_rmse_mm": 2.3950515449704985,
+          "true_cross_max_abs_mm": 3.775019120211276,
+          "true_cross_peak_to_peak_mm": 5.717375046630391,
+          "true_xy_speed_m_s_p5_median_p95": [
+            2.778823115455929,
+            2.822628872175174,
+            2.9236554462630173
+          ],
+          "command_body_vy_rms_m_s": 0.017402800624332648,
+          "command_body_yaw_rate_rms_rad_s": 1.0784569652571029e-05,
+          "fusion_xyz_rmse_mm": [
+            7.223020341170432,
+            7.737734784293625,
+            8.330798291493613
+          ],
+          "fusion_attitude_rotvec_rmse_deg": [
+            0.10065828871467579,
+            0.539490359910735,
+            0.07610247378408434
+          ]
+        },
+        {
+          "track": 1,
+          "samples": 65,
+          "true_cross_rmse_mm": 2.4913750210024994,
+          "true_cross_max_abs_mm": 4.883601057897646,
+          "true_cross_peak_to_peak_mm": 7.9543218172803964,
+          "true_xy_speed_m_s_p5_median_p95": [
+            2.813810205276202,
+            2.883959622182783,
+            2.939240120874063
+          ],
+          "command_body_vy_rms_m_s": 0.012856694880832163,
+          "command_body_yaw_rate_rms_rad_s": 0.001207959831389779,
+          "fusion_xyz_rmse_mm": [
+            11.339498624258342,
+            7.5104258769368375,
+            9.097651618807756
+          ],
+          "fusion_attitude_rotvec_rmse_deg": [
+            0.27389280750738004,
+            0.6160608061793714,
+            0.08049714935638543
+          ]
+        },
+        {
+          "track": 2,
+          "samples": 66,
+          "true_cross_rmse_mm": 2.472804431465688,
+          "true_cross_max_abs_mm": 5.198478458859568,
+          "true_cross_peak_to_peak_mm": 7.795072989339847,
+          "true_xy_speed_m_s_p5_median_p95": [
+            2.782112505497312,
+            2.844538297635757,
+            2.9389896806733287
+          ],
+          "command_body_vy_rms_m_s": 0.008383756806674145,
+          "command_body_yaw_rate_rms_rad_s": 0.0,
+          "fusion_xyz_rmse_mm": [
+            10.36407314231755,
+            9.26290242183823,
+            11.246296802956069
+          ],
+          "fusion_attitude_rotvec_rmse_deg": [
+            0.3884555430729391,
+            0.5450560901935314,
+            0.0861997158614545
+          ]
+        }
+      ],
+      "capture": [
+        {
+          "track_id": 0,
+          "blocks": 6,
+          "rows": 24576,
+          "truth_along_extent_m": [
+            -4.933000830278013,
+            4.053236166644664
+          ],
+          "continuous_roi": true
+        },
+        {
+          "track_id": 1,
+          "blocks": 7,
+          "rows": 25697,
+          "truth_along_extent_m": [
+            -4.93856618298236,
+            4.450450258201978
+          ],
+          "continuous_roi": true
+        },
+        {
+          "track_id": 2,
+          "blocks": 6,
+          "rows": 24576,
+          "truth_along_extent_m": [
+            -4.91543103073289,
+            4.072790345628087
+          ],
+          "continuous_roi": true
+        }
+      ],
+      "final_state": "ACQUIRED",
+      "final_motion": "HOLD",
+      "double_line_centers_peak_to_peak_px": [
+        37.5,
+        84.0
+      ],
+      "double_line_center_std_px": [
+        12.280465076489191,
+        19.305959961330036
+      ],
+      "double_line_nonlinear_peak_to_peak_px": [
+        36.42318747622585,
+        67.16483259318193
+      ],
+      "valid_image_windows": 313
+    },
+    "3 mm": {
+      "motion": [
+        {
+          "track": 0,
+          "samples": 67,
+          "true_cross_rmse_mm": 14.08048407077362,
+          "true_cross_max_abs_mm": 16.086333309163425,
+          "true_cross_peak_to_peak_mm": 4.808506908696941,
+          "true_xy_speed_m_s_p5_median_p95": [
+            2.789220877145271,
+            2.8335687776357954,
+            2.9238943684380123
+          ],
+          "command_body_vy_rms_m_s": 0.01158295003602893,
+          "command_body_yaw_rate_rms_rad_s": 0.00040654011636824685,
+          "fusion_xyz_rmse_mm": [
+            8.105270362522138,
+            9.065543369028815,
+            12.361803999963497
+          ],
+          "fusion_attitude_rotvec_rmse_deg": [
+            0.19869391888876042,
+            0.6718693709229624,
+            0.15421257813510791
+          ]
+        },
+        {
+          "track": 1,
+          "samples": 66,
+          "true_cross_rmse_mm": 8.551333429576927,
+          "true_cross_max_abs_mm": 14.561775093198337,
+          "true_cross_peak_to_peak_mm": 13.530208967850177,
+          "true_xy_speed_m_s_p5_median_p95": [
+            2.7989949578897257,
+            2.8607099841661965,
+            2.9389404275844533
+          ],
+          "command_body_vy_rms_m_s": 0.022464351803898174,
+          "command_body_yaw_rate_rms_rad_s": 0.0001227122895780745,
+          "fusion_xyz_rmse_mm": [
+            9.945515387605283,
+            14.937929280570279,
+            19.2989918181632
+          ],
+          "fusion_attitude_rotvec_rmse_deg": [
+            0.15334248161935773,
+            0.6030067911688721,
+            0.18585747681364262
+          ]
+        },
+        {
+          "track": 2,
+          "samples": 66,
+          "true_cross_rmse_mm": 3.149742706408261,
+          "true_cross_max_abs_mm": 4.666082512775283,
+          "true_cross_peak_to_peak_mm": 9.122030965591554,
+          "true_xy_speed_m_s_p5_median_p95": [
+            2.78247036202363,
+            2.841439106348096,
+            2.9353757144795782
+          ],
+          "command_body_vy_rms_m_s": 0.00765012421757642,
+          "command_body_yaw_rate_rms_rad_s": 0.0,
+          "fusion_xyz_rmse_mm": [
+            11.649588461571318,
+            8.136258836469427,
+            12.111566219955606
+          ],
+          "fusion_attitude_rotvec_rmse_deg": [
+            0.23304819812895633,
+            0.525081949839935,
+            0.08412833729279143
+          ]
+        }
+      ],
+      "capture": [
+        {
+          "track_id": 0,
+          "blocks": 6,
+          "rows": 24576,
+          "truth_along_extent_m": [
+            -4.915402215543519,
+            4.06988067604402
+          ],
+          "continuous_roi": true
+        },
+        {
+          "track_id": 1,
+          "blocks": 7,
+          "rows": 25609,
+          "truth_along_extent_m": [
+            -4.929097466389418,
+            4.431828086869608
+          ],
+          "continuous_roi": true
+        },
+        {
+          "track_id": 2,
+          "blocks": 6,
+          "rows": 24576,
+          "truth_along_extent_m": [
+            -4.914430021863777,
+            4.073503596154424
+          ],
+          "continuous_roi": true
+        }
+      ],
+      "final_state": "ACQUIRED",
+      "final_motion": "HOLD",
+      "double_line_centers_peak_to_peak_px": [
+        41.0,
+        85.5
+      ],
+      "double_line_center_std_px": [
+        12.895206702030281,
+        20.02630136287985
+      ],
+      "double_line_nonlinear_peak_to_peak_px": [
+        35.743946774822234,
+        67.03378289005195
+      ],
+      "valid_image_windows": 313
+    },
+    "0 mm": {
+      "motion": [
+        {
+          "track": 0,
+          "samples": 66,
+          "true_cross_rmse_mm": 10.761392882127216,
+          "true_cross_max_abs_mm": 17.448020278354015,
+          "true_cross_peak_to_peak_mm": 10.51461451154001,
+          "true_xy_speed_m_s_p5_median_p95": [
+            2.783817545662176,
+            2.8228484903260007,
+            2.9141872612125783
+          ],
+          "command_body_vy_rms_m_s": 0.01757433945546103,
+          "command_body_yaw_rate_rms_rad_s": 0.00020969806040807532,
+          "fusion_xyz_rmse_mm": [
+            8.93917491475935,
+            7.8647460613985185,
+            15.524394540024996
+          ],
+          "fusion_attitude_rotvec_rmse_deg": [
+            0.34821535017625116,
+            0.6856888061052594,
+            0.10440700448081718
+          ]
+        },
+        {
+          "track": 1,
+          "samples": 66,
+          "true_cross_rmse_mm": 9.350849282635114,
+          "true_cross_max_abs_mm": 15.402684290623636,
+          "true_cross_peak_to_peak_mm": 19.649232620786215,
+          "true_xy_speed_m_s_p5_median_p95": [
+            2.8042317256467415,
+            2.8672678090706505,
+            2.950651706609647
+          ],
+          "command_body_vy_rms_m_s": 0.023135554694715878,
+          "command_body_yaw_rate_rms_rad_s": 0.0003694103831053857,
+          "fusion_xyz_rmse_mm": [
+            10.328080540067521,
+            15.305127526732832,
+            12.61156353409038
+          ],
+          "fusion_attitude_rotvec_rmse_deg": [
+            0.12259412818879968,
+            0.6787112569846987,
+            0.1978596740233545
+          ]
+        },
+        {
+          "track": 2,
+          "samples": 65,
+          "true_cross_rmse_mm": 2.747697594846966,
+          "true_cross_max_abs_mm": 4.842277140840013,
+          "true_cross_peak_to_peak_mm": 8.50005438915935,
+          "true_xy_speed_m_s_p5_median_p95": [
+            2.805236226345045,
+            2.882894890309844,
+            2.9393030322594473
+          ],
+          "command_body_vy_rms_m_s": 0.00756935805297523,
+          "command_body_yaw_rate_rms_rad_s": 1.812087960671227e-05,
+          "fusion_xyz_rmse_mm": [
+            7.532638613662584,
+            13.962865152525197,
+            11.958513197926012
+          ],
+          "fusion_attitude_rotvec_rmse_deg": [
+            0.5632412187676573,
+            0.7411012138783928,
+            0.09026312753302397
+          ]
+        }
+      ],
+      "capture": [
+        {
+          "track_id": 0,
+          "blocks": 6,
+          "rows": 24576,
+          "truth_along_extent_m": [
+            -4.927790727540939,
+            4.057578202001437
+          ],
+          "continuous_roi": true
+        },
+        {
+          "track_id": 1,
+          "blocks": 7,
+          "rows": 25641,
+          "truth_along_extent_m": [
+            -4.923385517798103,
+            4.443682987092352
+          ],
+          "continuous_roi": true
+        },
+        {
+          "track_id": 2,
+          "blocks": 7,
+          "rows": 25624,
+          "truth_along_extent_m": [
+            -4.923657625612939,
+            4.445898530340147
+          ],
+          "continuous_roi": true
+        }
+      ],
+      "final_state": "ACQUIRED",
+      "final_motion": "HOLD",
+      "double_line_centers_peak_to_peak_px": [
+        38.0,
+        60.0
+      ],
+      "double_line_center_std_px": [
+        4.470882157856807,
+        9.163133405691003
+      ],
+      "double_line_nonlinear_peak_to_peak_px": [
+        37.758117536195186,
+        56.74799791181704
+      ],
+      "valid_image_windows": 313
+    }
+  },
+  "scope": "One three-track mission per setting on 20 m rough scene, 4 m requested ROI at 10 km/h. Not identical noise replay or proof of best default. Pose errors are evaluated against synchronized truth; attitude errors are small-angle body-frame rotation vectors. Images use only fixed flat/optical correction and row concatenation.",
+  "roi_margin_m": 0.1,
+  "truth_bracket_limit_s": 0.06,
+  "image_row_window": [
+    14000,
+    24000
+  ]
+}
