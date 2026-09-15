@@ -1,0 +1,136 @@
+{
+  "flat": {
+    "passed": true,
+    "rows": [
+      4096,
+      4096,
+      4096
+    ],
+    "speed_m_s": 2.777777777777778,
+    "real_time_factor": 1.0004030889582787,
+    "gazebo_gui": true,
+    "rviz": true,
+    "display_bad_stamps": 0,
+    "ros_all_blocks_byte_identical": true,
+    "sampling_queue_observed_wait_max_s": 0.011050089999116608,
+    "sampling_queue_high_water_lines": 91,
+    "final_motion_state": "HOLD",
+    "motion_evaluation": {
+      "scope": "ground-truth evaluation only, never command input; each pose uses its own timestamp",
+      "duration_s": 1.62,
+      "displacement_m": [
+        4.500520258976827,
+        -2.809323884633841e-09,
+        -9.542968304798727e-06
+      ],
+      "average_world_velocity_m_s": [
+        2.7780989252943376,
+        -1.734150546070272e-09,
+        -5.890721175801682e-06
+      ]
+    }
+  },
+  "rough": {
+    "passed": true,
+    "rows": [
+      4096,
+      4096,
+      4096
+    ],
+    "speed_m_s": 2.777777777777778,
+    "real_time_factor": 0.9997256107818561,
+    "gazebo_gui": true,
+    "rviz": true,
+    "display_bad_stamps": 0,
+    "ros_all_blocks_byte_identical": true,
+    "sampling_queue_observed_wait_max_s": 0.011003981000612839,
+    "sampling_queue_high_water_lines": 91,
+    "final_motion_state": "HOLD",
+    "motion_evaluation": {
+      "scope": "ground-truth evaluation only, never command input; each pose uses its own timestamp",
+      "duration_s": 1.62,
+      "displacement_m": [
+        4.499791624174261,
+        -0.00016312370805904308,
+        0.0008046126086570515
+      ],
+      "average_world_velocity_m_s": [
+        2.777649150724852,
+        -0.00010069364695002658,
+        0.0004966744497883034
+      ]
+    }
+  },
+  "calibration": {
+    "passed": true,
+    "backend": "optix_shared_mesh_dynamic_robot",
+    "calibration_id": "measured-3ce36aa22f834fe4",
+    "flat_cv_before": 0.14253494177344567,
+    "flat_cv_after": 0.0006127562757712664,
+    "holdout_error_px_before": 66.2346229844658,
+    "holdout_error_px_after": 0.6999999999998181,
+    "fit_error_px_max": 0.3384767638053745,
+    "valid_columns": 4096,
+    "partition_identical": true,
+    "metadata_preserved": true,
+    "full_throughput_acceptance": false,
+    "scope": "GZ capture, fixed horizontal plane; flat and holdout block 1 excluded from fitting"
+  },
+  "scene": {
+    "step_m": 0.1,
+    "max_abs_height_m": 0.003,
+    "rms_height_m": 0.0009011349259361133,
+    "min_height_m": -0.003,
+    "max_height_m": 0.002945330800971126,
+    "source_manifest_sha256": "20acaf395bc85a63ca39e45726eb003b830727f3f9348e6c1ada716a5d9d572a",
+    "seed": 20260915,
+    "profile": "shared heightfield plus unchanged shallow defects",
+    "collision_triangles": 56296,
+    "default_road_changed": false
+  },
+  "comparison": {
+    "flat": {
+      "shape": [
+        12288,
+        4096
+      ],
+      "block_rows": [
+        4096,
+        4096,
+        4096
+      ],
+      "first_global_line": 0,
+      "last_global_line": 12287,
+      "line_spacing_m": 0.00036570101983193683,
+      "pixel_sha256": "48f78205c16c1cbcdd8a94c1168ccbc350adb3325d804c1b79fed59f2ac65fd9",
+      "decoded_png_equals_corrected_rows": true
+    },
+    "rough": {
+      "shape": [
+        12288,
+        4096
+      ],
+      "block_rows": [
+        4096,
+        4096,
+        4096
+      ],
+      "first_global_line": 0,
+      "last_global_line": 12287,
+      "line_spacing_m": 0.00036570101983193683,
+      "pixel_sha256": "e311c548e7429669dce8d4e856762ad62e21cd2eb138b3e8c7b98cade6f7a1cb",
+      "decoded_png_equals_corrected_rows": true
+    },
+    "calibration_id": "measured-3ce36aa22f834fe4",
+    "preview_gray_range": [
+      0,
+      160
+    ],
+    "scope": "Independent acquisition origins; no matching, stretching or geometric alignment."
+  },
+  "scope": "Single short GUI/RViz capture per road, 4.5 m requested at 10 km/h. Not 100 m certification, 11 kHz throughput or a CPU/GPU memory-headroom measurement. No pose warp; fixed measured column correction, then exact consecutive rows.",
+  "startup_failures": [
+    "New Python module was not installed: rebuilt agv_linescan.",
+    "Flat prefetch height bounds rejected displaced terrain: recomputed from actual optical vertices; added Python guard and regression."
+  ]
+}

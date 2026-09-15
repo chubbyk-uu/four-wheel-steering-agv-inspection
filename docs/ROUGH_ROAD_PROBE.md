@@ -91,13 +91,66 @@ bash tools/with_optix_runtime.sh bash -c '
 ```bash
 python3 tools/create_rough_textured_scene.py \
   --source local_data/road_markings_probe_v1 \
-  --output local_data/rough_markings_3mm_v1
+  --output local_data/rough_markings_3mm_v2
 ```
 
 试片保留原UV、颜色/法线纹理、箭头/禁停标识和浅裂缝沟槽，把同一个二维高程加到精细光学表面及碰撞基底。当前8个资产的碰撞面合计56,296个三角形。高程极值−3.000/+2.945 mm、标准差0.901 mm；按本试片全域重新归一化，不能把此前50×4 m试片的车身响应直接当成本片测量值。
 
 新增`layered_heightfield_shallow_v1`代理契约，保留并校验原始浅缺陷参考网格、基底高程及碰撞网格的哈希。原有深度上限和受影响面积≤1%约束不变；粗碰撞网格必须逐顶点/逐三角形符合声明的高程基底。精细成像网格的每个顶点必须等于原顶点加相同高程，防止无意填平裂缝或只改变某一侧世界。光学与碰撞三角划分不同，另在光学三角形三边中点和重心检查基底插值误差≤0.15 mm；这是抽样约束，不是所有面内位置严格相等的证明。
 
-生成器对未改资产使用硬链接节省磁盘，改写文件先断开链接，默认场景保持原样。生成的场景和参考网格留在`local_data/`，不提交Git。自动回归33项通过（新高程/代理10项及既有共享场景23项），包含篡改哈希、重新计算哈希后偷偷填平、过大高程和过大面内插值误差拒绝。
+生成器对未改资产使用硬链接节省磁盘，改写文件先断开链接，默认场景保持原样。生成的场景和参考网格留在`local_data/`，不提交Git。自动回归34项通过（新高程/代理10项及既有共享场景24项），包含篡改哈希、重新计算哈希后偷偷填平、过大高程和过大面内插值误差拒绝。
 
-本段只说明资产和校验完成。带GUI/RViz的实际水泥采图、离线校正及条带对照结果需独立记录，不能由资产生成成功推定实时率或图像效果。
+实际联合采图结果见下节，不能由资产生成成功推定实时率或图像效果。
+
+## 水泥实拍对照结果
+
+两组使用相同悬挂、灯光、相机和真实0.40 m轮径：出生位置(2, −2.4) m，10 km/h直行，预热4.7秒，请求匀速采集4.5 m，**制动前关采图**，最后确认HOLD。光斑宽度未改。平地与起伏各一次GUI＋RViz＋OptiX；每组均保存3张4096×4096原图，ROS与归档逐字节一致，校正后条带4096×12288像素（约4.494 m）。不足1000行的终止尾块按既有规则丢弃，不补造像素。
+
+| 指标 | 平地 | 10 cm / 最大3 mm起伏 |
+|---|---:|---:|
+| 匀速采集实时率 | 1.00040 | 0.99973 |
+| 最大采样队列观察等待 | 11.05 ms | 11.00 ms |
+| 稀疏真值标签的roll标准差 | 约0° | 0.0425° |
+| 稀疏真值标签的pitch标准差 | 0.0141° | 0.0672° |
+| 稀疏标签相机高度标准差 | 0.286 mm | 1.595 mm |
+| 箭头杆左边缘横向峰峰变化 | 0.322 px | 1.215 px |
+
+姿态诊断每组仅使用15个已归档真值标签，**不是完整高频采样或整段极值**。平地组仍有少量起步俯仰恢复，因此不是机器精度零振动对照。这些标签完全不参与条带生成。GUI/RViz完成自动同步检查，原图和校正图实际查看；没有重做鼠标交互或人工动态部件专项验收。
+
+旧标定没有绕过机器人契约复用：本轮重新采暗场、平场、标靶及独立留出标靶。新标定横向平场CV由14.253%降至0.0613%，独立标靶最大误差由66.23 px降至0.70 px，4096列均有效。平地与起伏使用**同一套固定平面标定**，仅做离线平场和横向光学校正，再把连续行直接连接；不做位姿投影、逐块对齐、动态高度补偿、沿行拉伸或拼缝优化。
+
+![相同显示亮度的两组条带](images/rough_textured_comparison.png)
+
+**实际观察：整图差别较温和，没有明显纵向拉伸。** 为区分起点错位与局部变形，对左右纹理区域取88个512²窗口做相位相关诊断，87个达到固定0.6响应阈值。横向位移的总体峰峰变化约8.08 px；纵向位移约33.7行且近乎恒定，窗口间峰峰差约0.223 px。该恒定行偏移对应两次独立采集起点不同，不能当成局部伸缩。0.223 px包含匹配误差，不能宣称是精确的真实几何变形量。箭头杆局部边缘的1.2 px变化也说明：不能仅凭已有姿态变化就声称图像拼接难度足够。
+
+![局部位移与箭头直边诊断](images/rough_textured_deformation.png)
+
+诊断图只在**曲线上**扣除恒定位移/均值以便看变化，未把结果用于图像校正。窗口函数输入使用独立拷贝，避免OpenCV原地处理污染重叠窗口；另用已知(−4,+7) px平移验证，误差<0.05 px且两输入图不变。箭头ROI是本次试片专用，不是通用道路评价算法。
+
+运行边界：单次约1.62秒匀速采图，RTF被设为1，不能推算剩余算力；本轮没有单独量化CPU/GPU内存增量，不代替100 m新悬挂/新道路复验或11 kHz独立吞吐验收。正式默认道路仍是平面；保留该3 mm试片供观察，不自动增加振幅或引入支架抖动。
+
+### 复现与本轮修复
+
+新增Python模块后先`colcon build --packages-select agv_linescan --symlink-install`并重新加载`install/setup.bash`。新标定通过`tools/validate_optix_calibration.py --output local_data/calibration_soft_suspension_v1 --grid-scene local_data/road_markings_probe_v1/manifest.json`生成（同本页WSL运行库包装）。
+
+两次采图均使用：
+
+```bash
+bash tools/with_optix_runtime.sh bash -c '
+  source /opt/ros/jazzy/setup.bash
+  source install/setup.bash
+  python3 tools/with_mesa_runtime.py python3 tools/validate_rendered_linescan.py \
+    --backend optix --scene local_data/rough_markings_3mm_v2/manifest.json \
+    --reference-target --gui --rviz --require-realtime \
+    --spawn-x 2 --spawn-y -2.4 --speed 2.777777777777778 \
+    --warmup 4.7 --distance 4.5 --stop-capture-before-brake --domain 97
+' > /tmp/rough_textured_capture.log 2>&1
+```
+
+平地把`--scene`替换为`local_data/road_markings_probe_v1/manifest.json`。成功归档已移至`local_data/rough_textured_capture_v1/{flat,rough}`。`tools/compare_rough_textured_capture.py --flat ... --rough ... --profile ... --output 新目录`生成直接条带，PNG解码后与校正后的连续行完全一致；`tools/measure_rough_textured_capture.py --captures local_data/rough_textured_capture_v1 --output results/rough_textured_image_diagnostics.json --figure docs/images/rough_textured_deformation.png`重绘诊断。
+
+实跑发现并处理两次启动失败：首次新增模块尚未安装，重建后恢复；第二次OptiX拒绝平地遗留的`height_bounds_m`。生成器现从**实际精细网格（含沟槽）**计算纹理预取高度范围，Python场景验证也提前检查这项运行时约束，未放松OptiX护栏。失败日志保留，不计入性能。另清理了标定后残留的一个GZ进程，沿用已有退出问题记录。
+
+最终通过colcon/CTest的6组Python测试，共100项；其中高程/代理测试已加入CMake，标准测试入口会执行。直接pytest全目录时曾因没有CMake设置的原生OBJ扩展路径而出现6个导入错误，正确colcon入口全通过，未为此修改测试断言。
+
+数值与校验见[采集报告](../results/rough_textured_capture.json)、[图像诊断](../results/rough_textured_image_diagnostics.json)。完整PNG、原图和标定数据仅保留本地；公开仓库只提交预览、工具和不含本机路径的报告。

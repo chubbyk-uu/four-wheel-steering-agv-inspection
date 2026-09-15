@@ -163,6 +163,16 @@ def validate_display_uv(asset,manifest,vertices,uv):
     if len(uv)!=len(vertices) or not np.allclose(uv,expected_uv,rtol=0,atol=1e-8):
         raise ValueError('display mesh UV/world-coordinate mismatch')
 
+def validate_material_height_bounds(material,vertices):
+    """Match the OptiX streaming height guard before launching the simulator."""
+    if material['schema'] not in ('agv.ground_material.tiles.v1','agv.ground_material.recipe.v1'):
+        return
+    bounds=np.asarray(material['height_bounds_m'],float)
+    if (bounds.shape!=(2,) or not np.isfinite(bounds).all() or bounds[0]>bounds[1]
+            or np.any(vertices[:,2]<bounds[0]-1e-7) or np.any(vertices[:,2]>bounds[1]+1e-7)):
+        raise ValueError('textured mesh violates prefetch height bounds')
+
+
 def validate(manifest):
     path=Path(manifest).resolve();m=json.loads(path.read_text());root=path.parent
     if m['schema']!='agv.shared.static_scene.v1' or m['frame']!='world' or m['units']!='m' or m['transform']!='identity_world_baked':
@@ -185,7 +195,9 @@ def validate(manifest):
         link=model.find('link');asset=assets[model.get('name')]
         if 'collision_proxy' in asset or ('ground_material' in m and asset.get('material')=='ground'):
             mesh_data=read_obj(root/asset['mesh'],with_uv='ground_material' in m and asset.get('material')=='ground')
-            if 'ground_material' in m and asset.get('material')=='ground':validate_display_uv(asset,m,mesh_data[0],mesh_data[2])
+            if 'ground_material' in m and asset.get('material')=='ground':
+                validate_display_uv(asset,m,mesh_data[0],mesh_data[2])
+                validate_material_height_bounds(m['ground_material'],mesh_data[0])
         collision_path=validate_proxy(root,asset,mesh_data[:2]) if 'collision_proxy' in asset else (root/asset['mesh']).resolve()
         for kind in ('visual','collision'):
             items=link.findall(kind)

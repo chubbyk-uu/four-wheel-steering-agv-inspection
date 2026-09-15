@@ -99,3 +99,13 @@ def test_reject_large_face_interpolation_discrepancy(layered):
     asset['collision_proxy']['reference_surface']['sha256'] = digest(root / 'reference.obj')
     with pytest.raises(ValueError, match='interpolation discrepancy'):
         validate_proxy(root, asset)
+
+
+def test_streaming_bounds_include_bumps_and_groove_depth():
+    from agv_linescan.shared_scene import validate_material_height_bounds
+    vertices = np.array([[0, 0, -.004], [1, 0, .003]])
+    material = dict(schema='agv.ground_material.recipe.v1', height_bounds_m=[-.003001, .000001])
+    with pytest.raises(ValueError, match='prefetch height bounds'):
+        validate_material_height_bounds(material, vertices)
+    material['height_bounds_m'] = [-.004001, .003001]
+    validate_material_height_bounds(material, vertices)
