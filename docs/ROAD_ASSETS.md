@@ -67,6 +67,19 @@ OPENBLAS_NUM_THREADS=1 python3 tools/check_runtime_recipe.py \
 
 它只临时生成代表瓦片，不将整条道路展开。当前首尾/外侧缓冲区、黄白标线、两种翻转裂缝的所有对比字节一致。旧`baked_*`目录不是紧凑版运行依赖；旧压缩/全瓦片对照工具仍需要显式恢复旧基准，不能把配方目录冒充旧瓦片目录。
 
+### 100 m起伏道路
+
+在现行100 m紧凑场景上叠加与四轮悬挂共用的10 cm高度场：
+
+```bash
+python3 tools/create_rough_textured_scene.py \
+  --source assets/road/runtime_fullwidth_100m_v1 \
+  --output assets/road/runtime_fullwidth_100m_rough_3mm_v1 \
+  --peak-mm 3
+```
+
+该产物只有±3 mm起伏，没有箭头、禁停区等新增检验标识；原有道路底纹、板缝、裂缝和车道线保持不变。输出目录不纳入Git，需先按本页恢复源资产，再运行上述确定性命令。2026-09-15生成结果为48个分区、7712280个视觉/OptiX三角形、364672个碰撞三角形，耗时118.21 s，生成进程RSS峰值约457 MiB，新增磁盘约1020 MiB；完整记录见[`results/full_road_rough_asset.json`](../results/full_road_rough_asset.json)。运行时加载与资源数字另行实测，不能从离线生成耗时推断。
+
 ## 箭头和禁停网格标识试片
 
 在恢复20 m紧凑资产后生成独立试片：

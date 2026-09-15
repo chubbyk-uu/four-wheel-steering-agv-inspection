@@ -1,0 +1,28 @@
+{
+  "date": "2026-09-15",
+  "source": "assets/road/runtime_fullwidth_100m_v1",
+  "output": "assets/road/runtime_fullwidth_100m_rough_3mm_v1",
+  "source_manifest_sha256": "05397f00cc0b7dad0e47063a5615ca3733a1312910c7b4d221536e0291b89ea5",
+  "output_manifest_sha256": "39b0697d624377f1603ff4789eeb07bf623d95de22112e790084b126b444e575",
+  "command": "python3 tools/create_rough_textured_scene.py --source assets/road/runtime_fullwidth_100m_v1 --output assets/road/runtime_fullwidth_100m_rough_3mm_v1 --peak-mm 3",
+  "passed": true,
+  "assets": 48,
+  "visual_optix_triangles": 7712280,
+  "collision_triangles": 364672,
+  "roughness": {
+    "step_m": 0.1,
+    "max_abs_height_m": 0.003,
+    "rms_height_m": 0.0009883667434398926,
+    "min_height_m": -0.003,
+    "max_height_m": 0.002992170889506195,
+    "seed": 20260915
+  },
+  "generation": {
+    "wall_seconds": 118.21,
+    "max_rss_kib": 468204,
+    "swaps": 0,
+    "incremental_disk_mib": 1020,
+    "apparent_output_gib": 3.3,
+    "note": "The output hard-links unchanged source payloads; incremental disk use must be measured with the source directory counted first. The generated directory is ignored by Git and is recovered with the recorded command."
+  }
+}
