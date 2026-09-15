@@ -19,6 +19,43 @@ def trajectory_deceleration(platform):
 def wrap(a):return math.atan2(math.sin(a),math.cos(a))
 
 
+TRACKING_PARAMETERS=frozenset({
+    'position_gain','heading_gain','feedback_filter_s','longitudinal_feedback_filter_s',
+    'longitudinal_position_gain','position_deadband_m','scan_cross_track_deadband_m',
+    'heading_deadband_rad','max_position_feedback_m_s','max_heading_feedback_rad_s',
+    'cross_command_ratio','position_tolerance_m','heading_tolerance_rad','stopped_speed_m_s',
+    'stopped_yaw_rate_rad_s','settle_time_s','angular_accel_rad_s2','angular_decel_rad_s2',
+    'angular_speed_rad_s','alignment_linear_probe_m_s','alignment_angular_probe_rad_s',
+    'feedback_age_limit_s','wall_timeout_s','control_stall_threshold_s',
+    'control_phase_report_ticks','max_control_step_s','archive_drain_timeout_s',
+    'max_tracking_error_m','max_heading_error_rad','max_capture_heading_error_rad',
+    'segment_timeout_factor','segment_timeout_margin_s','terminal_dwell_s',
+    'terminal_translation_speed_m_s','terminal_rotation_speed_rad_s','max_terminal_trims',
+    'initial_ready_hold_s','pause_max_displacement_m','pause_max_rotation_rad',
+    'pause_stop_timeout_s','capture_state_timeout_s'})
+INTEGER_TRACKING_PARAMETERS=frozenset({'control_phase_report_ticks','max_terminal_trims'})
+
+
+def validate_tracking_config(config):
+    if not isinstance(config,dict):
+        raise ValueError('tracking configuration must be a mapping')
+    missing=TRACKING_PARAMETERS-config.keys();unknown=config.keys()-TRACKING_PARAMETERS
+    if missing:
+        raise ValueError('missing tracking parameters: '+', '.join(sorted(missing)))
+    if unknown:
+        raise ValueError('unknown tracking parameters: '+', '.join(sorted(unknown)))
+    for key,value in config.items():
+        if (isinstance(value,bool) or not isinstance(value,(int,float))
+                or not math.isfinite(value) or value<0
+                or (value==0 and key!='scan_cross_track_deadband_m')):
+            raise ValueError('invalid tracking parameter '+key)
+        if key in INTEGER_TRACKING_PARAMETERS and not isinstance(value,int):
+            raise ValueError('tracking parameter must be an integer: '+key)
+    if config['segment_timeout_factor']<1:
+        raise ValueError('segment timeout factor must not shorten the plan')
+    return config
+
+
 @dataclass
 class Profile:
     distance: float
@@ -46,16 +83,13 @@ class Profile:
 
 class SegmentTracker:
     def __init__(self,position,quaternion,kind,displacement,angle,speed,platform,config):
+        config=validate_tracking_config(config)
         self.start=np.asarray(position,float);self.rotation=Rotation.from_quat(quaternion)
         displacement=np.asarray(displacement,float)
         if self.start.shape!=(3,) or displacement.shape!=(2,) or not np.isfinite(np.r_[self.start,displacement,angle,speed]).all():
             raise ValueError('invalid segment geometry')
         if kind not in ('translate','rotate') or not 0<speed<=platform['max_speed']:
             raise ValueError('invalid segment type or speed')
-        for key,value in config.items():
-            if (not isinstance(value,(int,float)) or not math.isfinite(value) or value<0
-                    or (value==0 and key!='scan_cross_track_deadband_m')):
-                raise ValueError('invalid tracking parameter '+key)
         if not math.isfinite(platform['max_lateral_speed']) or platform['max_lateral_speed']<=0:
             raise ValueError('invalid lateral speed limit')
         self.kind=kind;self.cfg=config;self.platform=platform;self.forward_only=False
@@ -72,7 +106,6 @@ class SegmentTracker:
         self.accel=platform['drive_accel'] if kind=='translate' else config['angular_accel_rad_s2']
         self.decel=trajectory_deceleration(platform) if kind=='translate' else config['angular_decel_rad_s2']
         self.profile=Profile(self.length,self.speed,self.accel,self.decel)
-        if config['segment_timeout_factor']<1.:raise ValueError('segment timeout factor must not shorten the plan')
         self.budget=self.profile.duration*config['segment_timeout_factor']+config['segment_timeout_margin_s']
         self.clock=0.;self.offset=0.;self.elapsed=0.;self.settled=0.
         self.state='ALIGNING';self.reason='';self.filtered=np.zeros(3);self.command=np.zeros(3)

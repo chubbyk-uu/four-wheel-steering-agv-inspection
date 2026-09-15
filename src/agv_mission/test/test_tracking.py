@@ -2,7 +2,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 import yaml
-from agv_mission.tracking import Profile, SegmentTracker
+from agv_mission.tracking import Profile, SegmentTracker, validate_tracking_config
 
 
 @pytest.mark.parametrize('distance',[0.,.01,.5,4.,20.])
@@ -29,6 +29,28 @@ def tracker(kind='translate'):
     config=yaml.safe_load((root/'config/tracking.yaml').read_text())
     platform=yaml.safe_load((root.parent/'agv_description/config/platform.yaml').read_text())
     return SegmentTracker([0,0,.65],[0,0,0,1],kind,[4,0],1,.5,platform,config)
+
+
+def test_tracking_config_rejects_missing_unknown_and_non_mapping():
+    root=Path(__file__).resolve().parents[1]
+    config=yaml.safe_load((root/'config/tracking.yaml').read_text())
+    validate_tracking_config(config)
+    missing=dict(config);del missing['heading_tolerance_rad']
+    with pytest.raises(ValueError,match='missing tracking parameters: heading_tolerance_rad'):
+        validate_tracking_config(missing)
+    with pytest.raises(ValueError,match='unknown tracking parameters: heading_tolerence_rad'):
+        validate_tracking_config(dict(config,heading_tolerence_rad=.025))
+    with pytest.raises(ValueError,match='must be a mapping'):
+        validate_tracking_config(None)
+
+
+@pytest.mark.parametrize('key,value',[('control_phase_report_ticks',100.),
+                                       ('max_terminal_trims',True),
+                                       ('heading_tolerance_rad','0.025')])
+def test_tracking_config_rejects_wrong_value_types(key,value):
+    root=Path(__file__).resolve().parents[1]
+    config=yaml.safe_load((root/'config/tracking.yaml').read_text());config[key]=value
+    with pytest.raises(ValueError,match=key):validate_tracking_config(config)
 
 
 @pytest.mark.parametrize('band,expected',[(.01,0.),(.003,.0014),(0.,.0035)])

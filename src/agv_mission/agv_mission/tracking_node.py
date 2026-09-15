@@ -14,7 +14,7 @@ from std_msgs.msg import String
 from std_srvs.srv import Trigger
 from ament_index_python.packages import get_package_share_directory
 from .offload import TelemetryPublisher,ArchiveWriter
-from .tracking import SegmentTracker
+from .tracking import SegmentTracker,validate_tracking_config
 
 
 class TrackingNode(Node):
@@ -22,7 +22,8 @@ class TrackingNode(Node):
         super().__init__('segment_tracker')
         share=Path(get_package_share_directory('agv_mission'))
         description=Path(get_package_share_directory('agv_description'))/'config'
-        self.config=yaml.safe_load(Path(self.declare_parameter('config',str(share/'config/tracking.yaml')).value).read_text())
+        self.config=validate_tracking_config(yaml.safe_load(Path(
+            self.declare_parameter('config',str(share/'config/tracking.yaml')).value).read_text()))
         self.platform=yaml.safe_load(Path(self.declare_parameter('platform',str(description/'platform.yaml')).value).read_text())
         self.kind=self.declare_parameter('kind','translate').value
         self.displacement=self.declare_parameter('displacement_xy_m',[4.,0.]).value

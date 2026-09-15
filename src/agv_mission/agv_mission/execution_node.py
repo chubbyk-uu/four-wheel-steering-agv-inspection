@@ -17,7 +17,7 @@ from std_msgs.msg import String
 from std_srvs.srv import Trigger
 from .planner import plan,Vehicle
 from .execution import compile_steps,segment_arguments,check_position,scan_end_reached,camera_along_m
-from .tracking import SegmentTracker
+from .tracking import SegmentTracker,validate_tracking_config
 from .capture import CaptureGate
 from .callback_trace import TracedExecutor,PhaseTrace,StallWatch
 from .offload import TelemetryPublisher,ArchiveWriter
@@ -34,7 +34,7 @@ class Executor(Node):
         self.platform=yaml.safe_load((desc/'platform.yaml').read_text())
         self.camera=yaml.safe_load((desc/'linescan.yaml').read_text())
         tracking_path=Path(self.declare_parameter('tracking_config',str(share/'config/tracking.yaml')).value)
-        self.cfg=yaml.safe_load(tracking_path.read_text())
+        self.cfg=validate_tracking_config(yaml.safe_load(tracking_path.read_text()))
         request=Path(self.declare_parameter('request','').value)
         self.plan=plan(yaml.safe_load(request.read_text()),Vehicle.from_configs(self.platform,self.camera))
         if self.plan['frame_id']!='map':raise ValueError('request road.frame_id must be map for execution')

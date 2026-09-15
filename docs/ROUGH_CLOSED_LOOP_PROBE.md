@@ -6,7 +6,7 @@
 
 在`tracking.yaml`增加`scan_cross_track_deadband_m`，当前默认0 m（完成下述对照后关闭横向死区），仍可配置非负值。仅作用于PASS的前向采集平移，在轨迹切向/横向基底上处理滤波后的误差。纵向位置死区仍为1 cm、航向死区0.004 rad、横向滤波0.6 s；APPROACH、换道和终点调整沿用原设置。不能通过把共用的`position_deadband_m`置零来同时改动制动和起点调整。
 
-执行节点支持ROS参数`tracking_config`加载独立文件，并把实际使用的配置保存为`mission/tracking.yaml`；`tools/validate_rectangle_execution.py --tracking-config 文件`传入并用同一配置核对停车/异常阈值。默认配置不因试验覆盖文件而被改写。
+执行节点支持ROS参数`tracking_config`加载独立文件，并把实际使用的配置保存为`mission/tracking.yaml`；`tools/validate_rectangle_execution.py --tracking-config 文件`传入并用同一配置核对停车/异常阈值。默认配置不因试验覆盖文件而被改写。外部文件必须提供完整且无未知项的现行参数集合；执行器、独立段跟踪节点和`SegmentTracker`在运动前使用同一校验，缺键、拼错键和错误类型会在启动或构造阶段明确拒绝。
 
 新增回归覆盖1 cm/3 mm/零死区下5 mm横向误差的响应、纵向前馈不变、零死区不影响APPROACH，以及负数/非有限参数拒绝。任务包160项测试通过，1 cm档实际三道采图通过。三档实际采集结果见下，不能由单测推定稳定性。
 
