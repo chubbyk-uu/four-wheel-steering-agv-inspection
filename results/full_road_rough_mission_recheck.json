@@ -1,0 +1,132 @@
+{
+  "date": "2026-09-15",
+  "workload": {
+    "road_m": [
+      100,
+      10
+    ],
+    "region_m": [
+      20,
+      2
+    ],
+    "region_start_xy_m": [
+      8,
+      -1
+    ],
+    "spawn_x_m": 1.93,
+    "speed_m_s": 2.777777777777778,
+    "gui": true,
+    "rviz": true,
+    "optix": true,
+    "pause": false,
+    "ready_wait_wall_s": 60,
+    "order": [
+      "rough",
+      "flat"
+    ]
+  },
+  "cases": {
+    "rough": {
+      "passed": true,
+      "capture_passed": true,
+      "first_odometry_wall_s": 40.33893767900008,
+      "steady_rtf": 0.9858245406526215,
+      "steady_wall_s": 17.000996941002086,
+      "blocks": 34,
+      "rows": 139264,
+      "ros_archive_identical": true,
+      "coverage_status": "ESTIMATED_COMPLETE",
+      "final_state": "ACQUIRED",
+      "final_motion": "HOLD",
+      "actual_peak_speed_m_s": 2.9266972286886275,
+      "wheel_steering_range_rad": {
+        "fl": [
+          -1.8003769468660094,
+          0.06313101074234839
+        ],
+        "fr": [
+          -3.1742855787302164,
+          1.7458378742563158e-11
+        ],
+        "rl": [
+          -3.1742855787449,
+          1.2441467025237296e-11
+        ],
+        "rr": [
+          -1.590362456076882,
+          0.06313101075473947
+        ]
+      },
+      "chassis_ready_wall_s": 66.69638149000093,
+      "task_ready_wall_s": 74.75787862099969,
+      "stationary_rtf": 0.999446903310814,
+      "stationary_window_wall_s": 34.97934696099401,
+      "resources": {
+        "interval_s": 2.0,
+        "samples": 131,
+        "errors": [],
+        "scope": "Owned Linux process tree RSS (shared pages may repeat) and PSS; GPU usage is whole device, includes desktop; sampled peaks only",
+        "peak_tree_rss_bytes": 10834563072,
+        "peak_tree_pss_bytes": 10056006656,
+        "peak_device_used_bytes": 10043260928
+      }
+    },
+    "flat": {
+      "passed": true,
+      "capture_passed": true,
+      "first_odometry_wall_s": 34.23151089399471,
+      "steady_rtf": 0.9893743987866971,
+      "steady_wall_s": 16.89956807099952,
+      "blocks": 34,
+      "rows": 139264,
+      "ros_archive_identical": true,
+      "coverage_status": "ESTIMATED_COMPLETE",
+      "final_state": "ACQUIRED",
+      "final_motion": "HOLD",
+      "actual_peak_speed_m_s": 2.9492954283406996,
+      "wheel_steering_range_rad": {
+        "fl": [
+          -1.6418442571579412,
+          0.03784115541404652
+        ],
+        "fr": [
+          -3.200866115190583,
+          5.412019553138535e-19
+        ],
+        "rl": [
+          -3.2008661151941133,
+          2.7197092523324044e-18
+        ],
+        "rr": [
+          -1.670737431934174,
+          0.0378429485296127
+        ]
+      },
+      "chassis_ready_wall_s": 59.74541074199806,
+      "task_ready_wall_s": 68.1475451189981,
+      "stationary_rtf": 0.9999392232766733,
+      "stationary_window_wall_s": 34.98212609899929,
+      "resources": {
+        "interval_s": 2.0,
+        "samples": 127,
+        "errors": [],
+        "scope": "Owned Linux process tree RSS (shared pages may repeat) and PSS; GPU usage is whole device, includes desktop; sampled peaks only",
+        "peak_tree_rss_bytes": 10684530688,
+        "peak_tree_pss_bytes": 9906252800,
+        "peak_device_used_bytes": 10054795264
+      }
+    }
+  },
+  "delta": {
+    "moving_rtf_percentage_points": -0.3549858134075601,
+    "first_odometry_wall_s": 6.107426785005373,
+    "chassis_ready_wall_s": 6.950970748002874
+  },
+  "limitations": [
+    "Single short two-track task per scene, not a 100 x 10 m repeat acceptance.",
+    "Earlier stationary spawn_x=-3 probe reported 0.7535. This run starts at x=1.93 and reaches near-real-time both stationary and moving; root cause of the earlier discrepancy is unresolved.",
+    "No exclusive collision substitution experiment or internal physics profiling has established the cause.",
+    "Screenshots confirmed road, vehicle and RViz preview; no full mouse interaction regression."
+  ],
+  "startup_probe_fix": "Initial rough attempt stopped before motion because the test used joint message count as readiness. Now it waits for fresh /motion_state HOLD; both tasks passed."
+}

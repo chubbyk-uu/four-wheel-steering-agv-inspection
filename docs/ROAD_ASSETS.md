@@ -80,7 +80,9 @@ python3 tools/create_rough_textured_scene.py \
 
 该产物只有±3 mm起伏，没有箭头、禁停区等新增检验标识；原有道路底纹、板缝、裂缝和车道线保持不变。输出目录不纳入Git，需先按本页恢复源资产，再运行上述确定性命令。2026-09-15生成结果为48个分区、7712280个视觉/OptiX三角形、364672个碰撞三角形，耗时118.21 s，生成进程RSS峰值约457 MiB，新增磁盘约1020 MiB；完整记录见[`results/full_road_rough_asset.json`](../results/full_road_rough_asset.json)。
 
-完整GUI＋RViz＋OptiX静止对照在90 s预热后连续测量30 s：原场景RTF为0.99958，当前起伏场景为0.75349，相对下降24.62%；首个里程计由33.94 s延至40.66 s。进程树RSS峰值增加约176 MiB，整卡显存峰值增加约39 MiB，说明主要代价来自36.5万碰撞三角形的物理计算。短预热会同时低估两者RTF，不能用作稳态数字。当前起伏碰撞表示因此仍是待优化试验资产，不作为100 m正式采集基线；详见[`results/full_road_rough_runtime.json`](../results/full_road_rough_runtime.json)。
+GUI＋RViz＋OptiX短任务复核：在100 m道路上从X=1.93 m出生，运行20×2 m双道、请求10 km/h，两场景均34张满帧、覆盖完成、最终HOLD。平面/起伏的行驶RTF为0.98937/0.98582，仅差0.355个百分点；起步前静止RTF为0.99994/0.99945。首里程计34.23/40.34 s，实际底盘解锁59.75/66.70 s，起伏加载增加约6–7 s。见[`results/full_road_rough_mission_recheck.json`](../results/full_road_rough_mission_recheck.json)。
+
+此前X=−3 m出生的静止探针测得0.99958/0.75349，见[`results/full_road_rough_runtime.json`](../results/full_road_rough_runtime.json)。该差异仍待按出生位置、接触状态及环境隔离，不应归因为整个道路的三角形总数，也不能据此断言全程下降25%。现有短任务不替代新道路100×10 m全区域验收；目前没有依据降低10 cm路面分辨率。
 
 ## 箭头和禁停网格标识
 

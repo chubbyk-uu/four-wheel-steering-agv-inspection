@@ -1,6 +1,6 @@
 {
   "date": "2026-09-15",
-  "workload": "inspection.launch.py with Gazebo GUI, RViz and OptiX, stationary AGV",
+  "workload": "inspection.launch.py with Gazebo GUI, RViz and OptiX, stationary AGV at spawn_x=-3 m",
   "method": "One sequential run per scene under the project-private patched Mesa and experimental OptiX runtime; 90 s wall-time warm-up followed by a 30 s continuously-spun odometry window. Whole-device VRAM includes the desktop.",
   "baseline": {
     "scene": "assets/road/runtime_fullwidth_100m_v1/manifest.json",
@@ -33,5 +33,5 @@
     "note": "This includes full manifest hashes and OBJ/proxy validation and is not simulator load time."
   },
   "supersedes": "The initial 50 s warm-up plus 10 s probe reported 0.8826/0.6639 while GPU resources were still loading. Those values are not steady-state results.",
-  "conclusion": "The material memory cost is small, but a 364672-triangle road collision mesh causes an unacceptable RTF regression. Preserve the 10 cm visual/OptiX height field and optimize its physics representation before full-region capture."
+  "conclusion": "This stationary probe measured a lower RTF at spawn_x=-3. Subsequent GUI two-track tasks at spawn_x=1.93 reached 0.99945 stationary and 0.98582 moving on the same rough scene. A general collision-size causation or full-road 25% regression is not established; isolate location/contact and environment before optimization. See full_road_rough_mission_recheck.json."
 }
