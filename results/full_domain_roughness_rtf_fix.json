@@ -1,0 +1,50 @@
+{
+  "date": "2026-09-15",
+  "passed": true,
+  "problem": "The production rough-road generator reused the isolated probe's flat lead-in, creating a position-dependent RTF collapse in the negative-X buffer.",
+  "change": "Production visual, OptiX and collision geometry now use the same deterministic untapered heightfield over the complete optical domain. The isolated probe keeps its explicit tapered lead-in.",
+  "assets": {
+    "rough": "assets/road/runtime_fullwidth_100m_rough_3mm_v2",
+    "rough_manifest_sha256": "2df11dbe0465847546259c2725f307fdb76751e6b13fb42da203f48b6e474b35",
+    "marked": "assets/road/runtime_fullwidth_100m_rough_marked_3mm_v2",
+    "marked_manifest_sha256": "cfe0b3c3a4b0a4b5fab7e31d26497ee5560aac181ed99728044bc5b873f0ad0e",
+    "visual_optix_triangles": 7712280,
+    "collision_triangles": 364672,
+    "logical_material_tiles": 6930,
+    "inspection_paint_polygons": 145,
+    "height_min_m": -0.003,
+    "height_max_m": 0.002992170889506195,
+    "height_rms_m": 0.0010467657294417486,
+    "tapered_lead_in": false,
+    "static_contracts_passed": true
+  },
+  "stationary_server": {
+    "gui": false,
+    "rviz": false,
+    "linescan": false,
+    "negative_x": {"spawn_x_m": -3.0, "steady_rtf": 0.9998401176247542},
+    "positive_x": {"spawn_x_m": 105.3, "steady_rtf": 0.9995342043440871},
+    "old_negative_x_dense_rtf": 0.9066753675253764
+  },
+  "gui_rviz_optix_two_track": {
+    "region_m": [100.0, 2.0],
+    "requested_speed_m_s": 2.7777777777777777,
+    "blocks": 140,
+    "rows": 571327,
+    "final_state": "ACQUIRED",
+    "final_motion": "HOLD",
+    "steady_rtf": 0.9541761591634138,
+    "observed_rtf": 0.9684577532987545,
+    "two_second_windows": 66,
+    "window_min_rtf": 0.90596847,
+    "window_p10_rtf": 0.93921606,
+    "window_median_rtf": 0.96777166,
+    "negative_buffer_approach_median_rtf": 0.9898,
+    "negative_buffer_pass_median_rtf": 0.9709
+  },
+  "limitations": [
+    "The full GUI run validates two tracks over the complete road length, not all ten tracks.",
+    "Receiver-clock RTF windows include middleware scheduling and are not a direct physics solver profile.",
+    "The separate intermittent wheel-fit residual fault remains open."
+  ]
+}

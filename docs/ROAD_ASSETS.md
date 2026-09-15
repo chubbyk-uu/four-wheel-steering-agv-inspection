@@ -74,11 +74,11 @@ OPENBLAS_NUM_THREADS=1 python3 tools/check_runtime_recipe.py \
 ```bash
 python3 tools/create_rough_textured_scene.py \
   --source assets/road/runtime_fullwidth_100m_v1 \
-  --output assets/road/runtime_fullwidth_100m_rough_3mm_v1 \
+  --output assets/road/runtime_fullwidth_100m_rough_3mm_v2 \
   --peak-mm 3
 ```
 
-该产物只有±3 mm起伏，没有箭头、禁停区等新增检验标识；原有道路底纹、板缝、裂缝和车道线保持不变。输出目录不纳入Git，需先按本页恢复源资产，再运行上述确定性命令。2026-09-15生成结果为48个分区、7712280个视觉/OptiX三角形、364672个碰撞三角形，耗时118.21 s，生成进程RSS峰值约457 MiB，新增磁盘约1020 MiB；完整记录见[`results/full_road_rough_asset.json`](../results/full_road_rough_asset.json)。
+该产物在完整光学域（含两端非采集缓冲区）使用同一套连续±3 mm起伏，没有箭头、禁停区等新增检验标识；原有道路底纹、板缝、裂缝和车道线保持不变。早期悬挂试片的平坦渐入只保留在试片生成命令，正式道路禁止复用。输出目录不纳入Git，需先按本页恢复源资产，再运行上述确定性命令。2026-09-15 v2生成结果为48个分区、7712280个视觉/OptiX三角形、364672个碰撞三角形，耗时118.56 s，生成进程RSS峰值约455 MiB；完整记录见[`results/full_domain_roughness_rtf_fix.json`](../results/full_domain_roughness_rtf_fix.json)。
 
 GUI＋RViz＋OptiX短任务复核：在100 m道路上从X=1.93 m出生，运行20×2 m双道、请求10 km/h，两场景均34张满帧、覆盖完成、最终HOLD。平面/起伏的行驶RTF为0.98937/0.98582，仅差0.355个百分点；起步前静止RTF为0.99994/0.99945。首里程计34.23/40.34 s，实际底盘解锁59.75/66.70 s，起伏加载增加约6–7 s。见[`results/full_road_rough_mission_recheck.json`](../results/full_road_rough_mission_recheck.json)。
 
@@ -96,8 +96,8 @@ python3 tools/generate_marked_road.py --output local_data/road_markings_probe_v1
 
 ```bash
 python3 tools/generate_marked_road.py \
-  --source assets/road/runtime_fullwidth_100m_rough_3mm_v1 \
-  --output assets/road/runtime_fullwidth_100m_rough_marked_3mm_v1 \
+  --source assets/road/runtime_fullwidth_100m_rough_3mm_v2 \
+  --output assets/road/runtime_fullwidth_100m_rough_marked_3mm_v2 \
   --block-length-m 1.5
 ```
 
