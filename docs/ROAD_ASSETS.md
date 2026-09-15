@@ -107,6 +107,8 @@ python3 tools/generate_marked_road.py \
 
 输出manifest可传给已有`--scene`采集工具。标识几何与用途见[SURFACE_HEADING_STRIP_DESIGN.md](SURFACE_HEADING_STRIP_DESIGN.md)。显示4 mm纹素、采样0.25 mm纹素仍沿用原配置。新增标识仅在缓存烘焙时计算，不在每根扫描线的射线命中路径中计算；不能把单次烘焙计时当成整车11 kHz验收。
 
+100 m资产包含145个标识多边形。运行时按当前瓦片（含gutter）的世界包围盒先在CPU筛选，只上传相交多边形供该瓦片烘焙；不再使用短道路阶段遗留的127个全局上限，也不会让每个纹素遍历整条道路的全部标识。完整资产已通过实际配方创建、标识/非标识瓦片对照和一张4096×4096 OptiX集成采集；11 kHz目标节拍下主动管线约25.2 k行/s、无无效像素。该探针证明资产可启动，不替代100×10 m任务与持续RTF验收，详见[`results/full_road_marked_runtime_fix.json`](../results/full_road_marked_runtime_fix.json)。
+
 实际显示检查：`tools/render_road_alignment.py --manifest local_data/road_markings_probe_v1/manifest.json --output local_data/road_markings_ogre_v1`（使用当前Mesa/ROS运行环境）。除原双黄线坐标外，新增实际Ogre2禁停框像素与独立俯视投影的重合率检查。
 
 高清烘焙检查工具`tools/validate_road_test_markings.py`接受`--source`原recipe.json、`--trial`试片recipe.json、`--library`暴露recipe C接口的共享库、`--output`结果JSON。可将构建产物包装为测试共享库：

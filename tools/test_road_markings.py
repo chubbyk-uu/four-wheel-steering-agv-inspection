@@ -32,8 +32,10 @@ def test_trial_markings_geometry_and_lane_clearance():
 
 
 def test_markings_distribute_over_100m_and_cross_both_track_seams():
+    from generate_marked_road import validate_runtime_paint
     from road_test_markings import polygons,seam_crossings
     one=polygons();full=polygons(100,10)
+    validate_runtime_paint(full)
     assert len(full)==5*len(one)
     assert min(v[0] for item in full for v in item['vertices'])>=0
     assert max(v[0] for item in full for v in item['vertices'])<=100

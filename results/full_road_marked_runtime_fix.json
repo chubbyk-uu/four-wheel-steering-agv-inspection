@@ -1,0 +1,41 @@
+{
+  "date": "2026-09-15",
+  "problem": "The 100 m marked recipe contains 145 paint polygons, while RuntimeMaterial rejected the 128th polygon before the scene could start.",
+  "root_cause": "A defensive global polygon limit from the short-road implementation was left in the CUDA recipe loader. The generator had no equivalent end-to-end runtime check.",
+  "assets": {
+    "rough_unmarked_manifest_sha256": "39b0697d624377f1603ff4789eeb07bf623d95de22112e790084b126b444e575",
+    "rough_marked_manifest_sha256": "2e314adf3b680c6101be27164a453562efa6abf6582e49592378a01478803090",
+    "marked_polygon_count": 145
+  },
+  "fix": {
+    "global_polygon_limit_removed": true,
+    "host_tile_bbox_culling": true,
+    "device_upload_scope": "Only paint polygons intersecting the current tile including its gutter",
+    "generator_schema_validation": true
+  },
+  "isolated_recipe_probe": {
+    "marked_recipe_created": true,
+    "marked_device_bytes": 830804980,
+    "unmarked_device_bytes": 830779460,
+    "incremental_device_bytes": 25520,
+    "unmarked_tile_pixel_difference_count": 0,
+    "marked_tile_changed_pixels": 2626255
+  },
+  "optix_integration_probe": {
+    "target_lines_per_second": 11000,
+    "image_dimensions": [4096, 4096],
+    "blocks": 1,
+    "effective_lines_per_wall_second": 10994.784300880347,
+    "active_pipeline_lines_per_second": 25191.88035928271,
+    "invalid_pixels": 0,
+    "batch_seconds_max": 0.011631413,
+    "runtime_tile_loads": 32,
+    "required_tile_misses_after_warm": 0,
+    "generation_seconds_max": 0.010281913
+  },
+  "tests": {
+    "workspace": "442 passed, 0 failed",
+    "new_regression": "A 145-polygon recipe must initialize and bake a tile with only its intersecting paint applied."
+  },
+  "scope": "This proves the complete marked asset initializes and produces a full OptiX image. It is not the 100 x 10 m mission or sustained-RFT acceptance run."
+}

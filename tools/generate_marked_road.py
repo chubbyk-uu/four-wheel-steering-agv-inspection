@@ -12,6 +12,15 @@ from bake_concrete_road import LUT,srgb
 from road_test_markings import polygons,paint,seam_crossings
 
 
+def validate_runtime_paint(items):
+    for index,item in enumerate(items):
+        points=item.get('vertices',[])
+        if not 3<=len(points)<=8:
+            raise ValueError(f'paint polygon {index} must have 3 to 8 vertices')
+        if item.get('color') not in ('white','yellow'):
+            raise ValueError(f'paint polygon {index} has unsupported color')
+
+
 def generate(source,out,block_length_m=1.5):
     source=source.resolve();out=out.resolve()
     m=json.loads((source/'manifest.json').read_text())
@@ -19,6 +28,7 @@ def generate(source,out,block_length_m=1.5):
         raise ValueError('requires a compact recipe scene')
     length=float(m['length_m']);width=float(m['width_m'])
     items=polygons(length,width);crossings=seam_crossings(items,length,block_length_m)
+    validate_runtime_paint(items)
     # Immutable payloads share disk blocks. Every modified file is unlinked first.
     shutil.copytree(source,out,copy_function=os.link)
     def write(path,data):

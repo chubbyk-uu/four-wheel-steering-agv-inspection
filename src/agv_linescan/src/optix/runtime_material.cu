@@ -78,7 +78,8 @@ __global__ void Generate(Inputs in,const double* coordinates,const int* ids,int 
 }
 struct RuntimeMaterial::Impl {
  Inputs inputs={};Json hashes;VerifiedTileReader reader;std::vector<void*> buffers;size_t bytes=0;int core,gutter,stride,nx,ny;double ox,oy,texel,qx,qy,gsd;
- std::vector<int4> patches;double* coordinates=nullptr;int* ids=nullptr;unsigned char* output=nullptr;unsigned* invalid=nullptr;
+ std::vector<int4> patches;std::vector<PaintPolygon> paint;PaintPolygon* tilePaint=nullptr;
+ double* coordinates=nullptr;int* ids=nullptr;unsigned char* output=nullptr;unsigned* invalid=nullptr;
  // One scratch set per instance: the material cache bakes from a single loader
  // thread. Reject concurrent entry instead of locking, so parallel baking must
  // add per-thread buffers rather than silently serialize or corrupt a tile.
@@ -101,12 +102,16 @@ struct RuntimeMaterial::Impl {
  }
  void GenerateTile(int ix,int iy,cudaStream_t stream){
   if(ix<0||iy<0||ix>=nx||iy>=ny)throw std::runtime_error("recipe tile outside bounds");
-  std::vector<double> xy(4*stride);std::vector<int> selected;
+  std::vector<double> xy(4*stride);std::vector<int> selected;std::vector<PaintPolygon> selectedPaint;
   for(int i=0;i<stride;++i){double x=ox+(ix*core+i-gutter+.5)*texel,y=oy+(iy*core+i-gutter+.5)*texel;xy[i]=(x-qx)/gsd;xy[stride+i]=(y-qy)/gsd;xy[2*stride+i]=x;xy[3*stride+i]=y;}
   for(size_t i=0;i<patches.size();++i){auto p=patches[i];if(xy[0]<p.x+inputs.patch&&xy[stride-1]>=p.x&&xy[stride]<p.y+inputs.patch&&xy[2*stride-1]>=p.y)selected.push_back(i);}
   if(selected.empty()||selected.size()>16)throw std::runtime_error("invalid recipe tile patch coverage");
+  const double xmin=xy[2*stride],xmax=xy[3*stride-1],ymin=xy[3*stride],ymax=xy[4*stride-1];
+  for(const auto& p:paint)if(p.xmax>=xmin&&p.xmin<=xmax&&p.ymax>=ymin&&p.ymin<=ymax)selectedPaint.push_back(p);
   Check(cudaMemcpyAsync(coordinates,xy.data(),xy.size()*sizeof(double),cudaMemcpyHostToDevice,stream));
   Check(cudaMemcpyAsync(ids,selected.data(),selected.size()*sizeof(int),cudaMemcpyHostToDevice,stream));
+  inputs.npaint=selectedPaint.size();
+  if(!selectedPaint.empty())Check(cudaMemcpyAsync(tilePaint,selectedPaint.data(),selectedPaint.size()*sizeof(PaintPolygon),cudaMemcpyHostToDevice,stream));
   Check(cudaMemsetAsync(invalid,0,sizeof(unsigned),stream));
   Generate<<<dim3((stride+15)/16,(stride+15)/16),dim3(16,16),0,stream>>>(inputs,coordinates,ids,selected.size(),stride,output,invalid);
   Check(cudaGetLastError());unsigned missing=0;Check(cudaMemcpyAsync(&missing,invalid,sizeof(unsigned),cudaMemcpyDeviceToHost,stream));Check(cudaStreamSynchronize(stream));if(missing)throw std::runtime_error("runtime recipe contains unfilled texels");
@@ -127,10 +132,9 @@ RuntimeMaterial::RuntimeMaterial(const std::filesystem::path& path,const std::st
  in.alpha=(unsigned char*)s.Load(root,m.at("alpha"),s.patches.size()*in.patch*in.patch);
  in.pigment=(float*)s.Load(root,m.at("pigment"),size_t(in.fw)*in.fh*4);in.strength=(float*)s.Load(root,m.at("strength"),size_t(in.fw)*in.fh*4);in.lut=(float*)s.Load(root,m.at("lut"),256*4);
  std::vector<float4> cracks;for(auto p:m.at("cracks"))cracks.push_back(make_float4(p[0],p[1],p[2],p[3]));in.ncracks=cracks.size();if(!cracks.empty())in.cracks=(float4*)s.Allocate(cracks.size()*sizeof(float4),cracks.data());
- std::vector<PaintPolygon> paint;
  for(const auto& item:m.value("inspection_paint",Json::array())){
   PaintPolygon p={};auto points=item.at("vertices");p.count=points.size();
-  if(p.count<3||p.count>8||paint.size()>=128)throw std::runtime_error("invalid paint polygon size");
+  if(p.count<3||p.count>8)throw std::runtime_error("paint polygon must have 3 to 8 vertices");
   auto color=item.at("color").get<std::string>();if(color!="white"&&color!="yellow")throw std::runtime_error("invalid paint color");p.color=color=="white"?2:1;
   p.xmin=p.ymin=1e100;p.xmax=p.ymax=-1e100;
   for(int j=0;j<p.count;++j){double x=points[j].at(0),y=points[j].at(1);
@@ -138,9 +142,9 @@ RuntimeMaterial::RuntimeMaterial(const std::filesystem::path& path,const std::st
    p.points[j]=make_double2(x,y);p.xmin=std::min(p.xmin,x);p.xmax=std::max(p.xmax,x);p.ymin=std::min(p.ymin,y);p.ymax=std::max(p.ymax,y);}
   double area=0;for(int j=0;j<p.count;++j){auto a=p.points[j],b=p.points[(j+1)%p.count];area+=a.x*b.y-a.y*b.x;
    for(int k=0;k<p.count;++k){auto c=p.points[k];if((b.x-a.x)*(c.y-a.y)-(b.y-a.y)*(c.x-a.x)<-1e-9)throw std::runtime_error("paint polygon must be convex CCW");}}
-  if(area<=1e-12)throw std::runtime_error("degenerate paint polygon");paint.push_back(p);
+  if(area<=1e-12)throw std::runtime_error("degenerate paint polygon");s.paint.push_back(p);
  }
- in.npaint=paint.size();if(!paint.empty())in.paint=(PaintPolygon*)s.Allocate(paint.size()*sizeof(PaintPolygon),paint.data());
+ in.npaint=0;if(!s.paint.empty()){s.tilePaint=(PaintPolygon*)s.Allocate(s.paint.size()*sizeof(PaintPolygon));in.paint=s.tilePaint;}
  s.coordinates=(double*)s.Allocate(4*s.stride*sizeof(double));s.ids=(int*)s.Allocate(16*sizeof(int));s.output=(unsigned char*)s.Allocate(size_t(s.stride)*s.stride*3);s.invalid=(unsigned*)s.Allocate(sizeof(unsigned));
 }
 void RuntimeMaterial::CheckLayout(const Json& m)const{auto& s=*impl_;

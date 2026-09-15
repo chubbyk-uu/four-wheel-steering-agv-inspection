@@ -64,6 +64,13 @@ TEST_F(RecipeTest,OptionalPaintUsesWorldCoordinatesAndDoesNotAccumulateOverlaps)
  std::vector<unsigned char> a(108);material.BakeHost(0,0,a.data());
  for(int y=0;y<6;++y)for(int x=0;x<6;++x)EXPECT_EQ(a[y*6+x],(x>=1&&x<=2&&y>=1&&y<=2)?199:128);
 }
+TEST_F(RecipeTest,SelectsTilePaintBeyondLegacyGlobalLimit){
+ Json paint=Json::array();
+ for(int i=0;i<145;++i){double x=1.+20.*i;paint.push_back({{"vertices",{{x,1.},{x+.5,1.},{x+.5,1.5},{x,1.5}}},{"color","white"}});}
+ m["inspection_paint"]=paint;Save();
+ agv_linescan::RuntimeMaterial material(root/"recipe.json");std::vector<unsigned char> a(108);material.BakeHost(0,0,a.data());
+ for(int y=0;y<6;++y)for(int x=0;x<6;++x)EXPECT_EQ(a[y*6+x],(x>=1&&x<=2&&y>=1&&y<=2)?199:128);
+}
 TEST_F(RecipeTest,RejectsNonConvexOrClockwisePaint){
  m["inspection_paint"]={{{"vertices",{{1.,1.},{1.,2.},{2.,2.},{2.,1.}}},{"color","white"}}};Save();
  EXPECT_THROW(agv_linescan::RuntimeMaterial material(root/"recipe.json"),std::runtime_error);
