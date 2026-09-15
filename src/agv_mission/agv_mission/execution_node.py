@@ -33,13 +33,15 @@ class Executor(Node):
         desc=Path(get_package_share_directory('agv_description'))/'config'
         self.platform=yaml.safe_load((desc/'platform.yaml').read_text())
         self.camera=yaml.safe_load((desc/'linescan.yaml').read_text())
-        self.cfg=yaml.safe_load((share/'config/tracking.yaml').read_text())
+        tracking_path=Path(self.declare_parameter('tracking_config',str(share/'config/tracking.yaml')).value)
+        self.cfg=yaml.safe_load(tracking_path.read_text())
         request=Path(self.declare_parameter('request','').value)
         self.plan=plan(yaml.safe_load(request.read_text()),Vehicle.from_configs(self.platform,self.camera))
         if self.plan['frame_id']!='map':raise ValueError('request road.frame_id must be map for execution')
         self.output=Path(self.declare_parameter('output_dir','').value)
         if str(self.output)=='.':raise ValueError('explicit new output_dir required')
         self.output.mkdir(parents=True,exist_ok=False)
+        (self.output/'tracking.yaml').write_text(yaml.safe_dump(self.cfg))
         self.execution_id=self.output.parent.name
         (self.output/'plan.json').write_text(json.dumps(self.plan,indent=2)+'\n')
         self.archive=ArchiveWriter()

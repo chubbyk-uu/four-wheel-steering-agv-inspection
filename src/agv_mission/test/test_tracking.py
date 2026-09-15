@@ -31,6 +31,38 @@ def tracker(kind='translate'):
     return SegmentTracker([0,0,.65],[0,0,0,1],kind,[4,0],1,.5,platform,config)
 
 
+@pytest.mark.parametrize('band,expected',[(.01,0.),(.003,.0014),(0.,.0035)])
+def test_scan_cross_deadband_is_independent(band,expected):
+    c=tracker();c.cfg['scan_cross_track_deadband_m']=band
+    c.forward_only=True;c.state='RUNNING';c.was_running=True;c.clock=.5
+    distance,feedforward=c.profile.sample(.52)
+    # A 5 mm lateral error, no longitudinal or heading error, already filtered.
+    c.filtered[:]=[0,.005,0]
+    command=c.update([distance,-.005,.65],[0,0,0,1],[feedforward,0,0],'DRIVE',.02)
+    assert command[1]==pytest.approx(expected)
+    assert command[0]==pytest.approx(feedforward)
+    assert command[2]==0
+
+
+def test_zero_scan_deadband_does_not_change_approach():
+    c=tracker();c.cfg['scan_cross_track_deadband_m']=0
+    c.state='RUNNING';c.was_running=True;c.clock=.5;c.filtered[:]=[0,.005,0]
+    distance,speed=c.profile.sample(.52)
+    command=c.update([distance,-.005,.65],[0,0,0,1],[speed,0,0],'DRIVE',.02)
+    assert command[1]==0
+
+
+@pytest.mark.parametrize('band',[0.,-.001,float('nan')])
+def test_scan_deadband_validation(band):
+    c=tracker();config=dict(c.cfg,scan_cross_track_deadband_m=band)
+    def construct():
+        return SegmentTracker([0,0,.65],[0,0,0,1],'translate',[4,0],0,.5,c.platform,config)
+    if band==0:
+        construct()
+    else:
+        with pytest.raises(ValueError,match='scan_cross_track_deadband_m'):construct()
+
+
 def test_reference_pauses_and_retimes_after_alignment():
     c=tracker();args=([0,0,.65],[0,0,0,1],[0,0,0])
     for _ in range(100):c.update(*args,'ALIGN',.02)

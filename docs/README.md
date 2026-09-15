@@ -8,7 +8,7 @@
 | 规划下一步与确认尚未实现的功能 | [实施计划](MISSION_IMPLEMENTATION_PLAN.md) |
 | 使用RViz任务面板、载入区域和采图 | [规划器](../src/agv_mission/README.md) → [任务执行](RECTANGLE_EXECUTION.md) → [采集与标签](RECTANGLE_CAPTURE.md) |
 | 平地加减速俯仰与悬挂是否调软 | [现行调参](SUSPENSION_TUNING.md) → [旧刚度对照](ACCEL_PITCH_RESPONSE.md) |
-| 匀速轻微振动、真实碰撞成本与水泥实拍变形 | [毫米级试片及图像对照](ROUGH_ROAD_PROBE.md) |
+| 匀速轻微振动、真实碰撞成本与水泥实拍变形 | [毫米级试片及图像对照](ROUGH_ROAD_PROBE.md)、[闭环与横向死区](ROUGH_CLOSED_LOOP_PROBE.md) |
 | 编码器、实际轮径与原图尺度误差 | [编码器模型](ENCODER_MODEL.md) |
 | 定位、噪声、延时与外参 | [定位包](../src/agv_localization/README.md)、[误差基线](LOCALIZATION_NOISE_BASELINE.md) |
 | GUI跟车和缩放 | [GUI操作](GUI_CAMERA.md) |

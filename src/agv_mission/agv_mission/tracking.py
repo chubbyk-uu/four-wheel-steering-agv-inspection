@@ -53,7 +53,8 @@ class SegmentTracker:
         if kind not in ('translate','rotate') or not 0<speed<=platform['max_speed']:
             raise ValueError('invalid segment type or speed')
         for key,value in config.items():
-            if not isinstance(value,(int,float)) or not math.isfinite(value) or value<=0:
+            if (not isinstance(value,(int,float)) or not math.isfinite(value) or value<0
+                    or (value==0 and key!='scan_cross_track_deadband_m')):
                 raise ValueError('invalid tracking parameter '+key)
         if not math.isfinite(platform['max_lateral_speed']) or platform['max_lateral_speed']<=0:
             raise ValueError('invalid lateral speed limit')
@@ -196,6 +197,16 @@ class SegmentTracker:
         feedback=self.filtered.copy()
         for i,deadband in enumerate([self.cfg['position_deadband_m']]*2+[self.cfg['heading_deadband_rad']]):
             feedback[i]=math.copysign(max(0,abs(feedback[i])-deadband),feedback[i])
+        if self.kind=='translate' and self.forward_only:
+            # Express PASS feedback in its along/across basis. This independent
+            # knob must not remove longitudinal braking or heading deadbands.
+            across=np.array([-self.axis[1],self.axis[0]])
+            along_error=float(np.dot(self.filtered[:2],self.axis))
+            cross_error=float(np.dot(self.filtered[:2],across))
+            cross_band=self.cfg.get('scan_cross_track_deadband_m',self.cfg['position_deadband_m'])
+            along_error=math.copysign(max(0,abs(along_error)-self.cfg['position_deadband_m']),along_error)
+            cross_error=math.copysign(max(0,abs(cross_error)-cross_band),cross_error)
+            feedback[:2]=along_error*self.axis+cross_error*across
         linear=feedback[:2]*self.cfg['position_gain']
         if self.kind=='translate':
             linear+=self.axis*np.dot(feedback[:2],self.axis)*(self.cfg.get('longitudinal_position_gain',self.cfg['position_gain'])-self.cfg['position_gain'])

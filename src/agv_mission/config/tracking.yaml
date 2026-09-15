@@ -6,6 +6,9 @@ feedback_filter_s: 0.6
 longitudinal_feedback_filter_s: 0.2
 longitudinal_position_gain: 1.2
 position_deadband_m: 0.01
+# PASS transverse feedback only; zero is allowed for controlled comparisons.
+# Approach, terminal trim, longitudinal and heading deadbands stay independent.
+scan_cross_track_deadband_m: 0.01
 heading_deadband_rad: 0.004
 max_position_feedback_m_s: 0.12
 max_heading_feedback_rad_s: 0.06

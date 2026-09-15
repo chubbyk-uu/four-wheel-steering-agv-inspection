@@ -42,6 +42,7 @@ def main():
                         help='keep AGV in view in GUI while allowing wheel zoom')
     parser.add_argument('--scene',type=Path)
     parser.add_argument('--request',type=Path,help='validate an existing rectangle request, including a generated rescan')
+    parser.add_argument('--tracking-config',type=Path,help='isolated controller configuration; archived by executor')
     parser.add_argument('--pause-once',action='store_true',help='pause early in first PASS, retain camera frame, then resume')
     parser.add_argument('--stop-after-pause',choices=['cancel','localization_timeout'],help='instead of resuming, validate partial-frame termination')
     parser.add_argument('--moving-fault',choices=['localization_timeout','camera_disabled'])
@@ -144,7 +145,8 @@ def main():
         runlog=(a.output/'executor.log').open('w')
         run=subprocess.Popen(['ros2','run','agv_mission','execute_rectangle','--ros-args',
             '-p','use_sim_time:=true','-p','autostart:=true','-p','request:='+str(path),
-            '-p','output_dir:='+str(a.output/'mission'),'-p','capture:='+str(bool(a.scene)).lower()],stdout=runlog,stderr=subprocess.STDOUT,start_new_session=True)
+            '-p','output_dir:='+str(a.output/'mission'),'-p','capture:='+str(bool(a.scene)).lower()]+
+            (['-p','tracking_config:='+str(a.tracking_config.resolve())] if a.tracking_config else []),stdout=runlog,stderr=subprocess.STDOUT,start_new_session=True)
         deadline=time.monotonic()+700
         while not (latest.get('status',{}).get('state') in ('COMPLETED','ACQUIRED','FAULT','CANCELED') and latest['status'].get('motion_state')=='HOLD' and latest['status'].get('capture_active') is False):
             assert run.poll() is None,'executor exited'
@@ -242,7 +244,7 @@ def main():
                 termination_probe=probe,pause_resume=pause_report)
         if a.moving_fault:
             assert moving_injection is not None,'fault never injected'
-            cfg=yaml.safe_load(Path('src/agv_mission/config/tracking.yaml').read_text())
+            cfg=yaml.safe_load((a.tracking_config or Path('src/agv_mission/config/tracking.yaml')).read_text())
             platform=yaml.safe_load(Path('src/agv_description/config/platform.yaml').read_text())
             if camera_future:assert camera_future.done() and camera_future.result().success
             probe=dict(case=a.moving_fault,injection=moving_injection,shutter_open_at_injection=shutter_open)
@@ -308,7 +310,7 @@ def main():
             result.update(passed=True,scope='moving fault handling and valid tail archive; incomplete ROI',
                 moving_fault=probe)
         if a.cancel_moving:
-            cfg=yaml.safe_load(Path('src/agv_mission/config/tracking.yaml').read_text())
+            cfg=yaml.safe_load((a.tracking_config or Path('src/agv_mission/config/tracking.yaml')).read_text())
             platform=yaml.safe_load(Path('src/agv_description/config/platform.yaml').read_text())
             assert stop_injected and moving_injection is not None
             assert end['state']=='CANCELED' and end['motion_state']=='HOLD' and end['capture_active'] is False,end
