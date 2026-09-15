@@ -36,7 +36,10 @@ def main():
         +(['localization_config:='+str(a.localization_config.resolve())] if a.localization_config else []),stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
     resources=ResourceMonitor(sim.pid,a.output/'resources.jsonl')
     rclpy.init();n=Node('operator_evaluator');latest={};images={};joints=[];states=[];actual=[]
-    health_history=deque(maxlen=512)
+    health_history=deque(maxlen=512);motion_ready={}
+    def motion_status(m):
+        motion_ready.update(mode=m.data,wall=time.monotonic())
+    n.create_subscription(String,'/motion_state',motion_status,10)
     n.create_subscription(String,'/localization/status',lambda m:health_history.append(dict(observed_sim_time=actual[-1][1] if actual else None,health=json.loads(m.data))),20)
     def status(m):
         latest.clear();latest.update(json.loads(m.data));states.append(latest.get('status',{}))
@@ -69,7 +72,9 @@ def main():
         send('save',path=str((a.output/'saved_request.yaml').resolve()))
         send('load',path=str((a.output/'saved_request.yaml').resolve()))
         send('preview')
-        wait(lambda:any(x.get('motion_state')=='HOLD' for x in states) or len(joints)>800,a.startup_timeout)
+        # Joint feedback may arrive while GUI loading still gates the controller.
+        wait(lambda:motion_ready.get('mode')=='HOLD' and time.monotonic()-motion_ready['wall']<.5,a.startup_timeout)
+        chassis_ready_wall_s=time.monotonic()-process_start
         send('prepare');wait(lambda:latest.get('status',{}).get('ready_to_start'))
         # Join after publication, as an RViz display enabled later would do.
         retained={}
@@ -77,6 +82,7 @@ def main():
             n.create_subscription(MarkerArray,topic,lambda m,k=key:retained.update({k:len(m.markers)}),QoSProfile(depth=1,durability=DurabilityPolicy.TRANSIENT_LOCAL))
         wait(lambda:retained.get('road',0)>0 and retained.get('plan',0)>0,10)
         mission_start_time=latest['status']['time_s']
+        (a.output/'startup_timing.json').write_text(json.dumps(dict(chassis_ready_wall_s=chassis_ready_wall_s,task_ready_wall_s=time.monotonic()-process_start),indent=2)+'\n')
         (a.output/'ready_for_ui').touch()
         until=time.monotonic()+a.inspect_seconds
         while time.monotonic()<until and latest['status']['state']=='READY':rclpy.spin_once(n,timeout_sec=.02)
