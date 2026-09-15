@@ -14,14 +14,18 @@ parser=argparse.ArgumentParser()
 parser.add_argument('--profile',choices=['server','optix','gui_optix','full'],required=True)
 parser.add_argument('--scene',type=Path,required=True)
 parser.add_argument('--output',type=Path,required=True)
+parser.add_argument('--settle-wall-s',type=float,default=50.0)
+parser.add_argument('--sample-count',type=int,default=10)
 a=parser.parse_args();case=a.profile;out=a.output;out.mkdir(parents=True,exist_ok=False)
+if a.settle_wall_s<1 or a.sample_count<1:parser.error('settle-wall-s and sample-count must be positive')
 os.environ.update(ROS_DOMAIN_ID=str(100+os.getpid()%70),GZ_PARTITION='vram_'+str(os.getpid()))
 common=['scene_manifest:='+str(a.scene.resolve()),'spawn_x:=-3']
 if case=='full':args=['inspection.launch.py','session_dir:='+str((out/'session').resolve())]+common
 else:args=['sim.launch.py','headless:='+('false' if case=='gui_optix' else 'true'),'rviz:=false','linescan:='+('false' if case=='server' else 'true'),'linescan_backend:=optix','capture_dir:='+str((out/'raw').resolve())]+common
-rclpy.init();n=rclpy.create_node('vram_probe');odom=[];speed=[]
+rclpy.init();n=rclpy.create_node('vram_probe');odom=[];odom_wall=[];speed=[]
 def receive(m):
  odom.append(m.header.stamp.sec+m.header.stamp.nanosec*1e-9)
+ odom_wall.append(time.monotonic())
  speed.append((m.twist.twist.linear.x**2+m.twist.twist.linear.y**2)**.5)
 n.create_subscription(Odometry,'/ground_truth/odom',receive,10)
 log=(out/'launch.log').open('w');p=subprocess.Popen(['ros2','launch','agv_bringup',*args],stdout=log,stderr=log,start_new_session=True);monitor=ResourceMonitor(p.pid,out/'resources.jsonl');start=time.monotonic();samples=[]
@@ -29,14 +33,18 @@ try:
  while time.monotonic()-start<180:
   assert p.poll() is None,'launch exited'
   rclpy.spin_once(n,timeout_sec=.1)
-  if odom and odom[-1]>=10 and time.monotonic()-start>=50:break
+  if odom and odom[-1]>=10 and time.monotonic()-start>=a.settle_wall_s:break
  else:raise RuntimeError('startup timeout')
- for i in range(10):
+ steady_wall=time.monotonic();steady_sim=odom[-1]
+ for i in range(a.sample_count):
   rclpy.spin_once(n,timeout_sec=.1)
   samples.append(int(subprocess.check_output(['nvidia-smi','--query-gpu=memory.used','--format=csv,noheader,nounits'],text=True).strip()))
   time.sleep(1)
  assert speed[-1]<.01,'robot is not stationary'
- result=dict(case=case,stationary=True,samples_mib=samples,median_mib=statistics.median(samples),sim_time=odom[-1],wall_s=time.monotonic()-start)
+ end=time.monotonic()
+ result=dict(case=case,stationary=True,samples_mib=samples,median_mib=statistics.median(samples),
+             first_odometry_wall_s=odom_wall[0]-start,steady_rtf=(odom[-1]-steady_sim)/(end-steady_wall),
+             sim_time=odom[-1],wall_s=end-start)
  (out/'summary.json').write_text(json.dumps(result,indent=2));print(json.dumps(result),flush=True)
 finally:
  monitor.close();stop_tree(p,known_children=list(monitor.owned.values()));n.destroy_node();rclpy.shutdown();log.close()

@@ -1,0 +1,36 @@
+{
+  "date": "2026-09-15",
+  "workload": "inspection.launch.py with Gazebo GUI, RViz and OptiX, stationary AGV",
+  "method": "One sequential run per scene under the project-private patched Mesa and experimental OptiX runtime; whole-device VRAM includes the desktop.",
+  "baseline": {
+    "scene": "assets/road/runtime_fullwidth_100m_v1/manifest.json",
+    "collision_triangles": 96,
+    "first_odometry_wall_s": 34.432475076006085,
+    "steady_rtf": 0.882616574953464,
+    "peak_tree_rss_bytes": 10502717440,
+    "peak_tree_pss_bytes": 9795108864,
+    "peak_device_used_bytes": 10036969472
+  },
+  "rough_3mm": {
+    "scene": "assets/road/runtime_fullwidth_100m_rough_3mm_v1/manifest.json",
+    "collision_triangles": 364672,
+    "first_odometry_wall_s": 40.858508093995624,
+    "steady_rtf": 0.6638967947662838,
+    "peak_tree_rss_bytes": 10631278592,
+    "peak_tree_pss_bytes": 9933147136,
+    "peak_device_used_bytes": 10046406656
+  },
+  "delta": {
+    "first_odometry_wall_s": 6.426033017989539,
+    "steady_rtf_relative_percent": -24.781977856338995,
+    "peak_tree_rss_bytes": 128561152,
+    "peak_tree_pss_bytes": 138038272,
+    "peak_device_used_bytes": 9437184
+  },
+  "static_validation": {
+    "baseline_mean_s": 24.55017861050146,
+    "rough_mean_s": 42.15379085650011,
+    "note": "This includes full manifest hashes and OBJ/proxy validation and is not simulator load time."
+  },
+  "conclusion": "The material memory cost is negligible, but a 364672-triangle road collision mesh causes an unacceptable RTF regression. Preserve the 10 cm visual/OptiX height field and optimize its physics representation before full-region capture."
+}
