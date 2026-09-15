@@ -1,0 +1,50 @@
+{
+ "schema": "agv.scan_flight_recorder.v1",
+ "date": "2026-09-15",
+ "purpose": "Make the next unsupported_scan_motion diagnosable on its first occurrence. The fault is intermittent -- one full-area run hit it on track 5, the next completed all ten tracks -- so waiting for it is the only honest option, and the recorder is what makes that wait productive.",
+ "why_not_a_side_channel": "An earlier attempt recorded the same quantities from a separate ROS node subscribing to /joint_states at 100 Hz. It twice disturbed the system it was measuring: once starving the operator's 0.5 s chassis-HOLD freshness window during route planning, once causing STALE_OR_UNREADY_LOCALIZATION on track 1. Data taken that way is not trustworthy. The plugin already computes every quantity involved, so the recording belongs inside it.",
+ "design": {
+  "ring": "fixed-capacity POD array (agv_linescan/flight_recorder.hpp). Recording a step is an assignment into a preallocated slot; no allocation and no file access on the physics thread.",
+  "bounds": "trimmed by simulated time span AND capped by sample count. The count bounds memory; the span keeps the window the same duration if max_step_size ever changes, so 2000 samples are never silently reinterpreted as 2 s.",
+  "defaults": {"span_s": 2.0, "max_samples": 4000, "half_limit_cooldown_s": 10.0, "max_dumps": 20},
+  "memory": "about 0.25 KB per sample, so the default window costs well under 1 MB",
+  "dump": "on rejection the ring is copied synchronously, capture reset and braking proceed immediately, and the copy is serialised by an async writer. Shutdown drains those writers and logs any write failure rather than discarding it.",
+  "window_meaning": "the record ends at the rejected step. It is the two seconds BEFORE the fault, deliberately: nothing is delayed to collect data after it."
+ },
+ "per_sample_fields": ["simulated time", "four drive shaft rates and their contact-speed conversion",
+  "four steer angles", "four suspension positions and rates", "per-wheel fit residual, not only the maximum",
+  "fitted vx/vy/wz and residual", "body pose and body velocity differentiated from the previous step",
+  "encoder polarity, motion state, capture active",
+  "each guard result separately: speed, lateral, yaw, residual, data validity, polarity"],
+ "what_the_fields_separate": {
+  "single bad encoder": "one wheel residual far above the other three",
+  "whole-vehicle slip": "four wheel residuals mutually consistent but disagreeing with the differentiated body velocity",
+  "losing contact": "a suspension position extending with an abnormal rate on one corner",
+  "solver or state-read glitch": "a joint value jumping for exactly one step",
+  "limitation": "suspension extension is a hint, not proof of lift-off. Tyre contact state or contact count would settle it and is deliberately not added yet, to keep the first version cheap."
+ },
+ "statistics_instead_of_writes": {
+  "why": "writing a sample every time the residual passes half the gate would become heavy I/O if it ever runs near that level",
+  "kept_in_memory": "sample count, over-half and over-limit counts, maximum, 32-bin histogram, P95/P99 from the histogram",
+  "events": "one event on first crossing half the limit, then only after a cooldown",
+  "block_metadata": "every captured block carries the running distribution, so normal runs answer how close to the gate the system actually operates -- a question there is currently no data for at all"
+ },
+ "dump_cap": "at most max_dumps files per session; further rejections increment flight_recorder_suppressed, which is reported in the event, so a throttled run is never mistaken for one that faulted only that many times",
+ "verification": {
+  "tool": "tools/verify_flight_recorder.py",
+  "method": "the residual gate is lowered to 1e-9 so rejection is certain; headless, OptiX backend on a prepared scene",
+  "not_a_reproduction": "this proves the recorder fires and is complete. It says nothing about why the real 0.0425 m/s residual occurred.",
+  "results": {
+   "file_written": true,
+   "window": "2001 samples spanning exactly 2.000 s",
+   "guard_isolation": "pass flags read {data:true, lateral:true, polarity:true, residual:false, speed:true, yaw:true} -- the failing guard is named, not inferred",
+   "per_wheel_residual_example": [1.5e-05, 5.0e-05, 1.5e-05, 2.6e-05],
+   "suspension_example": {"position_m": [0.00424, 0.00415, 0.00107, 0.00093], "rate_m_s": [-0.01613, -0.01616, 0.01684, 0.01681], "reading": "front and rear moving in opposite directions, i.e. pitch, is legible directly from the record"},
+   "stop_latency_after_fault_s": 1.64,
+   "stop_latency_check": "consistent with decelerating 1.0 m/s at the configured 1.0 m/s^2, so the async write does not hold the stop",
+   "dump_cap": "with max_dumps 3 the session wrote 3 files and reported flight_recorder_suppressed 9"
+  }
+ },
+ "unrelated_defect_encountered": "the first verification attempt used headless with linescan_backend:=render and the server segfaulted in Ogre::GL3PlusBufferInterface::_firstUpload during startup, with no project code on the stack. This is the same already-recorded failure as in gui_startup_abort.json and is not caused by this change; the verification uses the optix path the real captures use.",
+ "next": "deploy and wait. No attempt should be made to provoke the fault; the recorder exists so that its next natural occurrence is enough to settle the cause."
+}

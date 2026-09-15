@@ -6,7 +6,10 @@
 
 namespace agv_linescan {
 // Equal-weight rigid-body fit from rolling wheel velocity vectors. No pose truth.
-struct ScanVelocity { double vx=0,vy=0,wz=0,residual=0; };
+// residual is the worst wheel; wheelResidual keeps all four, because a single
+// bad encoder and a whole-vehicle slip produce the same maximum and are only
+// told apart by how the four compare.
+struct ScanVelocity { double vx=0,vy=0,wz=0,residual=0; std::array<double,4> wheelResidual{}; };
 inline ScanVelocity FitScanVelocity(const std::array<double,4>& speed,
                                     const std::array<double,4>& angle,double wheelbase,double track) {
   if(!(wheelbase>0 && track>0))throw std::invalid_argument("invalid wheel geometry");
@@ -19,7 +22,10 @@ inline ScanVelocity FitScanVelocity(const std::array<double,4>& speed,
     v.vx+=ux[i]/4;v.vy+=uy[i]/4;v.wz+=-y[i]*ux[i]+x[i]*uy[i];
   }
   v.wz/=wheelbase*wheelbase+track*track;
-  for(size_t i=0;i<4;++i)v.residual=std::max(v.residual,std::hypot(ux[i]-v.vx+v.wz*y[i],uy[i]-v.vy-v.wz*x[i]));
+  for(size_t i=0;i<4;++i){
+    v.wheelResidual[i]=std::hypot(ux[i]-v.vx+v.wz*y[i],uy[i]-v.vy-v.wz*x[i]);
+    v.residual=std::max(v.residual,v.wheelResidual[i]);
+  }
   return v;
 }
 class ProjectedEncoder {

@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include "agv_linescan/flight_recorder.hpp"
 #include "agv_linescan/mount_geometry.hpp"
 #include "agv_linescan/sampling.hpp"
 using namespace agv_linescan;
@@ -142,3 +143,46 @@ TEST(WheelEncoder, PhysicalDiameterChangesRawRowsNotCountsPerTurn) {
   EXPECT_THROW(WheelEncoderScale(2000,4,63,149,.2),std::invalid_argument);
   EXPECT_THROW(WheelEncoderScale(2000,4,64,0,.2),std::invalid_argument);
 }
+
+TEST(FlightRecorder, KeepsTheSpanAndNeverExceedsCapacity) {
+  FlightRecorder recorder(2000,2.0);
+  FlightSample sample;
+  for(int i=0;i<6000;++i){sample.simTime=i*.001;sample.residual=i*1e-6;recorder.Push(sample);}
+  EXPECT_LE(recorder.size(),recorder.capacity());
+  auto rows=recorder.Snapshot();
+  ASSERT_FALSE(rows.empty());
+  // Oldest first, and the whole window is within the declared span of the newest.
+  EXPECT_LT(rows.front().simTime,rows.back().simTime);
+  EXPECT_LE(rows.back().simTime-rows.front().simTime,recorder.span()+1e-9);
+  EXPECT_NEAR(rows.back().simTime,5.999,1e-9);
+}
+
+TEST(FlightRecorder, ACoarserStepStillKeepsTheSameSimulatedWindow) {
+  // The count limit must not be read as a duration: at 10 ms per step, 2000
+  // samples would be 20 s, and only the span keeps the window at 2 s.
+  FlightRecorder recorder(2000,2.0);
+  FlightSample sample;
+  for(int i=0;i<1000;++i){sample.simTime=i*.01;recorder.Push(sample);}
+  auto rows=recorder.Snapshot();
+  EXPECT_LE(rows.back().simTime-rows.front().simTime,2.0+1e-9);
+  EXPECT_LE(rows.size(),size_t(201));
+}
+
+TEST(FlightRecorder, RejectsDegenerateBounds) {
+  EXPECT_THROW(FlightRecorder(0,2.0),std::invalid_argument);
+  EXPECT_THROW(FlightRecorder(10,0.0),std::invalid_argument);
+}
+
+TEST(ResidualStats, CountsCrossingsAndEstimatesQuantiles) {
+  ResidualStats stats(.03);
+  for(int i=0;i<990;++i)stats.Add(.001);
+  for(int i=0;i<9;++i)stats.Add(.02);      // above half the limit, below it
+  stats.Add(.05);                           // above the limit
+  EXPECT_EQ(stats.samples(),1000u);
+  EXPECT_EQ(stats.overHalf(),10u);          // the nine plus the one over the limit
+  EXPECT_EQ(stats.overLimit(),1u);
+  EXPECT_DOUBLE_EQ(stats.max(),.05);
+  EXPECT_LT(stats.Quantile(.5),.01);
+  EXPECT_GT(stats.Quantile(.999),.015);
+}
+

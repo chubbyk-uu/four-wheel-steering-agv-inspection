@@ -4,6 +4,7 @@
 // tiled CUDA plane uses a bounded asynchronous queue to keep physics advancing.
 #include "agv_linescan/sampling.hpp"
 #include "agv_linescan/scan_motion.hpp"
+#include "agv_linescan/flight_recorder.hpp"
 #include "agv_linescan/queue_budget.hpp"
 #include "agv_linescan/mount_geometry.hpp"
 #include "agv_linescan/preview.hpp"
@@ -58,11 +59,24 @@ class GzLineScan final: public gz::sim::System,
                        public gz::sim::ISystemPreUpdate,
                        public gz::sim::ISystemPostUpdate {
  public:
+  // A diagnostic that silently failed to reach disk is worse than none, because
+  // the next investigation starts by looking for a file that was never written.
+  void DrainFlightWrites(bool report) {
+    for(auto &write:flightWrites_) {
+      try {write.get();}
+      catch(const std::exception &e) {
+        if(report && node_)RCLCPP_ERROR(node_->get_logger(),"%s",e.what());
+      }
+    }
+    flightWrites_.clear();
+  }
+
   ~GzLineScan() override {
     { std::lock_guard<std::mutex> lock(mutex_); quit_=true; }
     wake_.notify_one();
     if (renderThread_.joinable()) renderThread_.join();
     for (auto &write:writes_) { try { write.get(); } catch (...) {} }
+    DrainFlightWrites(false);
     if (context_) context_->shutdown("line-scan system destroyed");
   }
 
@@ -98,6 +112,19 @@ class GzLineScan final: public gz::sim::System,
     prefetchDistance_=sampling["prefetch_distance_m"].as<double>(4);
     queueBudget_=std::make_unique<QueueBudget>(sampling["queue_capacity_lines"].as<size_t>(2048),
         sampling["queue_capacity_jobs"].as<size_t>(512),sampling["queue_max_wait_s"].as<double>(.15));
+    // Flight recorder: the seconds before a scan-motion rejection, kept in memory
+    // so the physics step pays only an assignment. The count caps memory; the span
+    // is what keeps the window the same duration if the step size ever changes.
+    auto flight=config_["flight_recorder"];
+    const double flightSpan=flight?flight["span_s"].as<double>(2.):2.;
+    const size_t flightCapacity=flight?flight["max_samples"].as<size_t>(4000):4000;
+    residualHalfCooldown_=flight?flight["half_limit_cooldown_s"].as<double>(10.):10.;
+    flightDumpLimit_=flight?flight["max_dumps"].as<std::uint64_t>(20):20;
+    if(!std::isfinite(flightSpan)||flightSpan<=0||flightSpan>60||flightCapacity<100||flightCapacity>200000||
+       !std::isfinite(residualHalfCooldown_)||residualHalfCooldown_<0||flightDumpLimit_==0||flightDumpLimit_>1000)
+      throw std::runtime_error("invalid flight_recorder configuration");
+    flight_=std::make_unique<FlightRecorder>(flightCapacity,flightSpan);
+    residualStats_=std::make_unique<ResidualStats>(config_["max_scan_residual_m_s"].as<double>(.03));
     if(!batchRows_ || batchRows_>16384 || tileSlots_<4 || tileSlots_>64 ||
        queueBudget_->lineLimit<batchRows_ || queueBudget_->lineLimit>1048576 ||
        queueBudget_->jobLimit>65536 || !std::isfinite(prefetchDistance_) || prefetchDistance_<0)
@@ -223,7 +250,11 @@ class GzLineScan final: public gz::sim::System,
         drive_[i]=ecm.EntityByComponents(gz::sim::components::Name(names[i]+"_drive_joint"),gz::sim::components::ParentEntity(model_));
         steer_[i]=ecm.EntityByComponents(gz::sim::components::Name(names[i]+"_steer_joint"),gz::sim::components::ParentEntity(model_));
         if (!drive_[i] || !steer_[i]) throw std::runtime_error("missing AGV joint");
-        for (auto entity:{drive_[i],steer_[i]}) {
+        // Suspension travel is diagnostic only: it hints at losing contact, and a
+        // missing joint must not stop a capture that never needed it.
+        suspension_[i]=ecm.EntityByComponents(gz::sim::components::Name(names[i]+"_suspension_joint"),gz::sim::components::ParentEntity(model_));
+        for (auto entity:{drive_[i],steer_[i],suspension_[i]}) {
+          if (!entity) continue;
           if (!ecm.Component<gz::sim::components::JointPosition>(entity))
             ecm.CreateComponent(entity,gz::sim::components::JointPosition());
           if (!ecm.Component<gz::sim::components::JointVelocity>(entity))
@@ -298,19 +329,28 @@ class GzLineScan final: public gz::sim::System,
       const bool wheelDataValid=valid;
       valid=valid && *range.second-*range.first<=spreadLimit &&
           std::abs((speeds[1]+speeds[3]-speeds[0]-speeds[2])/(2*track_))<=config_["max_yaw_rate_rad_s"].as<double>();
+      ScanVelocity fitted{};bool fitted_ok=false;
+      FlightSample flight{};
+      flight.passData=wheelDataValid?1:0;
       if(config_["projected_encoder"].as<bool>(false)) {
         try {
           if(!wheelDataValid) {projectedEncoder_.Reset();throw std::runtime_error("invalid wheel data");}
           auto velocity=FitScanVelocity(speeds,angles,wheelbase_,track_);
+          fitted=velocity;fitted_ok=true;
           distance=projectedEncoder_.Update(wheelDistance,angles);
           lastDriveSpeed_=velocity.vx;
-          valid=wheelDataValid && std::abs(velocity.vx)<=maxSpeed_ &&
-              std::abs(velocity.vy)<=config_["max_scan_lateral_m_s"].as<double>() &&
-              std::abs(velocity.wz)<=config_["max_yaw_rate_rad_s"].as<double>() &&
-              velocity.residual<=config_["max_scan_residual_m_s"].as<double>();
-          scanMotion_={{"vx",velocity.vx},{"vy",velocity.vy},{"wz",velocity.wz},{"residual",velocity.residual}};
+          // Each guard is kept separately: the reason a step was rejected is not
+          // recoverable from the combined flag once it is false.
+          flight.passSpeed=std::abs(velocity.vx)<=maxSpeed_;
+          flight.passLateral=std::abs(velocity.vy)<=config_["max_scan_lateral_m_s"].as<double>();
+          flight.passYaw=std::abs(velocity.wz)<=config_["max_yaw_rate_rad_s"].as<double>();
+          flight.passResidual=velocity.residual<=config_["max_scan_residual_m_s"].as<double>();
+          valid=wheelDataValid && flight.passSpeed && flight.passLateral && flight.passYaw && flight.passResidual;
+          scanMotion_={{"vx",velocity.vx},{"vy",velocity.vy},{"wz",velocity.wz},{"residual",velocity.residual},
+                       {"wheel_residual_m_s",velocity.wheelResidual}};
         } catch(const std::exception&) {valid=false;}
       }
+      RecordFlight(flight,fitted,fitted_ok,speeds,angles,ecm,history_.back().pose);
       if(enabled_ && !valid && !config_["projected_encoder"].as<bool>(false)) scanMotion_={{"wheel_speeds_m_s",speeds},{"wheel_speed_spread_m_s",*range.second-*range.first},
         {"max_abs_steer_rad",maxSteer},{"encoder_yaw_estimate_rad_s",(speeds[1]+speeds[3]-speeds[0]-speeds[2])/(2*track_)},
         {"speed_limit_m_s",maxSpeed_},{"wheel_spread_limit_m_s",spreadLimit},
@@ -380,9 +420,128 @@ class GzLineScan final: public gz::sim::System,
     throw std::runtime_error("pose_outside_history");
   }
 
+  // Fill one flight sample and fold it into the running statistics. Everything
+  // here is arithmetic on preallocated storage: no allocation, no file access.
+  void RecordFlight(FlightSample &flight,const ScanVelocity &fitted,bool fitted_ok,
+                    const std::array<double,4> &speeds,const std::array<double,4> &angles,
+                    const gz::sim::EntityComponentManager &ecm,const gz::math::Pose3d &pose) {
+    if(!flight_)return;
+    flight.simTime=now_;
+    for(size_t i=0;i<4;++i) {
+      flight.wheelSpeed[i]=speeds[i];
+      flight.driveRate[i]=radius_>0?speeds[i]/radius_:0;
+      flight.steerAngle[i]=angles[i];
+      if(suspension_[i]!=gz::sim::kNullEntity) {
+        auto sp=ecm.Component<gz::sim::components::JointPosition>(suspension_[i]);
+        auto sv=ecm.Component<gz::sim::components::JointVelocity>(suspension_[i]);
+        if(sp && !sp->Data().empty())flight.suspensionPos[i]=sp->Data()[0];
+        if(sv && !sv->Data().empty())flight.suspensionVel[i]=sv->Data()[0];
+      }
+      flight.wheelResidual[i]=fitted_ok?fitted.wheelResidual[i]:0;
+    }
+    flight.vx=fitted.vx;flight.vy=fitted.vy;flight.wz=fitted.wz;flight.residual=fitted.residual;
+    flight.bodyX=pose.Pos().X();flight.bodyY=pose.Pos().Y();flight.bodyZ=pose.Pos().Z();
+    flight.bodyQx=pose.Rot().X();flight.bodyQy=pose.Rot().Y();
+    flight.bodyQz=pose.Rot().Z();flight.bodyQw=pose.Rot().W();
+    // Body motion from the poses themselves. Four wheels agreeing with each other
+    // but not with this is whole-vehicle slip, which per-wheel residuals cannot show.
+    if(bodyPrevValid_ && now_>bodyPrevTime_) {
+      const double dt=now_-bodyPrevTime_;
+      flight.bodyVx=(pose.Pos().X()-bodyPrevPose_.Pos().X())/dt;
+      flight.bodyVy=(pose.Pos().Y()-bodyPrevPose_.Pos().Y())/dt;
+      flight.bodyVz=(pose.Pos().Z()-bodyPrevPose_.Pos().Z())/dt;
+      flight.bodyWz=(pose.Rot().Yaw()-bodyPrevPose_.Rot().Yaw())/dt;
+    }
+    bodyPrevValid_=true;bodyPrevTime_=now_;bodyPrevPose_=pose;
+    flight.encoderPolarity=encoderPolarity_;
+    flight.capturing=active_?1:0;
+    flight.motionState=MotionCode(motion_);
+    flight_->Push(flight);
+    if(!fitted_ok || !residualStats_)return;
+    residualStats_->Add(fitted.residual);
+    // Crossing half the gate is written once, then only after a cooldown, so a
+    // residual that lives near the threshold cannot turn into a stream of writes.
+    if(fitted.residual>residualStats_->limit()/2 && now_-lastHalfEvent_>=residualHalfCooldown_) {
+      lastHalfEvent_=now_;++halfEvents_;
+      Json event={{"reason","scan_residual_near_limit"},{"simulation_time_s",now_},
+                  {"residual_m_s",fitted.residual},{"limit_m_s",residualStats_->limit()},
+                  {"wheel_residual_m_s",fitted.wheelResidual},
+                  {"position_m",{flight.bodyX,flight.bodyY,flight.bodyZ}},
+                  {"capturing",active_},{"occurrence",halfEvents_}};
+      std::ofstream(output_/"events.jsonl",std::ios::app)<<event.dump()<<'\n';
+    }
+  }
+
+  static uint8_t MotionCode(const std::string &name) {
+    if(name=="DRIVE")return 1; if(name=="BRAKE")return 2; if(name=="HOLD")return 3;
+    if(name=="ALIGN")return 4; if(name=="FEEDBACK_HOLD")return 5;
+    return name.empty()?0:6;
+  }
+
+  Json ResidualSummary() const {
+    if(!residualStats_)return Json::object();
+    return Json{{"samples",residualStats_->samples()},
+                {"limit_m_s",residualStats_->limit()},
+                {"max_m_s",residualStats_->max()},
+                {"p95_m_s",residualStats_->Quantile(.95)},
+                {"p99_m_s",residualStats_->Quantile(.99)},
+                {"over_half_limit",residualStats_->overHalf()},
+                {"over_limit",residualStats_->overLimit()},
+                {"near_limit_events",halfEvents_},
+                {"flight_dumps",flightDumps_},{"flight_dumps_suppressed",flightDumpsSuppressed_},
+                {"histogram_bin_width_m_s",2*residualStats_->limit()/(ResidualStats::kBins-1)},
+                {"histogram",residualStats_->histogram()}};
+  }
+
+  // Copy the ring on the physics thread, hand the copy to a writer, and return.
+  // The step must not wait for the disk, and stopping must not wait for data.
+  void DumpFlight(const std::string &reason) {
+    if(!flight_ || flight_->size()==0)return;
+    // A repeating fault must not turn the diagnostic into its own disturbance.
+    // The count keeps being reported, so a capped run is never mistaken for a
+    // run that only faulted this many times.
+    if(flightDumps_>=flightDumpLimit_){++flightDumpsSuppressed_;return;}
+    auto rows=flight_->Snapshot();
+    Json summary=ResidualSummary();
+    const auto index=++flightDumps_;
+    const double when=now_;
+    auto path=output_/("flight_"+std::to_string(index)+"_"+reason+".json");
+    flightWrites_.push_back(std::async(std::launch::async,
+        [path,rows=std::move(rows),summary=std::move(summary),reason,when]() {
+      Json doc={{"schema","agv.linescan.flight_recorder.v1"},{"reason",reason},
+                {"fault_simulation_time_s",when},{"samples",rows.size()},
+                {"window_s",rows.empty()?0.:rows.back().simTime-rows.front().simTime},
+                {"note","the window ends at the rejected step; nothing after it is recorded"},
+                {"residual_statistics",summary}};
+      Json records=Json::array();
+      for(const auto &r:rows) {
+        records.push_back({{"t",r.simTime},{"drive_rate_rad_s",r.driveRate},{"wheel_speed_m_s",r.wheelSpeed},
+          {"steer_rad",r.steerAngle},{"suspension_m",r.suspensionPos},{"suspension_rate_m_s",r.suspensionVel},
+          {"wheel_residual_m_s",r.wheelResidual},{"vx",r.vx},{"vy",r.vy},{"wz",r.wz},{"residual",r.residual},
+          {"body_xyz",{r.bodyX,r.bodyY,r.bodyZ}},{"body_quat_xyzw",{r.bodyQx,r.bodyQy,r.bodyQz,r.bodyQw}},
+          {"body_velocity_m_s",{r.bodyVx,r.bodyVy,r.bodyVz}},{"body_yaw_rate_rad_s",r.bodyWz},
+          {"encoder_polarity",r.encoderPolarity},{"motion_state",r.motionState},{"capturing",r.capturing!=0},
+          {"pass",{{"speed",r.passSpeed!=0},{"lateral",r.passLateral!=0},{"yaw",r.passYaw!=0},
+                   {"residual",r.passResidual!=0},{"data",r.passData!=0},{"polarity",r.passPolarity!=0}}}});
+      }
+      doc["records"]=std::move(records);
+      std::ofstream out(path);
+      out<<doc.dump();
+      if(!out)throw std::runtime_error("flight recorder write failed: "+path.string());
+    }));
+  }
+
   void Reset(const std::string &reason) {
     Json event={{"reason",reason},{"simulation_time_s",now_},{"discarded_pending_lines",pending_.size()}};
     if(reason=="unsupported_scan_motion" || reason=="direction change")event["motion_condition"]=scanMotion_;
+    // Hand the ring to a writer before the capture state is cleared. The copy is
+    // synchronous and cheap; the file is not, and the step must not wait for it.
+    if(reason=="unsupported_scan_motion"){
+      DumpFlight(reason);
+      event["flight_recorder"]=flightDumps_;
+      if(flightDumpsSuppressed_)event["flight_recorder_suppressed"]=flightDumpsSuppressed_;
+    }
+    if(residualStats_ && residualStats_->samples())event["residual_statistics"]=ResidualSummary();
     event["encoder_output_mode"]=config_["encoder_output_mode"].as<std::string>("strict");
     event["encoder_max_retrace_m"]=trigger_->MaxRetrace();
     event["encoder_retrace_episodes"]=trigger_->RetraceEpisodes();
@@ -721,6 +880,7 @@ class GzLineScan final: public gz::sim::System,
     }
     if(AsyncBackend()) {
       std::lock_guard<std::mutex> lock(mutex_);
+      meta["scan_residual_statistics"]=ResidualSummary();
       meta["sampling_queue_capacity_jobs"]=queueBudget_->jobLimit;
       meta["sampling_queue_capacity_lines"]=queueBudget_->lineLimit;
       meta["sampling_queue_high_water_jobs"]=queueBudget_->peakJobs;
@@ -809,7 +969,13 @@ class GzLineScan final: public gz::sim::System,
   bool flexible_=false;
   gz::sim::Entity cameraEntity_=gz::sim::kNullEntity;
   gz::sim::Entity model_=gz::sim::kNullEntity;
-  std::array<gz::sim::Entity,4> drive_{},steer_{};
+  std::array<gz::sim::Entity,4> drive_{},steer_{},suspension_{};
+  std::unique_ptr<FlightRecorder> flight_;
+  std::unique_ptr<ResidualStats> residualStats_;
+  std::vector<std::future<void>> flightWrites_;
+  double residualHalfCooldown_=10.,lastHalfEvent_=-1e9;
+  std::uint64_t halfEvents_=0,flightDumps_=0,flightDumpLimit_=20,flightDumpsSuppressed_=0;
+  bool bodyPrevValid_=false;double bodyPrevTime_=0;gz::math::Pose3d bodyPrevPose_;
   std::deque<Sample> history_;
   std::deque<Event> pending_;
   gz::math::Pose3d offset_;
