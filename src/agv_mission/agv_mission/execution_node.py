@@ -320,7 +320,18 @@ class Executor(Node):
                 # and a motion-quality window then excludes that whole 1.5 m block
                 # -- 18 ms of overlap cost one pass 0.84 m inside the region. The
                 # handshake measured 4-20 ms against 0.6 m of lead-in remaining.
-                if self.mode=='DRIVE':self.capture.request(True,step['track_id'])
+                # DRIVE confirms wheel alignment, not chassis heading: contact
+                # forces while re-steering can yaw the stopped vehicle. Let the
+                # existing lead-in feedback recover before opening the shutter.
+                # Once open, retain the frame; check_scan_heading still enforces
+                # the unchanged hard capture limit (including after a pause).
+                heading=self.core.diagnostic.get('reference_heading_error_rad')
+                opening_limit=min(self.cfg['heading_tolerance_rad'],
+                                  .5*self.cfg['max_capture_heading_error_rad'])
+                if (self.mode=='DRIVE' and
+                        (self.capture.active or (heading is not None and
+                         abs(heading)<=opening_limit))):
+                    self.capture.request(True,step['track_id'])
                 # The guarantee that replaces "do not move before the sensor
                 # acknowledges": never let the camera reach the region without it.
                 if (self.capture.enabled and self.capture.active is not True

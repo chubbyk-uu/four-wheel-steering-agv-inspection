@@ -32,6 +32,7 @@
 - [扫描道终点过冲](issues/PASS_TERMINAL_OVERSHOOT.md)：执行延迟与舵轮限位分支两个成因、停止距离钳制与段余量。
 - [覆盖缺口：末端与起点](issues/COVERAGE_TAIL_GAP.md)：采集在ROI边界关闭而传感器会丢掉收尾短图，过扫距离改由规划器按上界导出（与道长无关）；以及起步对轮在快门已开时作废首块，改为对轮完成后再开采集。
 - [路面UV镜像](issues/ROAD_DISPLAY_ALIGNMENT.md)：错误公式、实际渲染证据、迁移和回归。
+- [掉头对轮后航向保护](issues/POST_TURN_HEADING.md)：对轮导致车身偏转、DRIVE不能作为唯一开采条件，前导段闭环恢复与原保护保留。
 - [扫描摆动、后退调整、预览与条光](issues/SCAN_STABILITY.md)：保留调参前后原图和定位误差对照。
 - [沟槽碰撞简化](issues/COLLISION_PROXY.md)：视觉/碰撞边界、成本与不适用工况。
 

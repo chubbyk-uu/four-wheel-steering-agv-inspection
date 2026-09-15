@@ -2,6 +2,7 @@
 from pathlib import Path
 from types import SimpleNamespace as NS
 import numpy as np
+import pytest
 import yaml
 from agv_mission.execution import camera_along_m, compile_steps
 from agv_mission.execution_node import Executor
@@ -153,3 +154,37 @@ def test_a_mission_without_capture_completes_on_the_same_rule():
     assert h.state=='RUNNING'
     queue.drained=True;h.run_step(.02)
     assert h.state=='COMPLETED'
+
+
+@pytest.mark.parametrize('sign',[-1,1])
+def test_resteering_body_yaw_must_recover_before_shutter_opens(sign):
+    from scipy.spatial.transform import Rotation
+    h=started()
+    h.mode='ALIGN';h.q=Rotation.from_euler('z',sign*.074).as_quat()
+    h.run_step(.02)
+    h.mode='DRIVE';h.run_step(.02)
+    Executor.check_scan_heading(h)
+    assert h.state=='RUNNING' and not h.capture.active
+    h.run_step(.02)  # filtered heading feedback clears its deadband
+    assert h.cmd[0]>0 and h.cmd[2]*sign<0  # lead-in feedback, no reverse or extra spin
+    h.q=Rotation.from_euler('z',sign*.02).as_quat();h.run_step(.02)
+    assert h.capture.active
+    # Once armed, the tighter opening tolerance must not split a partial frame.
+    h.q=Rotation.from_euler('z',sign*.03).as_quat();h.run_step(.02)
+    Executor.check_scan_heading(h)
+    assert h.capture.active and h.state=='RUNNING' and not h.capture.closed
+    h.q=Rotation.from_euler('z',sign*.051).as_quat();h.run_step(.02)
+    Executor.check_scan_heading(h)
+    assert h.state=='FAULT' and h.reason=='SCAN_HEADING_EXCEEDS_GATE'
+
+
+def test_heading_not_recovered_at_region_fails_without_opening():
+    from scipy.spatial.transform import Rotation
+    h=started();h.mode='DRIVE'
+    h.q=Rotation.from_euler('z',-.074).as_quat()
+    h.place(-h.plan['request']['coverage_error_m']+.02)
+    # Keep the time reference close to the region to isolate the capture guard.
+    h.core.start=h.p.copy();h.core.reference=h.p.copy()
+    h.run_step(.02)
+    assert not h.capture.active and h.capture.opened==0
+    assert h.state=='FAULT' and h.reason=='CAPTURE_NOT_ACTIVE_AT_REGION'

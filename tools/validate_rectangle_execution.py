@@ -19,6 +19,13 @@ from prepare_mission_camera import prepare
 from validate_tracking import stop
 
 
+def check_pause_block(meta,block_rows,min_tail_rows):
+    # A retained partial frame can still be short when the mission later ends.
+    # Pausing must not emit it, but ending after resume may legitimately do so.
+    assert ((meta['rows']==block_rows and meta['end_reason']=='full') or
+            (min_tail_rows<=meta['rows']<block_rows and meta['end_reason']=='capture_toggle')), 'invalid frame termination across pause'
+
+
 def stop_tree(process,known_children=()):
     # Gazebo launch may leave server/GUI children after its own exit.
     owned={p.pid:p for p in known_children}
@@ -44,6 +51,7 @@ def main():
     parser.add_argument('--request',type=Path,help='validate an existing rectangle request, including a generated rescan')
     parser.add_argument('--camera-config',type=Path,default=Path('src/agv_description/config/linescan.yaml'))
     parser.add_argument('--tracking-config',type=Path,help='isolated controller configuration; archived by executor')
+    parser.add_argument('--suspension-config',type=Path,help='diagnostic YAML containing only suspension stiffness/damping/preloads')
     parser.add_argument('--pause-once',action='store_true',help='pause early in first PASS, retain camera frame, then resume')
     parser.add_argument('--stop-after-pause',choices=['cancel','localization_timeout'],help='instead of resuming, validate partial-frame termination')
     parser.add_argument('--moving-fault',choices=['localization_timeout','camera_disabled'])
@@ -69,9 +77,23 @@ def main():
     path=a.output/'request.yaml';path.write_text(yaml.safe_dump(req))
     os.environ.update(ROS_DOMAIN_ID='98',GZ_PARTITION='agv_rectangle_'+str(os.getpid()))
     extra=[]
+    if a.suspension_config:
+        changes=yaml.safe_load(a.suspension_config.read_text())
+        allowed={'suspension_stiffness','suspension_damping','suspension_preload',
+                 'suspension_preload_front','suspension_preload_rear'}
+        if not isinstance(changes,dict) or not changes or changes.keys()-allowed:
+            parser.error('suspension comparison cannot change vehicle geometry or control limits')
+        if any(not isinstance(v,(int,float)) or not np.isfinite(v) for v in changes.values()):
+            parser.error('suspension parameters must be finite numbers')
+        if any(changes[k]<=0 for k in ('suspension_stiffness','suspension_damping') if k in changes):
+            parser.error('suspension stiffness and damping must be positive')
+        platform=yaml.safe_load(Path('src/agv_description/config/platform.yaml').read_text())
+        platform.update(changes)
+        physics_path=a.output/'platform.yaml';physics_path.write_text(yaml.safe_dump(platform))
+        extra.append('platform:='+str(physics_path.resolve()))
     if a.scene:
         camera_path=prepare(a.camera_config,a.output/'camera.yaml')
-        extra=['linescan:=true','linescan_backend:=optix','scene_manifest:='+str(a.scene.resolve()),
+        extra+=['linescan:=true','linescan_backend:=optix','scene_manifest:='+str(a.scene.resolve()),
                'camera_config:='+str(camera_path.resolve()),'scan_speed_limit:='+str(yaml.safe_load(camera_path.read_text())['max_scan_speed_m_s']),'capture_dir:='+str(a.output/'raw')]
     log=(a.output/'simulation.log').open('w')
     sim=subprocess.Popen(['ros2','launch','agv_bringup','sim.launch.py','localization:=true',
@@ -422,11 +444,12 @@ def main():
                 for b in manifest['blocks']:
                     tags=b['pose_tags']
                     if tags[0]['time_s']<pause_report['stopped_time_s'] and tags[-1]['time_s']>pause_report['resume_request_time_s']:
-                        assert b['rows']==4096,'pause split a full frame'
+                        meta=json.loads(Path(b['image']).with_suffix('.json').read_text())
+                        check_pause_block(meta,camera_cfg['block_rows'],camera_cfg['min_tail_rows'])
                         adjacent=[(l,r) for l,r in zip(tags,tags[1:]) if r['global_line']==l['global_line']+1 and r['time_s']-l['time_s']>2]
                         assert adjacent,'missing tags directly across stopped time'
                         crossing.append(dict(block_id=b['block_id'],rows=b['rows'],pause_gap_s=adjacent[0][1]['time_s']-adjacent[0][0]['time_s']))
-                assert crossing,'no complete image straddled pause'
+                assert crossing,'no retained image straddled pause'
                 result['pause_resume']['crossing_blocks']=crossing
                 result['pause_resume']['no_partial_frame_during_pause']=True
             result.update(scope='rectangle motion + OptiX raw capture + sparse fused labels; no correction/stitching',capture=captured)

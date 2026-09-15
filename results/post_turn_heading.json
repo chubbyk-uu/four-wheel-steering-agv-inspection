@@ -1,0 +1,557 @@
+{
+  "rigid_zero": {
+    "passed": false,
+    "final_state": "FAULT",
+    "reason": "SCAN_HEADING_EXCEEDS_GATE",
+    "final_motion": "HOLD",
+    "passes": [
+      {
+        "track_id": 0,
+        "align_seconds": 3.0150000000000006,
+        "align_truth_yaw_change_deg": 1.479583110494501,
+        "align_truth_translation_m": 0.009132725291975431,
+        "wheel_start_end_deg": [
+          [
+            52.576827529523314,
+            52.5768275275045,
+            52.57682752846878,
+            52.57682752801002
+          ],
+          [
+            0.15189362871711864,
+            0.1518936279675928,
+            0.1518936272335446,
+            0.15189362753883814
+          ]
+        ],
+        "wheel_travel_deg": [
+          -52.424933900806195,
+          -52.42493389953691,
+          -52.424933901235235,
+          -52.42493390047118
+        ],
+        "drive_start_heading_error_rad": -0.025919239627971706,
+        "drive_start_time_s": 16.879,
+        "capture_delay_after_drive_s": 0.015000000000000568,
+        "first_capture_heading_error_rad": -0.02592516530168841,
+        "max_active_heading_error_rad": 0.026269373892454973,
+        "reverse_command_samples": 0
+      },
+      {
+        "track_id": 1,
+        "align_seconds": 2.1600000000000037,
+        "align_truth_yaw_change_deg": -4.252666465633166,
+        "align_truth_translation_m": 0.011579746595171999,
+        "wheel_start_end_deg": [
+          [
+            -54.90897252520648,
+            -128.52976661933462,
+            -123.23287285836787,
+            -53.39536113556256
+          ],
+          [
+            -0.4595634330165405,
+            -180.38453238903602,
+            -180.30038575957045,
+            -0.4418493690808218
+          ]
+        ],
+        "wheel_travel_deg": [
+          54.44940909218994,
+          -51.8547657697014,
+          -57.06751290120258,
+          52.95351176648174
+        ],
+        "drive_start_heading_error_rad": 0.07425485241970597,
+        "drive_start_time_s": 53.601000000000006,
+        "capture_delay_after_drive_s": 0.015999999999998238,
+        "first_capture_heading_error_rad": 0.07425771996154355,
+        "max_active_heading_error_rad": 0.07425771996154355,
+        "reverse_command_samples": 0
+      }
+    ],
+    "capture": null,
+    "pause_resume": null,
+    "wheel_order": [
+      "fl",
+      "fr",
+      "rl",
+      "rr"
+    ]
+  },
+  "run600": {
+    "passed": false,
+    "final_state": "FAULT",
+    "reason": "SCAN_HEADING_EXCEEDS_GATE",
+    "final_motion": "HOLD",
+    "passes": [
+      {
+        "track_id": 0,
+        "align_seconds": 2.546999999999999,
+        "align_truth_yaw_change_deg": 1.5547700609212065,
+        "align_truth_translation_m": 0.007372781153509426,
+        "wheel_start_end_deg": [
+          [
+            52.90573778047429,
+            52.90573778173859,
+            52.905737782755075,
+            52.905737781175304
+          ],
+          [
+            0.3135008019413289,
+            0.3135008011885755,
+            0.31350080045584877,
+            0.3135008007556516
+          ]
+        ],
+        "wheel_travel_deg": [
+          -52.59223697853296,
+          -52.592236980550005,
+          -52.59223698229923,
+          -52.59223698041965
+        ],
+        "drive_start_heading_error_rad": -0.019991916409649504,
+        "drive_start_time_s": 16.517,
+        "capture_delay_after_drive_s": 0.004000000000001336,
+        "first_capture_heading_error_rad": -0.019991916409649504,
+        "max_active_heading_error_rad": 0.02334614988348233,
+        "reverse_command_samples": 0
+      },
+      {
+        "track_id": 1,
+        "align_seconds": 2.0799999999999983,
+        "align_truth_yaw_change_deg": -2.920883934457286,
+        "align_truth_translation_m": 0.010594449986358653,
+        "wheel_start_end_deg": [
+          [
+            -54.13017648225495,
+            -125.86982351740782,
+            -125.86982351709834,
+            -54.13017648211125
+          ],
+          [
+            -0.10962627288329771,
+            -179.896991997754,
+            -179.89699199764834,
+            -0.10962627226138921
+          ]
+        ],
+        "wheel_travel_deg": [
+          54.02055020937165,
+          -54.02716848034617,
+          -54.02716848055,
+          54.020550209849866
+        ],
+        "drive_start_heading_error_rad": 0.052034176251305936,
+        "drive_start_time_s": 52.25,
+        "capture_delay_after_drive_s": 0.018000000000000682,
+        "first_capture_heading_error_rad": 0.05201113536872883,
+        "max_active_heading_error_rad": 0.05201113536872883,
+        "reverse_command_samples": 0
+      }
+    ],
+    "capture": null,
+    "pause_resume": null,
+    "wheel_order": [
+      "fl",
+      "fr",
+      "rl",
+      "rr"
+    ]
+  },
+  "heading_probe_flat_before": {
+    "passed": true,
+    "final_state": "COMPLETED",
+    "reason": "",
+    "final_motion": "HOLD",
+    "passes": [
+      {
+        "track_id": 0,
+        "align_seconds": 3.42,
+        "align_truth_yaw_change_deg": 1.68837921961163,
+        "align_truth_translation_m": 0.03362026164315656,
+        "wheel_start_end_deg": [
+          [
+            52.94780229770081,
+            53.59230931716078,
+            53.59228134051376,
+            56.07128335377007
+          ],
+          [
+            0.5147673774128391,
+            0.5237738475453374,
+            0.5237731237993765,
+            0.5788099136510263
+          ]
+        ],
+        "wheel_travel_deg": [
+          -52.43303492028797,
+          -53.06853546961545,
+          -53.06850821671438,
+          -55.49247344011905
+        ],
+        "drive_start_heading_error_rad": -0.02956913869628923,
+        "drive_start_time_s": 17.018,
+        "capture_delay_after_drive_s": null,
+        "first_capture_heading_error_rad": null,
+        "max_active_heading_error_rad": null,
+        "reverse_command_samples": 0
+      },
+      {
+        "track_id": 1,
+        "align_seconds": 2.0799999999999983,
+        "align_truth_yaw_change_deg": -0.0011106216517909892,
+        "align_truth_translation_m": 0.06721683647429484,
+        "wheel_start_end_deg": [
+          [
+            -54.130176482287816,
+            -125.86982351773055,
+            -125.86982351773142,
+            -54.13017648228872
+          ],
+          [
+            -0.0982425951239468,
+            -179.88559415746275,
+            -179.8855941560202,
+            -0.09824259640678344
+          ]
+        ],
+        "wheel_travel_deg": [
+          54.03193388716387,
+          -54.01577063973218,
+          -54.015770638288764,
+          54.03193388588194
+        ],
+        "drive_start_heading_error_rad": 2.224286018731691e-05,
+        "drive_start_time_s": 52.938,
+        "capture_delay_after_drive_s": null,
+        "first_capture_heading_error_rad": null,
+        "max_active_heading_error_rad": null,
+        "reverse_command_samples": 0
+      }
+    ],
+    "capture": null,
+    "pause_resume": null,
+    "wheel_order": [
+      "fl",
+      "fr",
+      "rl",
+      "rr"
+    ]
+  },
+  "heading_probe_rough_fix1": {
+    "passed": true,
+    "final_state": "ACQUIRED",
+    "reason": "",
+    "final_motion": "HOLD",
+    "passes": [
+      {
+        "track_id": 0,
+        "align_seconds": 2.543000000000001,
+        "align_truth_yaw_change_deg": 1.8402413861927953,
+        "align_truth_translation_m": 0.00982845603509644,
+        "wheel_start_end_deg": [
+          [
+            54.10733643207784,
+            54.10733643121578,
+            54.10733643276499,
+            54.10733643145134
+          ],
+          [
+            0.4696724762370435,
+            0.4696724754462093,
+            0.4696724745154308,
+            0.4696724748798177
+          ]
+        ],
+        "wheel_travel_deg": [
+          -53.63766395584079,
+          -53.63766395576957,
+          -53.63766395824956,
+          -53.63766395657152
+        ],
+        "drive_start_heading_error_rad": -0.0294290567345374,
+        "drive_start_time_s": 16.060000000000002,
+        "capture_delay_after_drive_s": 1.0489999999999995,
+        "first_capture_heading_error_rad": -0.024926938269526345,
+        "max_active_heading_error_rad": 0.024926938269526345,
+        "reverse_command_samples": 0
+      },
+      {
+        "track_id": 1,
+        "align_seconds": 2.0799999999999983,
+        "align_truth_yaw_change_deg": -3.95607062546112,
+        "align_truth_translation_m": 0.012596330625126663,
+        "wheel_start_end_deg": [
+          [
+            -54.13017760684395,
+            -125.86982450617485,
+            -125.86982251803973,
+            -54.130175369909274
+          ],
+          [
+            -0.6606474305312804,
+            -180.42139045402803,
+            -180.421390454317,
+            -0.660647429437692
+          ]
+        ],
+        "wheel_travel_deg": [
+          53.46953017631267,
+          -54.55156594785318,
+          -54.551567936277266,
+          53.469527940471586
+        ],
+        "drive_start_heading_error_rad": 0.0700823659109858,
+        "drive_start_time_s": 54.551,
+        "capture_delay_after_drive_s": 2.3470000000000013,
+        "first_capture_heading_error_rad": 0.02496873598116461,
+        "max_active_heading_error_rad": 0.02496873598116461,
+        "reverse_command_samples": 0
+      }
+    ],
+    "capture": [
+      {
+        "track_id": 0,
+        "blocks": 6,
+        "rows": 24470,
+        "truth_along_extent_m": [
+          -4.48988523740263,
+          4.445081023609633
+        ],
+        "continuous_roi": true
+      },
+      {
+        "track_id": 1,
+        "blocks": 5,
+        "rows": 19530,
+        "truth_along_extent_m": [
+          -2.749443125443383,
+          4.397954742514393
+        ],
+        "continuous_roi": true
+      }
+    ],
+    "pause_resume": null,
+    "wheel_order": [
+      "fl",
+      "fr",
+      "rl",
+      "rr"
+    ]
+  },
+  "heading_probe_stiff_rough": {
+    "passed": true,
+    "final_state": "ACQUIRED",
+    "reason": "",
+    "final_motion": "HOLD",
+    "passes": [
+      {
+        "track_id": 0,
+        "align_seconds": 2.5090000000000003,
+        "align_truth_yaw_change_deg": 1.9653985416524151,
+        "align_truth_translation_m": 0.017086427395443207,
+        "wheel_start_end_deg": [
+          [
+            52.489047600600784,
+            52.489047601171116,
+            52.48904760063164,
+            52.489047599773976
+          ],
+          [
+            0.08576527623511566,
+            0.08576527542730647,
+            0.08576527462951934,
+            0.08576527484432482
+          ]
+        ],
+        "wheel_travel_deg": [
+          -52.40328232436567,
+          -52.40328232574381,
+          -52.40328232600212,
+          -52.403282324929656
+        ],
+        "drive_start_heading_error_rad": -0.03430571162813309,
+        "drive_start_time_s": 17.091,
+        "capture_delay_after_drive_s": 1.3829999999999991,
+        "first_capture_heading_error_rad": -0.024986563939065294,
+        "max_active_heading_error_rad": 0.024986563939065294,
+        "reverse_command_samples": 0
+      },
+      {
+        "track_id": 1,
+        "align_seconds": 2.0800000000000054,
+        "align_truth_yaw_change_deg": -3.1142019416953417,
+        "align_truth_translation_m": 0.033328855741412935,
+        "wheel_start_end_deg": [
+          [
+            -54.130176507729004,
+            -125.86982353855399,
+            -125.86982349688125,
+            -54.13017645695289
+          ],
+          [
+            -0.543075225384731,
+            -180.30499733754945,
+            -180.30499733806417,
+            -0.5430752239044785
+          ]
+        ],
+        "wheel_travel_deg": [
+          53.58710128234428,
+          -54.435173798995486,
+          -54.43517384118292,
+          53.58710123304841
+        ],
+        "drive_start_heading_error_rad": 0.05436310278967174,
+        "drive_start_time_s": 52.42400000000001,
+        "capture_delay_after_drive_s": 2.093999999999994,
+        "first_capture_heading_error_rad": 0.024710885884096683,
+        "max_active_heading_error_rad": 0.024710885884096683,
+        "reverse_command_samples": 0
+      }
+    ],
+    "capture": [
+      {
+        "track_id": 0,
+        "blocks": 6,
+        "rows": 23590,
+        "truth_along_extent_m": [
+          -4.1820501650448225,
+          4.43481566110809
+        ],
+        "continuous_roi": true
+      },
+      {
+        "track_id": 1,
+        "blocks": 5,
+        "rows": 20480,
+        "truth_along_extent_m": [
+          -3.194718288363953,
+          4.303905461181604
+        ],
+        "continuous_roi": true
+      }
+    ],
+    "pause_resume": null,
+    "wheel_order": [
+      "fl",
+      "fr",
+      "rl",
+      "rr"
+    ]
+  },
+  "heading_probe_rough_pause2": {
+    "passed": true,
+    "final_state": "ACQUIRED",
+    "reason": "",
+    "final_motion": "HOLD",
+    "passes": [
+      {
+        "track_id": 0,
+        "align_seconds": 2.947000000000001,
+        "align_truth_yaw_change_deg": 1.4887653881303626,
+        "align_truth_translation_m": 0.008649891020395506,
+        "wheel_start_end_deg": [
+          [
+            52.735875282836275,
+            52.735875280849754,
+            52.73587528208852,
+            52.73587528161619
+          ],
+          [
+            0.30094648079515124,
+            0.3009464701906622,
+            0.30094646950247517,
+            0.30094646976109385
+          ]
+        ],
+        "wheel_travel_deg": [
+          -52.43492880204113,
+          -52.434928810659095,
+          -52.434928812586044,
+          -52.434928811855094
+        ],
+        "drive_start_heading_error_rad": -0.022610452050896575,
+        "drive_start_time_s": 17.135,
+        "capture_delay_after_drive_s": 0.012000000000000455,
+        "first_capture_heading_error_rad": -0.022623089252724948,
+        "max_active_heading_error_rad": 0.024528192060407534,
+        "reverse_command_samples": 0
+      },
+      {
+        "track_id": 1,
+        "align_seconds": 2.940000000000005,
+        "align_truth_yaw_change_deg": -3.43895499901308,
+        "align_truth_translation_m": 0.005148227738339746,
+        "wheel_start_end_deg": [
+          [
+            -67.28287856434201,
+            -135.9146312104656,
+            -112.57890663178739,
+            -44.28008724625609
+          ],
+          [
+            -0.7714633612299463,
+            -180.69079907178676,
+            -180.56639669634058,
+            -0.6908040172360211
+          ]
+        ],
+        "wheel_travel_deg": [
+          66.51141520311208,
+          -44.77616786132118,
+          -67.9874900645532,
+          43.58928322902006
+        ],
+        "drive_start_heading_error_rad": 0.059602328640259446,
+        "drive_start_time_s": 53.93000000000001,
+        "capture_delay_after_drive_s": 2.158999999999999,
+        "first_capture_heading_error_rad": 0.023444640756374226,
+        "max_active_heading_error_rad": 0.023444640756374226,
+        "reverse_command_samples": 0
+      }
+    ],
+    "capture": [
+      {
+        "track_id": 0,
+        "blocks": 6,
+        "rows": 24576,
+        "truth_along_extent_m": [
+          -4.924840423851991,
+          4.0512688747760315
+        ],
+        "continuous_roi": true
+      },
+      {
+        "track_id": 1,
+        "blocks": 5,
+        "rows": 20480,
+        "truth_along_extent_m": [
+          -3.124717163508665,
+          4.376176404895719
+        ],
+        "continuous_roi": true
+      }
+    ],
+    "pause_resume": {
+      "requested_time_s": 57.483000000000004,
+      "stopped_time_s": 60.818000000000005,
+      "resume_request_time_s": 63.836000000000006,
+      "crossing_blocks": [
+        {
+          "block_id": 11,
+          "rows": 4096,
+          "pause_gap_s": 3.688150052185911
+        }
+      ],
+      "no_partial_frame_during_pause": true
+    },
+    "wheel_order": [
+      "fl",
+      "fr",
+      "rl",
+      "rr"
+    ]
+  }
+}

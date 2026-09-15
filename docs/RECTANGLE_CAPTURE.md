@@ -128,6 +128,8 @@ python3 tools/audit_mission_capture.py \
 
 实际执行记录出现PASS采集开启期间的限位恢复、大角度对轮或对轮滚动保护时，覆盖审计把相应时间窗扩展前后各50 ms。任何跨越该时间窗的完整原图块都会保留原文件和哈希，但标记`inputs[].motion_quality_excluded=true`、记录`STEERING_DURING_CAPTURE`并从已确认覆盖中排除，随后按真实空间生成补扫请求。这里保守排除整块，不重编号、不删除行、不伪造暂停前后的几何连续性。普通HOLD暂停及STOP_REQUEST恢复、不采集时的换道/转身不触发该排除。
 
-该策略本身未改，但曾被一个自造条件反复触发：采集在PASS起步对轮**之前**就已确认开启，对轮期间车辆蠕动数十毫米、快门已开，`ALIGN_WHEEL_MOTION`时间窗与该道第一张图重叠11–18 ms，整块1.5 m随之作废，其中0.83 m在ROI内。现改为控制器进入`DRIVE`后再开采集（握手实测4–20 ms，此时距ROI起点尚有0.64 m），对轮期间`capture_active`为假。原"采集确认前车不动"的隐式保证由显式故障`CAPTURE_NOT_ACTIVE_AT_REGION`取代：相机到达`ROI起点−coverage_error`时采集仍未激活即中止。见[覆盖缺口](issues/COVERAGE_TAIL_GAP.md)。
+该策略本身未改，但曾被一个自造条件反复触发：采集在PASS起步对轮**之前**就已确认开启，对轮期间车辆蠕动数十毫米、快门已开，`ALIGN_WHEEL_MOTION`时间窗与该道第一张图重叠11–18 ms，整块1.5 m随之作废，其中0.83 m在ROI内。该次修复改为控制器进入`DRIVE`后再开采集（当时握手实测4–20 ms，此时距ROI起点尚有0.64 m），对轮期间`capture_active`为假。原"采集确认前车不动"的隐式保证由显式故障`CAPTURE_NOT_ACTIVE_AT_REGION`取代：相机到达`ROI起点−coverage_error`时采集仍未激活即中止。见[覆盖缺口](issues/COVERAGE_TAIL_GAP.md)。
 
 审计读取`execution.jsonl`并记录其SHA256；缺少文件会拒绝审计，轨迹记录未覆盖图块首末时间则按`EXECUTION_TRACE_INCOMPLETE`排除。状态时间窗是约50 Hz控制遥测，不是逐行几何校正或像素级缺陷判别。未来拼接必须遵循这些质量排除项；不能只取原图目录或输入哈希列表而忽略质量标记。
+
+2026-09-15起伏路面对照补充：DRIVE仅代表轮角已就绪，对轮本身仍可能偏转车身。当前首次开采还要求参考航向误差进入`min(heading_tolerance_rad, 0.5*max_capture_heading_error_rad)`（默认0.025 rad）；已有前导段继续正常时间轨迹和定位反馈，不额外停车或后退。已开启的半帧不会因超过此准入容差而关闭，原0.05 rad故障保护及ROI前必须开采的检查保留。见[掉头后的航向恢复](issues/POST_TURN_HEADING.md)。
