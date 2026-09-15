@@ -161,6 +161,25 @@ def main():
         require(future.result().success, 'capture could not be enabled')
         session = future.result().message
         log('capture enabled in', session)
+        status_path = os.path.join(session, 'diagnostic_status.json')
+        require(os.path.isfile(status_path),
+                'diagnostic_status.json was not created before the first event')
+        initial_status = json.load(open(status_path))
+        require(initial_status == {'schema': 'agv.linescan.diagnostic_status.v1',
+                                   'write_failures': 0, 'dropped_records': 0},
+                'unexpected initial diagnostic status: ' + repr(initial_status))
+
+        # Fill the ring by simulation time before provoking the first rejection.
+        # A wall-time sleep is not sufficient when startup RTF is below one: the
+        # first dump would then correctly contain less than the configured span,
+        # while this verifier would incorrectly demand 2001 samples from it.
+        fill_start = node.get_clock().now().nanoseconds
+        fill_deadline = time.time() + 90
+        while ((node.get_clock().now().nanoseconds - fill_start) * 1e-9 < SPAN_S + .1
+               and time.time() < fill_deadline):
+            node.drive(0., .1)
+        require((node.get_clock().now().nanoseconds - fill_start) * 1e-9 >= SPAN_S + .1,
+                'simulation did not advance enough to fill the flight recorder')
 
         def events():
             path = os.path.join(session, 'events.jsonl')
@@ -245,11 +264,14 @@ def main():
     stats = doc['residual_statistics']
     for key in ('samples', 'limit_m_s', 'max_m_s', 'p95_m_s', 'p99_m_s', 'over_limit',
                 'histogram', 'flight_dumps', 'flight_dumps_suppressed',
-                'diagnostic_write_failures'):
+                'diagnostic_write_failures', 'diagnostic_dropped_records'):
         require(key in stats, 'missing statistic ' + key)
     require(stats['diagnostic_write_failures'] == 0,
             'the recorder had already reported %d failed writes'
             % stats['diagnostic_write_failures'])
+    require(stats['diagnostic_dropped_records'] == 0,
+            'the recorder had already dropped %d records'
+            % stats['diagnostic_dropped_records'])
 
     status_path = os.path.join(os.path.dirname(files[0]), 'diagnostic_status.json')
     require(os.path.isfile(status_path), 'the ordered writer did not publish diagnostic_status.json')
@@ -259,6 +281,8 @@ def main():
     require(status['write_failures'] == 0,
             'the ordered writer reported %d failed writes'
             % status['write_failures'])
+    require(status['dropped_records'] == 0,
+            'the ordered writer dropped %d records' % status['dropped_records'])
 
     suppressed = [e.get('flight_recorder_suppressed') for e in
                   [json.loads(l) for l in

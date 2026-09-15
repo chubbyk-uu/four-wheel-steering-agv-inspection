@@ -70,9 +70,9 @@
     ],
     "reading": "front and rear moving in opposite directions, i.e. pitch, is legible directly from the record"
    },
-   "stop_latency_after_fault_s": 1.84,
+   "stop_latency_after_fault_s": 1.83,
    "stop_latency_check": "below the explicit 5.0 s bound; the verifier fails nonzero if stopping or the diagnostic writer exceeds its contract",
-   "dump_cap": "with max_dumps 3 the session wrote exactly 3 files and reported 2 further suppressed dumps",
+   "dump_cap": "with max_dumps 3 the session wrote exactly 3 files and reported 3 further suppressed dumps",
    "tests": "448 pass"
   },
   "negative_test": "--stop-latency-limit-s 0.1 fails with exit code 1; an existing --output directory is rejected without deleting its contents"
@@ -116,10 +116,13 @@
  },
  "review_fixes_followup_2026_09_15": {
   "single_ordered_writer": "Near-limit, reset, recovery and tail events plus flight dumps are queued to one FIFO worker. Independent ofstream appenders no longer race on events.jsonl.",
-  "observable_write_failures": "diagnostic_status.json is atomically refreshed after every writer job, rather than being created only during plugin destruction. This survives the already-known Gazebo shutdown fault and makes late writer failures externally checkable.",
+  "observable_write_failures": "diagnostic_status.json is created during Configure before any event can occur, then atomically refreshed after every writer job. It contains write_failures and dropped_records, survives the already-known Gazebo shutdown fault, and makes late failures externally checkable.",
   "safe_output": "--output must name a nonexistent directory; the verifier never recursively deletes a caller-owned directory.",
   "wsl_launch": "WSL detection automatically composes with_mesa_runtime.py and with_optix_runtime.sh, then reloads ROS and the workspace inside the OptiX environment. A direct invocation from a sourced workspace completed.",
   "strict_cap_gate": "verification now requires exactly max_dumps files and at least one reported suppression, not merely a file count below the cap.",
-  "latest_run": "direct WSL invocation generated its own scene, wrote 3 dumps, reported 2 suppressions, parsed all 11 ordered event records, reported zero writer failures and stopped in 1.84 s."
+  "latest_run": "direct WSL invocation verified the status file before the first event, generated its own scene, wrote 3 dumps, reported 3 suppressions, parsed the ordered event log, left no temporary status file, reported zero writes/drops and stopped in 1.83 s.",
+  "non_intrusive_queue": "Queue shutdown or allocation failure increments dropped_records and returns without throwing into PostUpdate; the writer catches both standard and unknown job exceptions.",
+  "status_delivery_order": "/linescan/status publishes immediately while events.jsonl is persisted later by the FIFO writer. Online consumers use the message payload; disk readers wait for session completion.",
+  "temporary_cleanup": "a stale diagnostic_status.json.tmp is removed before each atomic replacement and cleaned after a failed attempt"
  }
 }
