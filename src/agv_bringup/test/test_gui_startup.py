@@ -19,7 +19,9 @@ follow = load('agv_follow_camera', PACKAGE / 'scripts' / 'follow_camera.py')
 
 def test_gui_retry_is_limited_to_d3d12_startup_abort():
     assert sim.should_retry_gui(134, ready=False, remaining=1, d3d12=True)
+    assert sim.should_retry_gui(-6, ready=False, remaining=1, d3d12=True)
     assert not sim.should_retry_gui(134, ready=True, remaining=1, d3d12=True)
+    assert not sim.should_retry_gui(-6, ready=True, remaining=1, d3d12=True)
     assert not sim.should_retry_gui(134, ready=False, remaining=0, d3d12=True)
     assert not sim.should_retry_gui(134, ready=False, remaining=1, d3d12=False)
     assert not sim.should_retry_gui(1, ready=False, remaining=1, d3d12=True)

@@ -1,6 +1,7 @@
 """AGV simulation; ground truth is reserved for sensor simulation and evaluation."""
 from pathlib import Path
 import math
+import signal
 import tempfile
 import os
 import shutil
@@ -45,7 +46,10 @@ def validate_gui_options(delay, retry_delay, retries):
 
 def should_retry_gui(returncode, ready, remaining, d3d12):
     """Only retry the observed WSL D3D12 graphics-context startup abort."""
-    return d3d12 and returncode == 134 and not ready and remaining > 0
+    # A shell reports SIGABRT as 128 + signal number (134), while ROS launch
+    # can report the same process death directly as the negative signal (-6).
+    abort_codes = (128 + signal.SIGABRT, -signal.SIGABRT)
+    return d3d12 and returncode in abort_codes and not ready and remaining > 0
 
 
 def setup(context):
@@ -267,11 +271,11 @@ def setup(context):
                                      name='gazebo_gui', output='screen')
 
             def exited(event, context):
-                # 134 is SIGABRT, which is the only way the Qt context failure has ever
-                # ended: the D3D12 screen is lost and this Mesa has no software driver
-                # to fall back to. A clean close, a signal, or any other code is a real
-                # exit and still stops the run, because a mission observed headless is
-                # not the joint GUI acceptance it would be mistaken for.
+                # SIGABRT appears as either shell status 134 or launch status -6. It is
+                # the only failure retried: the D3D12 screen is lost and this Mesa has
+                # no software driver to fall back to. A clean close or any other exit
+                # still stops the run, because a mission observed headless is not the
+                # joint GUI acceptance it would be mistaken for.
                 ready = ready_file.is_file()
                 if should_retry_gui(event.returncode, ready, remaining, d3d12):
                     return [LogInfo(msg='Gazebo GUI aborted creating its graphics context; '
