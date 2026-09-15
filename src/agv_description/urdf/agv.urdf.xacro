@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="agv">
   <xacro:arg name="platform" default="$(find agv_description)/config/platform.yaml"/>
-  <xacro:arg name="controllers" default="$(find agv_bringup)/config/controllers.yaml"/>
+  <xacro:arg name="controllers" default="$(find agv_description)/config/controllers.yaml"/>
   <xacro:arg name="actual_wheel_diameter" default="0"/>
   <xacro:property name="p" value="${xacro.load_yaml('$(arg platform)')}"/>
   <!-- Physical tyre only; control/odometry retain platform.wheel_radius. -->

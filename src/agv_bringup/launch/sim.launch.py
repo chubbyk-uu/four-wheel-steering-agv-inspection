@@ -83,7 +83,7 @@ def setup(context):
             yaml.safe_dump(camera_values, f)
             camera_config = f.name
     robot = xacro.process_file(str(desc / 'urdf/agv.urdf.xacro'), mappings={
-        'platform': platform, 'actual_wheel_diameter': str(actual_diameter), 'camera_config': camera_config, 'controllers': str(bringup / 'config/controllers.yaml')}).toxml()
+        'platform': platform, 'actual_wheel_diameter': str(actual_diameter), 'camera_config': camera_config, 'controllers': str(desc / 'config/controllers.yaml')}).toxml()
     from agv_linescan.robot_scene import split_visual_links
     robot = split_visual_links(robot)
     headless = LaunchConfiguration('headless').perform(context).lower() == 'true'

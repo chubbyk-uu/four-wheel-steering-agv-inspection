@@ -75,7 +75,7 @@ def test_physical_tyres_change_without_recalibrating_control(diameter):
     xml = xacro.process_file(str(root/'src/agv_description/urdf/agv.urdf.xacro'), mappings={
         'platform': str(platform), 'actual_wheel_diameter': str(diameter),
         'camera_config': str(root/'src/agv_description/config/linescan.yaml'),
-        'controllers': str(root/'src/agv_bringup/config/controllers.yaml')}).toxml()
+        'controllers': str(root/'src/agv_description/config/controllers.yaml')}).toxml()
     robot = ET.fromstring(xml)
     for wheel in ('fl','fr','rl','rr'):
         link=robot.find(f"link[@name='{wheel}_wheel_link']")
