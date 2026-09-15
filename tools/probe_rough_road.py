@@ -15,7 +15,13 @@ import numpy as np
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'src/agv_linescan'))
 
-def height(x,y):
+def height(x,y, taper=True):
+    """Return the deterministic road profile used by the rough-road tools.
+
+    ``taper`` belongs to the original isolated probe: it provides a flat
+    approach before the measured rough section.  Production roads pass False
+    so their non-acquisition buffers have the same surface as the ROI.
+    """
     rng=np.random.default_rng(20260915)
     wavelengths=np.geomspace(1.,6.,48)
     angles=rng.uniform(-np.pi,np.pi,48);phases=rng.uniform(0,2*np.pi,48)
@@ -23,8 +29,11 @@ def height(x,y):
     for w,a,p in zip(wavelengths,angles,phases):
         z+=np.sin(2*np.pi/w*(x*np.cos(a)+y*np.sin(a))+p)
     z*=.0003*np.sqrt(2/48)
-    taper=np.sin(np.clip((np.asarray(x)-2)/3,0,1)*np.pi/2)**2
-    return .001*np.tanh(z/.001)*taper
+    profile=.001*np.tanh(z/.001)
+    if not taper:
+        return profile
+    envelope=np.sin(np.clip((np.asarray(x)-2)/3,0,1)*np.pi/2)**2
+    return profile*envelope
 
 def generate(out,step,peak_mm=None):
     from agv_linescan.shared_scene import digest,validate

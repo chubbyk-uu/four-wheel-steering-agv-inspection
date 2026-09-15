@@ -26,7 +26,12 @@ def main():
     for path in source.iterdir():
         if path.is_file():os.link(path,out/path.name)
     bounds=m.get('optical_valid_bounds_xy_m',[-2,22,-7,7]);x=np.arange(np.floor(bounds[0]*10),np.ceil(bounds[1]*10)+1)/10;y=np.arange(np.floor(bounds[2]*10),np.ceil(bounds[3]*10)+1)/10
-    xx,yy=np.meshgrid(x,y);z=height(xx,yy);scale=a.peak_mm*.001/np.max(abs(z));z*=scale
+    # A production road is physically continuous through the acceleration and
+    # turn-around buffers.  The old isolated suspension probe intentionally
+    # tapered from a flat lead-in; reusing that profile here made x < 2 m a
+    # dense but exactly coplanar collision mesh; an equal-shape proxy A/B tied
+    # that region to the measured position-dependent DART contact cost.
+    xx,yy=np.meshgrid(x,y);z=height(xx,yy,taper=False);scale=a.peak_mm*.001/np.max(abs(z));z*=scale
     field_path=out/'road_heightfield.json';field_path.write_text(json.dumps(dict(schema='agv.reference_heightfield.v1',x=x.tolist(),y=y.tolist(),z=z.tolist(),seed=20260915,scale=scale)))
     field=Heightfield(field_path);tree=ET.parse(source/m['world']);world=tree.getroot().find('world')
     ground_min,ground_max=float('inf'),-float('inf')
@@ -49,7 +54,7 @@ def main():
     # negative groove depth. Do not retain the flat road's old Z interval.
     if 'ground_material' in m:
         m['ground_material']['height_bounds_m']=[ground_min-1e-6,ground_max+1e-6]
-    m['roughness_experiment']=dict(step_m=.1,max_abs_height_m=float(np.max(abs(z))),rms_height_m=float(np.std(z)),min_height_m=float(z.min()),max_height_m=float(z.max()),source_manifest_sha256=digest(source/'manifest.json'),seed=20260915,profile='shared heightfield plus unchanged shallow defects')
+    m['roughness_experiment']=dict(step_m=.1,max_abs_height_m=float(np.max(abs(z))),rms_height_m=float(np.std(z)),min_height_m=float(z.min()),max_height_m=float(z.max()),source_manifest_sha256=digest(source/'manifest.json'),seed=20260915,profile='full-domain shared heightfield plus unchanged shallow defects',tapered_lead_in=False)
     manifest=out/'manifest.json';manifest.unlink();manifest.write_text(json.dumps(m,indent=2));validate(manifest)
     print(json.dumps(dict(passed=True,assets=len(m['assets']),collision_triangles=sum(e['collision_proxy']['triangles'] for e in m['assets']),roughness=m['roughness_experiment'])))
 if __name__=='__main__':main()

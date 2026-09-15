@@ -10,6 +10,23 @@ from agv_linescan.heightfield import Heightfield
 from agv_linescan.shared_scene import digest
 
 
+def test_production_roughness_does_not_flatten_negative_buffer():
+    import sys
+    tools = Path(__file__).resolve().parents[3] / 'tools'
+    sys.path.insert(0, str(tools))
+    try:
+        from probe_rough_road import height
+        x = np.array([-8., -3., 0., 2.])
+        y = np.array([-.47, .47, -.47, .47])
+        assert np.array_equal(height(x, y), np.zeros(4))
+        full = height(x, y, taper=False)
+        assert np.all(np.isfinite(full))
+        assert np.any(np.abs(full) > 1e-6)
+        np.testing.assert_array_equal(full, height(x, y, taper=False))
+    finally:
+        sys.path.remove(str(tools))
+
+
 def field_file(path):
     path.write_text(json.dumps(dict(schema='agv.reference_heightfield.v1',
         x=[0, .5, 1], y=[0, .5, 1],
