@@ -1,0 +1,83 @@
+{
+ "schema": "agv.body_shake_baseline.v1",
+ "date": "2026-09-15",
+ "question": "Does the vehicle body actually move on the current collision surface? This decides whether a compliant camera mount can produce anything, and how much road excitation is needed.",
+ "method": {
+  "world": "agv_bringup/worlds/flat.sdf via sim.launch.py headless:=true linescan:=false",
+  "applies_to_acceptance_scene": "runtime_fullwidth_100m_v1 uses collision_proxy shallow_horizontal_rectangle_v1 with plane_z_m 0 and 2 triangles, so its collision surface is the same horizontal plane; the 3 mm relief in that manifest is on the visual mesh only",
+  "signal": "/ground_truth/odom at 50 Hz (evaluation only) and /joint_states suspension positions at 100 Hz",
+  "profile": "6 s stationary, 6 s ramp to rated 2.7778 m/s, 24 s cruise, 6 s brake, 4 s settle; straight line, no steering",
+  "rows": {
+   "odom": 2307,
+   "joint": 4600
+  },
+  "optical_height_m": 1.0463169642857144,
+  "m_per_px": 0.0003662109375,
+  "pixel_conversion": "attitude to across-track pixels by h*theta/px; body height to edge pixels by dz/h*0.75/px"
+ },
+ "measured": {
+  "cruise_rated": {
+   "duration_s": 23.979999999999997,
+   "speed_m_s": 2.7777776712401927,
+   "roll_std_rad": 2.620803817943474e-15,
+   "roll_p2p_deg": 1.1446357011393805e-12,
+   "roll_hf_p2p_px": 5.616781844220103e-11,
+   "pitch_std_rad": 4.531506415981661e-14,
+   "pitch_p2p_deg": 2.894707299083673e-11,
+   "pitch_hf_p2p_px": 1.4434689802571882e-09,
+   "body_z_p2p_m": 6.439293542825908e-15,
+   "body_z_hf_p2p_px_edge": 1.2603898843129476e-11,
+   "suspension_travel_std_m": [
+    2.940529286881805e-14,
+    2.941719014980732e-14,
+    2.933325674358029e-14,
+    2.929597370089609e-14
+   ],
+   "verdict": "every quantity sits at double-precision rounding magnitude; the body is motionless to machine precision while scanning"
+  },
+  "transients": {
+   "accel_pitch_p2p_deg": 0.1928711220711023,
+   "accel_pitch_detrended_p2p_px": 8.919376232007794,
+   "brake_pitch_p2p_deg": 0.23980061182403895,
+   "brake_pitch_detrended_p2p_px": 14.611156333154275,
+   "accel_z_p2p_m": 9.748331812220457e-06,
+   "brake_z_p2p_m": 7.913827259842243e-06,
+   "dominant_hz": 0.3333333333333404,
+   "verdict": "the only body motion is the low-frequency squat and dive of the speed ramps themselves, not vibration; capture runs at constant speed"
+  },
+  "suspension": {
+   "static_mean_m": [
+    0.0017515667662088173,
+    0.0017515667662097738,
+    0.0013946407022465733,
+    0.0013946407022475675
+   ],
+   "static_std_m": [
+    1.4873468995642176e-15,
+    1.555390452087753e-15,
+    1.4259395976723404e-15,
+    1.5196081174754215e-15
+   ],
+   "front_rear_difference_m": 0.00035692606396224395,
+   "implied_static_pitch_rad": 0.00027455851074018766,
+   "measured_static_pitch_rad": 0.0002737145243149278,
+   "cross_check": "the front/rear compression difference over the 1.3 m wheelbase reproduces the measured static pitch, so the spring is carrying load and the reported attitude is genuinely integrated rather than pinned"
+  }
+ },
+ "resolved": {
+  "spring_chain_is_live": "springStiffness/springReference in the gazebo-classic tag are converted by sdformat into axis/dynamics/spring_stiffness and spring_reference (verified on the gz sdf -p output), the dartsim plugin references sdf::JointAxis::SpringStiffness, and the static equilibrium above confirms the force is applied. The suspension is not resting on its travel limit.",
+  "camera_mount_is_rigid": "camera_mount is a fixed joint from base_link, so it adds nothing and removes nothing today"
+ },
+ "limitations": [
+  "Ground truth is sampled at 50 Hz, so motion above 25 Hz is not resolved as a frequency. It cannot be hidden, however: aliasing relocates energy in frequency without reducing variance, and the measured cruise variance is at rounding magnitude, so no unresolved vibration of any consequence exists.",
+  "Straight line only; roll from a steering transient was not measured.",
+  "Tyres are rigid contacts with no tyre model, so tyre-level compliance and its own modes are outside this measurement.",
+  "One run, one seed, flat.sdf; not a mission and not the full-area scene."
+ ],
+ "consequences": {
+  "compliant_camera_mount": "A mount model is driven by body acceleration. During capture that acceleration is zero to machine precision, so adding compliance alone would output zero. It cannot be evaluated before an excitation source exists.",
+  "ordering": "Road excitation is the cause and the mount is the transmission path, so the dependency runs the other way round: excitation first, mount second.",
+  "excitation_need_not_touch_collision_geometry": "The suspension already enters the dynamics as -k(q - q_rest) - d*q_dot. Driving q_rest, or equivalently applying k*z_road(x) to each suspension link, is the standard quarter-car road input and leaves the 2-triangle collision proxy untouched: one table lookup per wheel per step, no collision mesh cost. Excitation then propagates through the real suspension, so pitch, roll, heave and the wheel-shaft encoder all respond consistently.",
+  "amplitude_reference": "The visual mesh already declares max_surface_deviation_m 0.003. A physical profile should share that source so the roughness the camera sees and the roughness the body feels are the same surface."
+ }
+}
