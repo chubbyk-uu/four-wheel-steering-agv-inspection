@@ -42,6 +42,7 @@ def main():
                         help='keep AGV in view in GUI while allowing wheel zoom')
     parser.add_argument('--scene',type=Path)
     parser.add_argument('--request',type=Path,help='validate an existing rectangle request, including a generated rescan')
+    parser.add_argument('--camera-config',type=Path,default=Path('src/agv_description/config/linescan.yaml'))
     parser.add_argument('--tracking-config',type=Path,help='isolated controller configuration; archived by executor')
     parser.add_argument('--pause-once',action='store_true',help='pause early in first PASS, retain camera frame, then resume')
     parser.add_argument('--stop-after-pause',choices=['cancel','localization_timeout'],help='instead of resuming, validate partial-frame termination')
@@ -69,7 +70,7 @@ def main():
     os.environ.update(ROS_DOMAIN_ID='98',GZ_PARTITION='agv_rectangle_'+str(os.getpid()))
     extra=[]
     if a.scene:
-        camera_path=prepare(Path('src/agv_description/config/linescan.yaml'),a.output/'camera.yaml')
+        camera_path=prepare(a.camera_config,a.output/'camera.yaml')
         extra=['linescan:=true','linescan_backend:=optix','scene_manifest:='+str(a.scene.resolve()),
                'camera_config:='+str(camera_path.resolve()),'scan_speed_limit:='+str(yaml.safe_load(camera_path.read_text())['max_scan_speed_m_s']),'capture_dir:='+str(a.output/'raw')]
     log=(a.output/'simulation.log').open('w')
@@ -79,7 +80,7 @@ def main():
         'follow_camera:='+str(a.follow_camera).lower(),'spawn_x:=3']+extra,
         stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
     rclpy.init();node=Node('rectangle_evaluator',parameter_overrides=[Parameter('use_sim_time',value=True)])
-    latest={};records=[];truth=[];run=None;runlog=None;images={};joint_samples=[]
+    latest={};records=[];truth=[];run=None;runlog=None;images={};joint_samples=[];mount_samples=[];clock_samples=[]
     owned_children={};last_child_scan=0.
     def check_simulator():
         nonlocal last_child_scan
@@ -134,6 +135,7 @@ def main():
     def status(m):
         v=json.loads(m.data);latest.update(status=v);records.append(v)
     def actual(m):
+        clock_samples.append([m.header.stamp.sec+m.header.stamp.nanosec*1e-9,time.monotonic()])
         p=m.pose.pose.position;q=m.pose.pose.orientation
         latest['truth_position']=[p.x,p.y,p.z];v=m.twist.twist
         latest['truth_speed']=float(np.hypot(v.linear.x,v.linear.y));latest['truth_yaw_rate']=float(v.angular.z)
@@ -141,6 +143,9 @@ def main():
     def image(m):images[m.header.stamp.sec*10**9+m.header.stamp.nanosec]=(hashlib.sha256(m.data).hexdigest(),m.width,m.height)
     def joints(m):
         names={name:i for i,name in enumerate(m.name)}
+        if all(k in names for k in ('camera_roll_joint','camera_pitch_joint')):
+            mount_samples.append([m.header.stamp.sec+m.header.stamp.nanosec*1e-9,
+                m.position[names['camera_roll_joint']],m.position[names['camera_pitch_joint']]])
         if all(k+'_steer_joint' in names for k in ('fl','fr','rl','rr')):
             joint_samples.append([m.header.stamp.sec+m.header.stamp.nanosec*1e-9]+[m.position[names[k+'_steer_joint']] for k in ('fl','fr','rl','rr')])
     node.create_subscription(JointState,'/joint_states',joints,qos_profile_sensor_data)
@@ -215,6 +220,10 @@ def main():
         settle()
         end=latest['status'];np.save(a.output/'truth_evaluation.npy',np.asarray(truth))
         np.save(a.output/'joint_evaluation.npy',np.asarray(joint_samples))
+        np.save(a.output/'clock_evaluation.npy',np.asarray(clock_samples))
+        np.save(a.output/'mount_evaluation.npy',np.asarray(mount_samples).reshape(-1,3))
+        if camera_cfg.get('mount_flex',{}).get('enabled',False):
+            assert mount_samples and np.max(np.abs(np.asarray(mount_samples)[:,1:]))<.08,'mount missing or near mechanical limit'
         assert joint_samples,'no actual wheel steering samples'
         plan=json.loads((a.output/'mission/plan.json').read_text())
         passes=[]

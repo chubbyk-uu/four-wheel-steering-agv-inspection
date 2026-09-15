@@ -84,3 +84,41 @@ def test_physical_tyres_change_without_recalibrating_control(diameter):
         limit=robot.find(f"joint[@name='{wheel}_drive_joint']/limit")
         assert float(limit.get('velocity')) == pytest.approx(config['max_speed']/.2)
     assert config['wheel_radius'] == .2
+
+
+def test_camera_bracket_flex_preserves_mass_geometry_and_uses_dynamic_group(tmp_path):
+    import xacro
+    import yaml
+    from pathlib import Path
+    from agv_linescan.robot_scene import transform
+    repo=Path(__file__).resolve().parents[3]
+    cfg=yaml.safe_load((repo/'src/agv_description/config/linescan.yaml').read_text())
+    masses=[];inertias=[];bounds=[]
+    for enabled in (False,True):
+        cfg['mount_flex']['enabled']=enabled
+        path=tmp_path/f'camera_{enabled}.yaml';path.write_text(yaml.safe_dump(cfg))
+        xml=xacro.process_file(str(repo/'src/agv_description/urdf/agv.urdf.xacro'),mappings={'camera_config':str(path)}).toxml()
+        root=ET.fromstring(xml);joints={j.find('child').get('link'):j for j in root.findall('joint')}
+        def world(name):
+            j=joints.get(name)
+            return np.eye(4) if j is None else world(j.find('parent').get('link'))@transform(j.find('origin'))
+        inertia=[ET.tostring(x) for x in root.findall('link/inertial')];inertias.append(inertia)
+        masses.append(sum(float(x.get('value')) for x in root.findall('link/inertial/mass')))
+        vertices=[]
+        for link in root.findall('link'):
+            for v in link.findall('visual'):
+                t=world(link.get('name'))@transform(v.find('origin'));p=triangles(v.find('geometry')).reshape(-1,3)
+                vertices.append(p@t[:3,:3].T+t[:3,3])
+        bounds.append(np.concatenate(vertices))
+        group=json.loads(export(xml,tmp_path/str(enabled)).read_text())['groups']
+        assert ('camera_carrier_link' in [g['name'] for g in group]) == enabled
+        assert root.find("joint[@name='camera_pitch_joint']").get('type') == ('revolute' if enabled else 'fixed')
+        states=root.findall("ros2_control/joint[@name='camera_pitch_joint']")
+        assert bool(states)==enabled
+        if enabled:
+            assert not states[0].findall('command_interface')
+            rest=float(root.find("gazebo[@reference='camera_pitch_joint']/springReference").text)
+            assert rest*cfg['mount_flex']['stiffness_nm_rad']==pytest.approx(-9.81*(2.9*.07+.145))
+    assert masses==pytest.approx([550,550])
+    assert inertias[0]==inertias[1]
+    np.testing.assert_allclose(bounds[0],bounds[1],atol=1e-12)

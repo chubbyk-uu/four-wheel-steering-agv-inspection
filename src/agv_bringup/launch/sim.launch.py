@@ -29,6 +29,13 @@ def setup(context):
         raise ValueError('actual_wheel_diameter must be within the small tyre experiment range [0.38, 0.42] m')
     from agv_linescan.encoder import line_spacing
     camera_values = yaml.safe_load(Path(camera_config).read_text())
+    flex = camera_values.get('mount_flex', {})
+    if flex.get('enabled', False):
+        import math
+        for key, lo, hi in [('stiffness_nm_rad', 40, 2000), ('damping_nms_rad', .1, 30)]:
+            value = flex.get(key, float('nan'))
+            if not isinstance(value, (int, float)) or not math.isfinite(value) or not lo <= value <= hi:
+                raise ValueError('mount_flex '+key+' outside experimental range')
     effective_spacing = line_spacing(camera_values, config['wheel_radius'])
     if camera_values['line_spacing_m'] != effective_spacing:
         camera_values['line_spacing_m'] = effective_spacing
@@ -160,7 +167,7 @@ def setup(context):
                                    LaunchConfiguration('gpu_adapter'))])
     if LaunchConfiguration('rviz').perform(context).lower() == 'true':
         actions.append(Node(package='agv_bringup', executable='visualization_tf.py',
-                            parameters=[{'use_sim_time': True}], output='screen'))
+                            parameters=[{'use_sim_time': True, 'camera_flex_enabled': bool(flex.get('enabled', False))}], output='screen'))
         rviz_node=Node(package='rviz2', executable='rviz2', name='agv_rviz',
                             arguments=['-d', str(bringup/'config/inspection.rviz')],
                             parameters=[{'use_sim_time': True}], remappings=[('/tf','/visualization/tf')], output='screen')

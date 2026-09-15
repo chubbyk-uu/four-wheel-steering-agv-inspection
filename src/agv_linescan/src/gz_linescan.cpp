@@ -48,7 +48,7 @@ using Json=nlohmann::json;
 using Clock=std::chrono::steady_clock;
 double Seconds(Clock::duration d) { return std::chrono::duration<double>(d).count(); }
 struct WheelMotion {bool valid=false;double zMin=0,zMax=0,lastZ=0,maxStep=0;gz::math::Vector3d localMin,localMax;};
-struct Sample { double time; gz::math::Pose3d pose; std::vector<gz::math::Pose3d> links; };
+struct Sample { double time; gz::math::Pose3d pose; gz::math::Pose3d camera; std::vector<gz::math::Pose3d> links; };
 struct Line { Event event; std::array<gz::math::Pose3d,3> exposure; gz::math::Pose3d midpoint; uint64_t sequence=0; std::array<std::vector<gz::math::Pose3d>,3> links; };
 struct Job { std::vector<Line> lines; std::string endReason; double sceneTime=0; bool warm=false; bool holdBoundary=false; };
 
@@ -146,6 +146,8 @@ class GzLineScan final: public gz::sim::System,
     trigger_=std::make_unique<Trigger>(spacing_,encoderMode=="position");
     offset_=gz::math::Pose3d(config_["camera_x_m"].as<double>(),0,
         optics_->height-config_["base_nominal_height_m"].as<double>(),0,0,0);
+    flexible_=config_["mount_flex"] && config_["mount_flex"]["enabled"].as<bool>(false);
+    if(flexible_)offset_.Pos()-=gz::math::Vector3d(1.005,0,.14);
     output_=std::filesystem::path(sdf->Get<std::string>("output_dir")) /
         ("session_cpp_"+std::to_string(std::chrono::system_clock::now().time_since_epoch().count()));
     std::filesystem::create_directories(output_);
@@ -180,7 +182,7 @@ class GzLineScan final: public gz::sim::System,
           Reset("capture_toggle"); enabled_=false;
           if(req->data && AsyncBackend()) {
             if(history_.empty()) {res->success=false;res->message="wait for robot pose before preparing terrain";return;}
-            Line warm;warm.midpoint=history_.back().pose*offset_;
+            Line warm;warm.midpoint=history_.back().camera;
             warm.exposure.fill(warm.midpoint);warm.links.fill(history_.back().links);warm.event={now_,0,lastDriveSpeed_<0?-1:1};
             Dispatch(Job{{warm},"",now_,true});
             if(terrainFailed_) {res->success=false;res->message="terrain prefetch failed; capture remains disabled";return;}
@@ -207,6 +209,10 @@ class GzLineScan final: public gz::sim::System,
         auto entity=ecm.EntityByComponents(gz::sim::components::Name(name),gz::sim::components::ParentEntity(model_));
         if(!entity)throw std::runtime_error("missing ray-scene link: "+name);
         linkEntities_.push_back(entity);
+      }
+      if(flexible_) {
+        cameraEntity_=ecm.EntityByComponents(gz::sim::components::Name("camera_carrier_link"),gz::sim::components::ParentEntity(model_));
+        if(!cameraEntity_)throw std::runtime_error("missing flexible camera carrier");
       }
       const std::array<std::string,4> names={"fl","fr","rl","rr"};
       for (size_t i=0;i<4;++i) {
@@ -250,7 +256,8 @@ class GzLineScan final: public gz::sim::System,
       if (!history_.empty() && now_<=history_.back().time) {
         job.endReason="time_reset"; Reset(job.endReason); history_.clear(); projectedEncoder_.Reset();
       }
-      Sample snapshot{now_,gz::sim::worldPose(model_,ecm),{}};
+      Sample snapshot{now_,gz::sim::worldPose(model_,ecm),{}, {}};
+      snapshot.camera=(flexible_?gz::sim::worldPose(cameraEntity_,ecm):snapshot.pose)*offset_;
       for(auto entity:linkEntities_)snapshot.links.push_back(gz::sim::worldPose(entity,ecm));
       if(enabled_ && active_) {
         std::lock_guard<std::mutex> lock(metricsMutex_);
@@ -328,10 +335,10 @@ class GzLineScan final: public gz::sim::System,
             Line line; line.event=event;
             for (size_t i=0;i<3;++i) {
               double t=event.time+exposure_*(i+.5)/3;
-              line.exposure[i]=PoseAt(t)*offset_;
+              line.exposure[i]=PoseAt(t,SIZE_MAX,true);
               for(size_t j=0;j<linkNames_.size();++j)line.links[i].push_back(PoseAt(t,j));
             }
-            line.midpoint=PoseAt(event.time+exposure_/2)*offset_;
+            line.midpoint=PoseAt(event.time+exposure_/2,SIZE_MAX,true);
             line.sequence=nextCaptureLine_++;
             job.lines.push_back(line);
           }
@@ -357,12 +364,13 @@ class GzLineScan final: public gz::sim::System,
  private:
   bool AsyncBackend() const {return backend_=="cuda_tiles" || backend_=="optix";}
 
-  gz::math::Pose3d PoseAt(double t,size_t link=SIZE_MAX) const {
+  gz::math::Pose3d PoseAt(double t,size_t link=SIZE_MAX,bool camera=false) const {
     for (size_t i=1;i<history_.size();++i) {
       const auto &a=history_[i-1],&b=history_[i];
       if (t>=a.time && t<=b.time) {
         if (b.time-a.time>maxSampleGap_) throw std::runtime_error("pose_gap");
-        return Interpolate(link==SIZE_MAX?a.pose:a.links.at(link),link==SIZE_MAX?b.pose:b.links.at(link),(t-a.time)/(b.time-a.time));
+        if(camera && !flexible_)return Interpolate(a.pose,b.pose,(t-a.time)/(b.time-a.time))*offset_;
+        return Interpolate(camera?a.camera:(link==SIZE_MAX?a.pose:a.links.at(link)),camera?b.camera:(link==SIZE_MAX?b.pose:b.links.at(link)),(t-a.time)/(b.time-a.time));
       }
     }
     throw std::runtime_error("pose_outside_history");
@@ -794,6 +802,8 @@ class GzLineScan final: public gz::sim::System,
   ProjectedEncoder projectedEncoder_;
   gz::sim::RenderUtil render_;
   std::vector<gz::rendering::CameraPtr> cameras_;
+  bool flexible_=false;
+  gz::sim::Entity cameraEntity_=gz::sim::kNullEntity;
   gz::sim::Entity model_=gz::sim::kNullEntity;
   std::array<gz::sim::Entity,4> drive_{},steer_{};
   std::deque<Sample> history_;

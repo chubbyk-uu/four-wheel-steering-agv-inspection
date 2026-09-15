@@ -25,6 +25,8 @@ class VisualizationTF(Node):
         self.pending=deque()
         self.frames=0;self.dropped=0;self.max_age=0.
         self.links=[f'{corner}_{part}_link' for corner in ('fl','fr','rl','rr') for part in ('suspension','steer','wheel')]
+        if self.declare_parameter('camera_flex_enabled',False).value:
+            self.links += ['camera_roll_link','camera_carrier_link']
         self.pub=self.create_publisher(TFMessage,'/visualization/tf',10)
         self.status=self.create_publisher(String,'/visualization/status',10)
         self.create_subscription(Odometry,'/ground_truth/odom',self.odom,10)

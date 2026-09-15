@@ -10,6 +10,8 @@
   <xacro:arg name="camera_config" default="$(find agv_description)/config/linescan.yaml"/>
   <xacro:property name="cam" value="${xacro.load_yaml('$(arg camera_config)')}"/>
   <xacro:property name="camera_height" value="${cam.nominal_width_m*cam.focal_length_m/(cam.width*cam.pixel_pitch_m)}"/>
+  <xacro:property name="flex" value="${cam.get('mount_flex', dict(enabled=False))}"/>
+  <xacro:property name="flexible" value="${flex.get('enabled',False)}"/>
   <xacro:property name="lid" value="${xacro.load_yaml('$(find agv_description)/config/lidar.yaml')}"/>
   <material name="orange"><color rgba="1 0.23 0.025 1"/></material>
   <material name="white"><color rgba="0.85 0.87 0.89 1"/></material>
@@ -24,7 +26,7 @@
   </xacro:macro>
   <!-- Large 550 kg AGV; base_link nominally 0.65m above ground. Battery is low. -->
   <link name="base_link">
-    <xacro:box_inertia m="${p.mass-337.2}" x="1.90" y="1.10" z="0.50"/>
+    <xacro:box_inertia m="${p.mass-340.2}" x="1.90" y="1.10" z="0.50"/>
     <visual><geometry><mesh filename="file://$(find agv_description)/meshes/large_body.obj"/></geometry><material name="orange"/></visual>
     <collision><geometry><mesh filename="file://$(find agv_description)/meshes/large_body.obj"/></geometry></collision>
     <xacro:box_visual x="0.96" y="0.74" z="0.025" xyz="0 0 0.4375" rpy="0 0 0" color="white"/>
@@ -52,17 +54,12 @@
       <!-- Bolt to the front vertical face below the opening lid; uprights stay ahead of x=.95. -->
       <xacro:box_visual x="0.08" y="0.08" z="0.12" xyz="0.97 ${y} 0.15" rpy="0 0 0" color="white"/>
       <collision><origin xyz="0.97 ${y} 0.15"/><geometry><box size="0.08 0.08 0.12"/></geometry></collision>
-      <xacro:box_visual x="0.04" y="0.04" z="0.30" xyz="1.005 ${y} 0.29" rpy="0 0 0" color="white"/>
-      <collision><origin xyz="1.005 ${y} 0.29"/><geometry><box size="0.04 0.04 0.30"/></geometry></collision>
-      <xacro:box_visual x="0.17" y="0.035" z="0.035" xyz="1.065 ${y} 0.44" rpy="0 0 0" color="white"/>
-      <collision><origin xyz="1.065 ${y} 0.44"/><geometry><box size="0.17 0.035 0.035"/></geometry></collision>
       <xacro:box_visual x="0.04" y="0.04" z="${0.81-(cam.led_height_m+0.035)}" xyz="0.94 ${y} ${(0.81+cam.led_height_m+0.035)/2-cam.base_nominal_height_m}" rpy="0 0 0" color="metal"/>
       <collision><origin xyz="0.94 ${y} ${(0.81+cam.led_height_m+0.035)/2-cam.base_nominal_height_m}"/><geometry><box size="0.04 0.04 ${0.81-(cam.led_height_m+0.035)}"/></geometry></collision>
       <xacro:box_visual x="${cam.camera_x_m+cam.led_forward_offset_m-0.92+0.02}" y="0.04" z="0.04" xyz="${(0.92+cam.camera_x_m+cam.led_forward_offset_m+0.02)/2} ${y} ${cam.led_height_m+0.035-cam.base_nominal_height_m}" rpy="0 0 0" color="metal"/>
       <collision><origin xyz="${(0.92+cam.camera_x_m+cam.led_forward_offset_m+0.02)/2} ${y} ${cam.led_height_m+0.035-cam.base_nominal_height_m}"/><geometry><box size="${cam.camera_x_m+cam.led_forward_offset_m-0.92+0.02} 0.04 0.04"/></geometry></collision>
     </xacro:macro>
     <xacro:front_arm y="0.24"/><xacro:front_arm y="-0.24"/>
-    <xacro:box_visual x="0.05" y="0.54" z="0.03" xyz="1.10 0 0.44" rpy="0 0 0" color="white"/>
     <visual><origin xyz="0 0 0.48"/><geometry><cylinder radius="0.04" length="0.05"/></geometry><material name="orange"/></visual>
   </link>
   <link name="battery_link">
@@ -158,7 +155,37 @@
   <xacro:wheel name="rr" x="${-p.wheelbase/2}" y="${-p.track/2}"/>
   <!-- Nominal optics geometry; the visible LED uses overlapping, shadow-casting spot lights. -->
   <link name="camera_link"><xacro:box_inertia m="1.0" x="0.10" y="0.12" z="0.08"/><xacro:box_visual x="0.10" y="0.12" z="0.08" xyz="0 0 0" rpy="0 0 0" color="metal"/><collision><geometry><box size="0.10 0.12 0.08"/></geometry></collision></link>
-  <joint name="camera_mount" type="fixed"><parent link="base_link"/><child link="camera_link"/><origin xyz="${cam.camera_x_m} 0 ${camera_height-cam.base_nominal_height_m+0.04}"/></joint>
+  <!-- Two equivalent bending modes of the upper bracket. Physical springs,
+       no prescribed pose/noise. LED arms and lower mounting blocks stay rigid. -->
+    <link name="camera_roll_link"><xacro:box_inertia m="0.1" x="0.08" y="0.54" z="0.02"/></link>
+    <joint name="camera_roll_joint" type="${'revolute' if flexible else 'fixed'}">
+      <parent link="base_link"/><child link="camera_roll_link"/><origin xyz="1.005 0 0.14"/><axis xyz="1 0 0"/>
+      <limit lower="-0.0872664626" upper="0.0872664626" effort="1000" velocity="5"/>
+      <dynamics damping="${flex.get('damping_nms_rad',5.0)}"/>
+    </joint>
+    <xacro:if value="${flexible}"><gazebo reference="camera_roll_joint"><springStiffness>${flex['stiffness_nm_rad']}</springStiffness><springReference>0</springReference></gazebo></xacro:if>
+    <link name="camera_carrier_link">
+      <inertial><origin xyz="0.07 0 0.15"/><mass value="2.9"/>
+        <inertia ixx="${2.9*(.54**2+.30**2)/12}" iyy="${2.9*(.17**2+.30**2)/12}" izz="${2.9*(.17**2+.54**2)/12}" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+      <xacro:macro name="moving_arm" params="y">
+        <xacro:box_visual x="0.04" y="0.04" z="0.30" xyz="0 ${y} 0.15" rpy="0 0 0" color="white"/>
+        <collision><origin xyz="0 ${y} 0.15"/><geometry><box size="0.04 0.04 0.30"/></geometry></collision>
+        <xacro:box_visual x="0.17" y="0.035" z="0.035" xyz="0.06 ${y} 0.30" rpy="0 0 0" color="white"/>
+        <collision><origin xyz="0.06 ${y} 0.30"/><geometry><box size="0.17 0.035 0.035"/></geometry></collision>
+      </xacro:macro>
+      <xacro:moving_arm y="0.24"/><xacro:moving_arm y="-0.24"/>
+      <xacro:box_visual x="0.05" y="0.54" z="0.03" xyz="0.095 0 0.30" rpy="0 0 0" color="white"/>
+    </link>
+    <joint name="camera_pitch_joint" type="${'revolute' if flexible else 'fixed'}">
+      <parent link="camera_roll_link"/><child link="camera_carrier_link"/><axis xyz="0 1 0"/>
+      <limit lower="-0.0872664626" upper="0.0872664626" effort="1000" velocity="5"/>
+      <dynamics damping="${flex.get('damping_nms_rad',5.0)}"/>
+    </joint>
+    <!-- Balance gravity at the nominal level pose, not an added oscillation.
+         Camera mass 1 kg + carrier 2.9 kg; roll has symmetric loading. -->
+    <xacro:if value="${flexible}"><gazebo reference="camera_pitch_joint"><springStiffness>${flex['stiffness_nm_rad']}</springStiffness><springReference>${-9.81*(2.9*.07+cam.camera_x_m-1.005)/flex['stiffness_nm_rad']}</springReference></gazebo></xacro:if>
+    <joint name="camera_mount" type="fixed"><parent link="camera_carrier_link"/><child link="camera_link"/><origin xyz="${cam.camera_x_m-1.005} 0 ${camera_height-cam.base_nominal_height_m+0.04-.14}"/></joint>
   <link name="camera_optical_frame"/>
   <joint name="camera_optical_joint" type="fixed"><parent link="camera_link"/><child link="camera_optical_frame"/><origin xyz="0 0 -0.04" rpy="${pi} 0 ${pi/2}"/></joint>
   <link name="led_link"><xacro:box_inertia m="1.0" x="0.035" y="${cam.led_length_m}" z="0.035"/><xacro:box_visual x="0.035" y="${cam.led_length_m}" z="0.035" xyz="0 0 0" rpy="0 0 0" color="white"/><collision><geometry><box size="0.035 ${cam.led_length_m} 0.035"/></geometry></collision></link>
@@ -204,6 +231,10 @@
     </xacro:macro>
     <xacro:macro name="passive" params="name"><joint name="${name}_suspension_joint"><state_interface name="position"/><state_interface name="velocity"/></joint></xacro:macro>
     <xacro:passive name="fl"/><xacro:passive name="fr"/><xacro:passive name="rl"/><xacro:passive name="rr"/>
+    <xacro:if value="${flexible}">
+      <joint name="camera_roll_joint"><state_interface name="position"/><state_interface name="velocity"/></joint>
+      <joint name="camera_pitch_joint"><state_interface name="position"/><state_interface name="velocity"/></joint>
+    </xacro:if>
     <xacro:interfaces name="fl"/><xacro:interfaces name="fr"/><xacro:interfaces name="rl"/><xacro:interfaces name="rr"/>
   </ros2_control>
   <gazebo><plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin"><parameters>$(arg controllers)</parameters></plugin>

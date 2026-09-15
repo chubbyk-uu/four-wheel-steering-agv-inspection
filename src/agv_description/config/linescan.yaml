@@ -93,3 +93,10 @@ sampling:
   queue_capacity_jobs: 512
   queue_max_wait_s: 0.15
   prefetch_distance_m: 4.0
+
+# Experimental equivalent upper-bracket bending; default remains a fixed joint.
+# Two physical passive axes, pitch/roll, gravity-balanced at level. Not measured hardware.
+mount_flex:
+  enabled: false
+  stiffness_nm_rad: 600.0
+  damping_nms_rad: 5.0
