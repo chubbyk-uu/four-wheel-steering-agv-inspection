@@ -90,6 +90,6 @@ bash tools/with_optix_runtime.sh bash -c '
 
 1200档另做两次0.8 m/s²加速、1.0 m/s²制动复核：持续俯仰平均1.189°/1.437°，最大约1.201°/1.483°，仍在用户给定的1–2°目标内；回到静态±0.01°最慢2.30秒，比750档1.76秒更慢，原因是高阻尼压住峰值同时延长很小残差的尾部，不能把单一“首次进入阈值”当作全部视觉品质。
 
-GUI＋RViz＋OptiX已经实际显示1200档横移和掉头。正常定位与零噪声两次短双道都在第二道进入采集区时因航向误差约2.96°/2.82°触发`CAPTURE_NOT_ACTIVE_AT_REGION`并最终HOLD；这是独立的掉头后进区门控回归，故这两次只作为屏幕运动证据，不算双道采集通过。用户接受对照后，默认阻尼已改为1200；该门控问题仍须独立关闭。完整数字见[横移阻尼对照](../results/lateral_damping_comparison.json)。
+GUI＋RViz＋OptiX已经实际显示1200档横移和掉头。最初两次0.5 m/s短双道在第二道进入区时因航向误差约2.96°/2.82°触发`CAPTURE_NOT_ACTIVE_AT_REGION`并最终HOLD；根因是低速前导仅0.256 m，并非1200阻尼或已有航向准入失效。规划器加入3秒恢复时间后，前导为1.444 m，同场景无头及GUI两次均连续采完两道并最终`ACQUIRED/HOLD`。用户接受对照后，默认阻尼已改为1200。完整数字见[横移阻尼对照](../results/lateral_damping_comparison.json)及[航向恢复](../results/low_speed_heading_recovery.json)。
 
 ![横移停车后的横滚对照](images/lateral_damping_comparison.png)

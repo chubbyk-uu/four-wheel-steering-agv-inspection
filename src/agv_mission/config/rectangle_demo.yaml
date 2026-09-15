@@ -19,6 +19,9 @@ drivable_bounds_xy_m: [0.0, 20.0, -5.0, 5.0]
 optical_bounds_xy_m: [-1.024, 21.504, -6.144, 6.144]
 # Additional distance beyond ideal acceleration/braking distances.
 longitudinal_margin_m: 0.1
+# Minimum time available after post-turn wheel alignment for the normal pass
+# heading loop to recover before the camera reaches the inspection region.
+heading_recovery_time_s: 3.0
 # Conservative radius covers body, wheel sweep, camera and LED supports.
 vehicle_sweep_radius_m: 1.5
 sample_step_m: 0.1

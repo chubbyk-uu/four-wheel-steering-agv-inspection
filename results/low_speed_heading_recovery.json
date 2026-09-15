@@ -1,0 +1,58 @@
+{
+  "schema": "agv.low_speed_heading_recovery.v1",
+  "date": "2026-09-15",
+  "configuration": {
+    "region_m": [4.0, 2.0],
+    "track_spacing_m": 1.0,
+    "scan_speed_m_s": 0.5,
+    "suspension_stiffness_n_m": 8000.0,
+    "suspension_damping_ns_m": 1200.0,
+    "localization_profile": "zero",
+    "scene": "rough_markings_3mm_v2"
+  },
+  "planning": {
+    "previous_lead_distance_m": 0.25625,
+    "heading_recovery_time_s": 3.0,
+    "heading_recovery_distance_m": 1.34375,
+    "longitudinal_margin_m": 0.1,
+    "new_lead_distance_m": 1.44375,
+    "rated_10kmh_lead_distance_m_unchanged": 4.92253086419753
+  },
+  "runs": [
+    {
+      "mode": "headless",
+      "passed": true,
+      "final_state": "ACQUIRED",
+      "final_motion_state": "HOLD",
+      "track_count": 2,
+      "block_count": 8,
+      "captured_rows": 31722,
+      "continuous_roi_both_tracks": true,
+      "second_track_start_heading_error_deg": 0.7563282445126386,
+      "second_track_open_heading_error_deg": 0.7563282445126386
+    },
+    {
+      "mode": "gui_rviz",
+      "passed": true,
+      "final_state": "ACQUIRED",
+      "final_motion_state": "HOLD",
+      "track_count": 2,
+      "block_count": 8,
+      "captured_rows": 29857,
+      "continuous_roi_both_tracks": true,
+      "second_track_start_heading_error_deg": -0.18343792033194412,
+      "second_track_open_heading_error_deg": -0.18343792033194412
+    }
+  ],
+  "deterministic_regression": {
+    "injected_heading_error_deg": [-4.24, 4.24],
+    "expected": "capture remains closed until error is within 0.025 rad; no reverse or extra spin",
+    "passed": true
+  },
+  "validation": {
+    "mission_python_tests_passed": 176,
+    "unexpected_reverse": false,
+    "steering_within_limits": true,
+    "scope": "Short low-speed two-track regression; does not replace the 100 x 10 m rated-speed acceptance."
+  }
+}

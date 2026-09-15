@@ -87,8 +87,31 @@ def test_braking_and_acceleration_distinct(request_data, vehicle):
     # Fast enough that both distances clear the sensor over-run floor below.
     request_data['scan_speed_m_s']=1.
     p=plan(request_data,vehicle)
-    assert p['lead_distance_m'] == pytest.approx(1/(2*.8)+.1)
+    expected_recovery=1*3-1**2/(2*.8)
+    assert p['heading_recovery_time_s'] == 3
+    assert p['heading_recovery_distance_m'] == pytest.approx(expected_recovery)
+    assert p['lead_distance_m'] == pytest.approx(expected_recovery+.1)
     assert p['runout_distance_m'] == pytest.approx(1/(2*1)+.1)
+
+
+def test_low_speed_lead_preserves_heading_recovery_time(request_data,vehicle):
+    request_data['scan_speed_m_s']=.5
+    p=plan(request_data,vehicle)
+    acceleration_time=.5/vehicle.accel
+    expected=.5*acceleration_time**2*vehicle.accel + .5*(3-acceleration_time)
+    assert p['heading_recovery_distance_m']==pytest.approx(expected)
+    assert p['lead_distance_m']==pytest.approx(expected+request_data['longitudinal_margin_m'])
+    # The previous acceleration-only lead was 0.25625 m and provided less than
+    # one second in the physical run; the new plan provides the declared time.
+    assert p['lead_distance_m']>.25625
+
+
+def test_legacy_request_preserves_acceleration_only_geometry(request_data,vehicle):
+    del request_data['heading_recovery_time_s']
+    p=plan(request_data,vehicle)
+    assert p['heading_recovery_time_s']==0
+    assert p['lead_distance_m']==pytest.approx(.5**2/(2*vehicle.accel)+
+                                               request_data['longitudinal_margin_m'])
 
 
 def test_runout_contains_the_discardable_sensor_tail(request_data, vehicle):

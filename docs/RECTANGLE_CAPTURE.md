@@ -132,4 +132,4 @@ python3 tools/audit_mission_capture.py \
 
 审计读取`execution.jsonl`并记录其SHA256；缺少文件会拒绝审计，轨迹记录未覆盖图块首末时间则按`EXECUTION_TRACE_INCOMPLETE`排除。状态时间窗是约50 Hz控制遥测，不是逐行几何校正或像素级缺陷判别。未来拼接必须遵循这些质量排除项；不能只取原图目录或输入哈希列表而忽略质量标记。
 
-2026-09-15起伏路面对照补充：DRIVE仅代表轮角已就绪，对轮本身仍可能偏转车身。当前首次开采还要求参考航向误差进入`min(heading_tolerance_rad, 0.5*max_capture_heading_error_rad)`（默认0.025 rad）；已有前导段继续正常时间轨迹和定位反馈，不额外停车或后退。已开启的半帧不会因超过此准入容差而关闭，原0.05 rad故障保护及ROI前必须开采的检查保留。见[掉头后的航向恢复](issues/POST_TURN_HEADING.md)。
+2026-09-15起伏路面对照补充：DRIVE仅代表轮角已就绪，对轮本身仍可能偏转车身。当前首次开采还要求参考航向误差进入`min(heading_tolerance_rad, 0.5*max_capture_heading_error_rad)`（默认0.025 rad）；已有前导段继续正常时间轨迹和定位反馈，不额外停车或后退。现行规划模板将`heading_recovery_time_s`明确设为3.0秒，确保低速时前导不会退化成过短的加速距离；额定10 km/h仍由原加速距离主导。旧归档缺字段时保持原轨迹以便复核，不具备这项新保证。已开启的半帧不会因超过准入容差而关闭，原0.05 rad故障保护及ROI前必须开采的检查保留。见[掉头后的航向恢复](issues/POST_TURN_HEADING.md)。

@@ -93,7 +93,8 @@ def plan(request, vehicle):
     fields(request, ['schema', 'mission_id', 'road', 'region', 'track_spacing_m',
                      'scan_speed_m_s', 'coverage_error_m', 'drivable_bounds_xy_m',
                      'optical_bounds_xy_m', 'longitudinal_margin_m',
-                     'vehicle_sweep_radius_m', 'sample_step_m'])
+                     'vehicle_sweep_radius_m', 'sample_step_m'],
+                     ['heading_recovery_time_s'])
     if request['schema'] != 'agv.rectangle.request.v1':
         raise PlanningError('unsupported request schema')
     if not isinstance(request['mission_id'], str) or not request['mission_id'].strip():
@@ -114,6 +115,14 @@ def plan(request, vehicle):
     speed = number(request['scan_speed_m_s'], 'speed', 0, True)
     error = number(request['coverage_error_m'], 'coverage error', 0)
     margin = number(request['longitudinal_margin_m'], 'longitudinal margin', 0)
+    # Re-steering after a lane change can yaw the stopped chassis through tyre
+    # contact. Capture waits for the ordinary pass heading loop to recover, so a
+    # low scan speed still needs time-based lead-in; acceleration distance alone
+    # shrinks in exactly the wrong direction. Current request templates store the
+    # budget explicitly. Missing means zero only to reproduce archived v1 plans;
+    # changing their endpoints would invalidate capture-audit provenance.
+    recovery_time = number(request.get('heading_recovery_time_s', 0.0),
+                           'heading recovery time', 0)
     radius = number(request['vehicle_sweep_radius_m'], 'sweep radius', 0, True)
     step = number(request['sample_step_m'], 'sample step', 0, True)
     for name in ('swath', 'base_height', 'accel', 'decel', 'max_speed', 'rated_scan_speed',
@@ -145,7 +154,11 @@ def plan(request, vehicle):
     # footprint, which trails the camera centre. Closing 0.10 m past a 13 m pass
     # against a 0.37 m discardable tail left 0.26-0.31 m of every pass unverified.
     overrun = vehicle.discardable_tail_m + 2 * error
-    lead = max(speed**2 / (2 * vehicle.accel), error) + margin
+    acceleration_time = speed / vehicle.accel
+    recovery_distance = (.5 * vehicle.accel * recovery_time**2
+                         if recovery_time <= acceleration_time else
+                         speed * recovery_time - speed**2 / (2 * vehicle.accel))
+    lead = max(speed**2 / (2 * vehicle.accel), recovery_distance, error) + margin
     # The margin also keeps the capture close ahead of the tracker's own stop, so
     # a short braking distance cannot race the over-run to the end of the pass.
     runout = max(speed**2 / (2 * vehicle.decel), overrun) + margin
@@ -212,11 +225,15 @@ def plan(request, vehicle):
         if previous:
             old_exit, old_heading = previous
             shifted = (old_exit[0], cy)
+            if math.dist(shifted, entry) > 1e-8:
+                raise PlanningError('forward-only turn geometry must meet the next entry')
+            # The two expressions are algebraically identical but can differ by
+            # one floating-point bit. Reuse the previous endpoint so adjacent
+            # segments retain an exact continuous-pose contract.
+            entry = shifted
             segment('SHIFT', old_exit, shifted, old_heading, old_heading, i)
             # Rotation sign is a PREVIEW candidate. Runtime must use actual wheel states.
             segment('ROTATE_180', shifted, shifted, old_heading, heading, i)
-            if math.dist(shifted, entry) > 1e-8:
-                raise PlanningError('forward-only turn geometry must meet the next entry')
         segment('ACCELERATE', entry, scan0, heading, heading, i, stop=False)
         segment('SCAN', scan0, scan1, heading, heading, i, capture=True, stop=False)
         segment('RUNOUT_BRAKE', scan1, exit_, heading, heading, i)
@@ -236,7 +253,9 @@ def plan(request, vehicle):
             'vehicle': dict(vars(vehicle)), 'scan_speed_m_s': speed,
             'track_count': n, 'actual_track_spacing_m': actual,
             'guaranteed_overlap_m': effective-actual if n > 1 else None,
-            'lead_distance_m': lead, 'runout_distance_m': runout,
+            'lead_distance_m': lead, 'heading_recovery_time_s': recovery_time,
+            'heading_recovery_distance_m': recovery_distance,
+            'runout_distance_m': runout,
             'scan_overrun_distance_m': overrun,
             'turn_runout_distance_m': max(runout, 2*vehicle.camera_x+lead),
             'sweep_radius_m': radius, 'total_base_translation_m': total_s,

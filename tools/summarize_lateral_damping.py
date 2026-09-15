@@ -68,10 +68,11 @@ def gui_case(path):
     result=json.loads((path/'results.json').read_text())
     final=result['final']
     log=(path/'simulation.log').read_text(errors='replace')
+    heading=final.get('reference_heading_error_rad')
     return dict(profile=result['profile'],gui_ready='Gazebo GUI readiness confirmed' in log,
         motion_observed=any(track['running_samples'] for track in result['tracks']),
         final_state=final['state'],final_reason=final['reason'],final_motion_state=final['motion_state'],
-        second_track_heading_error_deg=float(np.degrees(final.get('reference_heading_error_rad',float('nan')))))
+        second_track_heading_error_deg=None if heading is None else float(np.degrees(heading)))
 
 
 def main():
@@ -88,12 +89,13 @@ def main():
         move_roll_peak_to_peak=100*(candidate['mean_move_roll_peak_to_peak_deg']/baseline['mean_move_roll_peak_to_peak_deg']-1),
         max_suspension_travel=100*(candidate['max_suspension_abs_m']/baseline['max_suspension_abs_m']-1))
     report['candidate_1200_acceleration_check']=acceleration_case(a.input)
-    report['candidate_1200_gui_checks']=[gui_case(a.input/name) for name in ('gui_1200','gui_1200_zero_fixed')]
-    report['recommendation']='1200 N s/m was selected as the default after user review: one prominent post-HOLD extremum instead of three, 18% lower post-HOLD peak and 19% lower maximum suspension travel. It retains the requested 1-2 degree sustained acceleration and braking pitch. GUI/RViz motion was displayed, but both two-track capture attempts stopped loudly at the second-track heading gate; that separate heading-entry regression remains open.'
+    report['candidate_1200_gui_checks']=[gui_case(a.input/name) for name in
+        ('gui_1200','gui_1200_zero_fixed','heading_low_speed_fixed_gui')]
+    report['recommendation']='1200 N s/m was selected as the default after user review: one prominent post-HOLD extremum instead of three, 18% lower post-HOLD peak and 19% lower maximum suspension travel. It retains the requested 1-2 degree sustained acceleration and braking pitch. The two initial 0.5 m/s GUI attempts exposed an acceleration-only lead-in that was too short for post-turn heading recovery; the planner now reserves three seconds and subsequent headless and GUI two-track captures passed.'
     report['limitations']=['One zero-noise rectangle mission per damping value; two opposite repeats in the isolated test.',
         'The isolated brake trigger uses controller velocity commands and a fixed six-second observation; it is diagnostic rather than the mission position tracker.',
         'The mission starts ROTATE_180 after different STOPPING durations, so stop-to-rotate duration is reported and is not treated as pure damping response.',
-        'Both 1200 N s/m GUI checks reached visible motion but faulted on CAPTURE_NOT_ACTIVE_AT_REGION after the turn; they are visual-motion evidence, not successful two-track capture acceptance.']
+        'The first two 1200 N s/m GUI checks reached visible motion but faulted on CAPTURE_NOT_ACTIVE_AT_REGION after the turn. After the low-speed lead-in fix, the third GUI/RViz check completed both tracks and reached ACQUIRED/HOLD.']
     ax.axvline(0,color='black',lw=1,label='zero command');ax.axhline(0,color='0.5',lw=.7)
     ax.set(xlabel='Simulation time from brake command (s)',ylabel='Body roll relative to rest (deg)',xlim=(-1.4,4.0))
     ax.grid(alpha=.25);ax.legend(ncol=2,fontsize=8);fig.tight_layout();a.figure.parent.mkdir(parents=True,exist_ok=True);fig.savefig(a.figure,dpi=160);plt.close(fig)

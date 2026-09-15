@@ -28,5 +28,8 @@ optical_bounds_xy_m:
 - -7.68
 - 7.68
 longitudinal_margin_m: 0.1
+# Keep low-speed runs from losing the time needed to recover chassis yaw after
+# the wheels re-align; at rated speed acceleration distance is already longer.
+heading_recovery_time_s: 3.0
 vehicle_sweep_radius_m: 1.5
 sample_step_m: 0.1

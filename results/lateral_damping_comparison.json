@@ -113,13 +113,22 @@
       "final_reason": "CAPTURE_NOT_ACTIVE_AT_REGION",
       "final_motion_state": "HOLD",
       "second_track_heading_error_deg": -2.8156359288486112
+    },
+    {
+      "profile": "zero",
+      "gui_ready": true,
+      "motion_observed": true,
+      "final_state": "ACQUIRED",
+      "final_reason": "",
+      "final_motion_state": "HOLD",
+      "second_track_heading_error_deg": null
     }
   ],
-  "recommendation": "1200 N s/m was selected as the default after user review: one prominent post-HOLD extremum instead of three, 18% lower post-HOLD peak and 19% lower maximum suspension travel. It retains the requested 1-2 degree sustained acceleration and braking pitch. GUI/RViz motion was displayed, but both two-track capture attempts stopped loudly at the second-track heading gate; that separate heading-entry regression remains open.",
+  "recommendation": "1200 N s/m was selected as the default after user review: one prominent post-HOLD extremum instead of three, 18% lower post-HOLD peak and 19% lower maximum suspension travel. It retains the requested 1-2 degree sustained acceleration and braking pitch. The two initial 0.5 m/s GUI attempts exposed an acceleration-only lead-in that was too short for post-turn heading recovery; the planner now reserves three seconds and subsequent headless and GUI two-track captures passed.",
   "limitations": [
     "One zero-noise rectangle mission per damping value; two opposite repeats in the isolated test.",
     "The isolated brake trigger uses controller velocity commands and a fixed six-second observation; it is diagnostic rather than the mission position tracker.",
     "The mission starts ROTATE_180 after different STOPPING durations, so stop-to-rotate duration is reported and is not treated as pure damping response.",
-    "Both 1200 N s/m GUI checks reached visible motion but faulted on CAPTURE_NOT_ACTIVE_AT_REGION after the turn; they are visual-motion evidence, not successful two-track capture acceptance."
+    "The first two 1200 N s/m GUI checks reached visible motion but faulted on CAPTURE_NOT_ACTIVE_AT_REGION after the turn. After the low-speed lead-in fix, the third GUI/RViz check completed both tracks and reached ACQUIRED/HOLD."
   ]
 }
