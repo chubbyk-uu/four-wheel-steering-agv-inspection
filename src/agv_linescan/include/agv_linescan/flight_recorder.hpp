@@ -26,7 +26,7 @@ struct FlightSample {
   // Differentiated from the previous step's pose: four wheels agreeing with each
   // other but disagreeing with this is whole-vehicle slip, which per-wheel
   // residuals alone cannot show.
-  double bodyVx=0,bodyVy=0,bodyVz=0,bodyWz=0;
+  double bodyVx=0,bodyVy=0,bodyVz=0,bodyWz=0;  // base_link frame, matching the fit
   int32_t encoderPolarity=0;
   uint8_t motionState=0;         // index into the caller's motion name table
   // Every guard as it was actually evaluated, so a reader never re-derives them.
@@ -54,6 +54,11 @@ class FlightRecorder {
     while(count_>1 && sample.simTime-buffer_[head_].simTime>span_)Drop();
   }
   void Clear() {head_=0;count_=0;}
+
+  // Guards that run after the step was recorded need to correct their own result
+  // in place; a dump that shows a guard passing on the step it rejected is worse
+  // than no dump at all.
+  FlightSample* Newest() {return count_?&buffer_[(head_+count_-1)%buffer_.size()]:nullptr;}
 
   // Oldest first. Copying out is the caller's way to hand the physics thread's
   // data to a writer without holding the step.

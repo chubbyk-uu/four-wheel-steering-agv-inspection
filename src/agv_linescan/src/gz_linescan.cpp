@@ -19,6 +19,7 @@
 #include <array>
 #include <chrono>
 #include <condition_variable>
+#include <iostream>
 #include <deque>
 #include <filesystem>
 #include <fstream>
@@ -65,7 +66,13 @@ class GzLineScan final: public gz::sim::System,
     for(auto &write:flightWrites_) {
       try {write.get();}
       catch(const std::exception &e) {
-        if(report && node_)RCLCPP_ERROR(node_->get_logger(),"%s",e.what());
+        if(!report)continue;
+        // A lost diagnostic must be loud: the next investigation would otherwise
+        // start by hunting for a file that was never written. The logger may
+        // already be gone during teardown, so stderr is the fallback, not silence.
+        if(node_)RCLCPP_ERROR(node_->get_logger(),"%s",e.what());
+        else std::cerr<<"linescan diagnostic write failed: "<<e.what()<<std::endl;
+        ++flightWriteFailures_;
       }
     }
     flightWrites_.clear();
@@ -76,7 +83,7 @@ class GzLineScan final: public gz::sim::System,
     wake_.notify_one();
     if (renderThread_.joinable()) renderThread_.join();
     for (auto &write:writes_) { try { write.get(); } catch (...) {} }
-    DrainFlightWrites(false);
+    DrainFlightWrites(true);
     if (context_) context_->shutdown("line-scan system destroyed");
   }
 
@@ -365,8 +372,13 @@ class GzLineScan final: public gz::sim::System,
         try {
           if(encoderWheel_>=0) {
             const int polarity=std::cos(angles[encoderWheel_])<0 ? -1 : 1;
-            if(active_ && polarity!=encoderPolarity_)
+            if(active_ && polarity!=encoderPolarity_) {
+              // This guard runs after the sample was pushed, so correct the stored
+              // record; otherwise the dump would show polarity passing on the very
+              // step it rejected.
+              MarkPolarityFailure();
               throw std::runtime_error("unsupported_scan_motion");
+            }
             encoderPolarity_=polarity;
           }
           auto events=trigger_->Update(now_,distance);
@@ -444,13 +456,19 @@ class GzLineScan final: public gz::sim::System,
     flight.bodyQx=pose.Rot().X();flight.bodyQy=pose.Rot().Y();
     flight.bodyQz=pose.Rot().Z();flight.bodyQw=pose.Rot().W();
     // Body motion from the poses themselves. Four wheels agreeing with each other
-    // but not with this is whole-vehicle slip, which per-wheel residuals cannot show.
+    // but not with this is whole-vehicle slip, which per-wheel residuals cannot show
+    // -- but only if both are in the same frame. The fit is in base_link, so the
+    // world displacement is rotated into base_link before it is compared; left in
+    // world, a normal pass after a turnaround (yaw near pi) would read as slip.
     if(bodyPrevValid_ && now_>bodyPrevTime_) {
       const double dt=now_-bodyPrevTime_;
-      flight.bodyVx=(pose.Pos().X()-bodyPrevPose_.Pos().X())/dt;
-      flight.bodyVy=(pose.Pos().Y()-bodyPrevPose_.Pos().Y())/dt;
-      flight.bodyVz=(pose.Pos().Z()-bodyPrevPose_.Pos().Z())/dt;
-      flight.bodyWz=(pose.Rot().Yaw()-bodyPrevPose_.Rot().Yaw())/dt;
+      const auto world=(pose.Pos()-bodyPrevPose_.Pos())/dt;
+      const auto body=pose.Rot().RotateVectorReverse(world);
+      flight.bodyVx=body.X();flight.bodyVy=body.Y();flight.bodyVz=body.Z();
+      // Relative rotation rather than a yaw difference: subtracting yaw across
+      // +/-pi invents a spike of about 2*pi/dt exactly during a turnaround.
+      const auto delta=bodyPrevPose_.Rot().Inverse()*pose.Rot();
+      flight.bodyWz=delta.Yaw()/dt;
     }
     bodyPrevValid_=true;bodyPrevTime_=now_;bodyPrevPose_=pose;
     flight.encoderPolarity=encoderPolarity_;
@@ -463,13 +481,26 @@ class GzLineScan final: public gz::sim::System,
     // residual that lives near the threshold cannot turn into a stream of writes.
     if(fitted.residual>residualStats_->limit()/2 && now_-lastHalfEvent_>=residualHalfCooldown_) {
       lastHalfEvent_=now_;++halfEvents_;
+      // Serialising and appending here would put a file write on the physics
+      // thread at the first approach to the gate -- precisely the moment least
+      // able to absorb a disturbance. Hand it to the same async writer.
       Json event={{"reason","scan_residual_near_limit"},{"simulation_time_s",now_},
                   {"residual_m_s",fitted.residual},{"limit_m_s",residualStats_->limit()},
                   {"wheel_residual_m_s",fitted.wheelResidual},
                   {"position_m",{flight.bodyX,flight.bodyY,flight.bodyZ}},
                   {"capturing",active_},{"occurrence",halfEvents_}};
-      std::ofstream(output_/"events.jsonl",std::ios::app)<<event.dump()<<'\n';
+      auto path=output_/"events.jsonl";
+      flightWrites_.push_back(std::async(std::launch::async,[path,event=std::move(event)]() {
+        std::ofstream out(path,std::ios::app);
+        out<<event.dump()<<'\n';
+        if(!out)throw std::runtime_error("near-limit event write failed: "+path.string());
+      }));
     }
+  }
+
+  void MarkPolarityFailure() {
+    if(!flight_)return;
+    if(auto *newest=flight_->Newest())newest->passPolarity=0;
   }
 
   static uint8_t MotionCode(const std::string &name) {
@@ -489,6 +520,7 @@ class GzLineScan final: public gz::sim::System,
                 {"over_limit",residualStats_->overLimit()},
                 {"near_limit_events",halfEvents_},
                 {"flight_dumps",flightDumps_},{"flight_dumps_suppressed",flightDumpsSuppressed_},
+                {"flight_write_failures",flightWriteFailures_},
                 {"histogram_bin_width_m_s",2*residualStats_->limit()/(ResidualStats::kBins-1)},
                 {"histogram",residualStats_->histogram()}};
   }
@@ -519,7 +551,7 @@ class GzLineScan final: public gz::sim::System,
           {"steer_rad",r.steerAngle},{"suspension_m",r.suspensionPos},{"suspension_rate_m_s",r.suspensionVel},
           {"wheel_residual_m_s",r.wheelResidual},{"vx",r.vx},{"vy",r.vy},{"wz",r.wz},{"residual",r.residual},
           {"body_xyz",{r.bodyX,r.bodyY,r.bodyZ}},{"body_quat_xyzw",{r.bodyQx,r.bodyQy,r.bodyQz,r.bodyQw}},
-          {"body_velocity_m_s",{r.bodyVx,r.bodyVy,r.bodyVz}},{"body_yaw_rate_rad_s",r.bodyWz},
+          {"body_velocity_base_link_m_s",{r.bodyVx,r.bodyVy,r.bodyVz}},{"body_yaw_rate_rad_s",r.bodyWz},
           {"encoder_polarity",r.encoderPolarity},{"motion_state",r.motionState},{"capturing",r.capturing!=0},
           {"pass",{{"speed",r.passSpeed!=0},{"lateral",r.passLateral!=0},{"yaw",r.passYaw!=0},
                    {"residual",r.passResidual!=0},{"data",r.passData!=0},{"polarity",r.passPolarity!=0}}}});
@@ -974,7 +1006,7 @@ class GzLineScan final: public gz::sim::System,
   std::unique_ptr<ResidualStats> residualStats_;
   std::vector<std::future<void>> flightWrites_;
   double residualHalfCooldown_=10.,lastHalfEvent_=-1e9;
-  std::uint64_t halfEvents_=0,flightDumps_=0,flightDumpLimit_=20,flightDumpsSuppressed_=0;
+  std::uint64_t halfEvents_=0,flightDumps_=0,flightDumpLimit_=20,flightDumpsSuppressed_=0,flightWriteFailures_=0;
   bool bodyPrevValid_=false;double bodyPrevTime_=0;gz::math::Pose3d bodyPrevPose_;
   std::deque<Sample> history_;
   std::deque<Event> pending_;

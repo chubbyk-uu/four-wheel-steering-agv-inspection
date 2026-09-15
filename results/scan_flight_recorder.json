@@ -6,16 +6,27 @@
  "design": {
   "ring": "fixed-capacity POD array (agv_linescan/flight_recorder.hpp). Recording a step is an assignment into a preallocated slot; no allocation and no file access on the physics thread.",
   "bounds": "trimmed by simulated time span AND capped by sample count. The count bounds memory; the span keeps the window the same duration if max_step_size ever changes, so 2000 samples are never silently reinterpreted as 2 s.",
-  "defaults": {"span_s": 2.0, "max_samples": 4000, "half_limit_cooldown_s": 10.0, "max_dumps": 20},
+  "defaults": {
+   "span_s": 2.0,
+   "max_samples": 4000,
+   "half_limit_cooldown_s": 10.0,
+   "max_dumps": 20
+  },
   "memory": "about 0.25 KB per sample, so the default window costs well under 1 MB",
   "dump": "on rejection the ring is copied synchronously, capture reset and braking proceed immediately, and the copy is serialised by an async writer. Shutdown drains those writers and logs any write failure rather than discarding it.",
   "window_meaning": "the record ends at the rejected step. It is the two seconds BEFORE the fault, deliberately: nothing is delayed to collect data after it."
  },
- "per_sample_fields": ["simulated time", "four drive shaft rates and their contact-speed conversion",
-  "four steer angles", "four suspension positions and rates", "per-wheel fit residual, not only the maximum",
-  "fitted vx/vy/wz and residual", "body pose and body velocity differentiated from the previous step",
+ "per_sample_fields": [
+  "simulated time",
+  "four drive shaft rates and their contact-speed conversion",
+  "four steer angles",
+  "four suspension positions and rates",
+  "per-wheel fit residual, not only the maximum",
+  "fitted vx/vy/wz and residual",
+  "body pose and body velocity differentiated from the previous step",
   "encoder polarity, motion state, capture active",
-  "each guard result separately: speed, lateral, yaw, residual, data validity, polarity"],
+  "each guard result separately: speed, lateral, yaw, residual, data validity, polarity"
+ ],
  "what_the_fields_separate": {
   "single bad encoder": "one wheel residual far above the other three",
   "whole-vehicle slip": "four wheel residuals mutually consistent but disagreeing with the differentiated body velocity",
@@ -38,13 +49,69 @@
    "file_written": true,
    "window": "2001 samples spanning exactly 2.000 s",
    "guard_isolation": "pass flags read {data:true, lateral:true, polarity:true, residual:false, speed:true, yaw:true} -- the failing guard is named, not inferred",
-   "per_wheel_residual_example": [1.5e-05, 5.0e-05, 1.5e-05, 2.6e-05],
-   "suspension_example": {"position_m": [0.00424, 0.00415, 0.00107, 0.00093], "rate_m_s": [-0.01613, -0.01616, 0.01684, 0.01681], "reading": "front and rear moving in opposite directions, i.e. pitch, is legible directly from the record"},
+   "per_wheel_residual_example": [
+    1.5e-05,
+    5e-05,
+    1.5e-05,
+    2.6e-05
+   ],
+   "suspension_example": {
+    "position_m": [
+     0.00424,
+     0.00415,
+     0.00107,
+     0.00093
+    ],
+    "rate_m_s": [
+     -0.01613,
+     -0.01616,
+     0.01684,
+     0.01681
+    ],
+    "reading": "front and rear moving in opposite directions, i.e. pitch, is legible directly from the record"
+   },
    "stop_latency_after_fault_s": 1.64,
    "stop_latency_check": "consistent with decelerating 1.0 m/s at the configured 1.0 m/s^2, so the async write does not hold the stop",
-   "dump_cap": "with max_dumps 3 the session wrote 3 files and reported flight_recorder_suppressed 9"
-  }
+   "dump_cap": "with max_dumps 3 the session wrote 3 files and reported flight_recorder_suppressed 9",
+   "tests": "448 pass"
+  },
+  "negative_test": "--stop-latency-limit-s 0.1 fails with a named assertion and exit code 1"
  },
  "unrelated_defect_encountered": "the first verification attempt used headless with linescan_backend:=render and the server segfaulted in Ogre::GL3PlusBufferInterface::_firstUpload during startup, with no project code on the stack. This is the same already-recorded failure as in gui_startup_abort.json and is not caused by this change; the verification uses the optix path the real captures use.",
- "next": "deploy and wait. No attempt should be made to provoke the fault; the recorder exists so that its next natural occurrence is enough to settle the cause."
+ "next": "deploy and wait. No attempt should be made to provoke the fault; the recorder exists so that its next natural occurrence is enough to settle the cause.",
+ "review_fixes_2026_09_15": {
+  "frame_mismatch": {
+   "problem": "body velocity was a world-frame position difference while the wheel fit is in base_link. After a turnaround (yaw near pi) a normal pass would show the two with opposite signs and read as whole-vehicle slip -- the exact conclusion the field exists to support.",
+   "fix": "the world displacement is rotated into base_link before being stored, and the field is named body_velocity_base_link_m_s so the frame is not left to be assumed"
+  },
+  "yaw_wrap": {
+   "problem": "yaw rate was a plain difference of yaw angles, which crossing +/-pi turns into a spurious spike of about 2*pi/dt, precisely during the turnaround",
+   "fix": "taken from the relative rotation between the two poses instead"
+  },
+  "silent_write_loss": {
+   "problem": "the drain supported reporting but its only caller passed false, so a full disk or a permission error would have destroyed a rare fault record with no log at all -- the opposite of what the design claimed",
+   "fix": "shutdown now reports, counts the failures, and falls back to stderr when the logger is already gone; the count is published in the statistics as flight_write_failures"
+  },
+  "verification_was_not_a_gate": {
+   "problem": "the verification script printed its findings and exited 0 regardless, so none of the claimed behaviour was actually enforced",
+   "fix": "every check is an assertion that fails the exit code: sample count, window duration, field presence and arity, per-wheel residuals being distinct, which guard failed, statistics keys, zero write failures, the dump cap and its suppression count, and the stop latency",
+   "negative_test": "run with --stop-latency-limit-s 0.1 the gate reports 'stopping took 1.84 s, beyond the 0.10 s limit' and exits 1, so the assertions demonstrably fail when they should"
+  },
+  "polarity_recorded_before_it_was_checked": {
+   "problem": "the encoder polarity guard runs after the sample is pushed and never set its flag, so a dump would have shown polarity passing on the step it rejected",
+   "fix": "FlightRecorder::Newest() lets that guard correct its own stored result; covered by a unit test"
+  },
+  "synchronous_event_on_the_physics_thread": {
+   "problem": "the near-limit event serialised and appended to events.jsonl inline, putting a file write on the physics thread at the first approach to the gate -- the moment least able to absorb a disturbance",
+   "fix": "handed to the same async writer as the dumps"
+  },
+  "not_recoverable_from_a_clean_checkout": {
+   "problem": "the verifier hard-coded a local home path and pointed at a scene under gitignored local_data, so it could not run on another machine and leaked a local path",
+   "fix": "the project root is derived from the script location and the scene is generated by tools/generate_shared_scene.py unless --scene is given"
+  },
+  "domain_isolation": {
+   "problem": "found while running the negative test: a leftover simulator collided on the controller manager and the failure surfaced as 'the simulator did not start', which would misdirect an investigation",
+   "fix": "the verifier runs in its own ROS_DOMAIN_ID and GZ_PARTITION derived from its pid"
+  }
+ }
 }

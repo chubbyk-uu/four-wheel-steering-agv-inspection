@@ -186,3 +186,15 @@ TEST(ResidualStats, CountsCrossingsAndEstimatesQuantiles) {
   EXPECT_GT(stats.Quantile(.999),.015);
 }
 
+TEST(FlightRecorder, ALateGuardCanCorrectTheStepItRejected) {
+  // The polarity check runs after the sample is stored. Without this the dump
+  // would show that guard passing on the very step that failed it.
+  FlightRecorder recorder(16,2.0);
+  EXPECT_EQ(recorder.Newest(),nullptr);
+  FlightSample sample;sample.simTime=.001;recorder.Push(sample);
+  ASSERT_NE(recorder.Newest(),nullptr);
+  EXPECT_EQ(recorder.Newest()->passPolarity,1);
+  recorder.Newest()->passPolarity=0;
+  EXPECT_EQ(recorder.Snapshot().back().passPolarity,0);
+}
+
