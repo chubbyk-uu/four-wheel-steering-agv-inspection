@@ -132,7 +132,7 @@
   "Each geometry dump is 7.2 MB now that contact points carry velocities; thirteen dumps across three runs, with no measurable RTF cost."
  ],
  "not_closed": [
-  "the 13 to 32 mm camera-versus-encoder gap is unattributed: body pitch covers under 3.2 mm of it, and mount flex and contact sliding were not measured",
+  "the 0.5 to 4.9 mm left after the pitch term, with mount flex unmeasured",
   "the 13-32 mm gap between body travel and the recorded scan-line ground position during pass-start acceleration",
   "whether the geometry floor of 0.95, set on a flat road whose minimum was 0.9910, is the right rule for a surface that pitches",
   "the pitch explanation remains testable only on the 3 mm scene, where the body-level gap it was built for actually appears"
@@ -170,5 +170,37 @@
   },
   "consequence_for_step_1": "The trigger was added so that an alert would leave the evidence explaining it. It did not: the fields that evidence depends on sit behind a flag the capture runs never set. The dumps exist and the window is correct, but the three quantities that would discriminate are absent.",
   "fix_for_the_next_series": "enable probe_contact_kinematics for the full-area runs, not only the startup probes, and check its cost first: it also turns on EnableVelocityChecks for the wheel links (gz_linescan.cpp:289), which is presumably why it is opt-in."
+ },
+ "alert_cause_closed_2026_09_16": {
+  "cause": "All thirteen alerts are the body pitch reference effect measured at the camera's lever. Pitch about the contact plane displaces every point on the vehicle horizontally by its own height times the pitch change. The encoder measures ground travel; the alert compares it against the camera optical centre, which is the point with the longest lever.",
+  "user_identified_it": "The explanation is the user's: braking and acceleration pitch changes the camera's view. My three earlier readings -- re-imaged ground, an imaging-chain projection or timing fault, and stale pose tags across a hold boundary -- were each wrong and are withdrawn.",
+  "evidence": {
+   "one_to_one": "encoder minus camera against camera height times pitch change over the thirteen intervals: correlation 0.9528, slope 0.992",
+   "explained_fraction": [
+    0.788,
+    0.982
+   ],
+   "explained_median": 0.944,
+   "unexplained_residual_mm": [
+    0.5,
+    4.9
+   ],
+   "unexplained_rms_mm": 2.5,
+   "lever_ratio_test": "sign-free and magnitude-free: (encoder-body)/(body-camera) should equal h_body/(h_camera-h_body) = 1.593 for pure pitch about the contact plane. Eleven of thirteen fall within 0.35 of it.",
+   "worked_example": "the pause-resume alert in run 1, ratio 0.3917. Pitch change -12.269 mrad over 61 lines. Ground footprint at height 0 moves 22.30 mm, matching the encoder exactly. base_link at 0.648 m moves 22.30 - 7.95 = 14.35 mm, and 0.648*12.269 mrad = 7.95 mm exactly. The camera centre at 1.0416 m moves 9.52 predicted against 8.70 observed.",
+   "pixels_agree": "adjacent-row difference over the flagged 61 rows is 9.305 against a block median of 8.644, i.e. normal spacing. That is only consistent with the ground footprint having tracked the encoder, and it is what falsified the re-imaging reading.",
+   "pause_drift_explained": "the camera centre moves back 27.0 mm during the 3.66 s pause. Braking pitches the nose down about 1.44 deg; relaxing to level on stopping retracts the camera by 1.0416 m * 25 mrad = 26 mm."
+  },
+  "consequence_for_the_rule": {
+   "corrected_ratio": "comparing the encoder against the ground footprint, camera centre plus height times pitch, puts all thirteen between 0.9571 and 0.9988",
+   "all_thirteen_pass": true,
+   "this_is_not_relaxing_the_threshold": "0.95 is unchanged. The metric was comparing ground travel against a point a metre above the ground on a pitching body, so it was measuring the wrong point. Real sliding would still be caught, because pitch cannot explain it.",
+   "recommended": "keep the floor at 0.95 and correct the reference point in tools/audit_scan_slip.py and in the plugin's online check, using the body pitch already recorded in every sample"
+  },
+  "what_this_does_not_settle": [
+   "contact tangential velocity was still never measured, so sliding is not independently excluded; it is simply no longer needed to explain these thirteen",
+   "the residual 0.5 to 4.9 mm after the pitch term is unattributed; mount flex is the obvious candidate and remains unmeasured",
+   "whether the same correction accounts for alerts on the 3 mm road, where the startup probes found a larger body-level gap"
+  ]
  }
 }
