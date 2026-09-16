@@ -5,7 +5,8 @@ Two independent views of the same question, because neither alone is conclusive.
 
 The archived pose tags carry both an encoder distance and the camera's position,
 so the ratio of ground travel to encoder travel over a tag interval says whether
-the wheels turned without the vehicle advancing. That is cheap and covers every
+the camera centre advanced less than nominal encoder travel. Suspension pitch
+and mount flex also change that ratio, so it alone cannot establish tyre slip. That is cheap and covers every
 line, but the tags are sparse: a short stall is diluted across its interval.
 
 The pixels say it directly. Consecutive scan lines 0.3662 mm apart differ by a
@@ -35,7 +36,7 @@ from PIL import Image
 
 
 def tag_intervals(blocks):
-    """Ground travel against encoder travel, per pose-tag interval."""
+    """Camera-centre horizontal travel / nominal encoder distance, not tyre slip."""
     for block in blocks:
         spacing = block['line_spacing_m']
         for start, end in zip(block['pose_tags'], block['pose_tags'][1:]):
@@ -48,7 +49,9 @@ def tag_intervals(blocks):
                          - start['camera_position_world_m'][0])
             yield dict(block_id=block['block_id'], segment_id=block['segment_id'],
                        first_line=start['global_line'], last_line=end['global_line'],
-                       lines=lines, encoder_m=lines*spacing, ground_m=travel,
+                       lines=lines, encoder_m=lines*spacing, camera_horizontal_m=travel, ground_m=travel,
+                       first_time_s=start["time_s"], last_time_s=end["time_s"],
+                       camera_x_extent_m=sorted([start["camera_position_world_m"][0], end["camera_position_world_m"][0]]),
                        ratio=travel/(lines*spacing), seconds=end['time_s']-start['time_s'])
 
 
@@ -108,7 +111,7 @@ def main():
                         help='mission directory holding capture_blocks.jsonl')
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--ratio-floor', type=float, default=.95,
-                        help='ground/encoder below this is reported as slip')
+                        help='camera-centre/encoder below this raises a geometry alert, not confirmed tyre slip')
     parser.add_argument('--column-stride', type=int, default=4)
     parser.add_argument('--duplicate-fraction', type=float, default=.4,
                         help='difference/texture below this fraction of the run median is a duplicate')
@@ -146,17 +149,17 @@ def main():
     texture_floor = texture_median*args.texture_fraction
     def ratio_of(difference, texture):
         return difference/np.maximum(texture, 1e-6)
-    testable = [texture >= texture_floor for _, texture in evidence]
+    testable = [(texture > 0) & (texture >= texture_floor) for _, texture in evidence]
     pooled = np.concatenate([ratio_of(d, x)[ok] for (d, x), ok in zip(evidence, testable)]) \
         if evidence and any(ok.any() for ok in testable) else np.zeros(0)
     ratio_median = float(np.median(pooled)) if pooled.size else 0.
     threshold = ratio_median*args.duplicate_fraction
     untestable = int(sum(int((~ok).sum()) for ok in testable))
-    ratio_floor_seen = float(pooled.min()) if pooled.size else math.inf
+    ratio_floor_seen = float(pooled.min()) if pooled.size else None
     for entry, (difference, texture), ok in zip(per_image, evidence, testable):
         ratio = ratio_of(difference, texture)
-        # An exact duplicate is a defect whatever the ground looked like.
-        flagged = (ok & (ratio < threshold)) | (difference == 0)
+        # A featureless row cannot establish motion, even if it repeats exactly.
+        flagged = ok & ((ratio < threshold) | (difference == 0))
         if flagged.any():
             rows = np.flatnonzero(flagged)
             worst.append(dict(image=entry['image'], rows=rows.tolist()[:64],
@@ -164,7 +167,10 @@ def main():
                               ratio_minimum=float(ratio[flagged].min())))
 
     report = dict(
-        schema='agv.scan_slip.v1', mission=str(args.mission),
+        schema='agv.scan_slip.v2', mission=str(args.mission),
+        ratio_quantity='camera_centre_horizontal_travel_over_nominal_encoder_distance',
+        mechanical_slip_confirmed=False,
+        legacy_fields={'encoder_vs_ground': 'encoder_vs_camera alias', 'ground_m': 'camera_horizontal_m alias'},
         blocks=len(blocks), images=len(images), lines=sum(v['lines'] for v in intervals),
         pixel_evidence=dict(archives=[str(v) for v in archives], blocks=len(blocks),
                             images=len(images), missing=len(missing), first_missing=missing[:8]),
@@ -188,12 +194,18 @@ def main():
                'navigation, whose centimetre noise hides a millimetre stall.'))
     # An empty image set satisfies "no duplicate rows" vacuously, so the pixel
     # half must first prove it had pixels to test.
-    report['passed'] = bool(images) and not missing and not slips and not worst
+    report['encoder_vs_camera'] = report['encoder_vs_ground'].copy()
+    report['capture_integrity_passed'] = bool(images) and not missing and not worst
+    report['pixel_motion_verifiable'] = bool(pooled.size)
+    report['geometry_requires_review'] = bool(slips)
+    # Keep the conservative combined gate until the geometry criterion is agreed.
+    # A geometry alert must not be renamed a capture failure or confirmed tyre slip.
+    report['passed'] = report['capture_integrity_passed'] and report['pixel_motion_verifiable'] and not slips
     args.output.write_text(json.dumps(report, indent=2)+'\n')
-    print('slip intervals below %.2f: %d/%d' % (args.ratio_floor, len(slips), len(intervals)))
+    print('camera/encoder geometry alerts below %.2f: %d/%d' % (args.ratio_floor, len(slips), len(intervals)))
     print('row difference median %.3f, texture median %.3f' % (median, texture_median))
     print('difference/texture median %.3f, threshold %.3f, observed floor %.3f, untestable pairs %d'
-          % (ratio_median, threshold, ratio_floor_seen, untestable))
+          % (ratio_median, threshold, ratio_floor_seen if ratio_floor_seen is not None else float('nan'), untestable))
     print('images with duplicate rows: %d/%d   exact duplicates: %d'
           % (len(worst), len(images), report['adjacent_rows']['exact_duplicate_rows']))
     if missing:

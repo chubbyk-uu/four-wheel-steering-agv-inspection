@@ -146,3 +146,36 @@ def test_a_block_paired_with_its_own_image_passes(tmp_path, monkeypatch):
     assert report['blocks'] == 1 and report['images'] == 1
     assert report['pixel_evidence']['missing'] == 0
     assert report['passed'] is True and code == 0
+
+
+def test_featureless_band_is_untestable_not_a_duplicate_fault(tmp_path, monkeypatch):
+    from PIL import Image
+    mission = archived(tmp_path)
+    image = tmp_path/'raw/session/block_000000.pgm'
+    pixels = np.array(Image.open(image)); pixels[200:220] = 128
+    Image.fromarray(pixels).save(image)
+    code, report = run(mission, tmp_path/'r.json', monkeypatch)
+    assert report['adjacent_rows']['untestable_row_pairs'] >= 19
+    assert report['adjacent_rows']['images_flagged'] == 0
+    assert report['capture_integrity_passed'] and code == 0
+
+
+def test_wholly_featureless_image_cannot_verify_motion(tmp_path, monkeypatch):
+    from PIL import Image
+    mission = archived(tmp_path)
+    Image.fromarray(np.full((256, 64), 128, dtype=np.uint8)).save(tmp_path/'raw/session/block_000000.pgm')
+    code, report = run(mission, tmp_path/'r.json', monkeypatch)
+    assert report['adjacent_rows']['images_flagged'] == 0
+    assert report['adjacent_rows']['untestable_row_pairs'] == 255
+    assert report['adjacent_rows']['observed_ratio_minimum'] is None
+    assert not report['pixel_motion_verifiable'] and code == 1
+
+
+def test_geometry_alert_does_not_claim_a_capture_or_tyre_fault(tmp_path, monkeypatch):
+    mission = archived(tmp_path)
+    record = json.loads((mission/'capture_blocks.jsonl').read_text())
+    record['pose_tags'][1]['camera_position_world_m'][0] *= .93
+    (mission/'capture_blocks.jsonl').write_text(json.dumps(record)+'\n')
+    code, report = run(mission, tmp_path/'r.json', monkeypatch)
+    assert report['capture_integrity_passed'] and report['geometry_requires_review']
+    assert not report['mechanical_slip_confirmed'] and code == 1
