@@ -24,7 +24,7 @@ python3 tools/fix_road_display_uv.py assets/road/baked_fullwidth_20m_v1/manifest
 
 该迁移不重烘焙高清纹素；完成后重启Gazebo。新生成器已修正。错误原因及实际渲染验证见[UV问题记录](issues/ROAD_DISPLAY_ALIGNMENT.md)。裂缝碰撞边界见[碰撞说明](issues/COLLISION_PROXY.md)。
 
-100×10 m全区稳定采集已通过，现行结果见[全区验收](FULL_ROAD_ACCEPTANCE.md)。历史100 m窄走廊、20 m全宽、展开瓦片与紧凑配方是不同阶段，不混用其资源数字或恢复命令；本页带日期的旧台架命令只用于对应历史资产回归。
+9月14日配置的100×10 m全区采集曾通过；当前起伏标识道路及高度场仍需复验，范围见[全区验收](FULL_ROAD_ACCEPTANCE.md)。历史100 m窄走廊、20 m全宽、展开瓦片与紧凑配方是不同阶段，不混用其资源数字或恢复命令；本页带日期的旧台架命令只用于对应历史资产回归。
 
 
 ## 配方与校验边界
