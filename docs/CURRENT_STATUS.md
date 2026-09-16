@@ -60,7 +60,9 @@
 
 2026-09-16再次直接清理：5个旧/失败全区测试目录删除1862张PGM原图，释放约29.10 GiB；各段保留首尾样片及带图块编号的事件附近样片，全部JSON标签、日志和诊断转储保留。每个目录的`image_cleanup.json`列明删除与保留清单；这些旧目录已不具备完整像素重审条件，不能因缺图把旧审计重跑结果当作回归。新±2 mm三次运行、成功高度场全区运行、旧`accept_rated_6`、启动接触A/B、标定、道路资产与私有Mesa均未清理。见[清理记录](../results/data_cleanup_20260916.json)。
 
-本轮`local_data/default_2mm_closure_1`完整原图、标签与窗口证据保留供后处理；短回归保留在`default_2mm_boundary_check`。工作数据不入Git。
+本轮`local_data/default_2mm_closure_1`完整原图、标签与窗口证据保留供后处理；短回归保留在`default_2mm_boundary_check`与`default_2mm_short_boundary_check`。工作数据不入Git。
+
+收尾后再次盘点：默认入口完整原图与`rough2mm_repeat_1`、`accept_rated_6`完整基线保留；`rough2mm_repeat_2`、`rough2mm_repeat_3`及已被新默认覆盖的`heightmap100_full_rated_2`直接删除2035张重复原图，释放约31.80 GiB，仅保留各采集段首尾和诊断事件附近样片。全部标签、日志、诊断转储保留；这三份运行不再具备完整像素重审条件，上述“三次完整数据保留”描述是本次清理之前的历史状态。另删除两个空比较目录及pytest缓存。道路资产、标定和Mesa构建目录未动。见[收尾后清理记录](../results/data_cleanup_after_default_closure_20260916.json)。
 
 ## 历史与重要问题
 

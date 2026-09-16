@@ -1,0 +1,45 @@
+{
+  "date": "2026-09-16",
+  "scope": "Post-default-closure redundant capture images and empty/cache directories",
+  "direct_delete": true,
+  "runs": [
+    {
+      "directory": "local_data/rough2mm_repeat_2",
+      "images_before": 701,
+      "images_retained": 26,
+      "images_deleted": 675,
+      "deleted_logical_bytes": 11324632275,
+      "all_non_image_evidence_preserved": true
+    },
+    {
+      "directory": "local_data/rough2mm_repeat_3",
+      "images_before": 703,
+      "images_retained": 27,
+      "images_deleted": 676,
+      "deleted_logical_bytes": 11341409508,
+      "all_non_image_evidence_preserved": true
+    },
+    {
+      "directory": "local_data/heightmap100_full_rated_2",
+      "images_before": 704,
+      "images_retained": 20,
+      "images_deleted": 684,
+      "deleted_logical_bytes": 11475627372,
+      "all_non_image_evidence_preserved": true
+    }
+  ],
+  "empty_directories_removed": [
+    "local_data/strip_pose_comparison_final",
+    "local_data/strip_pose_comparison_valid"
+  ],
+  "deleted_images": 2035,
+  "deleted_logical_gib": 31.79690721910447,
+  "filesystem_available_increase_gib": 31.804306030273438,
+  "protected": [
+    "default_2mm_closure_1 complete capture",
+    "rough2mm_repeat_1 complete capture",
+    "accept_rated_6 complete capture",
+    "road assets, calibration, Mesa source/runtime and all diagnostic metadata"
+  ],
+  "verification": "Removed files absent; retained images have matching JSON; non-image evidence untouched. Pruned runs cannot be used for complete pixel re-audit."
+}
