@@ -1,0 +1,1366 @@
+{
+  "schema": "agv.startup_contact_ab.v1",
+  "scope": "Six independent headless straight probes at x=6,y=0,yaw=0; same 550kg/1200 damping/300 mount, aligned stationary capture enable, stamped body commands, unchanged 0.8 m/s\u00b2 controller acceleration, 10km/h cruise, braking to HOLD. Same OptiX visual road; only road collision representation differs.",
+  "contact_velocity_definition": "Native GZ wheel world linear velocity + angular velocity cross (contact point - wheel link origin), projected tangent to contact normal. Other collision must belong to a static road model. This is the primary mechanical slip evidence.",
+  "limitations": [
+    "No force aggregation is used.",
+    "Small-angle height*pitch estimate is explanatory, not an exact terrain/rolling reconstruction.",
+    "Absolute tangent travel covers observed contact samples only; no-contact gaps are reported separately.",
+    "This is a startup diagnostic, not full-area repeat acceptance or a real-tyre validation."
+  ],
+  "runs": {
+    "mesh_1": {
+      "passed": true,
+      "max_physics_gap_s": 0.0010000000000012221,
+      "windows": {
+        "startup_first_second": {
+          "samples": 1001,
+          "encoder_m": 0.3205495862452333,
+          "body_reference_x_m": 0.30831421662313385,
+          "camera_centre_x_m": 0.29986814372596804,
+          "body_over_encoder": 0.961830025221936,
+          "camera_over_encoder": 0.9354813002209178,
+          "encoder_minus_body_m": 0.012235369622099423,
+          "body_pitch_delta_deg": -1.1095859790221287,
+          "small_angle_rocking_estimate_m": 0.012544019897355247,
+          "unexplained_after_rocking_m": -0.00030865027525582393,
+          "wheel_contact": [
+            {
+              "wheel": "fl",
+              "points": 3961,
+              "velocity_points": 3961,
+              "no_contact_samples": 1,
+              "tangential_speed_max_m_s": 0.0007123660761862993,
+              "tangential_speed_p99_m_s": 0.00012937320570927113,
+              "observed_absolute_tangent_travel_m": 3.647966640341685e-05,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "fr",
+              "points": 1749,
+              "velocity_points": 1749,
+              "no_contact_samples": 5,
+              "tangential_speed_max_m_s": 0.0006443659076467156,
+              "tangential_speed_p99_m_s": 0.00029187218751758337,
+              "observed_absolute_tangent_travel_m": 8.082324662627667e-05,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "rl",
+              "points": 2139,
+              "velocity_points": 2139,
+              "no_contact_samples": 4,
+              "tangential_speed_max_m_s": 0.0009323673439212143,
+              "tangential_speed_p99_m_s": 0.0008317994070239365,
+              "observed_absolute_tangent_travel_m": 0.00019766140532524273,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "rr",
+              "points": 1908,
+              "velocity_points": 1908,
+              "no_contact_samples": 4,
+              "tangential_speed_max_m_s": 0.000669692293740809,
+              "tangential_speed_p99_m_s": 0.0005848645232617855,
+              "observed_absolute_tangent_travel_m": 0.00013438357760470014,
+              "travel_excludes_no_contact_samples": true
+            }
+          ]
+        },
+        "acceleration": {
+          "samples": 3601,
+          "encoder_m": 4.883199529492986,
+          "body_reference_x_m": 4.871990729532318,
+          "camera_centre_x_m": 4.8635625593320135,
+          "body_over_encoder": 0.9977046197082529,
+          "camera_over_encoder": 0.9959786672565044,
+          "encoder_minus_body_m": 0.01120879996066737,
+          "body_pitch_delta_deg": -1.1076429278807702,
+          "small_angle_rocking_estimate_m": 0.012519481900676133,
+          "unexplained_after_rocking_m": -0.0013106819400087628,
+          "wheel_contact": [
+            {
+              "wheel": "fl",
+              "points": 13334,
+              "velocity_points": 13334,
+              "no_contact_samples": 44,
+              "tangential_speed_max_m_s": 0.0013786996714770794,
+              "tangential_speed_p99_m_s": 0.0003469075891189277,
+              "observed_absolute_tangent_travel_m": 0.00020976136931114394,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "fr",
+              "points": 7249,
+              "velocity_points": 7249,
+              "no_contact_samples": 38,
+              "tangential_speed_max_m_s": 0.0016595785273239017,
+              "tangential_speed_p99_m_s": 0.00035937942448072135,
+              "observed_absolute_tangent_travel_m": 0.0003321715636698924,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "rl",
+              "points": 11604,
+              "velocity_points": 11604,
+              "no_contact_samples": 44,
+              "tangential_speed_max_m_s": 0.0018352112965658307,
+              "tangential_speed_p99_m_s": 0.0007928649429231882,
+              "observed_absolute_tangent_travel_m": 0.00033018755345094893,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "rr",
+              "points": 7595,
+              "velocity_points": 7595,
+              "no_contact_samples": 42,
+              "tangential_speed_max_m_s": 0.0032094730995595455,
+              "tangential_speed_p99_m_s": 0.0005575460381805897,
+              "observed_absolute_tangent_travel_m": 0.00037782933632600556,
+              "travel_excludes_no_contact_samples": true
+            }
+          ]
+        },
+        "cruise": {
+          "samples": 2001,
+          "encoder_m": 5.555565554038533,
+          "body_reference_x_m": 5.554883796866127,
+          "camera_centre_x_m": 5.554407374023768,
+          "body_over_encoder": 0.9998772839298223,
+          "camera_over_encoder": 0.999791527972535,
+          "encoder_minus_body_m": 0.0006817571724058169,
+          "body_pitch_delta_deg": -0.058223803998823265,
+          "small_angle_rocking_estimate_m": 0.0006579259979832856,
+          "unexplained_after_rocking_m": 2.3831174422531305e-05,
+          "wheel_contact": [
+            {
+              "wheel": "fl",
+              "points": 5988,
+              "velocity_points": 5988,
+              "no_contact_samples": 76,
+              "tangential_speed_max_m_s": 0.0016752780647948384,
+              "tangential_speed_p99_m_s": 0.0006233410094864666,
+              "observed_absolute_tangent_travel_m": 0.00023081025272257067,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "fr",
+              "points": 7479,
+              "velocity_points": 7479,
+              "no_contact_samples": 52,
+              "tangential_speed_max_m_s": 0.0016304287128150463,
+              "tangential_speed_p99_m_s": 0.000440481147961691,
+              "observed_absolute_tangent_travel_m": 0.00012099368406363409,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "rl",
+              "points": 4886,
+              "velocity_points": 4886,
+              "no_contact_samples": 61,
+              "tangential_speed_max_m_s": 0.0016714613884687424,
+              "tangential_speed_p99_m_s": 0.0005245083593763411,
+              "observed_absolute_tangent_travel_m": 0.0002813939380692439,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "rr",
+              "points": 6908,
+              "velocity_points": 6908,
+              "no_contact_samples": 46,
+              "tangential_speed_max_m_s": 0.0015393561916425824,
+              "tangential_speed_p99_m_s": 0.0003447297203820199,
+              "observed_absolute_tangent_travel_m": 0.00011291807126122066,
+              "travel_excludes_no_contact_samples": true
+            }
+          ]
+        },
+        "brake": {
+          "samples": 3601,
+          "encoder_m": 3.889461981031625,
+          "body_reference_x_m": 3.888972489369401,
+          "camera_centre_x_m": 3.8894958169039064,
+          "body_over_encoder": 0.9998741492616173,
+          "camera_over_encoder": 1.000008699370876,
+          "encoder_minus_body_m": 0.0004894916622242285,
+          "body_pitch_delta_deg": 0.07114246131550805,
+          "small_angle_rocking_estimate_m": -0.0008045480295561884,
+          "unexplained_after_rocking_m": 0.0012940396917804169,
+          "wheel_contact": [
+            {
+              "wheel": "fl",
+              "points": 8774,
+              "velocity_points": 8774,
+              "no_contact_samples": 32,
+              "tangential_speed_max_m_s": 0.0018103588372468948,
+              "tangential_speed_p99_m_s": 0.0015485237818211317,
+              "observed_absolute_tangent_travel_m": 0.0005934083292858031,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "fr",
+              "points": 16785,
+              "velocity_points": 16785,
+              "no_contact_samples": 32,
+              "tangential_speed_max_m_s": 0.001571138622239232,
+              "tangential_speed_p99_m_s": 0.0011214202968403697,
+              "observed_absolute_tangent_travel_m": 0.0002965476960050489,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "rl",
+              "points": 8653,
+              "velocity_points": 8653,
+              "no_contact_samples": 35,
+              "tangential_speed_max_m_s": 0.001665560994297266,
+              "tangential_speed_p99_m_s": 0.0016459107864648104,
+              "observed_absolute_tangent_travel_m": 0.0008002602841667799,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "rr",
+              "points": 11495,
+              "velocity_points": 11495,
+              "no_contact_samples": 25,
+              "tangential_speed_max_m_s": 0.0019480317132547498,
+              "tangential_speed_p99_m_s": 0.0019248457392677665,
+              "observed_absolute_tangent_travel_m": 0.0007926805693734393,
+              "travel_excludes_no_contact_samples": true
+            }
+          ]
+        }
+      },
+      "final_state": "HOLD"
+    },
+    "mesh_2": {
+      "passed": true,
+      "max_physics_gap_s": 0.0010000000000012221,
+      "windows": {
+        "startup_first_second": {
+          "samples": 1001,
+          "encoder_m": 0.32160598624513725,
+          "body_reference_x_m": 0.30933994598148384,
+          "camera_centre_x_m": 0.3008790361647762,
+          "body_over_encoder": 0.9618600374736064,
+          "camera_over_encoder": 0.935551727993762,
+          "encoder_minus_body_m": 0.01226604026365341,
+          "body_pitch_delta_deg": -1.1124267598091906,
+          "small_angle_rocking_estimate_m": 0.012576121267865186,
+          "unexplained_after_rocking_m": -0.00031008100421177527,
+          "wheel_contact": [
+            {
+              "wheel": "fl",
+              "points": 4495,
+              "velocity_points": 4495,
+              "no_contact_samples": 2,
+              "tangential_speed_max_m_s": 0.0007123660761862993,
+              "tangential_speed_p99_m_s": 0.00018711625307332724,
+              "observed_absolute_tangent_travel_m": 3.574988935000369e-05,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "fr",
+              "points": 1750,
+              "velocity_points": 1750,
+              "no_contact_samples": 5,
+              "tangential_speed_max_m_s": 0.0006443659076467156,
+              "tangential_speed_p99_m_s": 0.00029599948902614415,
+              "observed_absolute_tangent_travel_m": 8.263798938549445e-05,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "rl",
+              "points": 1933,
+              "velocity_points": 1933,
+              "no_contact_samples": 3,
+              "tangential_speed_max_m_s": 0.0009323673439212143,
+              "tangential_speed_p99_m_s": 0.0008317994070239365,
+              "observed_absolute_tangent_travel_m": 0.00019701422228561845,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "rr",
+              "points": 1903,
+              "velocity_points": 1903,
+              "no_contact_samples": 4,
+              "tangential_speed_max_m_s": 0.000669692293740809,
+              "tangential_speed_p99_m_s": 0.0005784525419585407,
+              "observed_absolute_tangent_travel_m": 0.00012707280531984533,
+              "travel_excludes_no_contact_samples": true
+            }
+          ]
+        },
+        "acceleration": {
+          "samples": 3601,
+          "encoder_m": 4.889513491451683,
+          "body_reference_x_m": 4.878300676833901,
+          "camera_centre_x_m": 4.869887551542565,
+          "body_over_encoder": 0.9977067627203842,
+          "camera_over_encoder": 0.995986116012681,
+          "encoder_minus_body_m": 0.011212814617781675,
+          "body_pitch_delta_deg": -1.1072087337455407,
+          "small_angle_rocking_estimate_m": 0.012514594769056338,
+          "unexplained_after_rocking_m": -0.0013017801512746636,
+          "wheel_contact": [
+            {
+              "wheel": "fl",
+              "points": 14262,
+              "velocity_points": 14262,
+              "no_contact_samples": 36,
+              "tangential_speed_max_m_s": 0.0011391835287213326,
+              "tangential_speed_p99_m_s": 0.00027682792278937995,
+              "observed_absolute_tangent_travel_m": 0.00020691153377433078,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "fr",
+              "points": 6974,
+              "velocity_points": 6974,
+              "no_contact_samples": 39,
+              "tangential_speed_max_m_s": 0.003908855840563774,
+              "tangential_speed_p99_m_s": 0.00035826058592647314,
+              "observed_absolute_tangent_travel_m": 0.00034098620752633584,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "rl",
+              "points": 11522,
+              "velocity_points": 11522,
+              "no_contact_samples": 39,
+              "tangential_speed_max_m_s": 0.003121808636933565,
+              "tangential_speed_p99_m_s": 0.0007876285235397518,
+              "observed_absolute_tangent_travel_m": 0.0003323542781009555,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "rr",
+              "points": 7516,
+              "velocity_points": 7516,
+              "no_contact_samples": 38,
+              "tangential_speed_max_m_s": 0.0026827401015907526,
+              "tangential_speed_p99_m_s": 0.0005658072768710554,
+              "observed_absolute_tangent_travel_m": 0.0003788894452846867,
+              "travel_excludes_no_contact_samples": true
+            }
+          ]
+        },
+        "cruise": {
+          "samples": 2001,
+          "encoder_m": 5.555562323539981,
+          "body_reference_x_m": 5.554918994653869,
+          "camera_centre_x_m": 5.554477079767848,
+          "body_over_encoder": 0.9998842009415707,
+          "camera_over_encoder": 0.999804656358991,
+          "encoder_minus_body_m": 0.000643328886111405,
+          "body_pitch_delta_deg": -0.05511100619171594,
+          "small_angle_rocking_estimate_m": 0.0006227504680495968,
+          "unexplained_after_rocking_m": 2.05784180618082e-05,
+          "wheel_contact": [
+            {
+              "wheel": "fl",
+              "points": 5760,
+              "velocity_points": 5760,
+              "no_contact_samples": 65,
+              "tangential_speed_max_m_s": 0.0018224541563540697,
+              "tangential_speed_p99_m_s": 0.0005707842647098005,
+              "observed_absolute_tangent_travel_m": 0.00022525824857938404,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "fr",
+              "points": 7622,
+              "velocity_points": 7622,
+              "no_contact_samples": 47,
+              "tangential_speed_max_m_s": 0.0020321765914559364,
+              "tangential_speed_p99_m_s": 0.0008085790905170143,
+              "observed_absolute_tangent_travel_m": 0.00011818515620483014,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "rl",
+              "points": 5163,
+              "velocity_points": 5163,
+              "no_contact_samples": 84,
+              "tangential_speed_max_m_s": 0.0016807137290015817,
+              "tangential_speed_p99_m_s": 0.0007360504241660237,
+              "observed_absolute_tangent_travel_m": 0.00027565756318142246,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "rr",
+              "points": 7070,
+              "velocity_points": 7070,
+              "no_contact_samples": 43,
+              "tangential_speed_max_m_s": 0.0019868561066687107,
+              "tangential_speed_p99_m_s": 0.0004201701085548848,
+              "observed_absolute_tangent_travel_m": 0.00011868726912554327,
+              "travel_excludes_no_contact_samples": true
+            }
+          ]
+        },
+        "brake": {
+          "samples": 3601,
+          "encoder_m": 3.865864244265034,
+          "body_reference_x_m": 3.8655078312244235,
+          "camera_centre_x_m": 3.8660576961238604,
+          "body_over_encoder": 0.9999078050810658,
+          "camera_over_encoder": 1.0000500410378128,
+          "encoder_minus_body_m": 0.00035641304061062584,
+          "body_pitch_delta_deg": 0.07732688019627657,
+          "small_angle_rocking_estimate_m": -0.0008744850046890028,
+          "unexplained_after_rocking_m": 0.0012308980452996286,
+          "wheel_contact": [
+            {
+              "wheel": "fl",
+              "points": 9199,
+              "velocity_points": 9199,
+              "no_contact_samples": 32,
+              "tangential_speed_max_m_s": 0.004132787697017193,
+              "tangential_speed_p99_m_s": 0.0015215554740279913,
+              "observed_absolute_tangent_travel_m": 0.0005447547680535338,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "fr",
+              "points": 14422,
+              "velocity_points": 14422,
+              "no_contact_samples": 26,
+              "tangential_speed_max_m_s": 0.0017821143846958876,
+              "tangential_speed_p99_m_s": 0.001397142419591546,
+              "observed_absolute_tangent_travel_m": 0.0003824042681437092,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "rl",
+              "points": 8610,
+              "velocity_points": 8610,
+              "no_contact_samples": 41,
+              "tangential_speed_max_m_s": 0.001988070784136653,
+              "tangential_speed_p99_m_s": 0.0016405927017331123,
+              "observed_absolute_tangent_travel_m": 0.0008233494433307045,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "rr",
+              "points": 11005,
+              "velocity_points": 11005,
+              "no_contact_samples": 32,
+              "tangential_speed_max_m_s": 0.0019532316364347935,
+              "tangential_speed_p99_m_s": 0.0019173154141753912,
+              "observed_absolute_tangent_travel_m": 0.0008225192658411857,
+              "travel_excludes_no_contact_samples": true
+            }
+          ]
+        }
+      },
+      "final_state": "HOLD"
+    },
+    "mesh_3": {
+      "passed": true,
+      "max_physics_gap_s": 0.0010000000000012221,
+      "windows": {
+        "startup_first_second": {
+          "samples": 1001,
+          "encoder_m": 0.3209827862444033,
+          "body_reference_x_m": 0.3087174667919106,
+          "camera_centre_x_m": 0.3002546301498086,
+          "body_over_encoder": 0.9617882329579082,
+          "camera_over_encoder": 0.9354228420248933,
+          "encoder_minus_body_m": 0.012265319452492707,
+          "body_pitch_delta_deg": -1.1123497233996391,
+          "small_angle_rocking_estimate_m": 0.01257525893396914,
+          "unexplained_after_rocking_m": -0.00030993948147643377,
+          "wheel_contact": [
+            {
+              "wheel": "fl",
+              "points": 4569,
+              "velocity_points": 4569,
+              "no_contact_samples": 2,
+              "tangential_speed_max_m_s": 0.0007123660761862993,
+              "tangential_speed_p99_m_s": 0.00018618527974467725,
+              "observed_absolute_tangent_travel_m": 3.6004266096835365e-05,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "fr",
+              "points": 1640,
+              "velocity_points": 1640,
+              "no_contact_samples": 4,
+              "tangential_speed_max_m_s": 0.0006443659076467156,
+              "tangential_speed_p99_m_s": 0.00029599948902614415,
+              "observed_absolute_tangent_travel_m": 8.264239771061982e-05,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "rl",
+              "points": 1929,
+              "velocity_points": 1929,
+              "no_contact_samples": 3,
+              "tangential_speed_max_m_s": 0.0009323673439212143,
+              "tangential_speed_p99_m_s": 0.0008317994070239365,
+              "observed_absolute_tangent_travel_m": 0.00019749667643690147,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "rr",
+              "points": 1908,
+              "velocity_points": 1908,
+              "no_contact_samples": 4,
+              "tangential_speed_max_m_s": 0.000669692293740809,
+              "tangential_speed_p99_m_s": 0.000581848609726876,
+              "observed_absolute_tangent_travel_m": 0.0001275158385247322,
+              "travel_excludes_no_contact_samples": true
+            }
+          ]
+        },
+        "acceleration": {
+          "samples": 3601,
+          "encoder_m": 4.883367108260829,
+          "body_reference_x_m": 4.872088735928929,
+          "camera_centre_x_m": 4.863609743409485,
+          "body_over_encoder": 0.9976904516736369,
+          "camera_over_encoder": 0.9959541512212092,
+          "encoder_minus_body_m": 0.011278372331900322,
+          "body_pitch_delta_deg": -1.1137657934554281,
+          "small_angle_rocking_estimate_m": 0.012588699538553991,
+          "unexplained_after_rocking_m": -0.0013103272066536699,
+          "wheel_contact": [
+            {
+              "wheel": "fl",
+              "points": 14696,
+              "velocity_points": 14696,
+              "no_contact_samples": 49,
+              "tangential_speed_max_m_s": 0.0012165027437731624,
+              "tangential_speed_p99_m_s": 0.0003506313369143754,
+              "observed_absolute_tangent_travel_m": 0.0002084855482568329,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "fr",
+              "points": 7183,
+              "velocity_points": 7183,
+              "no_contact_samples": 41,
+              "tangential_speed_max_m_s": 0.0010079450439661741,
+              "tangential_speed_p99_m_s": 0.0003761021653190255,
+              "observed_absolute_tangent_travel_m": 0.0003353831280200205,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "rl",
+              "points": 11634,
+              "velocity_points": 11634,
+              "no_contact_samples": 37,
+              "tangential_speed_max_m_s": 0.003104686737060547,
+              "tangential_speed_p99_m_s": 0.0007894925656728446,
+              "observed_absolute_tangent_travel_m": 0.00033766658246235095,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "rr",
+              "points": 7128,
+              "velocity_points": 7128,
+              "no_contact_samples": 44,
+              "tangential_speed_max_m_s": 0.0014273832784965634,
+              "tangential_speed_p99_m_s": 0.0005613547982648015,
+              "observed_absolute_tangent_travel_m": 0.00037454152373666633,
+              "travel_excludes_no_contact_samples": true
+            }
+          ]
+        },
+        "cruise": {
+          "samples": 2001,
+          "encoder_m": 5.555565925878136,
+          "body_reference_x_m": 5.5549489392684315,
+          "camera_centre_x_m": 5.5545229333917945,
+          "body_over_encoder": 0.9998889426175595,
+          "camera_over_encoder": 0.9998122617029018,
+          "encoder_minus_body_m": 0.0006169866097041066,
+          "body_pitch_delta_deg": -0.052427764155208584,
+          "small_angle_rocking_estimate_m": 0.0005924316598165953,
+          "unexplained_after_rocking_m": 2.4554949887511295e-05,
+          "wheel_contact": [
+            {
+              "wheel": "fl",
+              "points": 5331,
+              "velocity_points": 5331,
+              "no_contact_samples": 66,
+              "tangential_speed_max_m_s": 0.0016098007326945662,
+              "tangential_speed_p99_m_s": 0.0005582532030530274,
+              "observed_absolute_tangent_travel_m": 0.0002235078731458802,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "fr",
+              "points": 7649,
+              "velocity_points": 7649,
+              "no_contact_samples": 54,
+              "tangential_speed_max_m_s": 0.0017372346483170986,
+              "tangential_speed_p99_m_s": 0.00034742889693006873,
+              "observed_absolute_tangent_travel_m": 0.00011575826470869021,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "rl",
+              "points": 4755,
+              "velocity_points": 4755,
+              "no_contact_samples": 72,
+              "tangential_speed_max_m_s": 0.0019243670394644141,
+              "tangential_speed_p99_m_s": 0.0006147255771793425,
+              "observed_absolute_tangent_travel_m": 0.00028901511389418195,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "rr",
+              "points": 6225,
+              "velocity_points": 6225,
+              "no_contact_samples": 45,
+              "tangential_speed_max_m_s": 0.0015235814498737454,
+              "tangential_speed_p99_m_s": 0.0003164560766890645,
+              "observed_absolute_tangent_travel_m": 0.00012080308372486709,
+              "travel_excludes_no_contact_samples": true
+            }
+          ]
+        },
+        "brake": {
+          "samples": 3601,
+          "encoder_m": 3.866121276385302,
+          "body_reference_x_m": 3.8656116593084846,
+          "camera_centre_x_m": 3.8661291179501376,
+          "body_over_encoder": 0.9998681838875748,
+          "camera_over_encoder": 1.0000020282769926,
+          "encoder_minus_body_m": 0.0005096170768172925,
+          "body_pitch_delta_deg": 0.07024527963470859,
+          "small_angle_rocking_estimate_m": -0.0007944015365568553,
+          "unexplained_after_rocking_m": 0.0013040186133741478,
+          "wheel_contact": [
+            {
+              "wheel": "fl",
+              "points": 8729,
+              "velocity_points": 8729,
+              "no_contact_samples": 30,
+              "tangential_speed_max_m_s": 0.0018402046989649534,
+              "tangential_speed_p99_m_s": 0.001544833299703896,
+              "observed_absolute_tangent_travel_m": 0.0005583207491623368,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "fr",
+              "points": 14559,
+              "velocity_points": 14559,
+              "no_contact_samples": 32,
+              "tangential_speed_max_m_s": 0.0015687714330852032,
+              "tangential_speed_p99_m_s": 0.0008341045468114316,
+              "observed_absolute_tangent_travel_m": 0.0002391982364329213,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "rl",
+              "points": 8286,
+              "velocity_points": 8286,
+              "no_contact_samples": 30,
+              "tangential_speed_max_m_s": 0.0019483239157125354,
+              "tangential_speed_p99_m_s": 0.0016609786543995142,
+              "observed_absolute_tangent_travel_m": 0.0008184860488740917,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "rr",
+              "points": 11282,
+              "velocity_points": 11282,
+              "no_contact_samples": 30,
+              "tangential_speed_max_m_s": 0.0019765838515013456,
+              "tangential_speed_p99_m_s": 0.001953420229256153,
+              "observed_absolute_tangent_travel_m": 0.0008284015728655018,
+              "travel_excludes_no_contact_samples": true
+            }
+          ]
+        }
+      },
+      "final_state": "HOLD"
+    },
+    "heightmap_1": {
+      "passed": true,
+      "max_physics_gap_s": 0.0010000000000012221,
+      "windows": {
+        "startup_first_second": {
+          "samples": 1001,
+          "encoder_m": 0.3210225733175217,
+          "body_reference_x_m": 0.3088795614691051,
+          "camera_centre_x_m": 0.3004802952007797,
+          "body_over_encoder": 0.9621739626502651,
+          "camera_over_encoder": 0.9360098640277742,
+          "encoder_minus_body_m": 0.012143011848416596,
+          "body_pitch_delta_deg": -1.1027334834834328,
+          "small_angle_rocking_estimate_m": 0.012465781137271934,
+          "unexplained_after_rocking_m": -0.00032276928885533775,
+          "wheel_contact": [
+            {
+              "wheel": "fl",
+              "points": 1915,
+              "velocity_points": 1915,
+              "no_contact_samples": 1,
+              "tangential_speed_max_m_s": 0.0005834350595250726,
+              "tangential_speed_p99_m_s": 0.0004902975051663816,
+              "observed_absolute_tangent_travel_m": 5.313472594302334e-05,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "fr",
+              "points": 998,
+              "velocity_points": 998,
+              "no_contact_samples": 3,
+              "tangential_speed_max_m_s": 0.0007256158860400319,
+              "tangential_speed_p99_m_s": 0.00045425520511344075,
+              "observed_absolute_tangent_travel_m": 9.034697727874581e-05,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "rl",
+              "points": 999,
+              "velocity_points": 999,
+              "no_contact_samples": 2,
+              "tangential_speed_max_m_s": 0.0007158868829719722,
+              "tangential_speed_p99_m_s": 0.0006699946243315935,
+              "observed_absolute_tangent_travel_m": 0.00013703581514333828,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "rr",
+              "points": 998,
+              "velocity_points": 998,
+              "no_contact_samples": 3,
+              "tangential_speed_max_m_s": 0.0006604793015867472,
+              "tangential_speed_p99_m_s": 0.0006174201844260097,
+              "observed_absolute_tangent_travel_m": 0.00012154689116120033,
+              "travel_excludes_no_contact_samples": true
+            }
+          ]
+        },
+        "acceleration": {
+          "samples": 3601,
+          "encoder_m": 4.887433808401765,
+          "body_reference_x_m": 4.876257744717163,
+          "camera_centre_x_m": 4.8678572786620355,
+          "body_over_encoder": 0.9977133063847557,
+          "camera_over_encoder": 0.9959945176738606,
+          "encoder_minus_body_m": 0.011176063684601445,
+          "body_pitch_delta_deg": -1.1049993877059554,
+          "small_angle_rocking_estimate_m": 0.012489550797137794,
+          "unexplained_after_rocking_m": -0.0013134871125363486,
+          "wheel_contact": [
+            {
+              "wheel": "fl",
+              "points": 4943,
+              "velocity_points": 4943,
+              "no_contact_samples": 8,
+              "tangential_speed_max_m_s": 0.0005834350595250726,
+              "tangential_speed_p99_m_s": 0.0003941830655094236,
+              "observed_absolute_tangent_travel_m": 0.00022002360548601865,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "fr",
+              "points": 3618,
+              "velocity_points": 3618,
+              "no_contact_samples": 8,
+              "tangential_speed_max_m_s": 0.0007256158860400319,
+              "tangential_speed_p99_m_s": 0.00040724739665165544,
+              "observed_absolute_tangent_travel_m": 0.0003410612628630542,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "rl",
+              "points": 3871,
+              "velocity_points": 3871,
+              "no_contact_samples": 6,
+              "tangential_speed_max_m_s": 0.0007158868829719722,
+              "tangential_speed_p99_m_s": 0.0006299691158346832,
+              "observed_absolute_tangent_travel_m": 0.00028075161441503695,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "rr",
+              "points": 3613,
+              "velocity_points": 3613,
+              "no_contact_samples": 7,
+              "tangential_speed_max_m_s": 0.0006604793015867472,
+              "tangential_speed_p99_m_s": 0.0005804845714010298,
+              "observed_absolute_tangent_travel_m": 0.0003687703523471681,
+              "travel_excludes_no_contact_samples": true
+            }
+          ]
+        },
+        "cruise": {
+          "samples": 2001,
+          "encoder_m": 5.555556773071272,
+          "body_reference_x_m": 5.555003172477157,
+          "camera_centre_x_m": 5.554621513243047,
+          "body_over_encoder": 0.9999003519148975,
+          "camera_over_encoder": 0.9998316532678132,
+          "encoder_minus_body_m": 0.0005536005941149114,
+          "body_pitch_delta_deg": -0.04807919340359804,
+          "small_angle_rocking_estimate_m": 0.0005432962447011562,
+          "unexplained_after_rocking_m": 1.0304349413755133e-05,
+          "wheel_contact": [
+            {
+              "wheel": "fl",
+              "points": 2049,
+              "velocity_points": 2049,
+              "no_contact_samples": 6,
+              "tangential_speed_max_m_s": 0.00037449359660968184,
+              "tangential_speed_p99_m_s": 0.00027828075690194964,
+              "observed_absolute_tangent_travel_m": 0.0002256552216263113,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "fr",
+              "points": 2044,
+              "velocity_points": 2044,
+              "no_contact_samples": 6,
+              "tangential_speed_max_m_s": 0.0002634450502227992,
+              "tangential_speed_p99_m_s": 0.0001986633287742734,
+              "observed_absolute_tangent_travel_m": 0.0001393519332214054,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "rl",
+              "points": 2025,
+              "velocity_points": 2025,
+              "no_contact_samples": 11,
+              "tangential_speed_max_m_s": 0.00048718845937401056,
+              "tangential_speed_p99_m_s": 0.00039019601535983384,
+              "observed_absolute_tangent_travel_m": 0.0002814659067307733,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "rr",
+              "points": 2204,
+              "velocity_points": 2204,
+              "no_contact_samples": 5,
+              "tangential_speed_max_m_s": 0.00025813846150413156,
+              "tangential_speed_p99_m_s": 0.00021757962531410158,
+              "observed_absolute_tangent_travel_m": 0.00013263329531823585,
+              "travel_excludes_no_contact_samples": true
+            }
+          ]
+        },
+        "brake": {
+          "samples": 3601,
+          "encoder_m": 3.895575899900829,
+          "body_reference_x_m": 3.8950824948294454,
+          "camera_centre_x_m": 3.895538036149212,
+          "body_over_encoder": 0.99987334220047,
+          "camera_over_encoder": 0.9999902803198834,
+          "encoder_minus_body_m": 0.0004934050713836236,
+          "body_pitch_delta_deg": 0.06418862359443987,
+          "small_angle_rocking_estimate_m": -0.0007259038295139294,
+          "unexplained_after_rocking_m": 0.0012193089008975528,
+          "wheel_contact": [
+            {
+              "wheel": "fl",
+              "points": 3635,
+              "velocity_points": 3635,
+              "no_contact_samples": 5,
+              "tangential_speed_max_m_s": 0.0019199155503883958,
+              "tangential_speed_p99_m_s": 0.001569221611134708,
+              "observed_absolute_tangent_travel_m": 0.0006917998717858091,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "fr",
+              "points": 4930,
+              "velocity_points": 4930,
+              "no_contact_samples": 4,
+              "tangential_speed_max_m_s": 0.00187823292799294,
+              "tangential_speed_p99_m_s": 0.001400294597260654,
+              "observed_absolute_tangent_travel_m": 0.0003430573229876682,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "rl",
+              "points": 3771,
+              "velocity_points": 3771,
+              "no_contact_samples": 7,
+              "tangential_speed_max_m_s": 0.0016032299026846886,
+              "tangential_speed_p99_m_s": 0.0015716125490143895,
+              "observed_absolute_tangent_travel_m": 0.0007624821014790024,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "rr",
+              "points": 3610,
+              "velocity_points": 3610,
+              "no_contact_samples": 7,
+              "tangential_speed_max_m_s": 0.0019686766900122166,
+              "tangential_speed_p99_m_s": 0.001933121820911765,
+              "observed_absolute_tangent_travel_m": 0.0007733898982625787,
+              "travel_excludes_no_contact_samples": true
+            }
+          ]
+        }
+      },
+      "final_state": "HOLD"
+    },
+    "heightmap_2": {
+      "passed": true,
+      "max_physics_gap_s": 0.0010000000000012221,
+      "windows": {
+        "startup_first_second": {
+          "samples": 1001,
+          "encoder_m": 0.3174921732979906,
+          "body_reference_x_m": 0.30510823867820047,
+          "camera_centre_x_m": 0.296552820298535,
+          "body_over_encoder": 0.960994519987216,
+          "camera_over_encoder": 0.9340476560982736,
+          "encoder_minus_body_m": 0.012383934619790149,
+          "body_pitch_delta_deg": -1.1240498511784527,
+          "small_angle_rocking_estimate_m": 0.012706749883566848,
+          "unexplained_after_rocking_m": -0.000322815263776699,
+          "wheel_contact": [
+            {
+              "wheel": "fl",
+              "points": 1920,
+              "velocity_points": 1920,
+              "no_contact_samples": 1,
+              "tangential_speed_max_m_s": 0.0006873435922898352,
+              "tangential_speed_p99_m_s": 0.0006108093075454235,
+              "observed_absolute_tangent_travel_m": 6.170501031447172e-05,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "fr",
+              "points": 999,
+              "velocity_points": 999,
+              "no_contact_samples": 2,
+              "tangential_speed_max_m_s": 0.0007256176904775202,
+              "tangential_speed_p99_m_s": 0.0005657034344039857,
+              "observed_absolute_tangent_travel_m": 9.82676671229692e-05,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "rl",
+              "points": 999,
+              "velocity_points": 999,
+              "no_contact_samples": 2,
+              "tangential_speed_max_m_s": 0.0007288643391802907,
+              "tangential_speed_p99_m_s": 0.0006879279389977455,
+              "observed_absolute_tangent_travel_m": 0.00013990218133729977,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "rr",
+              "points": 998,
+              "velocity_points": 998,
+              "no_contact_samples": 3,
+              "tangential_speed_max_m_s": 0.0006724159466102719,
+              "tangential_speed_p99_m_s": 0.000634783529676497,
+              "observed_absolute_tangent_travel_m": 0.0001244852833727067,
+              "travel_excludes_no_contact_samples": true
+            }
+          ]
+        },
+        "acceleration": {
+          "samples": 3601,
+          "encoder_m": 4.879785917138133,
+          "body_reference_x_m": 4.868630545122702,
+          "camera_centre_x_m": 4.860244171379246,
+          "body_over_encoder": 0.9977139628244239,
+          "camera_over_encoder": 0.9959953682209183,
+          "encoder_minus_body_m": 0.011155372015430487,
+          "body_pitch_delta_deg": -1.1033182486691469,
+          "small_angle_rocking_estimate_m": 0.012470570722138093,
+          "unexplained_after_rocking_m": -0.0013151987067076057,
+          "wheel_contact": [
+            {
+              "wheel": "fl",
+              "points": 4990,
+              "velocity_points": 4990,
+              "no_contact_samples": 7,
+              "tangential_speed_max_m_s": 0.0006873435922898352,
+              "tangential_speed_p99_m_s": 0.00046131538692861795,
+              "observed_absolute_tangent_travel_m": 0.00023133533248614213,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "fr",
+              "points": 3628,
+              "velocity_points": 3628,
+              "no_contact_samples": 8,
+              "tangential_speed_max_m_s": 0.0007256176904775202,
+              "tangential_speed_p99_m_s": 0.0004451537097338587,
+              "observed_absolute_tangent_travel_m": 0.0003459567713720171,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "rl",
+              "points": 3865,
+              "velocity_points": 3865,
+              "no_contact_samples": 7,
+              "tangential_speed_max_m_s": 0.0007288643391802907,
+              "tangential_speed_p99_m_s": 0.0006434209644794464,
+              "observed_absolute_tangent_travel_m": 0.0002760106888254318,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "rr",
+              "points": 3618,
+              "velocity_points": 3618,
+              "no_contact_samples": 10,
+              "tangential_speed_max_m_s": 0.0006845008465461433,
+              "tangential_speed_p99_m_s": 0.0005957629764452577,
+              "observed_absolute_tangent_travel_m": 0.0003625503416656387,
+              "travel_excludes_no_contact_samples": true
+            }
+          ]
+        },
+        "cruise": {
+          "samples": 2001,
+          "encoder_m": 5.555556045401115,
+          "body_reference_x_m": 5.555062608333177,
+          "camera_centre_x_m": 5.554700577143116,
+          "body_over_encoder": 0.9999111813356025,
+          "camera_over_encoder": 0.9998460157271373,
+          "encoder_minus_body_m": 0.0004934370679379185,
+          "body_pitch_delta_deg": -0.042858700077883824,
+          "small_angle_rocking_estimate_m": 0.0004843026840390369,
+          "unexplained_after_rocking_m": 9.134383898881649e-06,
+          "wheel_contact": [
+            {
+              "wheel": "fl",
+              "points": 2053,
+              "velocity_points": 2053,
+              "no_contact_samples": 7,
+              "tangential_speed_max_m_s": 0.0004015694430563599,
+              "tangential_speed_p99_m_s": 0.0002994125534314662,
+              "observed_absolute_tangent_travel_m": 0.00022705855828382898,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "fr",
+              "points": 2167,
+              "velocity_points": 2167,
+              "no_contact_samples": 5,
+              "tangential_speed_max_m_s": 0.00025196312344633043,
+              "tangential_speed_p99_m_s": 0.0001897090842248872,
+              "observed_absolute_tangent_travel_m": 0.0001153245457667253,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "rl",
+              "points": 2031,
+              "velocity_points": 2031,
+              "no_contact_samples": 7,
+              "tangential_speed_max_m_s": 0.0004543895192909986,
+              "tangential_speed_p99_m_s": 0.0004035956517327577,
+              "observed_absolute_tangent_travel_m": 0.00029326154859245435,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "rr",
+              "points": 2028,
+              "velocity_points": 2028,
+              "no_contact_samples": 7,
+              "tangential_speed_max_m_s": 0.00026257094577886164,
+              "tangential_speed_p99_m_s": 0.0002508368343114853,
+              "observed_absolute_tangent_travel_m": 0.00012113990677107726,
+              "travel_excludes_no_contact_samples": true
+            }
+          ]
+        },
+        "brake": {
+          "samples": 3601,
+          "encoder_m": 3.8678076489189213,
+          "body_reference_x_m": 3.867244699782894,
+          "camera_centre_x_m": 3.867656483471876,
+          "body_over_encoder": 0.999854452654546,
+          "camera_over_encoder": 0.9999609170205019,
+          "encoder_minus_body_m": 0.0005629491360270578,
+          "body_pitch_delta_deg": 0.05496053347881697,
+          "small_angle_rocking_estimate_m": -0.0006215401796811308,
+          "unexplained_after_rocking_m": 0.0011844893157081887,
+          "wheel_contact": [
+            {
+              "wheel": "fl",
+              "points": 3617,
+              "velocity_points": 3617,
+              "no_contact_samples": 4,
+              "tangential_speed_max_m_s": 0.001914854859933257,
+              "tangential_speed_p99_m_s": 0.0015607456443831325,
+              "observed_absolute_tangent_travel_m": 0.0005990049960813543,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "fr",
+              "points": 4386,
+              "velocity_points": 4386,
+              "no_contact_samples": 6,
+              "tangential_speed_max_m_s": 0.0017425124533474445,
+              "tangential_speed_p99_m_s": 0.0013519383501261473,
+              "observed_absolute_tangent_travel_m": 0.00037219421998967324,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "rl",
+              "points": 3610,
+              "velocity_points": 3610,
+              "no_contact_samples": 8,
+              "tangential_speed_max_m_s": 0.0017487661680206656,
+              "tangential_speed_p99_m_s": 0.0016826576320454478,
+              "observed_absolute_tangent_travel_m": 0.0007601327254539382,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "rr",
+              "points": 3648,
+              "velocity_points": 3648,
+              "no_contact_samples": 7,
+              "tangential_speed_max_m_s": 0.0019242051057517529,
+              "tangential_speed_p99_m_s": 0.0018905297620221972,
+              "observed_absolute_tangent_travel_m": 0.000773981429875599,
+              "travel_excludes_no_contact_samples": true
+            }
+          ]
+        }
+      },
+      "final_state": "HOLD"
+    },
+    "heightmap_3": {
+      "passed": true,
+      "max_physics_gap_s": 0.0010000000000012221,
+      "windows": {
+        "startup_first_second": {
+          "samples": 1001,
+          "encoder_m": 0.3210225733175217,
+          "body_reference_x_m": 0.308879561469106,
+          "camera_centre_x_m": 0.3004802952007797,
+          "body_over_encoder": 0.9621739626502679,
+          "camera_over_encoder": 0.9360098640277742,
+          "encoder_minus_body_m": 0.012143011848415708,
+          "body_pitch_delta_deg": -1.1027334834836235,
+          "small_angle_rocking_estimate_m": 0.012465781137274088,
+          "unexplained_after_rocking_m": -0.00032276928885838045,
+          "wheel_contact": [
+            {
+              "wheel": "fl",
+              "points": 1915,
+              "velocity_points": 1915,
+              "no_contact_samples": 1,
+              "tangential_speed_max_m_s": 0.0005834350595250726,
+              "tangential_speed_p99_m_s": 0.0004902975051663816,
+              "observed_absolute_tangent_travel_m": 5.313472594223109e-05,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "fr",
+              "points": 998,
+              "velocity_points": 998,
+              "no_contact_samples": 3,
+              "tangential_speed_max_m_s": 0.0007256158860400319,
+              "tangential_speed_p99_m_s": 0.00045425520511344075,
+              "observed_absolute_tangent_travel_m": 9.034697727874581e-05,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "rl",
+              "points": 999,
+              "velocity_points": 999,
+              "no_contact_samples": 2,
+              "tangential_speed_max_m_s": 0.0007158868829719722,
+              "tangential_speed_p99_m_s": 0.0006699946243315935,
+              "observed_absolute_tangent_travel_m": 0.0001370358151431109,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "rr",
+              "points": 998,
+              "velocity_points": 998,
+              "no_contact_samples": 3,
+              "tangential_speed_max_m_s": 0.0006604793015867472,
+              "tangential_speed_p99_m_s": 0.0006174201844260097,
+              "observed_absolute_tangent_travel_m": 0.00012154689116120033,
+              "travel_excludes_no_contact_samples": true
+            }
+          ]
+        },
+        "acceleration": {
+          "samples": 3601,
+          "encoder_m": 4.887441808405807,
+          "body_reference_x_m": 4.876265947185667,
+          "camera_centre_x_m": 4.867865630275266,
+          "body_over_encoder": 0.9977133515531746,
+          "camera_over_encoder": 0.9959945961715856,
+          "encoder_minus_body_m": 0.011175861220140249,
+          "body_pitch_delta_deg": -1.1049805576101825,
+          "small_angle_rocking_estimate_m": 0.01248933795729961,
+          "unexplained_after_rocking_m": -0.0013134767371593623,
+          "wheel_contact": [
+            {
+              "wheel": "fl",
+              "points": 4943,
+              "velocity_points": 4943,
+              "no_contact_samples": 8,
+              "tangential_speed_max_m_s": 0.0005834350595250726,
+              "tangential_speed_p99_m_s": 0.0003941830655094236,
+              "observed_absolute_tangent_travel_m": 0.00022001708449006922,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "fr",
+              "points": 3618,
+              "velocity_points": 3618,
+              "no_contact_samples": 8,
+              "tangential_speed_max_m_s": 0.0007256158860400319,
+              "tangential_speed_p99_m_s": 0.00040724739665165544,
+              "observed_absolute_tangent_travel_m": 0.00034104391589598435,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "rl",
+              "points": 3871,
+              "velocity_points": 3871,
+              "no_contact_samples": 6,
+              "tangential_speed_max_m_s": 0.0007158868829719722,
+              "tangential_speed_p99_m_s": 0.0006299691158346832,
+              "observed_absolute_tangent_travel_m": 0.0002807503214135906,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "rr",
+              "points": 3613,
+              "velocity_points": 3613,
+              "no_contact_samples": 7,
+              "tangential_speed_max_m_s": 0.0006604793015867472,
+              "tangential_speed_p99_m_s": 0.0005804845714010298,
+              "observed_absolute_tangent_travel_m": 0.00036877502470339445,
+              "travel_excludes_no_contact_samples": true
+            }
+          ]
+        },
+        "cruise": {
+          "samples": 2001,
+          "encoder_m": 5.555556753253376,
+          "body_reference_x_m": 5.555001412966085,
+          "camera_centre_x_m": 5.554615617200994,
+          "body_over_encoder": 0.9999000387698378,
+          "camera_over_encoder": 0.9998305955470924,
+          "encoder_minus_body_m": 0.0005553402872910951,
+          "body_pitch_delta_deg": -0.048236445555769634,
+          "small_angle_rocking_estimate_m": 0.0005450730518994343,
+          "unexplained_after_rocking_m": 1.026723539166081e-05,
+          "wheel_contact": [
+            {
+              "wheel": "fl",
+              "points": 2056,
+              "velocity_points": 2056,
+              "no_contact_samples": 7,
+              "tangential_speed_max_m_s": 0.00037449493538588285,
+              "tangential_speed_p99_m_s": 0.000278281542705372,
+              "observed_absolute_tangent_travel_m": 0.0002251991560947313,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "fr",
+              "points": 2029,
+              "velocity_points": 2029,
+              "no_contact_samples": 6,
+              "tangential_speed_max_m_s": 0.0002634460979606956,
+              "tangential_speed_p99_m_s": 0.00019866465299855918,
+              "observed_absolute_tangent_travel_m": 0.00013698874530734877,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "rl",
+              "points": 2038,
+              "velocity_points": 2038,
+              "no_contact_samples": 11,
+              "tangential_speed_max_m_s": 0.00048718799371272326,
+              "tangential_speed_p99_m_s": 0.00039019680116325617,
+              "observed_absolute_tangent_travel_m": 0.0002797309353281891,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "rr",
+              "points": 2188,
+              "velocity_points": 2188,
+              "no_contact_samples": 5,
+              "tangential_speed_max_m_s": 0.00025813959655351937,
+              "tangential_speed_p99_m_s": 0.0002116390533046797,
+              "observed_absolute_tangent_travel_m": 0.00013025237844630056,
+              "travel_excludes_no_contact_samples": true
+            }
+          ]
+        },
+        "brake": {
+          "samples": 3601,
+          "encoder_m": 3.8678041123870672,
+          "body_reference_x_m": 3.867302837763148,
+          "camera_centre_x_m": 3.867743836227252,
+          "body_over_encoder": 0.9998703981356466,
+          "camera_over_encoder": 0.9999844159223001,
+          "encoder_minus_body_m": 0.0005012746239190236,
+          "body_pitch_delta_deg": 0.05993539783867098,
+          "small_angle_rocking_estimate_m": -0.0006778023875718291,
+          "unexplained_after_rocking_m": 0.0011790770114908527,
+          "wheel_contact": [
+            {
+              "wheel": "fl",
+              "points": 3621,
+              "velocity_points": 3621,
+              "no_contact_samples": 5,
+              "tangential_speed_max_m_s": 0.002032648306339979,
+              "tangential_speed_p99_m_s": 0.00159825652372092,
+              "observed_absolute_tangent_travel_m": 0.0006019887766766085,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "fr",
+              "points": 4511,
+              "velocity_points": 4511,
+              "no_contact_samples": 4,
+              "tangential_speed_max_m_s": 0.0018488196656107903,
+              "tangential_speed_p99_m_s": 0.0013126243138685822,
+              "observed_absolute_tangent_travel_m": 0.000348663192273874,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "rl",
+              "points": 3674,
+              "velocity_points": 3674,
+              "no_contact_samples": 7,
+              "tangential_speed_max_m_s": 0.0017558304825797677,
+              "tangential_speed_p99_m_s": 0.0016882229829207063,
+              "observed_absolute_tangent_travel_m": 0.0007684681001647564,
+              "travel_excludes_no_contact_samples": true
+            },
+            {
+              "wheel": "rr",
+              "points": 3697,
+              "velocity_points": 3697,
+              "no_contact_samples": 5,
+              "tangential_speed_max_m_s": 0.001932820538058877,
+              "tangential_speed_p99_m_s": 0.0018966407515108585,
+              "observed_absolute_tangent_travel_m": 0.000779690462197209,
+              "travel_excludes_no_contact_samples": true
+            }
+          ]
+        }
+      },
+      "final_state": "HOLD"
+    }
+  },
+  "conclusion": "All six matched startup probes reproduce encoder/body/camera travel discrepancies while native contact tangent speeds remain small. First-second encoder/body difference 12.14-12.38 mm is mostly explained by the pitching reference frame (12.47-12.71 mm small-angle estimate; remainder about -0.31 to -0.32 mm). Neither representation exhibits the substantial wheel-ground sliding implied by interpreting the camera ratio as tyre slip. This does not retrospectively prove all old full-run intervals slip-free.",
+  "scene_manifest_sha256": {
+    "mesh": "cfe0b3c3a4b0a4b5fab7e31d26497ee5560aac181ed99728044bc5b873f0ad0e",
+    "heightmap": "f99ecf44afefe18fe98d3d3a86c385f2e073bb1148e68b5eb4eb975b12855703"
+  },
+  "tests": {
+    "agv_linescan_colcon": {
+      "tests": 194,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    "targeted_python": 37
+  },
+  "encoder_distance_definition": "Integral of archived fl shaft peripheral speed using the plugin nominal radius; continuous kinematic diagnostic, not a recount of AB edges or emitted image rows."
+}

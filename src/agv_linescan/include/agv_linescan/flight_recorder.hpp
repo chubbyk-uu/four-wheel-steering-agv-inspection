@@ -17,6 +17,9 @@ constexpr std::size_t kContactPointsPerWheel = 16;
 struct ContactPointEvidence {
   float position[3]={};          // world frame, metres
   float normal[3]={};            // raw GZ contact normal
+  float relativeVelocityWorld[3]={}; // material point velocity relative to static ground
+  float tangentialSpeed=0;
+  std::uint8_t velocityAvailable=0;
   float depth=0;                 // metres
   float forceMagnitude=0;        // newtons; sign-independent
   std::uint64_t otherCollision=0;
@@ -46,6 +49,7 @@ struct FlightSample {
   double suspensionVel[4]={};
   double wheelResidual[4]={};    // per wheel, not just the worst
   double vx=0,vy=0,wz=0,residual=0;
+  double cameraPos[3]={}, cameraQuat[4]={0,0,0,1}, mountAngle[2]={};
   double bodyX=0,bodyY=0,bodyZ=0;
   double bodyQx=0,bodyQy=0,bodyQz=0,bodyQw=1;
   // Differentiated from the previous step's pose: four wheels agreeing with each

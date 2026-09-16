@@ -5,6 +5,7 @@
 #include "agv_linescan/sampling.hpp"
 #include "agv_linescan/scan_motion.hpp"
 #include "agv_linescan/flight_recorder.hpp"
+#include "agv_linescan/contact_kinematics.hpp"
 #include "agv_linescan/queue_budget.hpp"
 #include "agv_linescan/mount_geometry.hpp"
 #include "agv_linescan/preview.hpp"
@@ -50,6 +51,11 @@
 #include <sensor_msgs/msg/image.hpp>
 #include <std_msgs/msg/string.hpp>
 #include <std_srvs/srv/set_bool.hpp>
+#include <std_srvs/srv/trigger.hpp>
+#include <gz/sim/Link.hh>
+#include <gz/sim/components/LinearVelocity.hh>
+#include <gz/sim/components/AngularVelocity.hh>
+#include <gz/sim/components/Static.hh>
 
 namespace agv_linescan {
 using Json=nlohmann::json;
@@ -114,6 +120,7 @@ class GzLineScan final: public gz::sim::System,
     const size_t flightCapacity=flight?flight["max_samples"].as<size_t>(4000):4000;
     residualHalfCooldown_=flight?flight["half_limit_cooldown_s"].as<double>(10.):10.;
     flightDumpLimit_=flight?flight["max_dumps"].as<std::uint64_t>(20):20;
+    probeKinematics_=flight && flight["probe_contact_kinematics"].as<bool>(false);
     contactEvidenceRequired_=flight?flight["contact_evidence"].as<bool>(true):true;
     if(!std::isfinite(flightSpan)||flightSpan<=0||flightSpan>60||flightCapacity<100||flightCapacity>200000||
        !std::isfinite(residualHalfCooldown_)||residualHalfCooldown_<0||flightDumpLimit_==0||flightDumpLimit_>1000)
@@ -202,6 +209,12 @@ class GzLineScan final: public gz::sim::System,
     statePub_=node_->create_publisher<std_msgs::msg::String>("/linescan/state",10);
     motionSub_=node_->create_subscription<std_msgs::msg::String>("/motion_state",10,
         [this](std_msgs::msg::String::ConstSharedPtr m) { motion_=m->data; });
+    if(probeKinematics_)probeService_=node_->create_service<std_srvs::srv::Trigger>("/linescan/dump_probe",
+      [this](const std::shared_ptr<std_srvs::srv::Trigger::Request>,
+             std::shared_ptr<std_srvs::srv::Trigger::Response> res) {
+        res->success=DumpFlight("startup_probe");
+        res->message=res->success?"probe queued; wait for diagnostic_status at shutdown":"probe unavailable, suppressed or could not be queued";
+      });
     enableService_=node_->create_service<std_srvs::srv::SetBool>("/linescan/set_enabled",
         [this](const std::shared_ptr<std_srvs::srv::SetBool::Request> req,
                std::shared_ptr<std_srvs::srv::SetBool::Response> res) {
@@ -262,6 +275,7 @@ class GzLineScan final: public gz::sim::System,
         // Suspension travel is diagnostic only: it hints at losing contact, and a
         // missing joint must not stop a capture that never needed it.
         suspension_[i]=ecm.EntityByComponents(gz::sim::components::Name(names[i]+"_suspension_joint"),gz::sim::components::ParentEntity(model_));
+        if(probeKinematics_ && wheelLink_[i]!=gz::sim::kNullEntity)gz::sim::Link(wheelLink_[i]).EnableVelocityChecks(ecm);
         for (auto entity:{drive_[i],steer_[i],suspension_[i]}) {
           if (!entity) continue;
           if (!ecm.Component<gz::sim::components::JointPosition>(entity))
@@ -561,6 +575,16 @@ class GzLineScan final: public gz::sim::System,
                     const gz::sim::EntityComponentManager &ecm,const gz::math::Pose3d &pose) {
     if(!flight_)return;
     flight.simTime=now_;
+    if(probeKinematics_ && !history_.empty()) {
+      const auto &camera=history_.back().camera;
+      for(size_t j=0;j<3;++j)flight.cameraPos[j]=camera.Pos()[j];
+      flight.cameraQuat[0]=camera.Rot().X();flight.cameraQuat[1]=camera.Rot().Y();
+      flight.cameraQuat[2]=camera.Rot().Z();flight.cameraQuat[3]=camera.Rot().W();
+      const std::array<const char*,2> names={"camera_roll_joint","camera_pitch_joint"};
+      for(size_t j=0;j<2;++j){auto entity=ecm.EntityByComponents(gz::sim::components::Name(names[j]),gz::sim::components::ParentEntity(model_));
+        auto pos=ecm.Component<gz::sim::components::JointPosition>(entity);
+        if(pos && !pos->Data().empty())flight.mountAngle[j]=pos->Data()[0];}
+    }
     for(size_t i=0;i<4;++i) {
       flight.wheelSpeed[i]=speeds[i];
       flight.driveRate[i]=radius_>0?speeds[i]/radius_:0;
@@ -653,6 +677,23 @@ class GzLineScan final: public gz::sim::System,
           const auto &normal=contact.normal(p);
           sample.normal[0]=normal.x();sample.normal[1]=normal.y();sample.normal[2]=normal.z();
         }
+        if(probeKinematics_ && other) {
+          auto parent=ecm.Component<gz::sim::components::ParentEntity>(other);
+          auto modelParent=parent?ecm.Component<gz::sim::components::ParentEntity>(parent->Data()):nullptr;
+          auto stationary=modelParent?ecm.Component<gz::sim::components::Static>(modelParent->Data()):nullptr;
+          auto lv=ecm.Component<gz::sim::components::WorldLinearVelocity>(wheelLink_[wheel]);
+          auto av=ecm.Component<gz::sim::components::WorldAngularVelocity>(wheelLink_[wheel]);
+          if(stationary && stationary->Data() && lv && av) {
+            const auto center=gz::sim::worldPose(wheelLink_[wheel],ecm).Pos();
+            const auto point=gz::math::Vector3d(position.x(),position.y(),position.z());
+            const auto material=lv->Data()+av->Data().Cross(point-center);
+            auto n=gz::math::Vector3d(sample.normal[0],sample.normal[1],sample.normal[2]);
+            const auto tangent=ContactTangentVelocity(lv->Data(),av->Data(),point-center,n);
+            if(tangent) {
+              sample.velocityAvailable=1;sample.tangentialSpeed=tangent->Length();
+              for(size_t j=0;j<3;++j)sample.relativeVelocityWorld[j]=material[j];}
+          }
+        }
         sample.depth=depth;sample.forceMagnitude=force;
         sample.otherCollision=other;sample.wheelCollisionSide=side;
       }
@@ -710,23 +751,25 @@ class GzLineScan final: public gz::sim::System,
 
   // Copy the ring on the physics thread, hand the copy to a writer, and return.
   // The step must not wait for the disk, and stopping must not wait for data.
-  void DumpFlight(const std::string &reason) noexcept {
+  bool DumpFlight(const std::string &reason) noexcept {
     try {
-      if(!flight_ || flight_->size()==0)return;
+      if(!flight_ || flight_->size()==0)return false;
       // A repeating fault must not turn the diagnostic into its own disturbance.
       // The count keeps being reported, so a capped run is never mistaken for a
       // run that only faulted this many times.
-      if(flightDumps_>=flightDumpLimit_){++flightDumpsSuppressed_;return;}
+      if(flightDumps_>=flightDumpLimit_){++flightDumpsSuppressed_;return false;}
       auto rows=flight_->Snapshot();
       Json summary=ResidualSummary();
       const auto index=++flightDumps_;
       const double when=now_;
       auto path=output_/("flight_"+std::to_string(index)+"_"+reason+".json");
-      QueueDiagnostic([path,rows=std::move(rows),summary=std::move(summary),reason,when]() {
+      const bool probe=probeKinematics_;
+      QueueDiagnostic([path,rows=std::move(rows),summary=std::move(summary),reason,when,probe]() {
       Json doc={{"schema","agv.linescan.flight_recorder.v2"},{"reason",reason},
+                {"probe_contact_kinematics",probe},{"camera_pose_available",probe},
                 {"fault_simulation_time_s",when},{"samples",rows.size()},
                 {"window_s",rows.empty()?0.:rows.back().simTime-rows.front().simTime},
-                {"note","the window ends at the rejected step; nothing after it is recorded"},
+                {"note","bounded window ending at dump request or rejected step; velocity fields require opt-in probe and static other collision"},
                 {"residual_statistics",summary}};
       Json records=Json::array();
       for(const auto &r:rows) {
@@ -736,7 +779,8 @@ class GzLineScan final: public gz::sim::System,
           for(size_t i=0;i<wheel.stored;++i) {
             const auto &p=wheel.point[i];
             points.push_back({{"position_world_m",p.position},{"normal",p.normal},{"depth_m",p.depth},
-              {"force_magnitude_n",p.forceMagnitude},{"other_collision_id",p.otherCollision},
+              {"relative_velocity_world_m_s",p.relativeVelocityWorld},{"tangential_speed_m_s",p.tangentialSpeed},
+              {"velocity_available",p.velocityAvailable!=0},{"force_magnitude_n",p.forceMagnitude},{"other_collision_id",p.otherCollision},
               {"wheel_collision_side",p.wheelCollisionSide}});
           }
           contact.push_back({{"available",wheel.available!=0},{"pair_count",wheel.pairs},
@@ -747,6 +791,7 @@ class GzLineScan final: public gz::sim::System,
         records.push_back({{"t",r.simTime},{"drive_rate_rad_s",r.driveRate},{"wheel_speed_m_s",r.wheelSpeed},
           {"steer_rad",r.steerAngle},{"suspension_m",r.suspensionPos},{"suspension_rate_m_s",r.suspensionVel},
           {"wheel_residual_m_s",r.wheelResidual},{"vx",r.vx},{"vy",r.vy},{"wz",r.wz},{"residual",r.residual},
+          {"camera_xyz",r.cameraPos},{"camera_quat_xyzw",r.cameraQuat},{"mount_roll_pitch_rad",r.mountAngle},
           {"body_xyz",{r.bodyX,r.bodyY,r.bodyZ}},{"body_quat_xyzw",{r.bodyQx,r.bodyQy,r.bodyQz,r.bodyQw}},
           {"body_velocity_base_link_m_s",{r.bodyVx,r.bodyVy,r.bodyVz}},{"body_yaw_rate_rad_s",r.bodyWz},
           {"encoder_polarity",r.encoderPolarity},{"motion_state",r.motionState},{"capturing",r.capturing!=0},
@@ -759,9 +804,11 @@ class GzLineScan final: public gz::sim::System,
       out<<doc.dump();
       if(!out)throw std::runtime_error("flight recorder write failed: "+path.string());
       });
+      return true;
     } catch(...) {
       ++diagnosticDropped_;
       std::cerr<<"linescan flight record could not be queued"<<std::endl;
+      return false;
     }
   }
 
@@ -1208,6 +1255,7 @@ class GzLineScan final: public gz::sim::System,
   std::array<bool,4> contactDataAvailable_{};
   bool contactEvidenceReady_=false;
   bool contactEvidenceRequired_=true;
+  bool probeKinematics_=false;
   std::unique_ptr<FlightRecorder> flight_;
   std::unique_ptr<ResidualStats> residualStats_;
   std::unique_ptr<CaptureContactStats> contactStats_;
@@ -1265,6 +1313,7 @@ class GzLineScan final: public gz::sim::System,
   Clock::time_point lastStatePublish_{};
   rclcpp::Subscription<std_msgs::msg::String>::SharedPtr motionSub_;
   rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr enableService_;
+  rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr probeService_;
 };
 }  // namespace agv_linescan
 GZ_ADD_PLUGIN(agv_linescan::GzLineScan,gz::sim::System,

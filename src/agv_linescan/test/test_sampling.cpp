@@ -216,3 +216,14 @@ TEST(ContactStats, CountsOnlyCaptureAndKeepsDropoutEpisodes) {
   EXPECT_NEAR(wheel.maxDepth,.0003,1e-8);EXPECT_NEAR(wheel.maxNormalTiltRad,M_PI/4,1e-12);
   EXPECT_EQ(wheel.suspensionRateHistogram[2],4u);
 }
+
+#include "agv_linescan/contact_kinematics.hpp"
+TEST(ContactKinematics, SeparatesRollingSlipAndNormalCompression) {
+  using gz::math::Vector3d;
+  const Vector3d arm(0,0,-.2),normal(0,0,1);
+  auto rolling=agv_linescan::ContactTangentVelocity(Vector3d(1,0,.03),Vector3d(0,5,0),arm,normal);
+  ASSERT_TRUE(rolling);EXPECT_NEAR(rolling->Length(),0,1e-12);
+  auto slip=agv_linescan::ContactTangentVelocity(Vector3d(.9,0,.03),Vector3d(0,5,0),arm,normal);
+  ASSERT_TRUE(slip);EXPECT_NEAR(slip->X(),-.1,1e-12);EXPECT_NEAR(slip->Z(),0,1e-12);
+  EXPECT_FALSE(agv_linescan::ContactTangentVelocity(Vector3d::Zero,Vector3d::Zero,arm,Vector3d::Zero));
+}
