@@ -1,0 +1,327 @@
+{
+  "schema": "agv.contact_heightmap_ab.v1",
+  "date": "2026-09-16",
+  "scope": "Matched 20 x 2 m, two-track, 10 km/h zero-noise missions on one 100 m visual/OptiX road and one +/-3 mm source heightfield; WheelSlip and tyre compliance disabled.",
+  "sampling_note": "The successful-run contact counters cover camera-active physical steps. Different lead-in readiness changes their counts, so compare fractions and consecutive duration, not raw totals.",
+  "force_note": "Contact force magnitudes are retained only as fault diagnostics; their point/substep/tangential aggregation is not defined and they are not compared with vehicle weight.",
+  "source_heightfield_resampling": {
+    "ode_heightmap_1025": {
+      "samples_xy": [
+        1025,
+        1025
+      ],
+      "cell_size_m": [
+        0.11562499999999999,
+        0.0150390625
+      ],
+      "mission_window_height_error_max_m": 6.98278624309955e-05,
+      "mission_window_height_error_rms_m": 1.8066441248209133e-05,
+      "source_max_abs_slope_xy": [
+        0.009615540769448596,
+        0.011690591788276436
+      ],
+      "reconstructed_max_abs_slope_xy": [
+        0.008994750304900864,
+        0.011419500490585892
+      ]
+    },
+    "ode_heightmap_2049": {
+      "samples_xy": [
+        2049,
+        2049
+      ],
+      "cell_size_m": [
+        0.057812499999999996,
+        0.00751953125
+      ],
+      "mission_window_height_error_max_m": 3.322790363327805e-05,
+      "mission_window_height_error_rms_m": 9.107974769677286e-06,
+      "source_max_abs_slope_xy": [
+        0.009615540769448596,
+        0.011690591788276436
+      ],
+      "reconstructed_max_abs_slope_xy": [
+        0.009525111265875885,
+        0.011564334613927526
+      ]
+    }
+  },
+  "cases": {
+    "ode_triangle_mesh": {
+      "passed": true,
+      "end_reason": "",
+      "mission_simulation_time_s": 92.44600000000001,
+      "blocks": 34,
+      "rtf": 0.9985706517172152,
+      "capture": [
+        {
+          "track_id": 0,
+          "blocks": 17,
+          "rows": 69409,
+          "truth_along_extent_m": [
+            -4.923553661471183,
+            20.462544439630395
+          ],
+          "continuous_roi": true
+        },
+        {
+          "track_id": 1,
+          "blocks": 17,
+          "rows": 69496,
+          "truth_along_extent_m": [
+            -4.953805042060239,
+            20.46220200517242
+          ],
+          "continuous_roi": true
+        }
+      ],
+      "residual_statistics": {
+        "samples": 86941,
+        "max_m_s": 0.06428396145340945,
+        "p95_m_s": 0.001935483870967742,
+        "p99_m_s": 0.015483870967741935,
+        "over_half_limit": 849,
+        "over_limit": 221
+      },
+      "capture_contact_statistics": [
+        {
+          "wheel": "fl",
+          "capturing_samples": 21683,
+          "no_contact_samples": 468,
+          "no_contact_fraction": 0.02158372918876539,
+          "no_contact_episodes": 405,
+          "longest_no_contact_samples": 2,
+          "max_normal_tilt_deg": 1.8500145542591782,
+          "max_depth_m": 5.0754759286064655e-05,
+          "max_suspension_rate_m_s": 0.08469871043492049
+        },
+        {
+          "wheel": "fr",
+          "capturing_samples": 21683,
+          "no_contact_samples": 423,
+          "no_contact_fraction": 0.019508370612922567,
+          "no_contact_episodes": 379,
+          "longest_no_contact_samples": 2,
+          "max_normal_tilt_deg": 1.737960187117289,
+          "max_depth_m": 5.5260890803765506e-05,
+          "max_suspension_rate_m_s": 0.08227497228651075
+        },
+        {
+          "wheel": "rl",
+          "capturing_samples": 21683,
+          "no_contact_samples": 448,
+          "no_contact_fraction": 0.020661347599501913,
+          "no_contact_episodes": 391,
+          "longest_no_contact_samples": 3,
+          "max_normal_tilt_deg": 1.68100395693544,
+          "max_depth_m": 6.903043686179444e-05,
+          "max_suspension_rate_m_s": 0.10433907687979198
+        },
+        {
+          "wheel": "rr",
+          "capturing_samples": 21683,
+          "no_contact_samples": 434,
+          "no_contact_fraction": 0.02001568048701748,
+          "no_contact_episodes": 388,
+          "longest_no_contact_samples": 8,
+          "max_normal_tilt_deg": 89.98509255828424,
+          "max_depth_m": 4.898593033431098e-05,
+          "max_suspension_rate_m_s": 0.1533108845183465
+        }
+      ]
+    },
+    "fcl_triangle_mesh": {
+      "passed": false,
+      "end_reason": "CAMERA_unsupported_scan_motion",
+      "mission_simulation_time_s": 59.355000000000004,
+      "blocks": 0,
+      "rtf": 0.8732286069259249,
+      "capture": [],
+      "fault_evidence": {
+        "simulation_time_s": 57.45,
+        "residual_m_s": 0.317820759394812,
+        "wheel_residual_m_s": [
+          0.22779396999294424,
+          0.24994832989252547,
+          0.16001764117501824,
+          0.317820759394812
+        ],
+        "contact_points": [
+          3,
+          0,
+          18,
+          35
+        ],
+        "max_reported_point_force_magnitude_n": 2721244.75,
+        "max_depth_m": 0.00018262297089677304
+      }
+    },
+    "ode_heightmap_2049": {
+      "passed": true,
+      "end_reason": "",
+      "mission_simulation_time_s": 93.33900000000001,
+      "blocks": 33,
+      "rtf": 0.5546145383055033,
+      "capture": [
+        {
+          "track_id": 0,
+          "blocks": 17,
+          "rows": 69202,
+          "truth_along_extent_m": [
+            -4.899679914459027,
+            20.407459032343674
+          ],
+          "continuous_roi": true
+        },
+        {
+          "track_id": 1,
+          "blocks": 16,
+          "rows": 63540,
+          "truth_along_extent_m": [
+            -2.8434517902633516,
+            20.400801503187672
+          ],
+          "continuous_roi": true
+        }
+      ],
+      "residual_statistics": {
+        "samples": 87882,
+        "max_m_s": 0.07131353613812846,
+        "p95_m_s": 0.005806451612903225,
+        "p99_m_s": 0.021290322580645157,
+        "over_half_limit": 2073,
+        "over_limit": 339
+      },
+      "capture_contact_statistics": [
+        {
+          "wheel": "fl",
+          "capturing_samples": 19360,
+          "no_contact_samples": 55,
+          "no_contact_fraction": 0.002840909090909091,
+          "no_contact_episodes": 55,
+          "longest_no_contact_samples": 1,
+          "max_normal_tilt_deg": 0.45447241208534106,
+          "max_depth_m": 6.745649443473667e-05,
+          "max_suspension_rate_m_s": 0.08841088899009723
+        },
+        {
+          "wheel": "fr",
+          "capturing_samples": 19360,
+          "no_contact_samples": 58,
+          "no_contact_fraction": 0.0029958677685950415,
+          "no_contact_episodes": 58,
+          "longest_no_contact_samples": 1,
+          "max_normal_tilt_deg": 0.4500575428865557,
+          "max_depth_m": 7.372126128757372e-05,
+          "max_suspension_rate_m_s": 0.0818004060498438
+        },
+        {
+          "wheel": "rl",
+          "capturing_samples": 19360,
+          "no_contact_samples": 59,
+          "no_contact_fraction": 0.0030475206611570247,
+          "no_contact_episodes": 59,
+          "longest_no_contact_samples": 1,
+          "max_normal_tilt_deg": 0.45806683336804976,
+          "max_depth_m": 6.96997158229351e-05,
+          "max_suspension_rate_m_s": 0.0781846499773321
+        },
+        {
+          "wheel": "rr",
+          "capturing_samples": 19360,
+          "no_contact_samples": 56,
+          "no_contact_fraction": 0.002892561983471074,
+          "no_contact_episodes": 56,
+          "longest_no_contact_samples": 1,
+          "max_normal_tilt_deg": 0.4500575428865557,
+          "max_depth_m": 6.895155092934147e-05,
+          "max_suspension_rate_m_s": 0.0650464057639198
+        }
+      ]
+    },
+    "ode_heightmap_1025": {
+      "passed": true,
+      "end_reason": "",
+      "mission_simulation_time_s": 92.379,
+      "blocks": 33,
+      "rtf": 0.9987446989239454,
+      "capture": [
+        {
+          "track_id": 0,
+          "blocks": 17,
+          "rows": 69364,
+          "truth_along_extent_m": [
+            -4.907002963688695,
+            20.459090909606363
+          ],
+          "continuous_roi": true
+        },
+        {
+          "track_id": 1,
+          "blocks": 16,
+          "rows": 63642,
+          "truth_along_extent_m": [
+            -2.8814806157214434,
+            20.39976767550377
+          ],
+          "continuous_roi": true
+        }
+      ],
+      "residual_statistics": {
+        "samples": 86969,
+        "max_m_s": 0.058143343766317294,
+        "p95_m_s": 0.003870967741935484,
+        "p99_m_s": 0.021290322580645157,
+        "over_half_limit": 1973,
+        "over_limit": 34
+      },
+      "capture_contact_statistics": [
+        {
+          "wheel": "fl",
+          "capturing_samples": 19390,
+          "no_contact_samples": 54,
+          "no_contact_fraction": 0.002784940691077875,
+          "no_contact_episodes": 54,
+          "longest_no_contact_samples": 1,
+          "max_normal_tilt_deg": 0.4407856454068038,
+          "max_depth_m": 6.350239709718153e-05,
+          "max_suspension_rate_m_s": 0.06290660218552754
+        },
+        {
+          "wheel": "fr",
+          "capturing_samples": 19390,
+          "no_contact_samples": 57,
+          "no_contact_fraction": 0.0029396596183599794,
+          "no_contact_episodes": 57,
+          "longest_no_contact_samples": 1,
+          "max_normal_tilt_deg": 0.44960639103317646,
+          "max_depth_m": 6.274944462347776e-05,
+          "max_suspension_rate_m_s": 0.08458402325602747
+        },
+        {
+          "wheel": "rl",
+          "capturing_samples": 19390,
+          "no_contact_samples": 55,
+          "no_contact_fraction": 0.0028365136668385767,
+          "no_contact_episodes": 55,
+          "longest_no_contact_samples": 1,
+          "max_normal_tilt_deg": 0.44356857771832553,
+          "max_depth_m": 8.676660945639014e-05,
+          "max_suspension_rate_m_s": 0.06997037236668763
+        },
+        {
+          "wheel": "rr",
+          "capturing_samples": 19390,
+          "no_contact_samples": 48,
+          "no_contact_fraction": 0.002475502836513667,
+          "no_contact_episodes": 48,
+          "longest_no_contact_samples": 1,
+          "max_normal_tilt_deg": 0.44960639103317646,
+          "max_depth_m": 6.554854189744219e-05,
+          "max_suspension_rate_m_s": 0.07786858852428448
+        }
+      ]
+    }
+  },
+  "conclusion": "FCL is rejected: it faults before the first full block with a 0.318 m/s residual and a severely overconstrained manifold. A single 2049-square ODE heightmap improves contact but reduces RTF to about 0.555. The 1025-square ODE heightmap keeps RTF near 0.999, reduces no-contact samples from about 2 percent to about 0.3 percent, bounds gaps to one 1 ms step, and removes the near-horizontal mesh normal. Its 11.6 cm longitudinal cell size introduces at most 0.070 mm height error in the tested mission window. It is the recommended collision representation pending repeated and full-area regression."
+}

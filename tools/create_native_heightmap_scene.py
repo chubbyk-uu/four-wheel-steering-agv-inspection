@@ -27,8 +27,12 @@ def main():
     parser.add_argument('--samples',type=int,default=257)
     parser.add_argument('--collision-detector',choices=('ode','fcl','bullet'),default='ode')
     args=parser.parse_args()
+    # DART / gz-physics 7 crashes in ImageHeightmap::FillHeightMap for a
+    # rectangular 2^n+1 image (confirmed with 513x257).  Keep one square size
+    # explicit here instead of exposing independent dimensions which validate
+    # as SDF but fail in the physics backend.
     if args.samples<3 or (args.samples-1)&(args.samples-2):
-        raise ValueError('heightmap samples must be 2^n+1')
+        raise ValueError('square heightmap samples must be 2^n+1')
     source=args.source.resolve();manifest=validate(source/'manifest.json')
     field_path=source/'road_heightfield.json';field=json.loads(field_path.read_text())
     output=args.output.resolve();output.mkdir(parents=True,exist_ok=False)
@@ -70,6 +74,7 @@ def main():
         'source_heightfield':source_field.name,'source_sha256':digest(source_field),
         'encoding':'png_uint16_min_to_max_v1','samples_xy':[args.samples,args.samples],
         'size_m':size,'position_m':position,'collision_detector':args.collision_detector,
+        'cell_size_m':[size[0]/(args.samples-1),size[1]/(args.samples-1)],
         'max_quantization_error_m':span/65535/2,
         'source_grid_shape':[len(field['y']),len(field['x'])],
     }
