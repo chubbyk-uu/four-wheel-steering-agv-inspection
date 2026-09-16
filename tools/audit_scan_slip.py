@@ -201,7 +201,7 @@ def main():
             intervals=len(intervals), floor=args.ratio_floor,
             median=float(np.median(ratios)), minimum=float(ratios.min()),
             p0_1=float(np.percentile(ratios, .1)), p1=float(np.percentile(ratios, 1)),
-            below_floor=len(slips), worst=slips[:8]),
+            below_floor=len(centre_alerts), worst=centre_alerts[:8]),
         adjacent_rows=dict(
             column_stride=args.column_stride, run_median=median,
             texture_median=texture_median, texture_floor=texture_floor,
@@ -225,13 +225,13 @@ def main():
         ratio_ceiling=1/args.ratio_floor, centre_diagnostic_alerts=len(centre_alerts),
         eligible_intervals=sum(v.get('ground_verdict')=='pass' or v.get('ground_verdict')=='alert' for v in intervals),
         short_intervals=[v for v in intervals if v.get('ground_verdict')=='short_interval'],
-        findings=slips)
+        findings=slips, intervals=intervals if ground_mode else [])
     report['geometry_requires_review'] = bool(slips) or (ground_mode and not report['ground_geometry']['eligible_intervals'])
     # Keep the conservative combined gate until the geometry criterion is agreed.
     # A geometry alert must not be renamed a capture failure or confirmed tyre slip.
     report['passed'] = report['capture_integrity_passed'] and report['pixel_motion_verifiable'] and not report['geometry_requires_review']
     args.output.write_text(json.dumps(report, indent=2)+'\n')
-    print('camera/encoder geometry alerts below %.2f: %d/%d' % (args.ratio_floor, len(slips), len(intervals)))
+    print('geometry reference: %s; findings: %d/%d; centre diagnostic alerts: %d' % (report['geometry_reference'],len(slips),len(intervals),len(centre_alerts)))
     print('row difference median %.3f, texture median %.3f' % (median, texture_median))
     print('difference/texture median %.3f, threshold %.3f, observed floor %.3f, untestable pairs %d'
           % (ratio_median, threshold, ratio_floor_seen if ratio_floor_seen is not None else float('nan'), untestable))
