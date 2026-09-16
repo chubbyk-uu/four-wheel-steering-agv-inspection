@@ -1165,7 +1165,7 @@ class GzLineScan final: public gz::sim::System,
     // Sparse tags on both sides prevent interpolation across stopped time.
     if (!buffer_.empty()) {
       auto tag=Tag(lastLine_,lastSceneTime_);
-      if (tags_.back()["global_line"]!=tag["global_line"]) tags_.push_back(std::move(tag));
+      if (tags_.back()["global_line"]!=tag["global_line"]) { tags_.push_back(std::move(tag)); CheckCameraEncoderGeometry(); }
     }
     tagAfterHold_=true;
   }
@@ -1196,7 +1196,7 @@ class GzLineScan final: public gz::sim::System,
   void Flush(const std::string &reason) {
     if (buffer_.empty()) return;
     last_=Tag(lastLine_,lastSceneTime_);
-    if (tags_.back()["global_line"]!=last_["global_line"]) tags_.push_back(last_);
+    if (tags_.back()["global_line"]!=last_["global_line"]) { tags_.push_back(last_); CheckCameraEncoderGeometry(); }
     const size_t count=buffer_.size()/optics_->width;
     if(DiscardShortTail(count,reason=="full",minTailRows_)) {
       Json event={{"reason","tail_discarded"},{"end_reason",reason},{"rows",count},{"minimum_rows",minTailRows_},
