@@ -21,18 +21,19 @@ def main():
     p=argparse.ArgumentParser();p.add_argument('--output',type=Path,required=True);p.add_argument('--inspect-seconds',type=float,default=0)
     p.add_argument('--speed',type=float,default=.5);p.add_argument('--length',type=float,default=3.);p.add_argument('--width',type=float,default=2.)
     p.add_argument('--start-x',type=float,default=6.);p.add_argument('--start-y',type=float);p.add_argument('--spawn-x',type=float,default=3.)
-    p.add_argument('--scene',type=Path,default=Path('assets/road/runtime_fullwidth_20m_v1/manifest.json'));p.add_argument('--startup-timeout',type=float,default=300.);p.add_argument('--run-timeout',type=float,default=400.)
-    p.add_argument('--fault-probe',action='store_true');p.add_argument('--no-pause',action='store_true');p.add_argument('--short-tail-probe',action='store_true');p.add_argument('--no-cancel-probe',action='store_true')
+    p.add_argument('--scene',type=Path,default=None,help='Override the inspection launch default road');p.add_argument('--startup-timeout',type=float,default=300.);p.add_argument('--run-timeout',type=float,default=400.)
+    p.add_argument('--fault-probe',action='store_true');p.add_argument('--pause-probe',action='store_true',help='Explicitly exercise pause/resume in the first track');p.add_argument('--no-pause',action='store_true',help='Compatibility: disable pause probe');p.add_argument('--short-tail-probe',action='store_true');p.add_argument('--no-cancel-probe',action='store_true')
     p.add_argument('--broker-stall',action='store_true',help='freeze only the GUI broker for 0.6 seconds during capture')
     p.add_argument('--executor-exit-probe',action='store_true',help='kill only the owned mission worker during a second task')
     p.add_argument('--localization-config',type=Path,help='measurement config overriding the shipped one, to run a named noise seed')
     p.add_argument('--rounds',type=int,default=1,
                    help='repeat load/prepare/execute/audit this many times in one session, to show the broker carries nothing between tasks')
-    a=p.parse_args();process_start=time.monotonic()
+    a=p.parse_args();a.no_pause = a.no_pause or not a.pause_probe;process_start=time.monotonic()
     if a.short_tail_probe:a.no_pause=True;a.no_cancel_probe=True
     a.output.mkdir(parents=True,exist_ok=False);session=a.output/'session'
     os.environ.update(ROS_DOMAIN_ID=str(100+os.getpid()%80),GZ_PARTITION='agv_operator_'+str(os.getpid()))
-    log=(a.output/'simulation.log').open('w');sim=subprocess.Popen(['ros2','launch','agv_bringup','inspection.launch.py','session_dir:='+str(session.resolve()),'spawn_x:='+str(a.spawn_x),'scene_manifest:='+str(a.scene.resolve())]
+    log=(a.output/'simulation.log').open('w');sim=subprocess.Popen(['ros2','launch','agv_bringup','inspection.launch.py','session_dir:='+str(session.resolve()),'spawn_x:='+str(a.spawn_x)]
+        +(['scene_manifest:='+str(a.scene.resolve())] if a.scene else [])
         +(['localization_config:='+str(a.localization_config.resolve())] if a.localization_config else []),stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
     resources=ResourceMonitor(sim.pid,a.output/'resources.jsonl')
     rclpy.init();n=Node('operator_evaluator');latest={};images={};joints=[];states=[];actual=[]

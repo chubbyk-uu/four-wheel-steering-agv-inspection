@@ -18,7 +18,7 @@ def setup(context):
     share=Path(get_package_share_directory('agv_bringup'))
     root=Path(LaunchConfiguration('session_dir').perform(context)).resolve();root.mkdir(parents=True,exist_ok=False)
     scene=Path(LaunchConfiguration('scene_manifest').perform(context)).resolve()
-    if not scene.is_file():raise ValueError('Restore road assets and set scene_manifest to the baked road manifest')
+    if not scene.is_file():raise ValueError('Default road asset missing: follow docs/ROAD_ASSETS.md (2 mm / 20 cm / 1025 heightmap), or explicitly set scene_manifest')
     config=yaml.safe_load((Path(get_package_share_directory('agv_description'))/'config/linescan.yaml').read_text())
     platform=yaml.safe_load((Path(get_package_share_directory('agv_description'))/'config/platform.yaml').read_text())
     config=inspection_camera_config(config,platform)
@@ -37,7 +37,7 @@ def setup(context):
 def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument('session_dir',default_value='local_data/inspection_'+time.strftime('%Y%m%d_%H%M%S')+'_'+uuid.uuid4().hex[:6]),
-        DeclareLaunchArgument('scene_manifest',default_value='assets/road/runtime_fullwidth_20m_v1/manifest.json'),
+        DeclareLaunchArgument('scene_manifest',default_value='assets/road/runtime_fullwidth_100m_rough_marked_2mm_20cm_heightmap_v1/manifest.json'),
         DeclareLaunchArgument('gpu_backend',default_value='d3d12',choices=['d3d12','native']),
         DeclareLaunchArgument('spawn_x',default_value='3'),
         # A repeat run has to name its noise seed without editing the shipped config.

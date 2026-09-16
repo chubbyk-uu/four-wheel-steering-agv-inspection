@@ -84,9 +84,9 @@ GUI＋RViz＋OptiX短任务复核：在100 m道路上从X=1.93 m出生，运行2
 
 此前X=−3 m出生的静止探针测得0.99958/0.75349，见[`results/full_road_rough_runtime.json`](../results/full_road_rough_runtime.json)。该历史差异后来确认来自负端平坦渐入碰撞网格，已由v2全域起伏修复，见[调查](issues/ROUGH_ROAD_RUNTIME.md)。短任务不替代新道路全区验收。
 
-### ±2 mm、20 cm源网格候选（2026-09-16）
+### 默认巡检道路：±2 mm、20 cm源网格（2026-09-16）
 
-按用户观察，另生成更平缓的100×10 m道路；旧±3 mm/10 cm资产保留用于对照，不直接覆盖。纹理、精细裂缝和分布式标识不降分辨率，只修改路面粗糙度高度场的幅度与采样间距。波长和随机种子不变；网格变粗不等于把振动波长设成20 cm，也不保证颠簸减半。
+用户已确认该100×10 m道路作为`inspection.launch.py`默认资产，包含分布式标识与1025²原生高度场碰撞。旧±3 mm/10 cm资产保留用于对照。纹理、精细裂缝和分布式标识不降分辨率，只修改路面粗糙度高度场的幅度与采样间距。波长和随机种子不变；网格变粗不等于把振动波长设成20 cm，也不保证颠簸减半。
 
 ```bash
 python3 tools/create_rough_textured_scene.py \
@@ -103,7 +103,7 @@ python3 tools/create_native_heightmap_scene.py \
   --samples 1025 --collision-detector ode
 ```
 
-两端缓冲区和ROI仍共用无渐入的高度函数。原生高度场保持1025²及model pose放置修复；20 cm指源高度场，原生碰撞重采样间距另见manifest的`physics_heightmap.cell_size_m`。候选的静态资产校验不等于实际轮地支撑、振动、RTF或采集验收；这轮只生成资产，尚未运行车辆，不提高其验证等级。资源与校验摘要见[候选报告](../results/rough_2mm_20cm_asset.json)。
+两端缓冲区和ROI仍共用无渐入的高度函数。原生高度场保持1025²及model pose放置修复；20 cm指源高度场，原生碰撞重采样间距另见manifest的`physics_heightmap.cell_size_m`。候选的静态资产校验不等于实际轮地支撑、振动、RTF或采集验收；三种子完整采集结果见[重复报告](../results/rough_2mm_repeat_acceptance.json)，几何判据收尾另行验证。资源与校验摘要见[候选报告](../results/rough_2mm_20cm_asset.json)。
 
 ## 箭头和禁停网格标识
 
@@ -138,3 +138,5 @@ python3 tools/generate_marked_road.py \
 g++ -shared -o /tmp/libagv_recipe_probe.so -Wl,--whole-archive build/agv_linescan/libagv_runtime_material.a -Wl,--no-whole-archive -L/usr/local/cuda/lib64 -lcudart -lcrypto
 LD_LIBRARY_PATH=/usr/local/cuda/lib64 python3 tools/validate_road_test_markings.py --source assets/road/runtime_fullwidth_20m_v1/recipe.json --trial local_data/road_markings_probe_v1/recipe.json --library /tmp/libagv_recipe_probe.so --output local_data/road_markings_probe_v1/cuda_validation.json
 ```
+
+正常巡检与`validate_operator_session.py`不再默认注入第一道暂停；验收暂停使用显式`--pause-probe`，原`--no-pause`兼容保留。未传`--scene`时验证器使用巡检launch的默认资产，而非另持一份道路默认值。
