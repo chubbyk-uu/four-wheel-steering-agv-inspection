@@ -1,0 +1,139 @@
+{
+ "schema": "agv.rough_2mm_repeat_acceptance.v1",
+ "date": "2026-09-16",
+ "criterion": "results/rough_2mm_repeat_criterion.json, pre-registered before the runs",
+ "subject": "assets/road/runtime_fullwidth_100m_rough_marked_2mm_20cm_heightmap_v1",
+ "verdict": "All three runs meet every acceptance gate. The audit still reports not-passed, solely on camera/encoder geometry alerts, all of which occur at pass starts with zero contact sliding.",
+ "runs": {
+  "run_1": {
+   "seed": "20260908 (shipped default)",
+   "passed": true,
+   "final_state": "ACQUIRED",
+   "final_motion": "HOLD",
+   "coverage_status": "ESTIMATED_COMPLETE",
+   "tracks": 10,
+   "tracks_with_unverified_or_flags": 0,
+   "blocks": 703,
+   "rows": 2865554,
+   "steady_rtf": 0.99226,
+   "observed_rtf": 0.98077,
+   "peak_rss_gib": 10.34,
+   "peak_vram_gib": 9.33,
+   "scan_motion_faults": 0,
+   "geometry_alerts": 4,
+   "audit_capture_integrity_passed": true,
+   "audit_images_flagged": 0,
+   "audit_untestable_row_pairs": 0,
+   "audit_passed": false
+  },
+  "run_2": {
+   "seed": "20260912",
+   "passed": true,
+   "final_state": "ACQUIRED",
+   "final_motion": "HOLD",
+   "coverage_status": "ESTIMATED_COMPLETE",
+   "tracks": 10,
+   "tracks_with_unverified_or_flags": 0,
+   "blocks": 701,
+   "rows": 2859256,
+   "steady_rtf": 0.99309,
+   "observed_rtf": 0.9821,
+   "peak_rss_gib": 10.54,
+   "peak_vram_gib": 9.3,
+   "scan_motion_faults": 0,
+   "geometry_alerts": 4,
+   "audit_capture_integrity_passed": true,
+   "audit_images_flagged": 0,
+   "audit_untestable_row_pairs": 0,
+   "audit_passed": false
+  },
+  "run_3": {
+   "seed": "20260913",
+   "passed": true,
+   "final_state": "ACQUIRED",
+   "final_motion": "HOLD",
+   "coverage_status": "ESTIMATED_COMPLETE",
+   "tracks": 10,
+   "tracks_with_unverified_or_flags": 0,
+   "blocks": 703,
+   "rows": 2861651,
+   "steady_rtf": 0.99212,
+   "observed_rtf": 0.97945,
+   "peak_rss_gib": 10.27,
+   "peak_vram_gib": 9.31,
+   "scan_motion_faults": 0,
+   "geometry_alerts": 5,
+   "audit_capture_integrity_passed": true,
+   "audit_images_flagged": 0,
+   "audit_untestable_row_pairs": 0,
+   "audit_passed": false
+  }
+ },
+ "acceptance": {
+  "all_three_acquired_hold": true,
+  "all_three_estimated_complete": true,
+  "tracks_with_unverified_or_flags": 0,
+  "scan_motion_faults": 0,
+  "steady_rtf_range": [
+   0.99212,
+   0.99309
+  ],
+  "rtf_floor": 0.92,
+  "peak_rss_gib_range": [
+   10.27,
+   10.54
+  ],
+  "rss_budget_gib": 20,
+  "peak_vram_gib_range": [
+   9.3,
+   9.33
+  ],
+  "vram_budget_gib": 10,
+  "capture_integrity_passed_all_three": true,
+  "images_with_duplicate_rows": 0,
+  "untestable_row_pairs": 0
+ },
+ "online_and_offline_detectors_agree": "The plugin's online alert count and the offline audit's independently produced 4, 4 and 5 for the three runs. That was the main implementation risk when the trigger was added and it is closed.",
+ "geometry_alerts": {
+  "total": 13,
+  "per_run": [
+   4,
+   4,
+   5
+  ],
+  "all_at_pass_starts": "mean speed over the alerting intervals is 0.58 m/s against a 2.78 m/s cruise",
+  "inside_roi": 2,
+  "outside_roi": 11,
+  "the_two_inside_roi_are_marginal": "x = 0.31 and 0.28 m, just past the entry",
+  "encoder_minus_camera_mm": [
+   13.6,
+   31.8
+  ],
+  "encoder_minus_body_mm": [
+   -1.81,
+   2.72
+  ],
+  "contact_tangential_speed_mm_s": 0.0,
+  "reading": "The body tracks the encoder to within 2.7 mm while the recorded scan-line ground position lags by 13.6 to 31.8 mm. Contact tangential speed is exactly zero at every contact point in all thirteen intervals, so there is no tyre sliding. The discrepancy is between the vehicle and the recorded ground position of the scan line, which is a camera projection or timing question in the imaging chain, not a contact question."
+ },
+ "pitch_hypothesis_outcome": {
+  "pre_registered_test": "transfers if every alert is in an acceleration or recovery phase AND the residual after the height*pitch estimate stays below 1 mm",
+  "phase_condition": "met: all thirteen are at pass starts",
+  "residual_condition": "not met: 4 of 13 exceed 1 mm, maximum 1.79 mm",
+  "formal_result": "does not transfer, as written",
+  "why_that_verdict_is_less_informative_than_it_looks": "The hypothesis was formulated against a 12.14-12.38 mm encoder-minus-body gap seen on the 3 mm road. On this road encoder-minus-body is at most 2.72 mm, so there is almost no body-level deficit left for a pitch term to explain and the residual is noise around a small number. The criterion was testing the wrong quantity for this surface; the 13-32 mm gap that does exist is camera-versus-body and the pitch estimate does not address it.",
+  "what_is_settled_regardless": "zero contact tangential speed across all thirteen intervals rules out tyre slip as the cause"
+ },
+ "limitations": [
+  "The instance was not freshly restarted; uptime went from 7h58m to 8h27m across the series and RTF is compared within the series, not against section 6 fresh-instance figures.",
+  "Three runs establish a range, not a rate.",
+  "Run 1 needed three attempts: a broker chassis-HOLD prepare race, then a fault I introduced by publishing the new alert on /linescan/status, which agv_mission/capture.py turns into CAMERA_<reason>. Neither reached capture on the road. The prepare retry was added mid-series, so all three runs carry it but run 1 was its first exercise.",
+  "The alert event records the interval's line numbers but not its timestamps, so locating it inside the flight dump required integrating wheel speed backwards to the encoder distance. Adding the timestamps was deliberately deferred so runs 2 and 3 stayed identical to run 1.",
+  "Each geometry dump is 7.2 MB now that contact points carry velocities; thirteen dumps across three runs, with no measurable RTF cost."
+ ],
+ "not_closed": [
+  "the 13-32 mm gap between body travel and the recorded scan-line ground position during pass-start acceleration",
+  "whether the geometry floor of 0.95, set on a flat road whose minimum was 0.9910, is the right rule for a surface that pitches",
+  "the pitch explanation remains testable only on the 3 mm scene, where the body-level gap it was built for actually appears"
+ ]
+}

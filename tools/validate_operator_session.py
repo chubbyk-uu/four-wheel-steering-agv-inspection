@@ -80,7 +80,23 @@ def main():
         delay(1.0)
         wait(lambda:motion_ready.get('mode')=='HOLD' and time.monotonic()-motion_ready['wall']<.5,a.startup_timeout)
         chassis_ready_wall_s=time.monotonic()-process_start
-        send('prepare');wait(lambda:latest.get('status',{}).get('ready_to_start'))
+        # The broker judges HOLD freshness when it processes the request, which
+        # this process cannot observe: one stale-feedback tick flips the
+        # controller to FEEDBACK_HOLD and the prepare is refused although the
+        # chassis is stopped. Settling here cannot close that gap, so retry the
+        # one rejection that means it, as an operator would click again. Any
+        # other refusal, and a chassis that never stops, still fail.
+        prepare_attempts=0
+        while True:
+            prepare_attempts+=1
+            identity=uuid.uuid4().hex
+            pub.publish(String(data=json.dumps(dict(id=identity,action='prepare'))))
+            wait(lambda:latest.get('response_id')==identity and not latest.get('busy'))
+            if latest['ok']:break
+            assert latest['message']=='等待底盘HOLD',latest['message']
+            assert prepare_attempts<8,'prepare refused for chassis HOLD %d times'%prepare_attempts
+            delay(1.)
+        wait(lambda:latest.get('status',{}).get('ready_to_start'))
         # Join after publication, as an RViz display enabled later would do.
         retained={}
         for key,topic in (('road','/mission/road/markers'),('plan','/mission/preview/markers')):

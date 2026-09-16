@@ -1115,7 +1115,12 @@ class GzLineScan final: public gz::sim::System,
     event["flight_recorder"]=DumpFlight("camera_encoder_geometry_alert",geometryDumps_,
                                         geometryDumpLimit_,geometryDumpsSuppressed_)?geometryDumps_:0;
     if(geometryDumpsSuppressed_)event["flight_recorder_suppressed"]=geometryDumpsSuppressed_;
-    std_msgs::msg::String message;message.data=event.dump();statusPub_->publish(message);
+    // Archive only, no /linescan/status publish. Anything published there with a
+    // reason outside the expected set becomes CAMERA_<reason> and faults the
+    // mission (agv_mission/capture.py). Capture is not interrupted here: this is
+    // a measurement for review, and calling it a capture failure is precisely
+    // what the geometry criterion exists to avoid. scan_residual_near_limit is
+    // archived the same way for the same reason.
     ArchiveEvent(std::move(event));
   }
 
