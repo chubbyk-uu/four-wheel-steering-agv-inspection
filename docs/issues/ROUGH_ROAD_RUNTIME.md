@@ -157,6 +157,10 @@ RSS峰值10.07 GiB、整卡显存9.30 GiB，均在预算内。**本轮100×10 m�
 
 查这条时发现一个真的遗留：`world.sdf`对`terrain_N_collision.obj`的引用为**0**，但manifest仍
 声明这48个碰撞代理、`shared_scene.validate_proxy()`仍逐块校验它们——已不加载却仍在校验。
+**已按用户决定处理**：声明和校验都保留（它们仍是有用的光学参照），但每个`collision_proxy`
+必须带`role='optical_reference_only'`；`validate`在有`physics_heightmap`时**强制**该标注、
+无高度场时**禁止**该标注，于是manifest不可能留下一个会被读成"当前碰撞面"的陈旧声明。
+该标注只改manifest，不动几何、哈希或world内容。
 
 ### 近门限事件的位置分布
 

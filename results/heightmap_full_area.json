@@ -181,13 +181,13 @@
   "the slip audit must stop flagging paint before it can gate this road",
   "acceleration slip under heightmap contact is measurably worse than under the mesh and is not explained",
   "one full-area run is not the repeat regression section 6 requires",
-  "the scene lives under local_data and is not in Git; the generator command above is the only way back to it",
-  "the manifest still declares 48 collision_proxy meshes and shared_scene.validate_proxy still checks them, but world.sdf no longer references any of them: dead geometry that is still validated"
+  "the scene lives under local_data and is not in Git; the generator command above is the only way back to it"
  ],
  "corrected_2026_09_16": {
   "retracted": "An earlier note in this file and in the docs claimed the heightmap removed the crack shallow-depression collision proxies and so changed the COLLISION_PROXY contract. That was a misreading and is withdrawn.",
   "what_is_actually_true": "COLLISION_PROXY.md describes a proxy that fills shallow depressions away, not one that represents them: 'no longer computes tyre contact inside the 1-2 mm cracks'. The production road's collision has never resolved cracks. All 48 collision meshes in the rough marked v2 asset are pure regular grids -- vertex and triangle counts equal ux*uy and (ux-1)*(uy-1)*2 exactly, with no extra geometry anywhere.",
   "so_the_heightmap_changes_nothing_there": "it replaces one single-valued non-crack-resolving surface, a 10 cm triangulated heightfield, with another, a 11.6 cm by 1.5 cm heightmap. Same class of representation.",
-  "found_while_checking": "world.sdf contains zero references to terrain_N_collision.obj, yet the manifest still declares them and the validator still walks them"
+  "found_while_checking": "world.sdf contains zero references to terrain_N_collision.obj, yet the manifest still declares them and the validator still walks them",
+  "dead_declaration_resolved": "The per-block collision_proxy entries stay declared and stay checked against the optical mesh, and each now carries role='optical_reference_only'. shared_scene.validate requires that marking whenever a physics_heightmap is present and forbids it when there is none, so a manifest cannot leave a stale proxy readable as the loaded collision. The marking is manifest-only: no geometry, checksum or world content changes, so the verified run and its asset still correspond exactly."
  }
 }

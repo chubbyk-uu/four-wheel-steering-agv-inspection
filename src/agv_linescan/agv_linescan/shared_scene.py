@@ -189,6 +189,18 @@ def validate(manifest):
     world=ET.parse(root/m['world']).getroot().find('world');models=world.findall('model')
     heightmap=m.get('physics_heightmap')
     heightmap_name=heightmap.get('model_name') if heightmap else None
+    # Once a heightmap carries the collision, the per-block proxies are no
+    # longer what the wheels touch, but they stay declared and checked as the
+    # optical reference. The manifest has to say which of the two it means:
+    # a stale claim that reads as the loaded collision is worse than none.
+    for asset in assets.values():
+        proxy=asset.get('collision_proxy')
+        if proxy is None:continue
+        role=proxy.get('role')
+        if heightmap and role!='optical_reference_only':
+            raise ValueError('collision proxy must be marked optical_reference_only under a physics heightmap')
+        if not heightmap and role is not None:
+            raise ValueError('collision proxy carries the collision and must not be marked otherwise')
     expected_models=set(assets)|({heightmap_name} if heightmap_name else set())
     if {v.get('name') for v in models}!=expected_models or len(models)!=len(expected_models):raise ValueError('scene model mismatch')
     if heightmap:

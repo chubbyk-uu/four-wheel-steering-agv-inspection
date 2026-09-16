@@ -75,6 +75,12 @@ def main():
     tree.write(world_path,encoding='unicode')
     manifest['world_sha256']=digest(world_path)
     manifest['profile']=manifest['profile']+'_native_heightmap'
+    # The per-block proxies are no longer loaded by the world.  Keep them
+    # declared and checked against the optical mesh, but say so, so nobody
+    # reads a stale collision_proxy as the surface the wheels are on.
+    for asset in manifest['assets']:
+        if 'collision_proxy' in asset:
+            asset['collision_proxy']['role']='optical_reference_only'
     manifest['physics_heightmap']={
         'model_name':name,'image':image_path.name,'sha256':digest(image_path),
         'source_heightfield':source_field.name,'source_sha256':digest(source_field),
