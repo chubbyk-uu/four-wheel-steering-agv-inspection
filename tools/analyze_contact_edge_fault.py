@@ -34,6 +34,10 @@ def phase_distance(point, step, origin):
     v = ((y-origin[1])/step) % 1.
     return {
         'position_world_m': point['position_world_m'],
+        'normal': point['normal'],
+        'normal_tilt_from_world_up_rad': angle(point['normal'], [0., 0., 1.]),
+        'depth_m': point.get('depth_m'),
+        'force_magnitude_n': point.get('force_magnitude_n'),
         'cell_ij': [math.floor((x-origin[0])/step), math.floor((y-origin[1])/step)],
         'cell_uv': [u, v],
         'nearest_grid_boundary_m': step*min(u, 1-u, v, 1-v),
@@ -43,6 +47,8 @@ def phase_distance(point, step, origin):
 
 def wheel_summary(wheel, step, origin):
     locations = [phase_distance(p, step, origin) for p in wheel['points']]
+    normal_tilts = [p['normal_tilt_from_world_up_rad'] for p in locations
+                    if p['normal_tilt_from_world_up_rad'] is not None]
     return {
         'available': wheel['available'],
         'pair_count': wheel['pair_count'],
@@ -52,6 +58,9 @@ def wheel_summary(wheel, step, origin):
         'max_depth_m': wheel['max_depth_m'],
         'max_force_magnitude_n': wheel['max_force_magnitude_n'],
         'mean_normal': mean_normal(wheel['points']),
+        # A mean can hide one invalid edge normal among otherwise vertical face
+        # normals.  Preserve the worst individual point as well.
+        'max_normal_tilt_from_world_up_rad': max(normal_tilts, default=None),
         'nearest_grid_boundary_m': min((p['nearest_grid_boundary_m'] for p in locations), default=None),
         'nearest_internal_diagonal_m': min((p['internal_diagonal_m'] for p in locations), default=None),
         'contact_locations': locations,

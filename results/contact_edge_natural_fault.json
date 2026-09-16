@@ -1,0 +1,1084 @@
+{
+  "schema": "agv.contact_edge_fault_analysis.v1",
+  "source": "local_data/contact_rootcause_full_3/session/raw/session_cpp_1789531407007305695/flight_1_unsupported_scan_motion.json",
+  "fault_reason": "unsupported_scan_motion",
+  "fault_simulation_time_s": 443.796,
+  "grid": {
+    "step_m": 0.1,
+    "origin_xy_m": [
+      0.0,
+      0.0
+    ],
+    "triangulation": "low-low to high-high diagonal (v <= u / v > u)"
+  },
+  "interpretation_limit": "Contact proximity to a grid edge is not causal proof. Confirm the hypothesis only when a residual spike, a contact count/normal/depth/force discontinuity and edge proximity coincide on the same wheel and physics step.",
+  "previous_time_s": 443.795,
+  "fault_time_s": 443.796,
+  "wheels": [
+    {
+      "name": "fl",
+      "fault_wheel_residual_m_s": 0.010112869200684889,
+      "previous": {
+        "available": true,
+        "pair_count": 2,
+        "point_count": 4,
+        "stored_point_count": 4,
+        "truncated": false,
+        "max_depth_m": 1.2055515981046483e-06,
+        "max_force_magnitude_n": 2001.47998046875,
+        "mean_normal": [
+          0.0024937452833416426,
+          -0.002797494756447871,
+          0.9999929776041176
+        ],
+        "max_normal_tilt_from_world_up_rad": 0.004026473057480662,
+        "nearest_grid_boundary_m": 0.007852935791015625,
+        "nearest_internal_diagonal_m": 0.0010968980742763364,
+        "contact_locations": [
+          {
+            "position_world_m": [
+              51.107852935791016,
+              0.1113273873925209,
+              -0.0005708823446184397
+            ],
+            "normal": [
+              0.0025626106653362513,
+              -0.0031089645344763994,
+              0.9999918937683105
+            ],
+            "normal_tilt_from_world_up_rad": 0.004026473057480662,
+            "depth_m": 1.7660079265624518e-07,
+            "force_magnitude_n": 2001.47998046875,
+            "cell_ij": [
+              511,
+              1
+            ],
+            "cell_uv": [
+              0.07852935791015625,
+              0.11327387392520905
+            ],
+            "nearest_grid_boundary_m": 0.007852935791015625,
+            "internal_diagonal_m": 0.002456808288328843
+          },
+          {
+            "position_world_m": [
+              51.10785675048828,
+              0.10940799862146378,
+              -0.000576691294554621
+            ],
+            "normal": [
+              0.0025626106653362513,
+              -0.0031089645344763994,
+              0.9999918937683105
+            ],
+            "normal_tilt_from_world_up_rad": 0.004026473057480662,
+            "depth_m": 0.0,
+            "force_magnitude_n": 0.0,
+            "cell_ij": [
+              511,
+              1
+            ],
+            "cell_uv": [
+              0.0785675048828125,
+              0.09407998621463776
+            ],
+            "nearest_grid_boundary_m": 0.00785675048828125,
+            "internal_diagonal_m": 0.0010968980742763364
+          },
+          {
+            "position_world_m": [
+              51.10845947265625,
+              -0.04640224948525429,
+              -0.0010483101941645145
+            ],
+            "normal": [
+              0.0024248796980828047,
+              -0.0024860247503966093,
+              0.9999939799308777
+            ],
+            "normal_tilt_from_world_up_rad": 0.003469891975992775,
+            "depth_m": 2.7755575615628914e-17,
+            "force_magnitude_n": 0.0,
+            "cell_ij": [
+              511,
+              -1
+            ],
+            "cell_uv": [
+              0.0845947265625,
+              0.5359775051474571
+            ],
+            "nearest_grid_boundary_m": 0.00845947265625,
+            "internal_diagonal_m": 0.03191758236482491
+          },
+          {
+            "position_world_m": [
+              51.10847091674805,
+              -0.0486706867814064,
+              -0.0010551755549386144
+            ],
+            "normal": [
+              0.0024248796980828047,
+              -0.0024860247503966093,
+              0.9999939799308777
+            ],
+            "normal_tilt_from_world_up_rad": 0.003469891975992775,
+            "depth_m": 1.2055515981046483e-06,
+            "force_magnitude_n": 0.0,
+            "cell_ij": [
+              511,
+              -1
+            ],
+            "cell_uv": [
+              0.08470916748046875,
+              0.513293132185936
+            ],
+            "nearest_grid_boundary_m": 0.008470916748046875,
+            "internal_diagonal_m": 0.030305462775105183
+          }
+        ]
+      },
+      "fault": {
+        "available": true,
+        "pair_count": 1,
+        "point_count": 2,
+        "stored_point_count": 2,
+        "truncated": false,
+        "max_depth_m": 1.7524389761547354e-07,
+        "max_force_magnitude_n": 1773.892333984375,
+        "mean_normal": [
+          0.002562610639407461,
+          -0.0031089645030195376,
+          0.9999918836502772
+        ],
+        "max_normal_tilt_from_world_up_rad": 0.004026473057480662,
+        "nearest_grid_boundary_m": 0.0050720214843750005,
+        "nearest_internal_diagonal_m": 0.0031891203179177548,
+        "contact_locations": [
+          {
+            "position_world_m": [
+              51.105072021484375,
+              0.11131711304187775,
+              -0.0005637884605675936
+            ],
+            "normal": [
+              0.0025626106653362513,
+              -0.0031089645344763994,
+              0.9999918937683105
+            ],
+            "normal_tilt_from_world_up_rad": 0.004026473057480662,
+            "depth_m": 1.7524389761547354e-07,
+            "force_magnitude_n": 0.0,
+            "cell_ij": [
+              511,
+              1
+            ],
+            "cell_uv": [
+              0.05072021484375,
+              0.11317113041877747
+            ],
+            "nearest_grid_boundary_m": 0.0050720214843750005,
+            "internal_diagonal_m": 0.004415946589441049
+          },
+          {
+            "position_world_m": [
+              51.10507583618164,
+              0.10958593338727951,
+              -0.0005690117832273245
+            ],
+            "normal": [
+              0.0025626106653362513,
+              -0.0031089645344763994,
+              0.9999918937683105
+            ],
+            "normal_tilt_from_world_up_rad": 0.004026473057480662,
+            "depth_m": 0.0,
+            "force_magnitude_n": 1773.892333984375,
+            "cell_ij": [
+              511,
+              1
+            ],
+            "cell_uv": [
+              0.05075836181640625,
+              0.0958593338727951
+            ],
+            "nearest_grid_boundary_m": 0.0050758361816406255,
+            "internal_diagonal_m": 0.0031891203179177548
+          }
+        ]
+      },
+      "fault_minus_previous": {
+        "point_count": -2,
+        "max_depth_m": -1.0303077004891747e-06,
+        "max_force_magnitude_n": -227.587646484375,
+        "mean_normal_angle_rad": 0.00031899379007071
+      }
+    },
+    {
+      "name": "fr",
+      "fault_wheel_residual_m_s": 0.018778796771920733,
+      "previous": {
+        "available": true,
+        "pair_count": 1,
+        "point_count": 4,
+        "stored_point_count": 4,
+        "truncated": false,
+        "max_depth_m": 2.050454895652365e-05,
+        "max_force_magnitude_n": 3000.87744140625,
+        "mean_normal": [
+          0.007132453790089361,
+          -0.00027926315272370524,
+          0.9999745247330173
+        ],
+        "max_normal_tilt_from_world_up_rad": 0.01331863525241248,
+        "nearest_grid_boundary_m": 1.52587890625e-06,
+        "nearest_internal_diagonal_m": 0.004801191965597302,
+        "contact_locations": [
+          {
+            "position_world_m": [
+              51.10247039794922,
+              0.891311526298523,
+              -0.0003638631314970553
+            ],
+            "normal": [
+              0.0009485578048042953,
+              -0.0002792701416183263,
+              0.9999995231628418
+            ],
+            "normal_tilt_from_world_up_rad": 0.0009765625388051115,
+            "depth_m": 2.050454895652365e-05,
+            "force_magnitude_n": 0.0,
+            "cell_ij": [
+              511,
+              8
+            ],
+            "cell_uv": [
+              0.0247039794921875,
+              0.9131152629852295
+            ],
+            "nearest_grid_boundary_m": 0.00247039794921875,
+            "internal_diagonal_m": 0.06282016430405743
+          },
+          {
+            "position_world_m": [
+              51.10244369506836,
+              0.8987849354743958,
+              -0.0003412452933844179
+            ],
+            "normal": [
+              0.0009485578048042953,
+              -0.0002792701416183263,
+              0.9999995231628418
+            ],
+            "normal_tilt_from_world_up_rad": 0.0009765625388051115,
+            "depth_m": 0.0,
+            "force_magnitude_n": 0.0,
+            "cell_ij": [
+              511,
+              8
+            ],
+            "cell_uv": [
+              0.02443695068359375,
+              0.9878493547439575
+            ],
+            "nearest_grid_boundary_m": 0.0012150645256042481,
+            "internal_diagonal_m": 0.06812354439903173
+          },
+          {
+            "position_world_m": [
+              51.099998474121094,
+              0.8913023471832275,
+              -0.000346223299857229
+            ],
+            "normal": [
+              0.013316077180206776,
+              -0.00027924549067392945,
+              0.9999113082885742
+            ],
+            "normal_tilt_from_world_up_rad": 0.01331863525241248,
+            "depth_m": 5.208770744502544e-06,
+            "force_magnitude_n": 3000.87744140625,
+            "cell_ij": [
+              510,
+              8
+            ],
+            "cell_uv": [
+              0.9999847412109375,
+              0.9130234718322754
+            ],
+            "nearest_grid_boundary_m": 1.52587890625e-06,
+            "internal_diagonal_m": 0.006149090327824205
+          },
+          {
+            "position_world_m": [
+              51.09999084472656,
+              0.8932009339332581,
+              -0.0003404773015063256
+            ],
+            "normal": [
+              0.013316077180206776,
+              -0.00027924549067392945,
+              0.9999113082885742
+            ],
+            "normal_tilt_from_world_up_rad": 0.01331863525241248,
+            "depth_m": 8.684752117460448e-08,
+            "force_magnitude_n": 0.0,
+            "cell_ij": [
+              510,
+              8
+            ],
+            "cell_uv": [
+              0.999908447265625,
+              0.9320093393325806
+            ],
+            "nearest_grid_boundary_m": 9.155273437500001e-06,
+            "internal_diagonal_m": 0.004801191965597302
+          }
+        ]
+      },
+      "fault": {
+        "available": true,
+        "pair_count": 0,
+        "point_count": 0,
+        "stored_point_count": 0,
+        "truncated": false,
+        "max_depth_m": 0.0,
+        "max_force_magnitude_n": 0.0,
+        "mean_normal": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "max_normal_tilt_from_world_up_rad": null,
+        "nearest_grid_boundary_m": null,
+        "nearest_internal_diagonal_m": null,
+        "contact_locations": []
+      },
+      "fault_minus_previous": {
+        "point_count": -4,
+        "max_depth_m": -2.050454895652365e-05,
+        "max_force_magnitude_n": -3000.87744140625,
+        "mean_normal_angle_rad": null
+      }
+    },
+    {
+      "name": "rl",
+      "fault_wheel_residual_m_s": 0.011031428697761258,
+      "previous": {
+        "available": true,
+        "pair_count": 1,
+        "point_count": 6,
+        "stored_point_count": 6,
+        "truncated": false,
+        "max_depth_m": 4.6432247472694144e-05,
+        "max_force_magnitude_n": 1302.607666015625,
+        "mean_normal": [
+          -0.0009239886521551192,
+          -0.003225012522448835,
+          0.9999943727537675
+        ],
+        "max_normal_tilt_from_world_up_rad": 0.003702578015371804,
+        "nearest_grid_boundary_m": 9.987354278564454e-05,
+        "nearest_internal_diagonal_m": 6.923884273369671e-05,
+        "contact_locations": [
+          {
+            "position_world_m": [
+              52.408538818359375,
+              0.10843608528375626,
+              -0.000542127643711865
+            ],
+            "normal": [
+              -0.0007660965202376246,
+              -0.0036147653590887785,
+              0.9999931454658508
+            ],
+            "normal_tilt_from_world_up_rad": 0.003702578015371804,
+            "depth_m": 3.9638351154280826e-05,
+            "force_magnitude_n": 0.0,
+            "cell_ij": [
+              524,
+              1
+            ],
+            "cell_uv": [
+              0.08538818359375,
+              0.08436085283756256
+            ],
+            "nearest_grid_boundary_m": 0.008436085283756256,
+            "internal_diagonal_m": 7.264325442216418e-05
+          },
+          {
+            "position_world_m": [
+              52.40849304199219,
+              0.12003947049379349,
+              -0.0005070106126368046
+            ],
+            "normal": [
+              -0.0007660965202376246,
+              -0.0036147653590887785,
+              0.9999931454658508
+            ],
+            "normal_tilt_from_world_up_rad": 0.003702578015371804,
+            "depth_m": 4.6432247472694144e-05,
+            "force_magnitude_n": 1302.607666015625,
+            "cell_ij": [
+              524,
+              1
+            ],
+            "cell_uv": [
+              0.084930419921875,
+              0.20039470493793488
+            ],
+            "nearest_grid_boundary_m": 0.0084930419921875,
+            "internal_diagonal_m": 0.00816455789197122
+          },
+          {
+            "position_world_m": [
+              52.40868377685547,
+              0.09990012645721436,
+              -0.0005678382003679872
+            ],
+            "normal": [
+              -0.0013494620798155665,
+              -0.0030314147006720304,
+              0.9999945163726807
+            ],
+            "normal_tilt_from_world_up_rad": 0.0033116860754117466,
+            "depth_m": 3.973045386373997e-05,
+            "force_magnitude_n": 0.0,
+            "cell_ij": [
+              524,
+              0
+            ],
+            "cell_uv": [
+              0.0868377685546875,
+              0.9990012645721436
+            ],
+            "nearest_grid_boundary_m": 9.987354278564454e-05,
+            "internal_diagonal_m": 0.06449969935847716
+          },
+          {
+            "position_world_m": [
+              52.408653259277344,
+              0.10875117778778076,
+              -0.0005410509766079485
+            ],
+            "normal": [
+              -0.0013494620798155665,
+              -0.0030314147006720304,
+              0.9999945163726807
+            ],
+            "normal_tilt_from_world_up_rad": 0.0033116860754117466,
+            "depth_m": 3.973045386373997e-05,
+            "force_magnitude_n": 0.0,
+            "cell_ij": [
+              524,
+              1
+            ],
+            "cell_uv": [
+              0.0865325927734375,
+              0.08751177787780762
+            ],
+            "nearest_grid_boundary_m": 0.00865325927734375,
+            "internal_diagonal_m": 6.923884273369671e-05
+          },
+          {
+            "position_world_m": [
+              52.40869903564453,
+              0.05828244984149933,
+              -0.0006939308950677514
+            ],
+            "normal": [
+              -0.000656407093629241,
+              -0.0030288565903902054,
+              0.9999951720237732
+            ],
+            "normal_tilt_from_world_up_rad": 0.0031074040972181426,
+            "depth_m": 3.376054155523889e-05,
+            "force_magnitude_n": 0.0,
+            "cell_ij": [
+              524,
+              0
+            ],
+            "cell_uv": [
+              0.0869903564453125,
+              0.5828244984149933
+            ],
+            "nearest_grid_boundary_m": 0.00869903564453125,
+            "internal_diagonal_m": 0.03506076841305746
+          },
+          {
+            "position_world_m": [
+              52.408546447753906,
+              0.10010012984275818,
+              -0.0005673718987964094
+            ],
+            "normal": [
+              -0.000656407093629241,
+              -0.0030288565903902054,
+              0.9999951720237732
+            ],
+            "normal_tilt_from_world_up_rad": 0.0031074040972181426,
+            "depth_m": 3.376054155523889e-05,
+            "force_magnitude_n": 1266.2427978515625,
+            "cell_ij": [
+              524,
+              1
+            ],
+            "cell_uv": [
+              0.0854644775390625,
+              0.0010012984275817871
+            ],
+            "nearest_grid_boundary_m": 0.00010012984275817872,
+            "internal_diagonal_m": 0.005972448671030197
+          }
+        ]
+      },
+      "fault": {
+        "available": true,
+        "pair_count": 1,
+        "point_count": 6,
+        "stored_point_count": 6,
+        "truncated": false,
+        "max_depth_m": 4.5967910409672186e-05,
+        "max_force_magnitude_n": 1897.369140625,
+        "mean_normal": [
+          -0.000927051769677918,
+          -0.003218875251892089,
+          0.9999943896928268
+        ],
+        "max_normal_tilt_from_world_up_rad": 0.003702578015371804,
+        "nearest_grid_boundary_m": 9.987354278564454e-05,
+        "nearest_internal_diagonal_m": 7.015553668880866e-05,
+        "contact_locations": [
+          {
+            "position_world_m": [
+              52.405765533447266,
+              0.10566609352827072,
+              -0.0005520500126294792
+            ],
+            "normal": [
+              -0.0007660965202376246,
+              -0.0036147653590887785,
+              0.9999931454658508
+            ],
+            "normal_tilt_from_world_up_rad": 0.003702578015371804,
+            "depth_m": 3.7425710615934804e-05,
+            "force_magnitude_n": 0.0,
+            "cell_ij": [
+              524,
+              1
+            ],
+            "cell_uv": [
+              0.05765533447265625,
+              0.056660935282707214
+            ],
+            "nearest_grid_boundary_m": 0.005666093528270722,
+            "internal_diagonal_m": 7.031464104193728e-05
+          },
+          {
+            "position_world_m": [
+              52.40571594238281,
+              0.12002918869256973,
+              -0.0005087133031338453
+            ],
+            "normal": [
+              -0.0007660965202376246,
+              -0.0036147653590887785,
+              0.9999931454658508
+            ],
+            "normal_tilt_from_world_up_rad": 0.003702578015371804,
+            "depth_m": 4.5967910409672186e-05,
+            "force_magnitude_n": 0.0,
+            "cell_ij": [
+              524,
+              1
+            ],
+            "cell_uv": [
+              0.057159423828125,
+              0.20029188692569733
+            ],
+            "nearest_grid_boundary_m": 0.0057159423828125,
+            "internal_diagonal_m": 0.010120993526422666
+          },
+          {
+            "position_world_m": [
+              52.405906677246094,
+              0.09990012645721436,
+              -0.0005693216226063669
+            ],
+            "normal": [
+              -0.0013586514396592975,
+              -0.0030222253408282995,
+              0.9999945163726807
+            ],
+            "normal_tilt_from_world_up_rad": 0.0033116860754117466,
+            "depth_m": 3.751980693778023e-05,
+            "force_magnitude_n": 0.0,
+            "cell_ij": [
+              524,
+              0
+            ],
+            "cell_uv": [
+              0.0590667724609375,
+              0.9990012645721436
+            ],
+            "nearest_grid_boundary_m": 9.987354278564454e-05,
+            "internal_diagonal_m": 0.06646340532429673
+          },
+          {
+            "position_world_m": [
+              52.4058837890625,
+              0.10598300397396088,
+              -0.0005509682232514024
+            ],
+            "normal": [
+              -0.0013586514396592975,
+              -0.0030222253408282995,
+              0.9999945163726807
+            ],
+            "normal_tilt_from_world_up_rad": 0.0033116860754117466,
+            "depth_m": 3.751980693778023e-05,
+            "force_magnitude_n": 0.0,
+            "cell_ij": [
+              524,
+              1
+            ],
+            "cell_uv": [
+              0.058837890625,
+              0.059830039739608765
+            ],
+            "nearest_grid_boundary_m": 0.0058837890625,
+            "internal_diagonal_m": 7.015553668880866e-05
+          },
+          {
+            "position_world_m": [
+              52.40591812133789,
+              0.05916556343436241,
+              -0.0006923684850335121
+            ],
+            "normal": [
+              -0.000656407093629241,
+              -0.0030196341685950756,
+              0.999995231628418
+            ],
+            "normal_tilt_from_world_up_rad": 0.003088163004634738,
+            "depth_m": 3.3422464184695855e-05,
+            "force_magnitude_n": 1897.369140625,
+            "cell_ij": [
+              524,
+              0
+            ],
+            "cell_uv": [
+              0.05918121337890625,
+              0.5916556343436241
+            ],
+            "nearest_grid_boundary_m": 0.005918121337890625,
+            "internal_diagonal_m": 0.037651627387253236
+          },
+          {
+            "position_world_m": [
+              52.405765533447266,
+              0.10010012984275818,
+              -0.0005688596866093576
+            ],
+            "normal": [
+              -0.000656407093629241,
+              -0.0030196341685950756,
+              0.999995231628418
+            ],
+            "normal_tilt_from_world_up_rad": 0.003088163004634738,
+            "depth_m": 3.3422464184695855e-05,
+            "force_magnitude_n": 0.0,
+            "cell_ij": [
+              524,
+              1
+            ],
+            "cell_uv": [
+              0.05765533447265625,
+              0.0010012984275817871
+            ],
+            "nearest_grid_boundary_m": 0.00010012984275817872,
+            "internal_diagonal_m": 0.004006045306905925
+          }
+        ]
+      },
+      "fault_minus_previous": {
+        "point_count": 0,
+        "max_depth_m": -4.643370630219579e-07,
+        "max_force_magnitude_n": 594.761474609375,
+        "mean_normal_angle_rad": 6.859213460240498e-06
+      }
+    },
+    {
+      "name": "rr",
+      "fault_wheel_residual_m_s": 0.0344996593415351,
+      "previous": {
+        "available": true,
+        "pair_count": 0,
+        "point_count": 0,
+        "stored_point_count": 0,
+        "truncated": false,
+        "max_depth_m": 0.0,
+        "max_force_magnitude_n": 0.0,
+        "mean_normal": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "max_normal_tilt_from_world_up_rad": null,
+        "nearest_grid_boundary_m": null,
+        "nearest_internal_diagonal_m": null,
+        "contact_locations": []
+      },
+      "fault": {
+        "available": true,
+        "pair_count": 1,
+        "point_count": 13,
+        "stored_point_count": 13,
+        "truncated": false,
+        "max_depth_m": 0.0003025920013897121,
+        "max_force_magnitude_n": 27632.232421875,
+        "mean_normal": [
+          -0.0011575302676157721,
+          0.16239306863575984,
+          0.9867254691061444
+        ],
+        "max_normal_tilt_from_world_up_rad": 1.3023884253608642,
+        "nearest_grid_boundary_m": 2.384185791015625e-08,
+        "nearest_internal_diagonal_m": 8.429369702178806e-08,
+        "contact_locations": [
+          {
+            "position_world_m": [
+              52.39990234375,
+              1.0304882526397705,
+              0.0011778856860473752
+            ],
+            "normal": [
+              -0.0025336435064673424,
+              -0.0030268023256212473,
+              0.9999921917915344
+            ],
+            "normal_tilt_from_world_up_rad": 0.003951763815551373,
+            "depth_m": 0.0002824206603690982,
+            "force_magnitude_n": 0.0,
+            "cell_ij": [
+              523,
+              10
+            ],
+            "cell_uv": [
+              0.9990234375,
+              0.3048825263977051
+            ],
+            "nearest_grid_boundary_m": 9.765625e-05,
+            "internal_diagonal_m": 0.04908317453394411
+          },
+          {
+            "position_world_m": [
+              52.400001525878906,
+              1.0001012086868286,
+              0.0010861644987016916
+            ],
+            "normal": [
+              -0.0025336435064673424,
+              -0.0030268023256212473,
+              0.9999921917915344
+            ],
+            "normal_tilt_from_world_up_rad": 0.003951763815551373,
+            "depth_m": 0.0002824206603690982,
+            "force_magnitude_n": 0.0,
+            "cell_ij": [
+              524,
+              10
+            ],
+            "cell_uv": [
+              1.52587890625e-05,
+              0.0010120868682861328
+            ],
+            "nearest_grid_boundary_m": 1.52587890625e-06,
+            "internal_diagonal_m": 7.048638944961918e-05
+          },
+          {
+            "position_world_m": [
+              52.400001525878906,
+              0.9999006390571594,
+              0.0010855590226128697
+            ],
+            "normal": [
+              -0.0025336435064673424,
+              -0.0030268023256212473,
+              0.9999921917915344
+            ],
+            "normal_tilt_from_world_up_rad": 0.003951763815551373,
+            "depth_m": 0.0002824206603690982,
+            "force_magnitude_n": 0.0,
+            "cell_ij": [
+              524,
+              9
+            ],
+            "cell_uv": [
+              1.52587890625e-05,
+              0.9990063905715942
+            ],
+            "nearest_grid_boundary_m": 1.52587890625e-06,
+            "internal_diagonal_m": 0.0706393403628652
+          },
+          {
+            "position_world_m": [
+              52.3994026184082,
+              1.0600072145462036,
+              0.0012663737870752811
+            ],
+            "normal": [
+              -0.0005379159119911492,
+              -0.0030202034395188093,
+              0.9999952912330627
+            ],
+            "normal_tilt_from_world_up_rad": 0.0030688012749850208,
+            "depth_m": 0.0002828183933161199,
+            "force_magnitude_n": 0.0,
+            "cell_ij": [
+              523,
+              10
+            ],
+            "cell_uv": [
+              0.9940261840820312,
+              0.6000721454620361
+            ],
+            "nearest_grid_boundary_m": 0.0005973815917968751,
+            "internal_diagonal_m": 0.02785675721840256
+          },
+          {
+            "position_world_m": [
+              52.39960479736328,
+              0.9999006390571594,
+              0.001084946095943451
+            ],
+            "normal": [
+              -0.0005379159119911492,
+              -0.0030202034395188093,
+              0.9999952912330627
+            ],
+            "normal_tilt_from_world_up_rad": 0.0030688012749850208,
+            "depth_m": 0.0002828183933161199,
+            "force_magnitude_n": 0.0,
+            "cell_ij": [
+              523,
+              9
+            ],
+            "cell_uv": [
+              0.9960479736328125,
+              0.9990063905715942
+            ],
+            "nearest_grid_boundary_m": 9.936094284057617e-05,
+            "internal_diagonal_m": 0.00020919166789897144
+          },
+          {
+            "position_world_m": [
+              52.39990234375,
+              0.9303582906723022,
+              0.0008750847773626447
+            ],
+            "normal": [
+              -0.0008765655220486224,
+              -0.002822347218170762,
+              0.9999956488609314
+            ],
+            "normal_tilt_from_world_up_rad": 0.0029499634655395456,
+            "depth_m": 0.00029655222897417843,
+            "force_magnitude_n": 0.0,
+            "cell_ij": [
+              523,
+              9
+            ],
+            "cell_uv": [
+              0.9990234375,
+              0.30358290672302246
+            ],
+            "nearest_grid_boundary_m": 9.765625e-05,
+            "internal_diagonal_m": 0.049175071522437275
+          },
+          {
+            "position_world_m": [
+              52.399600982666016,
+              1.00010085105896,
+              0.0010855504078790545
+            ],
+            "normal": [
+              -0.0005379159119911492,
+              -0.0030202034395188093,
+              0.9999952912330627
+            ],
+            "normal_tilt_from_world_up_rad": 0.0030688012749850208,
+            "depth_m": 0.0002828183933161199,
+            "force_magnitude_n": 0.0,
+            "cell_ij": [
+              523,
+              10
+            ],
+            "cell_uv": [
+              0.9960098266601562,
+              0.0010085105895996094
+            ],
+            "nearest_grid_boundary_m": 0.00010085105895996094,
+            "internal_diagonal_m": 0.07035721778830299
+          },
+          {
+            "position_world_m": [
+              52.39960479736328,
+              0.9995039105415344,
+              0.001083748647943139
+            ],
+            "normal": [
+              -0.0005379159119911492,
+              -0.0030202034395188093,
+              0.9999952912330627
+            ],
+            "normal_tilt_from_world_up_rad": 0.0030688012749850208,
+            "depth_m": 0.0002828183933161199,
+            "force_magnitude_n": 0.0,
+            "cell_ij": [
+              523,
+              9
+            ],
+            "cell_uv": [
+              0.9960479736328125,
+              0.9950391054153442
+            ],
+            "nearest_grid_boundary_m": 0.00039520263671875003,
+            "internal_diagonal_m": 7.133775578953924e-05
+          },
+          {
+            "position_world_m": [
+              52.40000915527344,
+              0.900009036064148,
+              0.0007834846619516611
+            ],
+            "normal": [
+              -0.0009229238494299352,
+              -0.0011232675751671195,
+              0.999998927116394
+            ],
+            "normal_tilt_from_world_up_rad": 0.0014648438809672687,
+            "depth_m": 0.0003025769256055355,
+            "force_magnitude_n": 0.0,
+            "cell_ij": [
+              524,
+              9
+            ],
+            "cell_uv": [
+              9.1552734375e-05,
+              9.036064147949219e-05
+            ],
+            "nearest_grid_boundary_m": 9.036064147949218e-06,
+            "internal_diagonal_m": 8.429369702178806e-08
+          },
+          {
+            "position_world_m": [
+              52.39965057373047,
+              0.9997512698173523,
+              0.0010845271172001958
+            ],
+            "normal": [
+              -0.0007801884785294533,
+              -0.0028223474510014057,
+              0.9999957084655762
+            ],
+            "normal_tilt_from_world_up_rad": 0.0029296885477389082,
+            "depth_m": 0.0002827772404998541,
+            "force_magnitude_n": 0.0,
+            "cell_ij": [
+              523,
+              9
+            ],
+            "cell_uv": [
+              0.9965057373046875,
+              0.997512698173523
+            ],
+            "nearest_grid_boundary_m": 0.0002487301826477051,
+            "internal_diagonal_m": 7.120288587430437e-05
+          },
+          {
+            "position_world_m": [
+              52.39998245239258,
+              0.9000089168548584,
+              0.0007834611460566521
+            ],
+            "normal": [
+              -0.0007801884785294533,
+              -0.0028223474510014057,
+              0.9999957084655762
+            ],
+            "normal_tilt_from_world_up_rad": 0.0029296885477389082,
+            "depth_m": 0.0003025920013897121,
+            "force_magnitude_n": 9809.625,
+            "cell_ij": [
+              523,
+              9
+            ],
+            "cell_uv": [
+              0.9998245239257812,
+              8.916854858398438e-05
+            ],
+            "nearest_grid_boundary_m": 8.916854858398437e-06,
+            "internal_diagonal_m": 0.07069196491791592
+          },
+          {
+            "position_world_m": [
+              52.397552490234375,
+              0.8999999761581421,
+              0.0010841323528438807
+            ],
+            "normal": [
+              -0.00020690428209491074,
+              0.9641942977905273,
+              0.26519668102264404
+            ],
+            "normal_tilt_from_world_up_rad": 1.3023884253608642,
+            "depth_m": 7.548946450697258e-05,
+            "force_magnitude_n": 0.0,
+            "cell_ij": [
+              523,
+              8
+            ],
+            "cell_uv": [
+              0.97552490234375,
+              0.9999997615814209
+            ],
+            "nearest_grid_boundary_m": 2.384185791015625e-08,
+            "internal_diagonal_m": 0.0017306338935543307
+          },
+          {
+            "position_world_m": [
+              52.36595153808594,
+              0.8999999761581421,
+              0.0010594783816486597
+            ],
+            "normal": [
+              -0.00020690428209491074,
+              0.9641942977905273,
+              0.26519668102264404
+            ],
+            "normal_tilt_from_world_up_rad": 1.3023884253608642,
+            "depth_m": 7.548946450697258e-05,
+            "force_magnitude_n": 27632.232421875,
+            "cell_ij": [
+              523,
+              8
+            ],
+            "cell_uv": [
+              0.659515380859375,
+              0.9999997615814209
+            ],
+            "nearest_grid_boundary_m": 2.384185791015625e-08,
+            "internal_diagonal_m": 0.024075881449666083
+          }
+        ]
+      },
+      "fault_minus_previous": {
+        "point_count": 13,
+        "max_depth_m": 0.0003025920013897121,
+        "max_force_magnitude_n": 27632.232421875,
+        "mean_normal_angle_rad": null
+      }
+    }
+  ]
+}
