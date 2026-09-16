@@ -1,0 +1,84 @@
+{
+  "schema": "agv.default_road_capture_closure.v1",
+  "date": "2026-09-16",
+  "passed": true,
+  "scope": "Current default 100x10 m marked 2 mm / 20 cm / 1025 heightmap, rated-speed obstacle-free rectangle acquisition. Not stitching accuracy or autonomous avoidance.",
+  "launch_scene_override": false,
+  "pause_probe": false,
+  "scene": "assets/road/runtime_fullwidth_100m_rough_marked_2mm_20cm_heightmap_v1/manifest.json",
+  "scene_sha256": "34c6f630cc1089986fbc7032e18c3ff83261dd250c95caf120dd2cb4d41d4d07",
+  "run_directory": "local_data/default_2mm_closure_1",
+  "previous_three_seed_evidence": "results/rough_2mm_repeat_acceptance.json",
+  "final_state": "ACQUIRED",
+  "final_motion": "HOLD",
+  "coverage_status": "ESTIMATED_COMPLETE",
+  "tracks": 10,
+  "blocks": 704,
+  "rows": 2868712,
+  "steady_rtf": 0.9935532426595952,
+  "peak_rss_gib": 10.24100112915039,
+  "peak_vram_gib": 8.962890625,
+  "ros_archive_identical": true,
+  "geometry_reference": "triangular_heightfield_centre_ray_v1",
+  "geometry_findings": 0,
+  "eligible_intervals": 2800,
+  "short_intervals": 5,
+  "centre_diagnostic_alerts": 4,
+  "online_ground_diagnostics": {},
+  "images_missing": 0,
+  "images_flagged": 0,
+  "pixel_motion_verifiable": true,
+  "limits": [
+    "Short intervals explicitly diagnostic; no guarantee of per-line geometric accuracy.",
+    "Existing three-seed runs had pause probes; this completion run intentionally does not.",
+    "WSL instance was not freshly restarted; no claim of repeating the historical fresh-instance, four-speed matrix.",
+    "Ground reference is source triangular heightfield, not every OptiX triangle hit."
+  ],
+  "visual_observation": "Actual X11 client framebuffer checked: GZ textured road/paint and following after turn; RViz coherent robot, boundaries, preview and 4096x4096 full-frame label. Host screen locked, so host capture not used.",
+  "tests": {
+    "targeted_python": 30,
+    "agv_linescan_colcon": 216,
+    "workspace_colcon": 486
+  },
+  "boundary_followup": {
+    "run_directory": "local_data/default_2mm_boundary_check",
+    "passed": true,
+    "purpose": "Closing tag append invokes online geometry check; short diagnostics agree with independent audit. No control/trigger/image changes.",
+    "short_case": {
+      "run_directory": "local_data/default_2mm_short_boundary_check",
+      "passed": true,
+      "online_short_intervals": 1,
+      "offline_short_intervals": 1,
+      "final_motion": "HOLD"
+    }
+  },
+  "previous_three_seed_ground_recheck": [
+    {
+      "run": "rough2mm_repeat_1",
+      "counts": {
+        "pass": 2797,
+        "short_interval": 6
+      },
+      "passed": true,
+      "scope": "Retrospective all archived pose-tag intervals; pixels previously audited, not reread by this calculation."
+    },
+    {
+      "run": "rough2mm_repeat_2",
+      "counts": {
+        "pass": 2791,
+        "short_interval": 7
+      },
+      "passed": true,
+      "scope": "Retrospective all archived pose-tag intervals; pixels previously audited, not reread by this calculation."
+    },
+    {
+      "run": "rough2mm_repeat_3",
+      "counts": {
+        "pass": 2791,
+        "short_interval": 9
+      },
+      "passed": true,
+      "scope": "Retrospective all archived pose-tag intervals; pixels previously audited, not reread by this calculation."
+    }
+  ]
+}

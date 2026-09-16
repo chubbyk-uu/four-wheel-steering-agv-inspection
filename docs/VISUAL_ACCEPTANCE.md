@@ -27,11 +27,11 @@
 运动故障回归使用`tools/validate_rectangle_execution.py --gui --profile normal --scene ... --moving-fault localization_timeout`或`camera_disabled`，记录故障时速度、零指令延时、真值停车距离、实际逐轮转角、尾图与HOLD；不得将仿真时间延时当作墙钟响应。普通暂停需同时复测，防止心跳误报。结束后用`tools/audit_mission_capture.py`检查归档并生成补扫预览；用验证器`--request`执行选定候选，独立审计新会话，不将局部补扫当作全区域完成。
 
 
-RViz面板改动后运行`tools/validate_operator_session.py --output 新目录 --inspect-seconds 25`，检查真实Gazebo/RViz联合流程、请求保存重载、越界拒绝、运行中锁定、暂停保留帧、审计与新任务取消；记录实际逐轮转角、ROS/原图哈希及最终HOLD。另需实际点击面板控件并观察状态改变，检查预览和覆盖标记显示正常、车辆移动时仍固定在道路坐标，而不是只检查ROS话题存在。启动时TF未就绪必须能恢复，不能留下红色预览状态。普通colcon包含Qt控件状态与后端护栏测试，不会自动启动完整GUI。WSLg下X11抓屏可能全黑，不能把黑色抓屏当作真实窗口；必要时从宿主窗口采集证据，公开图裁去本机标题/路径。
+RViz面板改动后运行`tools/validate_operator_session.py --output 新目录 --inspect-seconds 25 --pause-probe`，检查真实Gazebo/RViz联合流程、请求保存重载、越界拒绝、运行中锁定、暂停保留帧、审计与新任务取消；记录实际逐轮转角、ROS/原图哈希及最终HOLD。另需实际点击面板控件并观察状态改变，检查预览和覆盖标记显示正常、车辆移动时仍固定在道路坐标，而不是只检查ROS话题存在。启动时TF未就绪必须能恢复，不能留下红色预览状态。普通colcon包含Qt控件状态与后端护栏测试，不会自动启动完整GUI。WSLg下X11抓屏可能全黑，不能把黑色抓屏当作真实窗口；必要时从宿主窗口采集证据，公开图裁去本机标题/路径。
 
 巡检入口速度、尾图与道路显示改动后，另运行以下GUI场景（每次使用新输出目录）：
 
-- `tools/validate_operator_session.py --output local_data/check_08 --speed .8 --length 5 --width 2`：运行中改参数拒绝、暂停后满帧、重新准备与取消。
+- `tools/validate_operator_session.py --output local_data/check_08 --pause-probe --speed .8 --length 5 --width 2`：运行中改参数拒绝、暂停后满帧、重新准备与取消。
 - `tools/validate_operator_session.py --output local_data/check_10kmh --speed 2.777777777777778 --length 5 --width 1 --start-x 8 --spawn-x 1.93 --no-pause --no-cancel-probe`：有足够加减速空间的高速单道，检查终点、实际速度与实时率；不代表高速多道换道验收。
 - `tools/validate_operator_session.py --output local_data/check_tail --speed .2 --length .05 --width 1 --short-tail-probe`：不足1000行不输出图像，保留丢弃事件，覆盖报告不冒充完整。
 
@@ -56,3 +56,5 @@ RViz面板改动后运行`tools/validate_operator_session.py --output 新目录 
 2026-09-10长轨停车专项：新增`tools/validate_scan_limit_recovery.py --output 新目录 --scene assets/road/runtime_fullwidth_100m_v1/manifest.json`，实际根据±180°轮角分支触发LIMIT_RECONFIGURE，并要求采集中发生、同一完整图跨过恢复、行号连续和最终停车。实际查看跨恢复原图发现约23行窄纹理带，因此仅通过触发/归档语义检查，**未通过对轮图像质量验收**。生产100 m两道另两次完成（一次普通暂停、一次不主动暂停）；定位中断保护停车通过。此轮宿主锁屏，未完成GZ/RViz窗口肉眼验收；晚连接静态Marker订阅检查不能代替显示观察。详见[问题](issues/SCAN_STABILITY.md)及[报告](../results/long_run_stop_investigation.json)。
 
 后续进程隔离/保持修复：原始跨对轮图实际查看，300 N·m暂定峰值下不再出现被动滚动窄带，但相机位姿变化仍需质量排除和补扫。`validate_operator_session.py --broker-stall`会在真实PASS中仅暂停面板进程0.6 s；本次100 m两道采集与普通暂停均通过，运行中控制间隔最大22 ms。加`--executor-exit-probe`会在第二个任务运动中强杀工作进程，要求FAULT/HOLD和关闭确认；已通过。新进程READY首次收到/clock不计入RUNNING控制间隔。10 km/h短程归档/停车也通过。窗口人工/鼠标交互未重新验收，不能把工具的gui_rviz字段解释为截图观察已通过。详见[报告](../results/control_isolation_capture_quality.json)。
+
+正常巡检默认不注入暂停。上述暂停回归必须显式`--pause-probe`；带日期的历史命令记录当时默认行为，恢复历史暂停实验时也须加该选项。默认道路现为100 m、±2 mm/20 cm、1025²高度场，历史20 m命令应明确传`--scene`，不能混用默认资产的加载数字。
