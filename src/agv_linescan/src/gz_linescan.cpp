@@ -1106,6 +1106,13 @@ class GzLineScan final: public gz::sim::System,
       {"encoder_m",measured->encoder},{"camera_horizontal_m",measured->travel},{"ratio",measured->ratio},
       {"camera_x_from_m",from},{"camera_x_to_m",to},
       {"first_line",a["global_line"]},{"last_line",b["global_line"]},
+      // Both tag times, so the interval can be placed in the diagnostic window
+      // exactly instead of being reconstructed from integrated wheel travel.
+      {"first_time_s",a["time_s"]},{"last_time_s",b["time_s"]},
+      {"camera_rotation_from",a["camera_rotation_world"]},
+      {"camera_rotation_to",b["camera_rotation_world"]},
+      {"camera_position_from_m",a["camera_position_world_m"]},
+      {"camera_position_to_m",b["camera_position_world_m"]},
       {"block_id",block_},{"segment_id",segment_},{"capturing",active_}};
     if(const auto *newest=flight_->Newest()) {
       event["body_xyz"]={newest->bodyX,newest->bodyY,newest->bodyZ};
