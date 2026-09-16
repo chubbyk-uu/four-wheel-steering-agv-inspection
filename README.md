@@ -11,7 +11,7 @@
 - 550 kg四悬挂底盘，八电机四驱四转；车辆最高速度15 km/h、额定采集速度10 km/h，加速度0.8、减速度1.0 m/s²。转向硬限位[−280°, +100°]、软限位[−275°, +95°]，四轮一致，静止起步另留20°段余量。
 - 线阵相机20 mm、4096像素/1.5 m，约0.366 mm/像素；编码器等距触发，默认4096行/块，Mono8原图与稀疏末行参考标签归档。
 - 矩形规划、三维RTK/IMU/轮里程计融合、梯形/三角形时间闭环和按轨采集联动已实现。全区域联合验证已覆盖0.5/1.0/2.0/2.778 m/s四档，轨迹间距1 m，换道不后退。
-- OptiX共享几何、颜色＋法线和有界高清瓦片缓存已接入；20×10 m与100×10 m Concrete047A全宽道路均已修正显示UV。普通启动默认网格，水泥道路需显式载入。
+- OptiX共享几何、颜色＋法线和有界高清瓦片缓存已接入；20×10 m与100×10 m Concrete047A全宽道路均已修正显示UV。`sim.launch.py`基础仿真默认网格；`inspection.launch.py`巡检默认载入100×10 m、±2 mm/20 cm源网格的带标识高度场道路。
 - 暂停恢复、显式补扫/覆盖汇总及RViz任务面板已接入；自主避障、完整条带拼接及TIFF仍待实现。新版独立11 kHz、10 km/h矩形闭环与100×10 m全宽长时验收均已完成（2026-09-14）；旧模型性能不能替代新版验收。
 
 **接续工作先读[当前状态与下一步](docs/CURRENT_STATUS.md)，按任务查[文档索引](docs/README.md)。** 完整约束见[项目规范](PROJECT_SPEC.md)；历史实验已归档，重要问题及证据单独保留入口，踩过的坑汇总在[关键技术问题与解决方案](docs/LESSONS.md)。
@@ -61,8 +61,9 @@ source install/local_setup.bash
 
 ## 快速运行
 
-完整巡检界面：恢复道路资产并配置OptiX后，运行`ros2 launch agv_bringup inspection.launch.py`（原生Linux加`gpu_backend:=native`）。RViz显示同源低清跑道及可行驶边界，速度输入使用km/h、上限10 km/h。右侧面板提供区域编辑、预览、采集控制、覆盖审计和补扫；默认等待操作，详见[面板使用说明](docs/RECTANGLE_EXECUTION.md#rviz巡检任务面板)。
+完整巡检界面：按[道路资产指南](docs/ROAD_ASSETS.md)恢复默认100×10 m、±2 mm/20 cm源网格的带标识1025²高度场道路并配置OptiX后，运行`ros2 launch agv_bringup inspection.launch.py`（原生Linux加`gpu_backend:=native`）。RViz显示同源低清跑道及可行驶边界，速度输入使用km/h、上限10 km/h。右侧面板提供区域编辑、预览、采集控制、覆盖审计和补扫；默认等待操作，详见[面板使用说明](docs/RECTANGLE_EXECUTION.md#rviz巡检任务面板)。
 
+正常巡检不注入暂停；验证暂停使用显式`--pause-probe`。
 
 原生 Linux：
 
@@ -173,7 +174,7 @@ python3 tools/check_baked_road.py assets/road/baked_concrete047a_v1
 python3 tools/preview_baked_road.py assets/road/baked_concrete047a_v1
 ```
 
-输出目录必须不存在，防止覆盖已有资产。下载约 1 GB，样片约 1.6 GiB，建议为此过程预留至少 4 GiB 磁盘空间；100 × 10 m 全场资产需要更多。OptiX有界材质缓存已实现；上述命令只恢复旧版平面样片。当前20 m全宽三维道路的恢复入口见[当前道路恢复指南](docs/ROAD_ASSETS.md)，不能把全场高清图块一次性装进显存。
+输出目录必须不存在，防止覆盖已有资产。下载约 1 GB，样片约 1.6 GiB，建议为此过程预留至少 4 GiB 磁盘空间；100 × 10 m 全场资产需要更多。OptiX有界材质缓存已实现；上述命令只恢复旧版平面样片。当前100 m默认道路及20 m回归道路的恢复入口见[当前道路恢复指南](docs/ROAD_ASSETS.md)，不能把全场高清图块一次性装进显存。
 
 Concrete047A 为 [ambientCG CC0 素材](https://ambientcg.com/view?id=Concrete047A)。官方物理尺寸未给出，暂按整张 2.1 m 映射。烘焙约 0.25 mm/纹素；裂缝尖端、分叉和最终相机像素宽度仍需独立验证。[当前样片](docs/images/concrete047a_comparison.png)。
 
@@ -203,5 +204,3 @@ OptiX/GPU 测试需要对应硬件和运行库；纯 CPU 构建不注册这些�
 已有旧版全宽道路若在GUI中看不到中央双黄线，请按[路面显示对齐说明](docs/issues/ROAD_DISPLAY_ALIGNMENT.md)迁移显示UV；无需重新下载或烘焙高清纹素。新生成的道路已使用修订后的映射。
 
 控制、GUI、贴图与采图变更的实际观察验收见[验收约定](docs/VISUAL_ACCEPTANCE.md)，其中列明现有工具及各自验证范围。
-
-巡检默认道路为100×10 m、±2 mm/20 cm源网格、带标识的1025²高度场；恢复见[道路资产](docs/ROAD_ASSETS.md)。正常巡检不注入暂停，验证暂停使用`--pause-probe`。
