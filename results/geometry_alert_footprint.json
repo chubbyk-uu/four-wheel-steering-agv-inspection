@@ -221,7 +221,7 @@
   ],
   "residual_investigation": {
     "question": "what is the 0.2 to 0.9 percent by which the footprint ratio exceeds one",
-    "answer": "it is not a small residual but the incomplete cancellation of two large terms: +6.3 mm of mount deflection and camera lever against -4.3 mm of ground travel the encoder cannot see, because the encoder counts shaft rotation relative to a body that pitches. See results/geometry_residual_budget.json.",
+    "answer": "it is not a small residual but the incomplete cancellation of two large terms: +6.3 mm of mount deflection and camera lever against -4.0 mm of ground travel the encoder cannot see, because the encoder counts shaft rotation relative to a body that pitches. See results/geometry_residual_budget.json.",
     "budget_mm": {
       "mount_deflection_mm": {
         "mean": 2.5662491359216237,
@@ -230,22 +230,28 @@
         "max": 3.8166762719518132
       },
       "lever_geometry_mm": {
-        "mean": 3.700341968508482,
-        "stdev": 1.0282117334432517,
-        "min": 2.3425862896669924,
-        "max": 5.578541647862478
+        "mean": 3.7003252145850474,
+        "stdev": 1.0282362093235948,
+        "min": 2.3425528168621867,
+        "max": 5.578538494928564
       },
-      "contact_slip_mm": {
-        "mean": -0.4650127376050067,
-        "stdev": 1.1254399015957093,
-        "min": -2.543137585444888,
-        "max": 1.0257491096244409
+      "rolling_remainder_mm": {
+        "mean": -0.4300884945031079,
+        "stdev": 1.143792088282132,
+        "min": -2.7249066560424695,
+        "max": 1.0942176594337938
       },
       "body_pitch_mm": {
-        "mean": -4.31710583985204,
-        "stdev": 0.9355903867996985,
-        "min": -5.7350014211816625,
-        "max": -2.5437381498746547
+        "mean": -4.041157171712696,
+        "stdev": 0.9022709737864315,
+        "min": -5.389288008152335,
+        "max": -2.4195266669362536
+      },
+      "shaft_integration_mm": {
+        "mean": -0.31085615731780314,
+        "stdev": 0.10597199921135664,
+        "min": -0.37108198913499146,
+        "max": -0.07997392045279439
       },
       "total_mm": {
         "mean": 1.4844725269730583,
@@ -278,9 +284,16 @@
     },
     "still_open": [
       "1.762 mm of interval-to-interval scatter in the total",
-      "contact tangential speed was never collected; the slip term is kinematic and indirect",
+      "1.03 mm scatter in the lever/geometry term is itself unexplained",
+      "contact tangential speed was never collected; the rolling remainder is indirect",
       "whether the same correction applies to the 3 mm road alerts"
     ],
-    "criterion_consequence": "all four terms are absolute millimetres independent of interval length, so a ratio floor alone is not enough: a footprint criterion needs a minimum interval length or an absolute tolerance. The 1.10 and 1.13 on the two 22 mm pause-resume intervals are this amplification, not a worse interval."
+    "criterion_consequence": "the terms are absolute millimetres set by the attitude change across the interval; they do not grow with travel, and they are not independent of the interval either - a different interval sees a different attitude change. For one startup, shortening the interval does not shrink the millimetres proportionally, so a ratio floor alone is not enough: a footprint criterion needs a minimum interval length or an absolute tolerance. The 1.10 and 1.13 on the two 22 mm pause-resume intervals are this amplification, not a worse interval.",
+    "budget_is_an_identity": "the terms telescope, so their sum equals the observed difference by construction and is not a check on the attribution; the evidence is each independently measured intermediate position",
+    "naming_limits": {
+      "rolling_remainder": "not slip: also carries steering, ground slope and hub reconstruction error. Contact tangential speed is the direct evidence and was never collected.",
+      "shaft_integration": "not a mechanical effect: the accounting difference between the integrated shaft rate and the emitted line count, about 0.1% of travel. Previously folded into the pitch term, now separate."
+    },
+    "status": "supports \"the residual contains real mount motion and an encoder reference-frame effect\"; does not yet support \"every mechanical term is precisely settled\""
   }
 }

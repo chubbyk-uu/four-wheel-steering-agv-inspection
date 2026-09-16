@@ -12,10 +12,21 @@ still unexplained rather than about what was never measured.
                     at the interval start; no contact-kinematics probe needed.
   lever/geometry    rigid-mount footprint against the fl wheel centre rebuilt
                     from the body pose, suspension travel and the URDF chain.
-  contact slip      wheel centre travel against the rolling prediction.
-  body pitch        the encoder counts shaft rotation *relative to the body*,
-                    so a body that pitches by dtheta while rolling adds
-                    r*dtheta of ground travel the encoder never sees.
+  rolling remainder wheel centre travel against the rolling prediction. Not
+                    called slip: it also carries steering, ground slope and the
+                    error in rebuilding the hub from the body pose, and contact
+                    tangential speed - the direct slip evidence - is gated
+                    behind probe_contact_kinematics and was never collected.
+  body pitch        r*dtheta. The encoder counts shaft rotation *relative to
+                    the body*, so a body that pitches while rolling covers
+                    ground the encoder never sees.
+  shaft integration how far the integrated shaft rate lands from the line count
+                    the encoder emitted. An accounting difference between two
+                    readings of the same encoder, not a mechanical effect.
+
+The terms telescope, so their sum is the observed difference by construction
+and the sum is not a check on the attribution. The evidence is each
+intermediate position, measured separately.
 
 Nothing is filled in. An interval the flight window does not cover, or whose
 ray will not solve, is reported as unmeasured and excluded from the summary.
@@ -31,6 +42,7 @@ from scipy.spatial.transform import Rotation, Slerp
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT/'src/agv_linescan'))
 from agv_linescan.scan_footprint import Heightfield, ground_intersection  # noqa: E402
+from agv_linescan.travel_budget import TERMS, integrate_rate, travel_budget  # noqa: E402
 
 ALERT = 'camera_encoder_geometry_alert'
 
@@ -89,31 +101,33 @@ def budget(event, tags, dump, field, radius, wheelbase, track, hub_z):
     footprint = float(np.dot(np.asarray(g1) - np.asarray(g0), forward))
     rigid = float(np.dot(np.asarray(g1r) - np.asarray(g0), forward))
 
-    i0, i1 = int(np.argmin(abs(t - t0))), int(np.argmin(abs(t - t1)))
-    window = slice(i0, i1+1)
-    susp0, susp1 = records[i0]['suspension_m'][0], records[i1]['suspension_m'][0]
+    # Exact interval limits throughout; snapping to the nearest physics step is
+    # worth a few tenths of a millimetre on these terms.
+    susp = np.array([r['suspension_m'][0] for r in records])
+    susp0, susp1 = float(np.interp(t0, t, susp)), float(np.interp(t1, t, susp))
     hub0 = pb0 + rb0.apply([wheelbase/2, track/2, hub_z + susp0])
     hub1 = pb1 + rb1.apply([wheelbase/2, track/2, hub_z + susp1])
     hub = float(np.dot(hub1 - hub0, forward))
 
-    steer = float(np.mean([r['steer_rad'][0] for r in records[window]]))
+    steer_series = [r['steer_rad'][0] for r in records]
+    steer = integrate_rate(t, steer_series, t0, t1)
+    shaft = integrate_rate(t, [r['drive_rate_rad_s'][0] for r in records], t0, t1)
+    if steer is None or shaft is None:
+        return dict(measured=False, reason='rate integration window is not inside the samples')
+    steer /= (t1 - t0)
     axis = [-np.sin(steer), np.cos(steer), 0.]          # fl drive axis in the body frame
     pitch = float(np.dot((rb0.inv()*rb1).as_rotvec(), axis))
-    shaft = float(np.trapz([r['drive_rate_rad_s'][0] for r in records[window]], t[window]))
-    rolling = radius*(shaft + pitch)
     encoder = event['encoder_m']
 
+    terms = travel_budget(encoder, footprint, rigid, hub, shaft, pitch, radius)
     return dict(measured=True, lines=event['last_line']-event['first_line'],
                 interval_s=[t0, t1], camera_x_to_m=event['camera_x_to_m'],
                 probe_contact_kinematics=dump['probe_contact_kinematics'],
-                encoder_m=encoder, footprint_m=footprint,
+                encoder_m=encoder, footprint_m=footprint, hub_travel_m=hub,
+                rigid_mount_footprint_m=rigid, mean_steer_rad=steer,
                 shaft_relative_rad=shaft, body_pitch_about_axle_rad=pitch,
                 mount_change_rad=float(mount_change),
-                mount_deflection_mm=1000*(footprint - rigid),
-                lever_geometry_mm=1000*(rigid - hub),
-                contact_slip_mm=1000*(hub - rolling),
-                body_pitch_mm=1000*(rolling - encoder),
-                total_mm=1000*(footprint - encoder))
+                **{k[:-2]+'_mm': 1000*v for k, v in terms.items()})
 
 
 def main():
@@ -139,8 +153,7 @@ def main():
                          a.wheelbase, a.track, a.hub_z)
             rows.append(dict(run=run.name, simulation_time_s=event['simulation_time_s'], **row))
 
-    terms = ['mount_deflection_mm', 'lever_geometry_mm', 'contact_slip_mm',
-             'body_pitch_mm', 'total_mm']
+    terms = [k[:-2]+'_mm' for k in TERMS] + ['total_mm']
     solved = [r for r in rows if r['measured']]
     summary = {k: dict(mean=float(np.mean([r[k] for r in solved])),
                        stdev=float(np.std([r[k] for r in solved])),
@@ -151,21 +164,26 @@ def main():
                   alerts=len(rows), measured=len(solved),
                   unmeasured=[{k: r[k] for k in ('run', 'simulation_time_s', 'reason')}
                               for r in rows if not r['measured']],
-                  scope=('Decomposition of footprint travel minus encoder travel into four '
-                         'independently measured terms. The terms telescope, so their sum is '
-                         'the observed difference by construction; what the data supplies is '
-                         'each intermediate position. An uncovered window or an unsolved ray '
-                         'is reported, never given a value.'),
+                  scope=('Decomposition of footprint travel minus encoder travel into five '
+                         'separately measured terms. The terms telescope, so their sum is the '
+                         'observed difference BY CONSTRUCTION and is not a check on the '
+                         'attribution; the evidence is each intermediate position. '
+                         'rolling_remainder is not slip: it also carries steering, ground '
+                         'slope and hub reconstruction error, and contact tangential speed was '
+                         'never collected. shaft_integration is an accounting difference '
+                         'between the integrated shaft rate and the emitted line count, not a '
+                         'mechanical effect. An uncovered window or an unsolved ray is '
+                         'reported, never given a value.'),
                   summary_mm=summary, intervals=rows)
     a.output.write_text(json.dumps(report, indent=2)+'\n')
 
-    print('%-20s %-9s | %-9s %-9s %-9s %-9s | %-9s'
-          % ('run', 'sim_t', 'mount', 'lever', 'slip', 'pitch', 'total'))
+    head = ('run', 'sim_t', 'mount', 'lever', 'remain', 'pitch', 'shaft_int', 'total')
+    print('%-20s %-9s | %-9s %-9s %-9s %-9s %-10s | %-9s' % head)
     for r in rows:
         if not r['measured']:
             print('%-20s %-9.3f   UNMEASURED: %s' % (r['run'], r['simulation_time_s'], r['reason']))
             continue
-        print('%-20s %-9.3f | %-9.3f %-9.3f %-9.3f %-9.3f | %-9.3f'
+        print('%-20s %-9.3f | %-9.3f %-9.3f %-9.3f %-9.3f %-10.3f | %-9.3f'
               % (r['run'], r['simulation_time_s'], *(r[k] for k in terms)))
     if summary:
         print()
