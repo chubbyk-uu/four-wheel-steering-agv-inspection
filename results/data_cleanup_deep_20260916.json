@@ -1,0 +1,98 @@
+{
+  "date": "2026-09-16",
+  "direct_delete": true,
+  "entries": [
+    {
+      "directory": "local_data/accept_rated_6",
+      "kind": "redundant capture images",
+      "deleted_files": 690,
+      "retained_images": 20,
+      "logical_bytes": 11576290770
+    },
+    {
+      "directory": "local_data/rough2mm_repeat_1",
+      "kind": "redundant capture images",
+      "deleted_files": 677,
+      "retained_images": 26,
+      "logical_bytes": 11358186741
+    },
+    {
+      "directory": "local_data/mount_flex_probe_v1",
+      "kind": "redundant capture images",
+      "deleted_files": 68,
+      "retained_images": 32,
+      "logical_bytes": 1140851844
+    },
+    {
+      "directory": "local_data/rough_closed_loop_v1",
+      "kind": "redundant capture images",
+      "deleted_files": 80,
+      "retained_images": 36,
+      "logical_bytes": 1342178640
+    },
+    {
+      "directory": "local_data/rough_v2_full_length_2track",
+      "kind": "redundant capture images",
+      "deleted_files": 136,
+      "retained_images": 4,
+      "logical_bytes": 2281703688
+    },
+    {
+      "directory": "local_data/rough_runtime_diagnostic_v3",
+      "kind": "redundant capture images",
+      "deleted_files": 57,
+      "retained_images": 4,
+      "logical_bytes": 956302281
+    },
+    {
+      "directory": "local_data/collision_contact_heightmap_ab/scene_heightmap_ode_100m",
+      "kind": "regeneratable experimental meshes/textures",
+      "deleted_files": 247,
+      "logical_bytes": 3499775061
+    },
+    {
+      "directory": "local_data/collision_contact_heightmap_ab/scene_triangle_fcl_100m",
+      "kind": "regeneratable experimental meshes/textures",
+      "deleted_files": 246,
+      "logical_bytes": 3493816318
+    },
+    {
+      "directory": "local_data/collision_contact_heightmap_ab/scene_triangle_fcl",
+      "kind": "regeneratable experimental meshes/textures",
+      "deleted_files": 47,
+      "logical_bytes": 1129342011
+    },
+    {
+      "directory": "local_data/collision_contact_heightmap_ab/scene_heightmap_ode_100m_1025",
+      "kind": "regeneratable experimental meshes/textures",
+      "deleted_files": 247,
+      "logical_bytes": 3495418372
+    },
+    {
+      "directory": "local_data/collision_contact_heightmap_ab/scene_heightmap_ode_100m_1025_fixed",
+      "kind": "regeneratable experimental meshes/textures",
+      "deleted_files": 247,
+      "logical_bytes": 3495418372
+    },
+    {
+      "directory": "local_data/rough_flat_buffer_diagnostic",
+      "kind": "regeneratable experimental meshes/textures",
+      "deleted_files": 246,
+      "logical_bytes": 3491080947
+    }
+  ],
+  "logical_deleted_gib": 44.014644850976765,
+  "filesystem_available_increase_gib": 26.702213287353516,
+  "note": "Logical bytes include hardlinked scene files; actual freed space is measured separately.",
+  "protected": [
+    "default_2mm_closure_1 all original images",
+    "calibration data",
+    "key short strip comparison images and plots",
+    "all flight recorder/contact fault dumps and logs",
+    "active assets/road",
+    "Mesa source/build/runtime"
+  ],
+  "limits": "Pruned old runs no longer support full pixel audit. Temporary scene manifests require regenerating deleted assets before launch.",
+  "local_data_allocated_after": "approximately 32 GiB (du -sh)",
+  "protected_full_capture_verification": "704 PGM original images present with matching block JSON"
+}
