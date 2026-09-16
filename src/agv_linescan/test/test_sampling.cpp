@@ -198,3 +198,21 @@ TEST(FlightRecorder, ALateGuardCanCorrectTheStepItRejected) {
   EXPECT_EQ(recorder.Snapshot().back().passPolarity,0);
 }
 
+TEST(ContactStats, CountsOnlyCaptureAndKeepsDropoutEpisodes) {
+  CaptureContactStats stats;FlightSample sample;
+  for(auto &contact:sample.contact)contact.available=1;
+  stats.Add(sample); // armed state is intentionally excluded
+  sample.capturing=1;
+  sample.suspensionVel[0]=.012;
+  stats.Add(sample);stats.Add(sample);
+  sample.contact[0].points=1;sample.contact[0].stored=1;
+  sample.contact[0].maxDepth=.0003f;
+  sample.contact[0].point[0].normal[0]=1;sample.contact[0].point[0].normal[2]=1;
+  stats.Add(sample);
+  sample.contact[0].points=0;sample.contact[0].stored=0;stats.Add(sample);
+  const auto &wheel=stats.wheels()[0];
+  EXPECT_EQ(wheel.samples,4u);EXPECT_EQ(wheel.noContact,3u);
+  EXPECT_EQ(wheel.noContactEpisodes,2u);EXPECT_EQ(wheel.longestNoContact,2u);
+  EXPECT_NEAR(wheel.maxDepth,.0003,1e-8);EXPECT_NEAR(wheel.maxNormalTiltRad,M_PI/4,1e-12);
+  EXPECT_EQ(wheel.suspensionRateHistogram[2],4u);
+}

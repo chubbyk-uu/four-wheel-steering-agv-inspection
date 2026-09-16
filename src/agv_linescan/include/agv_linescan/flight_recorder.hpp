@@ -140,4 +140,51 @@ class ResidualStats {
   std::array<std::uint64_t,kBins> histogram_{};
 };
 
+// Cumulative evidence for runs which never trip the rare-fault recorder.  This
+// deliberately reports contact topology and kinematics, not a summed force:
+// the ContactSensorData force convention is not yet defined well enough to
+// compare its total with vehicle weight.
+class CaptureContactStats {
+ public:
+  static constexpr std::size_t kSuspensionBins=64;
+  static constexpr double kSuspensionBinWidth=0.005;  // m/s
+  struct Wheel {
+    std::uint64_t samples=0,available=0,noContact=0,noContactEpisodes=0;
+    std::uint64_t currentNoContact=0,longestNoContact=0;
+    std::uint16_t maxPoints=0;
+    double maxDepth=0,maxNormalTiltRad=0,maxSuspensionRate=0;
+    std::array<std::uint64_t,kSuspensionBins> suspensionRateHistogram{};
+  };
+
+  void Add(const FlightSample &sample) {
+    if(!sample.capturing)return;
+    for(std::size_t i=0;i<wheels_.size();++i) {
+      auto &dst=wheels_[i];const auto &contact=sample.contact[i];
+      ++dst.samples;
+      dst.maxSuspensionRate=std::max(dst.maxSuspensionRate,std::abs(sample.suspensionVel[i]));
+      const auto bin=std::min(kSuspensionBins-1,
+        static_cast<std::size_t>(std::abs(sample.suspensionVel[i])/kSuspensionBinWidth));
+      ++dst.suspensionRateHistogram[bin];
+      if(!contact.available)continue;
+      ++dst.available;dst.maxPoints=std::max(dst.maxPoints,contact.points);
+      dst.maxDepth=std::max(dst.maxDepth,static_cast<double>(contact.maxDepth));
+      if(contact.points==0) {
+        ++dst.noContact;
+        if(dst.currentNoContact++==0)++dst.noContactEpisodes;
+        dst.longestNoContact=std::max(dst.longestNoContact,dst.currentNoContact);
+      } else dst.currentNoContact=0;
+      for(std::size_t p=0;p<contact.stored;++p) {
+        const auto &n=contact.point[p].normal;
+        const double length=std::sqrt(double(n[0])*n[0]+double(n[1])*n[1]+double(n[2])*n[2]);
+        if(length>0)dst.maxNormalTiltRad=std::max(dst.maxNormalTiltRad,
+          std::acos(std::clamp(std::abs(double(n[2]))/length,0.,1.)));
+      }
+    }
+  }
+  const std::array<Wheel,4>& wheels() const {return wheels_;}
+
+ private:
+  std::array<Wheel,4> wheels_{};
+};
+
 }  // namespace agv_linescan

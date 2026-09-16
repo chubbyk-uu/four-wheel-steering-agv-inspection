@@ -120,6 +120,7 @@ class GzLineScan final: public gz::sim::System,
       throw std::runtime_error("invalid flight_recorder configuration");
     flight_=std::make_unique<FlightRecorder>(flightCapacity,flightSpan);
     residualStats_=std::make_unique<ResidualStats>(config_["max_scan_residual_m_s"].as<double>(.03));
+    contactStats_=std::make_unique<CaptureContactStats>();
     if(!batchRows_ || batchRows_>16384 || tileSlots_<4 || tileSlots_>64 ||
        queueBudget_->lineLimit<batchRows_ || queueBudget_->lineLimit>1048576 ||
        queueBudget_->jobLimit>65536 || !std::isfinite(prefetchDistance_) || prefetchDistance_<0)
@@ -597,6 +598,7 @@ class GzLineScan final: public gz::sim::System,
     flight.capturing=active_?1:0;
     flight.motionState=MotionCode(motion_);
     flight_->Push(flight);
+    if(contactStats_)contactStats_->Add(flight);
     if(!fitted_ok || !residualStats_)return;
     residualStats_->Add(fitted.residual);
     // Crossing half the gate is written once, then only after a cooldown, so a
@@ -686,6 +688,24 @@ class GzLineScan final: public gz::sim::System,
                 {"diagnostic_dropped_records",diagnosticDropped_.load()},
                 {"histogram_bin_width_m_s",2*residualStats_->limit()/(ResidualStats::kBins-1)},
                 {"histogram",residualStats_->histogram()}};
+  }
+
+  Json ContactSummary() const {
+    Json wheels=Json::array();
+    if(!contactStats_)return wheels;
+    static constexpr std::array<const char*,4> names={"fl","fr","rl","rr"};
+    for(std::size_t i=0;i<4;++i) {
+      const auto &w=contactStats_->wheels()[i];
+      wheels.push_back({{"wheel",names[i]},{"capturing_samples",w.samples},
+        {"contact_available_samples",w.available},{"no_contact_samples",w.noContact},
+        {"no_contact_episodes",w.noContactEpisodes},
+        {"longest_no_contact_samples",w.longestNoContact},{"max_contact_points",w.maxPoints},
+        {"max_depth_m",w.maxDepth},{"max_normal_tilt_rad",w.maxNormalTiltRad},
+        {"max_suspension_rate_m_s",w.maxSuspensionRate},
+        {"suspension_rate_histogram_bin_width_m_s",CaptureContactStats::kSuspensionBinWidth},
+        {"suspension_rate_histogram",w.suspensionRateHistogram}});
+    }
+    return wheels;
   }
 
   // Copy the ring on the physics thread, hand the copy to a writer, and return.
@@ -1095,6 +1115,7 @@ class GzLineScan final: public gz::sim::System,
     if(AsyncBackend()) {
       std::lock_guard<std::mutex> lock(mutex_);
       meta["scan_residual_statistics"]=ResidualSummary();
+      meta["capture_contact_statistics"]=ContactSummary();
       meta["sampling_queue_capacity_jobs"]=queueBudget_->jobLimit;
       meta["sampling_queue_capacity_lines"]=queueBudget_->lineLimit;
       meta["sampling_queue_high_water_jobs"]=queueBudget_->peakJobs;
@@ -1189,6 +1210,7 @@ class GzLineScan final: public gz::sim::System,
   bool contactEvidenceRequired_=true;
   std::unique_ptr<FlightRecorder> flight_;
   std::unique_ptr<ResidualStats> residualStats_;
+  std::unique_ptr<CaptureContactStats> contactStats_;
   double residualHalfCooldown_=10.,lastHalfEvent_=-1e9;
   std::uint64_t halfEvents_=0,flightDumps_=0,flightDumpLimit_=20,flightDumpsSuppressed_=0;
   std::atomic<std::uint64_t> diagnosticWriteFailures_{0},diagnosticDropped_{0};
