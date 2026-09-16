@@ -1,268 +1,286 @@
 {
- "schema": "agv.geometry_alert_footprint.v1",
- "heightfield": "assets/road/runtime_fullwidth_100m_rough_marked_2mm_20cm_heightmap_v1/road_heightfield.json",
- "floor": 0.95,
- "runs": [
-  "local_data/rough2mm_repeat_1",
-  "local_data/rough2mm_repeat_2",
-  "local_data/rough2mm_repeat_3"
- ],
- "alerts": 13,
- "footprint_solved": 13,
- "footprint_unsolved": 0,
- "intervals_without_tags": 0,
- "centre_ratio_range": [
-  0.3901584754304749,
-  0.9422582663518436
- ],
- "footprint_ratio_range": [
-  0.9949710826695277,
-  1.1285245082226543
- ],
- "centre_below_floor": 13,
- "footprint_below_floor": 0,
- "scope": "Footprint ratio is a candidate criterion only; the shipped floor and the shipped centre-based check are unchanged. An unsolved ray is reported, never replaced by the centre and never counted as a pass.",
- "intervals": [
-  {
-   "run": "rough2mm_repeat_1",
-   "simulation_time_s": 55.765,
-   "first_line": 0,
-   "last_line": 1024,
-   "camera_x_to_m": -4.562658624087827,
-   "measured": true,
-   "lines": 1024,
-   "encoder_m": 0.3744778443079033,
-   "centre_m": 0.35120483437011707,
-   "footprint_m": 0.3725946261867854,
-   "footprint_available": true,
-   "centre_ratio": 0.9378521044928609,
-   "footprint_ratio": 0.9949710826695277
-  },
-  {
-   "run": "rough2mm_repeat_1",
-   "simulation_time_s": 63.655,
-   "first_line": 14275,
-   "last_line": 14336,
-   "camera_x_to_m": 0.3084629214691344,
-   "measured": true,
-   "lines": 61,
-   "encoder_m": 0.022307762209748148,
-   "centre_m": 0.008738015870507099,
-   "footprint_m": 0.024601661900418126,
-   "footprint_available": true,
-   "centre_ratio": 0.39170293229541064,
-   "footprint_ratio": 1.102829663912572
-  },
-  {
-   "run": "rough2mm_repeat_1",
-   "simulation_time_s": 283.293,
-   "first_line": 864415,
-   "last_line": 865439,
-   "camera_x_to_m": 104.56495541220507,
-   "measured": true,
-   "lines": 1024,
-   "encoder_m": 0.3744778443079033,
-   "centre_m": 0.34883919618738446,
-   "footprint_m": 0.37762518819992863,
-   "footprint_available": true,
-   "centre_ratio": 0.9315349398896928,
-   "footprint_ratio": 1.0084046197655354
-  },
-  {
-   "run": "rough2mm_repeat_1",
-   "simulation_time_s": 355.357,
-   "first_line": 1153037,
-   "last_line": 1154061,
-   "camera_x_to_m": -4.523838019092407,
-   "measured": true,
-   "lines": 1024,
-   "encoder_m": 0.3744778443079033,
-   "centre_m": 0.342715868417625,
-   "footprint_m": 0.3760136738284894,
-   "footprint_available": true,
-   "centre_ratio": 0.9151832975620235,
-   "footprint_ratio": 1.0041012560393914
-  },
-  {
-   "run": "rough2mm_repeat_2",
-   "simulation_time_s": 52.352,
-   "first_line": 0,
-   "last_line": 1024,
-   "camera_x_to_m": -4.551691105301922,
-   "measured": true,
-   "lines": 1024,
-   "encoder_m": 0.3744778443079033,
-   "centre_m": 0.35285484436474057,
-   "footprint_m": 0.3752409316863048,
-   "footprint_available": true,
-   "centre_ratio": 0.9422582663518436,
-   "footprint_ratio": 1.0020377370517388
-  },
-  {
-   "run": "rough2mm_repeat_2",
-   "simulation_time_s": 60.163,
-   "first_line": 13251,
-   "last_line": 13312,
-   "camera_x_to_m": -0.05246533288781991,
-   "measured": true,
-   "lines": 61,
-   "encoder_m": 0.022307762209748148,
-   "centre_m": 0.008703562494020899,
-   "footprint_m": 0.02517485637730394,
-   "footprint_available": true,
-   "centre_ratio": 0.3901584754304749,
-   "footprint_ratio": 1.1285245082226543
-  },
-  {
-   "run": "rough2mm_repeat_2",
-   "simulation_time_s": 209.386,
-   "first_line": 575988,
-   "last_line": 577012,
-   "camera_x_to_m": -4.55351666445363,
-   "measured": true,
-   "lines": 1024,
-   "encoder_m": 0.3744778443079033,
-   "centre_m": 0.3504968664298902,
-   "footprint_m": 0.3764066116038389,
-   "footprint_available": true,
-   "centre_ratio": 0.9359615575593426,
-   "footprint_ratio": 1.0051505511614454
-  },
-  {
-   "run": "rough2mm_repeat_2",
-   "simulation_time_s": 282.582,
-   "first_line": 864595,
-   "last_line": 865619,
-   "camera_x_to_m": 104.56599875820231,
-   "measured": true,
-   "lines": 1024,
-   "encoder_m": 0.3744778443079033,
-   "centre_m": 0.34965380315297523,
-   "footprint_m": 0.37781979159903756,
-   "footprint_available": true,
-   "centre_ratio": 0.9337102540717542,
-   "footprint_ratio": 1.0089242857539695
-  },
-  {
-   "run": "rough2mm_repeat_3",
-   "simulation_time_s": 56.107,
-   "first_line": 0,
-   "last_line": 1024,
-   "camera_x_to_m": -4.576707423623506,
-   "measured": true,
-   "lines": 1024,
-   "encoder_m": 0.3744778443079033,
-   "centre_m": 0.35238696825643157,
-   "footprint_m": 0.3737811582998214,
-   "footprint_available": true,
-   "centre_ratio": 0.9410088570331863,
-   "footprint_ratio": 0.9981395801683021
-  },
-  {
-   "run": "rough2mm_repeat_3",
-   "simulation_time_s": 64.188,
-   "first_line": 13988,
-   "last_line": 14336,
-   "camera_x_to_m": 0.2847482201584377,
-   "measured": true,
-   "lines": 348,
-   "encoder_m": 0.12726395490151401,
-   "centre_m": 0.104825852515841,
-   "footprint_m": 0.12987521255795406,
-   "footprint_available": true,
-   "centre_ratio": 0.8236884717040484,
-   "footprint_ratio": 1.020518438692722
-  },
-  {
-   "run": "rough2mm_repeat_3",
-   "simulation_time_s": 208.574,
-   "first_line": 574385,
-   "last_line": 575409,
-   "camera_x_to_m": -4.554506923444437,
-   "measured": true,
-   "lines": 1024,
-   "encoder_m": 0.3744778443079033,
-   "centre_m": 0.34428397564663893,
-   "footprint_m": 0.37702958468524983,
-   "footprint_available": true,
-   "centre_ratio": 0.9193707475082601,
-   "footprint_ratio": 1.0068141291030517
-  },
-  {
-   "run": "rough2mm_repeat_3",
-   "simulation_time_s": 283.076,
-   "first_line": 862872,
-   "last_line": 863896,
-   "camera_x_to_m": 104.56379239885833,
-   "measured": true,
-   "lines": 1024,
-   "encoder_m": 0.3744778443079033,
-   "centre_m": 0.3494250002324861,
-   "footprint_m": 0.37759728388850533,
-   "footprint_available": true,
-   "centre_ratio": 0.9330992621960881,
-   "footprint_ratio": 1.0083301045122368
-  },
-  {
-   "run": "rough2mm_repeat_3",
-   "simulation_time_s": 500.106,
-   "first_line": 1718839,
-   "last_line": 1719863,
-   "camera_x_to_m": -4.5834533856264175,
-   "measured": true,
-   "lines": 1024,
-   "encoder_m": 0.3744778443079033,
-   "centre_m": 0.3500601505651799,
-   "footprint_m": 0.373421759689867,
-   "footprint_available": true,
-   "centre_ratio": 0.9347953580862672,
-   "footprint_ratio": 0.9971798475287954
+  "schema": "agv.geometry_alert_footprint.v1",
+  "heightfield": "assets/road/runtime_fullwidth_100m_rough_marked_2mm_20cm_heightmap_v1/road_heightfield.json",
+  "floor": 0.95,
+  "runs": [
+    "local_data/rough2mm_repeat_1",
+    "local_data/rough2mm_repeat_2",
+    "local_data/rough2mm_repeat_3"
+  ],
+  "alerts": 13,
+  "footprint_solved": 13,
+  "footprint_unsolved": 0,
+  "intervals_without_tags": 0,
+  "centre_ratio_range": [
+    0.3901584754304749,
+    0.9422582663518436
+  ],
+  "footprint_ratio_range": [
+    0.9949710826695277,
+    1.1285245082226543
+  ],
+  "centre_below_floor": 13,
+  "footprint_below_floor": 0,
+  "scope": "Footprint ratio is a candidate criterion only; the shipped floor and the shipped centre-based check are unchanged. An unsolved ray is reported, never replaced by the centre and never counted as a pass.",
+  "intervals": [
+    {
+      "run": "rough2mm_repeat_1",
+      "simulation_time_s": 55.765,
+      "first_line": 0,
+      "last_line": 1024,
+      "camera_x_to_m": -4.562658624087827,
+      "measured": true,
+      "lines": 1024,
+      "encoder_m": 0.3744778443079033,
+      "centre_m": 0.35120483437011707,
+      "footprint_m": 0.3725946261867854,
+      "footprint_available": true,
+      "centre_ratio": 0.9378521044928609,
+      "footprint_ratio": 0.9949710826695277
+    },
+    {
+      "run": "rough2mm_repeat_1",
+      "simulation_time_s": 63.655,
+      "first_line": 14275,
+      "last_line": 14336,
+      "camera_x_to_m": 0.3084629214691344,
+      "measured": true,
+      "lines": 61,
+      "encoder_m": 0.022307762209748148,
+      "centre_m": 0.008738015870507099,
+      "footprint_m": 0.024601661900418126,
+      "footprint_available": true,
+      "centre_ratio": 0.39170293229541064,
+      "footprint_ratio": 1.102829663912572
+    },
+    {
+      "run": "rough2mm_repeat_1",
+      "simulation_time_s": 283.293,
+      "first_line": 864415,
+      "last_line": 865439,
+      "camera_x_to_m": 104.56495541220507,
+      "measured": true,
+      "lines": 1024,
+      "encoder_m": 0.3744778443079033,
+      "centre_m": 0.34883919618738446,
+      "footprint_m": 0.37762518819992863,
+      "footprint_available": true,
+      "centre_ratio": 0.9315349398896928,
+      "footprint_ratio": 1.0084046197655354
+    },
+    {
+      "run": "rough2mm_repeat_1",
+      "simulation_time_s": 355.357,
+      "first_line": 1153037,
+      "last_line": 1154061,
+      "camera_x_to_m": -4.523838019092407,
+      "measured": true,
+      "lines": 1024,
+      "encoder_m": 0.3744778443079033,
+      "centre_m": 0.342715868417625,
+      "footprint_m": 0.3760136738284894,
+      "footprint_available": true,
+      "centre_ratio": 0.9151832975620235,
+      "footprint_ratio": 1.0041012560393914
+    },
+    {
+      "run": "rough2mm_repeat_2",
+      "simulation_time_s": 52.352,
+      "first_line": 0,
+      "last_line": 1024,
+      "camera_x_to_m": -4.551691105301922,
+      "measured": true,
+      "lines": 1024,
+      "encoder_m": 0.3744778443079033,
+      "centre_m": 0.35285484436474057,
+      "footprint_m": 0.3752409316863048,
+      "footprint_available": true,
+      "centre_ratio": 0.9422582663518436,
+      "footprint_ratio": 1.0020377370517388
+    },
+    {
+      "run": "rough2mm_repeat_2",
+      "simulation_time_s": 60.163,
+      "first_line": 13251,
+      "last_line": 13312,
+      "camera_x_to_m": -0.05246533288781991,
+      "measured": true,
+      "lines": 61,
+      "encoder_m": 0.022307762209748148,
+      "centre_m": 0.008703562494020899,
+      "footprint_m": 0.02517485637730394,
+      "footprint_available": true,
+      "centre_ratio": 0.3901584754304749,
+      "footprint_ratio": 1.1285245082226543
+    },
+    {
+      "run": "rough2mm_repeat_2",
+      "simulation_time_s": 209.386,
+      "first_line": 575988,
+      "last_line": 577012,
+      "camera_x_to_m": -4.55351666445363,
+      "measured": true,
+      "lines": 1024,
+      "encoder_m": 0.3744778443079033,
+      "centre_m": 0.3504968664298902,
+      "footprint_m": 0.3764066116038389,
+      "footprint_available": true,
+      "centre_ratio": 0.9359615575593426,
+      "footprint_ratio": 1.0051505511614454
+    },
+    {
+      "run": "rough2mm_repeat_2",
+      "simulation_time_s": 282.582,
+      "first_line": 864595,
+      "last_line": 865619,
+      "camera_x_to_m": 104.56599875820231,
+      "measured": true,
+      "lines": 1024,
+      "encoder_m": 0.3744778443079033,
+      "centre_m": 0.34965380315297523,
+      "footprint_m": 0.37781979159903756,
+      "footprint_available": true,
+      "centre_ratio": 0.9337102540717542,
+      "footprint_ratio": 1.0089242857539695
+    },
+    {
+      "run": "rough2mm_repeat_3",
+      "simulation_time_s": 56.107,
+      "first_line": 0,
+      "last_line": 1024,
+      "camera_x_to_m": -4.576707423623506,
+      "measured": true,
+      "lines": 1024,
+      "encoder_m": 0.3744778443079033,
+      "centre_m": 0.35238696825643157,
+      "footprint_m": 0.3737811582998214,
+      "footprint_available": true,
+      "centre_ratio": 0.9410088570331863,
+      "footprint_ratio": 0.9981395801683021
+    },
+    {
+      "run": "rough2mm_repeat_3",
+      "simulation_time_s": 64.188,
+      "first_line": 13988,
+      "last_line": 14336,
+      "camera_x_to_m": 0.2847482201584377,
+      "measured": true,
+      "lines": 348,
+      "encoder_m": 0.12726395490151401,
+      "centre_m": 0.104825852515841,
+      "footprint_m": 0.12987521255795406,
+      "footprint_available": true,
+      "centre_ratio": 0.8236884717040484,
+      "footprint_ratio": 1.020518438692722
+    },
+    {
+      "run": "rough2mm_repeat_3",
+      "simulation_time_s": 208.574,
+      "first_line": 574385,
+      "last_line": 575409,
+      "camera_x_to_m": -4.554506923444437,
+      "measured": true,
+      "lines": 1024,
+      "encoder_m": 0.3744778443079033,
+      "centre_m": 0.34428397564663893,
+      "footprint_m": 0.37702958468524983,
+      "footprint_available": true,
+      "centre_ratio": 0.9193707475082601,
+      "footprint_ratio": 1.0068141291030517
+    },
+    {
+      "run": "rough2mm_repeat_3",
+      "simulation_time_s": 283.076,
+      "first_line": 862872,
+      "last_line": 863896,
+      "camera_x_to_m": 104.56379239885833,
+      "measured": true,
+      "lines": 1024,
+      "encoder_m": 0.3744778443079033,
+      "centre_m": 0.3494250002324861,
+      "footprint_m": 0.37759728388850533,
+      "footprint_available": true,
+      "centre_ratio": 0.9330992621960881,
+      "footprint_ratio": 1.0083301045122368
+    },
+    {
+      "run": "rough2mm_repeat_3",
+      "simulation_time_s": 500.106,
+      "first_line": 1718839,
+      "last_line": 1719863,
+      "camera_x_to_m": -4.5834533856264175,
+      "measured": true,
+      "lines": 1024,
+      "encoder_m": 0.3744778443079033,
+      "centre_m": 0.3500601505651799,
+      "footprint_m": 0.373421759689867,
+      "footprint_available": true,
+      "centre_ratio": 0.9347953580862672,
+      "footprint_ratio": 0.9971798475287954
+    }
+  ],
+  "residual_investigation": {
+    "question": "what is the 0.2 to 0.9 percent by which the footprint ratio exceeds one",
+    "answer": "it is not a small residual but the incomplete cancellation of two large terms: +6.3 mm of mount deflection and camera lever against -4.3 mm of ground travel the encoder cannot see, because the encoder counts shaft rotation relative to a body that pitches. See results/geometry_residual_budget.json.",
+    "budget_mm": {
+      "mount_deflection_mm": {
+        "mean": 2.5662491359216237,
+        "stdev": 0.4754149146214156,
+        "min": 1.9768848005202178,
+        "max": 3.8166762719518132
+      },
+      "lever_geometry_mm": {
+        "mean": 3.700341968508482,
+        "stdev": 1.0282117334432517,
+        "min": 2.3425862896669924,
+        "max": 5.578541647862478
+      },
+      "contact_slip_mm": {
+        "mean": -0.4650127376050067,
+        "stdev": 1.1254399015957093,
+        "min": -2.543137585444888,
+        "max": 1.0257491096244409
+      },
+      "body_pitch_mm": {
+        "mean": -4.31710583985204,
+        "stdev": 0.9355903867996985,
+        "min": -5.7350014211816625,
+        "max": -2.5437381498746547
+      },
+      "total_mm": {
+        "mean": 1.4844725269730583,
+        "stdev": 1.7619427768214815,
+        "min": -2.0269152378158406,
+        "max": 3.293027181236585
+      }
+    },
+    "measured_by": "tools/analyze_geometry_residual_budget.py",
+    "retracted": [
+      {
+        "claim": "mount deflection is ruled out by the kinematic chain",
+        "why_wrong": "the tag pose containing the deflection means the footprint solve carries that real displacement faithfully, and the encoder does not see it. That is a source of the difference, not a proof against one. test_scan_footprint.py::test_mount_deflection shows the same effect.",
+        "now": "measured without the probe flag by freezing the mount at the interval start: +2.566 +/- 0.475 mm, the tightest systematic term in the budget"
+      },
+      {
+        "claim": "the residual tracks location repeatably, so it points at the surface",
+        "why_wrong": "every alert location is also a fixed startup, braking or turnaround phase, so mechanical response repeats there too; location and motion phase are fully confounded in this dataset",
+        "now": "the repeatability is the repeatable acceleration profile driving both the mount and the body pitch terms"
+      }
+    ],
+    "surface_hypothesis_closed": {
+      "three_surface_comparison_mm": {
+        "collision_minus_source": 0.0,
+        "visual_minus_source_max": 0.127,
+        "horizontal_equivalent": 0.0011,
+        "ray_tilt_deg": 0.501
+      },
+      "independent_recheck": "triangle-face resampling instead of bilinear changed interval travel by at most 0.94 um"
+    },
+    "still_open": [
+      "1.762 mm of interval-to-interval scatter in the total",
+      "contact tangential speed was never collected; the slip term is kinematic and indirect",
+      "whether the same correction applies to the 3 mm road alerts"
+    ],
+    "criterion_consequence": "all four terms are absolute millimetres independent of interval length, so a ratio floor alone is not enough: a footprint criterion needs a minimum interval length or an absolute tolerance. The 1.10 and 1.13 on the two 22 mm pause-resume intervals are this amplification, not a worse interval."
   }
- ],
- "residual_investigation": {
-  "question": "what is the 0.2 to 0.9 percent by which the footprint ratio exceeds one",
-  "mount_deflection_hypothesis": {
-   "proposed_by": "user",
-   "result": "falsified by the kinematic chain, not by statistics",
-   "why": "agv.urdf.xacro puts camera_roll_joint and camera_pitch_joint upstream of camera_carrier_link, camera_link and camera_optical_frame. The tag's camera_position_world_m and camera_rotation_world are that optical frame's world pose, so they already contain the mount deflection, and the footprint solve consumes both. Mount flex cannot appear as a residual in a quantity that is computed from a pose which already includes it.",
-   "corroboration": "the optical joint's fixed rpy of pi 0 pi/2 is exactly the quaternion Tag() applies, confirming the stored rotation is the optical frame and that its third column is the viewing direction"
-  },
-  "other_drivers_tested": {
-   "pitch_rate_correlation": 0.2755,
-   "pitch_magnitude_correlation": -0.0424,
-   "interval_length_correlation": -0.3226,
-   "reading": "no single-variable driver among these; an exposure-midpoint interpolation error would have tracked pitch rate and does not"
-  },
-  "what_the_residual_does_track": {
-   "finding": "location, repeatably across seeds",
-   "positive_end_x_104_6": {
-    "n": 3,
-    "range_mm": [
-     3.12,
-     3.34
-    ],
-    "stdev_mm": 0.1
-   },
-   "roi_entry_x_0_3": {
-    "n": 2,
-    "range_mm": [
-     2.29,
-     2.61
-    ],
-    "stdev_mm": 0.16
-   },
-   "negative_end_x_minus_4_5": {
-    "n": 8,
-    "range_mm": [
-     -1.88,
-     2.87
-    ],
-    "stdev_mm": 1.66
-   },
-   "reading": "three independent runs on three seeds agree to 0.10 mm at the positive end. A residual that repeats per place is a property of that place, not vehicle noise, which points at the surface the ray is solved against rather than at the vehicle or the camera.",
-   "caveat": "the negative end pools eight intervals from several distinct events including a pause-resume, so its spread may be sub-locations rather than true scatter"
-  },
-  "next": "compare the heightfield the solve uses, the 20 cm source field, against the surface actually imaged at those locations. The vehicle rides a 1025-square resample of that field and the camera images the triangulated visual mesh; neither is guaranteed identical to the source at a given point.",
-  "status": "the footprint criterion stays a candidate; 0.95 and the shipped centre check are unchanged"
- }
 }
