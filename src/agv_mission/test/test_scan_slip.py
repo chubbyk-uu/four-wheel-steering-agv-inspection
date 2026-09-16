@@ -179,3 +179,18 @@ def test_geometry_alert_does_not_claim_a_capture_or_tyre_fault(tmp_path, monkeyp
     code, report = run(mission, tmp_path/'r.json', monkeypatch)
     assert report['capture_integrity_passed'] and report['geometry_requires_review']
     assert not report['mechanical_slip_confirmed'] and code == 1
+
+@pytest.mark.parametrize('scale,expected',[(1.,True),(.8,False),(1.2,False)])
+def test_archived_ground_reference_replaces_pitching_centre(tmp_path,monkeypatch,scale,expected):
+    mission=archived(tmp_path,rows=1025)
+    archive=tmp_path/'raw/session'
+    (archive/'ground_geometry_heightfield.json').write_text(json.dumps(dict(x=[-2.,2.],y=[-2.,2.],z=[[0.,0.],[0.,0.]])))
+    rec=json.loads((archive/'block_000000.json').read_text());theta=-.03;c,s=np.cos(theta),np.sin(theta)
+    rec['pose_tags'][0]['camera_rotation_world']=[[1.,0.,0.],[0.,-1.,0.],[0.,0.,-1.]]
+    rec['pose_tags'][1].update(camera_position_world_m=[1024*SPACING*scale+s,0.,c],
+        camera_rotation_world=[[c,0.,-s],[0.,-1.,0.],[-s,0.,-c]])
+    (archive/'block_000000.json').write_text(json.dumps(rec))
+    (mission/'capture_blocks.jsonl').write_text(json.dumps(rec)+'\n')
+    code,r=run(mission,tmp_path/'r.json',monkeypatch)
+    assert r['geometry_reference']=='triangular_heightfield_centre_ray_v1'
+    assert r['passed']==expected and code==(0 if expected else 1)

@@ -31,6 +31,11 @@ import json
 import math
 from pathlib import Path
 
+import sys
+import hashlib
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"src/agv_linescan"))
+from agv_linescan.scan_footprint import Heightfield, interval_travel, ground_verdict
+
 import numpy as np
 from PIL import Image
 
@@ -124,10 +129,28 @@ def main():
     if not blocks:
         raise SystemExit('no archived blocks')
     intervals = list(tag_intervals(blocks))
+    archives_config=json.loads((args.mission/'capture_intervals.json').read_text())
+    field_paths=[Path(e['archive'])/'ground_geometry_heightfield.json' for e in archives_config]
+    ground_mode=bool(field_paths) and all(p.is_file() for p in field_paths)
+    if any(p.is_file() for p in field_paths) and not ground_mode:
+        raise SystemExit('incomplete archived geometry reference')
+    if ground_mode:
+        if len({hashlib.sha256(p.read_bytes()).hexdigest() for p in field_paths})!=1:
+            raise SystemExit('mixed geometry references')
+        field=Heightfield.load(field_paths[0])
+        tag_index={(b['block_id'],t['global_line']):t for b in blocks for t in b['pose_tags']}
+        for v in intervals:
+            out=interval_travel(tag_index[v['block_id'],v['first_line']],tag_index[v['block_id'],v['last_line']],field, v['encoder_m']/v['lines'])
+            travel=out['footprint_m'] if out else None
+            v.update(footprint_horizontal_m=travel, footprint_ratio=out['footprint_ratio'] if out else None,
+                     ground_verdict=ground_verdict(v['encoder_m'],travel,args.ratio_floor))
     ratios = np.array([v['ratio'] for v in intervals])
     slips = sorted((v for v in intervals if v['ratio'] < args.ratio_floor),
                    key=lambda v: v['ratio'])
 
+    centre_alerts=slips.copy()
+    if ground_mode:
+        slips=[v for v in intervals if v['ground_verdict'] in ('alert','unmeasured')]
     archives = []
     for entry in json.loads((args.mission/'capture_intervals.json').read_text()):
         directory = Path(entry['archive'])
@@ -197,10 +220,16 @@ def main():
     report['encoder_vs_camera'] = report['encoder_vs_ground'].copy()
     report['capture_integrity_passed'] = bool(images) and not missing and not worst
     report['pixel_motion_verifiable'] = bool(pooled.size)
-    report['geometry_requires_review'] = bool(slips)
+    report['geometry_reference']='triangular_heightfield_centre_ray_v1' if ground_mode else 'legacy_camera_centre'
+    report['ground_geometry'] = dict(minimum_encoder_m=.30, ratio_floor=args.ratio_floor,
+        ratio_ceiling=1/args.ratio_floor, centre_diagnostic_alerts=len(centre_alerts),
+        eligible_intervals=sum(v.get('ground_verdict')=='pass' or v.get('ground_verdict')=='alert' for v in intervals),
+        short_intervals=[v for v in intervals if v.get('ground_verdict')=='short_interval'],
+        findings=slips)
+    report['geometry_requires_review'] = bool(slips) or (ground_mode and not report['ground_geometry']['eligible_intervals'])
     # Keep the conservative combined gate until the geometry criterion is agreed.
     # A geometry alert must not be renamed a capture failure or confirmed tyre slip.
-    report['passed'] = report['capture_integrity_passed'] and report['pixel_motion_verifiable'] and not slips
+    report['passed'] = report['capture_integrity_passed'] and report['pixel_motion_verifiable'] and not report['geometry_requires_review']
     args.output.write_text(json.dumps(report, indent=2)+'\n')
     print('camera/encoder geometry alerts below %.2f: %d/%d' % (args.ratio_floor, len(slips), len(intervals)))
     print('row difference median %.3f, texture median %.3f' % (median, texture_median))

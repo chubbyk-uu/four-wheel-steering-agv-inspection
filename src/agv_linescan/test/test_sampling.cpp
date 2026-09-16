@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include "agv_linescan/camera_encoder_geometry.hpp"
+#include "agv_linescan/ground_geometry.hpp"
 #include "agv_linescan/flight_recorder.hpp"
 #include "agv_linescan/mount_geometry.hpp"
 #include "agv_linescan/sampling.hpp"
@@ -260,4 +261,16 @@ TEST(CameraEncoderGeometry, RefusesToJudgeWhatItCannot) {
   const double nan = std::numeric_limits<double>::quiet_NaN();
   EXPECT_FALSE(agv_linescan::MeasureCameraEncoder(0, 1024, .0004, nan, 1.).has_value());
   EXPECT_FALSE(agv_linescan::MeasureCameraEncoder(0, 1024, .0004, 0., nan).has_value());
+}
+
+TEST(GroundGeometry, ReferenceAndTwoSidedRules) {
+  GroundGeometry field(nlohmann::json{{"x",{-1.,1.}},{"y",{-1.,1.}},{"z",{{0.,0.},{0.,0.}}}});
+  nlohmann::json tag{{"camera_position_world_m",{0.,0.,1.}},{"camera_rotation_world",{{1.,0.,0.},{0.,-1.,0.},{0.,0.,-1.}}}};
+  auto hit=field.Hit(tag);ASSERT_TRUE(hit);EXPECT_NEAR(hit->Z(),0,1e-12);
+  EXPECT_STREQ(GroundVerdict(.4,.4),"pass");
+  EXPECT_STREQ(GroundVerdict(.4,.32),"alert");
+  EXPECT_STREQ(GroundVerdict(.4,.48),"alert");
+  EXPECT_STREQ(GroundVerdict(.02,.023),"short_interval");
+  EXPECT_STREQ(GroundVerdict(.4,std::nullopt),"unmeasured");
+  tag["camera_rotation_world"][2][2]=1.;EXPECT_FALSE(field.Hit(tag));
 }

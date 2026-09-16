@@ -203,3 +203,5 @@ OptiX/GPU 测试需要对应硬件和运行库；纯 CPU 构建不注册这些�
 已有旧版全宽道路若在GUI中看不到中央双黄线，请按[路面显示对齐说明](docs/issues/ROAD_DISPLAY_ALIGNMENT.md)迁移显示UV；无需重新下载或烘焙高清纹素。新生成的道路已使用修订后的映射。
 
 控制、GUI、贴图与采图变更的实际观察验收见[验收约定](docs/VISUAL_ACCEPTANCE.md)，其中列明现有工具及各自验证范围。
+
+巡检默认道路为100×10 m、±2 mm/20 cm源网格、带标识的1025²高度场；恢复见[道路资产](docs/ROAD_ASSETS.md)。正常巡检不注入暂停，验证暂停使用`--pause-probe`。

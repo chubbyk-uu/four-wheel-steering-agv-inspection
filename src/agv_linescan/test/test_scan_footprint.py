@@ -128,3 +128,12 @@ def test_a_degenerate_interval_is_refused():
     assert interval_travel(tag(512, 0.), tag(512, 1.), field, SPACING) is None
     assert interval_travel(tag(512, 0.), tag(100, 1.), field, SPACING) is None
     assert interval_travel(tag(0, 0.), tag(1024, 1.), field, 0.) is None
+
+
+def test_ground_verdict_is_two_sided_and_short_is_not_a_pass():
+    from agv_linescan.scan_footprint import ground_verdict
+    assert ground_verdict(.4,.4)=='pass'
+    assert ground_verdict(.4,.32)=='alert'
+    assert ground_verdict(.4,.48)=='alert'
+    assert ground_verdict(.02,.023)=='short_interval'
+    assert ground_verdict(.4,None)=='unmeasured'

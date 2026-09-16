@@ -49,8 +49,8 @@ class Heightfield:
         j = float(np.interp(y, self.y, np.arange(self.y.size)))
         i0, j0 = min(int(i), self.x.size-2), min(int(j), self.y.size-2)
         fi, fj = i-i0, j-j0
-        return float((1-fi)*(1-fj)*self.z[j0, i0] + fi*(1-fj)*self.z[j0, i0+1]
-                     + (1-fi)*fj*self.z[j0+1, i0] + fi*fj*self.z[j0+1, i0+1])
+        a,b,c,d=self.z[j0,i0],self.z[j0,i0+1],self.z[j0+1,i0+1],self.z[j0+1,i0]
+        return float(a*(1-fi)+b*(fi-fj)+c*fj if fj<=fi else a*(1-fj)+c*fi+d*(fj-fi))
 
 
 def optical_axis(rotation):
@@ -119,3 +119,12 @@ def interval_travel(first, last, field, spacing):
     out['footprint_ratio'] = (out['footprint_m']/out['encoder_m']
                               if out['footprint_available'] else None)
     return out
+
+
+def ground_verdict(encoder, travel, floor=.95, minimum=.30):
+    if not math.isfinite(encoder) or encoder <= 0 or travel is None or not math.isfinite(travel):
+        return 'unmeasured'
+    if encoder < minimum:
+        return 'short_interval'
+    ratio=travel/encoder
+    return 'alert' if ratio < floor or ratio > 1/floor else 'pass'

@@ -5,6 +5,7 @@
 #include "agv_linescan/sampling.hpp"
 #include "agv_linescan/scan_motion.hpp"
 #include "agv_linescan/camera_encoder_geometry.hpp"
+#include "agv_linescan/ground_geometry.hpp"
 #include "agv_linescan/flight_recorder.hpp"
 #include "agv_linescan/contact_kinematics.hpp"
 #include "agv_linescan/queue_budget.hpp"
@@ -104,6 +105,11 @@ class GzLineScan final: public gz::sim::System,
       for(auto g:robot.at("groups"))linkNames_.push_back(g.at("name").get<std::string>());
       config_["calibration_id"]=config_["calibration_id"].as<std::string>()+"-optix-strip-v1";
       std::ifstream sceneFile(scenePath_);Json scene;sceneFile>>scene;
+      if(scene.contains("physics_heightmap")) {
+        geometryPath_=std::filesystem::path(scenePath_).parent_path()/scene.at("physics_heightmap").at("source_heightfield").get<std::string>();
+        std::ifstream geometryFile(geometryPath_);Json field;geometryFile>>field;
+        groundGeometry_=std::make_unique<GroundGeometry>(field);
+      }
       sceneContract_=scene;robotContract_={{"source_sha256",robot.at("source_sha256")},{"cylinder_facets",robot.at("cylinder_facets")},{"link_names",linkNames_}};
     }
     if (backend_=="cuda_tiles") terrainPath_=sdf->Get<std::string>("terrain_manifest");
@@ -196,6 +202,7 @@ class GzLineScan final: public gz::sim::System,
     output_=std::filesystem::path(sdf->Get<std::string>("output_dir")) /
         ("session_cpp_"+std::to_string(std::chrono::system_clock::now().time_since_epoch().count()));
     std::filesystem::create_directories(output_);
+    if(groundGeometry_)std::filesystem::copy_file(geometryPath_,output_/"ground_geometry_heightfield.json");
     // Establish the status contract before normal operation. It must exist even
     // if the process is killed before the first diagnostic event is produced.
     WriteDiagnosticStatus();
@@ -1100,8 +1107,20 @@ class GzLineScan final: public gz::sim::System,
     const double to=b["camera_position_world_m"][0].template get<double>();
     const auto measured=MeasureCameraEncoder(a["global_line"].template get<double>(),
         b["global_line"].template get<double>(),spacing_,from,to);
-    if(!measured || measured->ratio>=geometryFloor_)return;
+    if(!measured)return;
+    std::optional<double> groundTravel;
+    if(groundGeometry_) {
+      auto ga=groundGeometry_->Hit(a),gb=groundGeometry_->Hit(b);
+      if(ga&&gb)groundTravel=std::abs(gb->X()-ga->X());
+    }
+    std::string verdict=GroundVerdict(measured->encoder,groundTravel,geometryFloor_);
+    if(groundGeometry_ && verdict=="pass")return;
+    if(!groundGeometry_ && measured->ratio>=geometryFloor_)return;
     Json event={{"reason","camera_encoder_geometry_alert"},{"simulation_time_s",now_},
+      {"geometry_reference",groundGeometry_?"triangular_heightfield_centre_ray_v1":"legacy_camera_centre"},
+      {"ground_verdict",groundGeometry_?verdict:"legacy_alert"},{"minimum_encoder_m",.30},
+      {"footprint_horizontal_m",groundTravel?Json(*groundTravel):Json(nullptr)},
+      {"footprint_ratio",groundTravel?Json(*groundTravel/measured->encoder):Json(nullptr)},
       {"floor",geometryFloor_},{"lines",measured->lines},{"line_spacing_m",spacing_},
       {"encoder_m",measured->encoder},{"camera_horizontal_m",measured->travel},{"ratio",measured->ratio},
       {"camera_x_from_m",from},{"camera_x_to_m",to},
@@ -1324,6 +1343,8 @@ class GzLineScan final: public gz::sim::System,
   std::uint64_t halfEvents_=0,flightDumps_=0,flightDumpLimit_=20,flightDumpsSuppressed_=0;
   std::uint64_t geometryDumps_=0,geometryDumpLimit_=40,geometryDumpsSuppressed_=0;
   double geometryFloor_=.95;
+  std::filesystem::path geometryPath_;
+  std::unique_ptr<GroundGeometry> groundGeometry_;
   std::atomic<std::uint64_t> diagnosticWriteFailures_{0},diagnosticDropped_{0};
   std::thread diagnosticThread_;
   std::mutex diagnosticMutex_;
