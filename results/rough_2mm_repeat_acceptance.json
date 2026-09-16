@@ -113,8 +113,8 @@
    -1.81,
    2.72
   ],
-  "contact_tangential_speed_mm_s": 0.0,
-  "reading": "The body tracks the encoder to within 2.7 mm while the recorded scan-line ground position lags by 13.6 to 31.8 mm. Contact tangential speed is exactly zero at every contact point in all thirteen intervals, so there is no tyre sliding. The discrepancy is between the vehicle and the recorded ground position of the scan line, which is a camera projection or timing question in the imaging chain, not a contact question."
+  "contact_tangential_speed_mm_s": "NOT MEASURED: probe_contact_kinematics was false; see retraction_2026_09_16",
+  "reading": "The body tracks the encoder to within 2.72 mm while the camera optical centre lags by 13.6 to 31.8 mm. Body pitch changes by at most 3 mrad over these intervals and accounts for under 3.2 mm of that with the camera's 1.0416 m lever. Mount flex and contact sliding were both unmeasured, so the cause is not established."
  },
  "pitch_hypothesis_outcome": {
   "pre_registered_test": "transfers if every alert is in an acceleration or recovery phase AND the residual after the height*pitch estimate stays below 1 mm",
@@ -122,7 +122,7 @@
   "residual_condition": "not met: 4 of 13 exceed 1 mm, maximum 1.79 mm",
   "formal_result": "does not transfer, as written",
   "why_that_verdict_is_less_informative_than_it_looks": "The hypothesis was formulated against a 12.14-12.38 mm encoder-minus-body gap seen on the 3 mm road. On this road encoder-minus-body is at most 2.72 mm, so there is almost no body-level deficit left for a pitch term to explain and the residual is noise around a small number. The criterion was testing the wrong quantity for this surface; the 13-32 mm gap that does exist is camera-versus-body and the pitch estimate does not address it.",
-  "what_is_settled_regardless": "zero contact tangential speed across all thirteen intervals rules out tyre slip as the cause"
+  "what_is_settled_regardless": "nothing about sliding: the contact velocity evidence was never collected"
  },
  "limitations": [
   "The instance was not freshly restarted; uptime went from 7h58m to 8h27m across the series and RTF is compared within the series, not against section 6 fresh-instance figures.",
@@ -132,8 +132,43 @@
   "Each geometry dump is 7.2 MB now that contact points carry velocities; thirteen dumps across three runs, with no measurable RTF cost."
  ],
  "not_closed": [
+  "the 13 to 32 mm camera-versus-encoder gap is unattributed: body pitch covers under 3.2 mm of it, and mount flex and contact sliding were not measured",
   "the 13-32 mm gap between body travel and the recorded scan-line ground position during pass-start acceleration",
   "whether the geometry floor of 0.95, set on a flat road whose minimum was 0.9910, is the right rule for a surface that pitches",
   "the pitch explanation remains testable only on the 3 mm scene, where the body-level gap it was built for actually appears"
- ]
+ ],
+ "retraction_2026_09_16": {
+  "what_was_withdrawn": [
+   "'contact tangential speed is 0.0000 mm/s in all thirteen intervals, so there is no tyre sliding'",
+   "'mount flex is zero throughout'",
+   "'the discrepancy is between the vehicle and the recorded ground position of the scan line, an imaging chain projection or timing question'"
+  ],
+  "why": "All three runs had probe_contact_kinematics false. gz_linescan.cpp:134 gates contact point velocity (691), camera pose (591) and mount joint angles (597) behind that flag, and every dump records probe_contact_kinematics false, camera_pose_available false, velocity_available false on 0 of 9256 contact points, and camera_xyz [0,0,0]. The zeros were uninitialised defaults. My reduction wrote max([...]+[0]) over an empty list, turning absence of evidence into a measurement of zero -- the exact failure ContactTangentVelocity guards against with nullopt and 'absence of evidence must not become zero slip', and that summarize_startup_contact.py asserts against with 'contact velocity evidence incomplete'. I wrote a reduction without that assertion.",
+  "second_error": "camera_position_world_m is the camera optical centre, z = 1.0416 m, not a scan-line ground intersection. The camera rides about 1.04 m up on a pitching body through a flexible mount, so extra horizontal motion of that point is expected and is not by itself evidence of a projection or timing fault.",
+  "what_still_stands": [
+   "every acceptance gate in all three runs, which comes from results.json and the audit's integrity half and does not depend on the probe flag",
+   "13 alerts, 4/4/5, all at pass starts, 11 outside the ROI and 2 just past the entry",
+   "online and offline detectors agreeing at 4, 4 and 5",
+   "encoder minus body of -1.81 to 2.72 mm: body pose and wheel speed are recorded unconditionally",
+   "encoder minus camera of 13.6 to 31.8 mm: pose tags are archived independently of the probe flag"
+  ],
+  "recomputed_with_the_camera_lever": {
+   "method": "body pitch is genuinely measured, so the rocking term was recomputed against the camera optical centre height of 1.0416 m rather than the body origin",
+   "body_pitch_change_over_alerting_intervals_mrad": [
+    -3.04,
+    2.21
+   ],
+   "camera_lever_term_mm": [
+    -2.3,
+    3.17
+   ],
+   "unexplained_after_it_mm": [
+    13.0,
+    29.8
+   ],
+   "reading": "Body pitch changes by at most 3 mrad over these intervals, so even with the camera's larger lever it accounts for under 3.2 mm of a 13 to 32 mm gap. Mount flex is the obvious remaining candidate and was not measured. Tyre slip is also not excluded."
+  },
+  "consequence_for_step_1": "The trigger was added so that an alert would leave the evidence explaining it. It did not: the fields that evidence depends on sit behind a flag the capture runs never set. The dumps exist and the window is correct, but the three quantities that would discriminate are absent.",
+  "fix_for_the_next_series": "enable probe_contact_kinematics for the full-area runs, not only the startup probes, and check its cost first: it also turns on EnableVelocityChecks for the wheel links (gz_linescan.cpp:289), which is presumably why it is opt-in."
+ }
 }
