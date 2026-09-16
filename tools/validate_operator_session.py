@@ -74,6 +74,11 @@ def main():
         send('preview')
         # Joint feedback may arrive while GUI loading still gates the controller.
         wait(lambda:motion_ready.get('mode')=='HOLD' and time.monotonic()-motion_ready['wall']<.5,a.startup_timeout)
+        # The evaluator and mission broker subscribe independently. The first HOLD
+        # can reach this process one scheduling turn before it reaches the broker;
+        # require it to remain fresh after a short settling interval before prepare.
+        delay(1.0)
+        wait(lambda:motion_ready.get('mode')=='HOLD' and time.monotonic()-motion_ready['wall']<.5,a.startup_timeout)
         chassis_ready_wall_s=time.monotonic()-process_start
         send('prepare');wait(lambda:latest.get('status',{}).get('ready_to_start'))
         # Join after publication, as an RViz display enabled later would do.
