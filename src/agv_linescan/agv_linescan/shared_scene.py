@@ -5,12 +5,29 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 import numpy as np
 from PIL import Image
+from . import derived_cache
 from .collision_proxy import validate_proxy
 from .obj_arrays import read_obj
 
 
 def digest(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+def proxy_files(root,asset):
+    """Every file a collision-proxy check reads, with the hash the manifest claims.
+
+    Kept next to the proxy policy so that the cached and uncached paths verify
+    exactly the same bytes; a hit is allowed to skip the derivation, never the
+    integrity check.
+    """
+    proxy=asset.get('collision_proxy')
+    if not proxy:return []
+    files=[(root/proxy['mesh'],proxy['sha256'])]
+    for part in ('reference_surface','heightfield'):
+        entry=proxy.get(part)
+        if entry:files.append((root/entry['mesh'],entry['sha256']))
+    return files
 
 
 def validate_spawn_position(scene, x, y, radius=1.5):
@@ -173,6 +190,55 @@ def validate_material_height_bounds(material,vertices):
         raise ValueError('textured mesh violates prefetch height bounds')
 
 
+def _geometry_fingerprint():
+    import sys
+    from . import collision_proxy,heightfield,obj_arrays
+    return derived_cache.code_fingerprint(sys.modules[__name__],collision_proxy,heightfield,obj_arrays)
+
+
+def _derive_asset_geometry(root,m,asset):
+    ground='ground_material' in m and asset.get('material')=='ground'
+    mesh_data=None
+    if 'collision_proxy' in asset or ground:
+        mesh_data=read_obj(root/asset['mesh'],with_uv=ground)
+        if ground:
+            validate_display_uv(asset,m,mesh_data[0],mesh_data[2])
+            validate_material_height_bounds(m['ground_material'],mesh_data[0])
+    if 'collision_proxy' not in asset:return (root/asset['mesh']).resolve()
+    return validate_proxy(root,asset,mesh_data[:2])
+
+
+def asset_geometry(root,m,asset):
+    """The collision path for one asset, with its geometry checked.
+
+    This is most of the cost of validating the 100 m road: 7.7 M triangles are
+    read back and resampled against the proxy heightfield on every launch,
+    from bytes that never change between runs. Every input is
+    content-addressed - validate() has already verified the optical mesh
+    against asset['sha256'], and the proxy-side files carry their own hashes -
+    so a key over the asset entry, the material and projection it is checked
+    against, and a fingerprint of the checking code stands for the same bytes
+    meeting the same checks.
+
+    A hit still digests every proxy-side file, which is what the uncached path
+    would have done on the way through. Only the derivation is skipped.
+    """
+    key=derived_cache.key('asset_geometry',asset,m.get('ground_material'),
+                          m.get('display_uv_projection'),_geometry_fingerprint())
+    stored=derived_cache.read_value('scene_geometry',key)
+    if stored is not None:
+        for file,expected in proxy_files(root,asset):
+            if file.resolve().parent!=root or digest(file)!=expected:
+                raise ValueError('collision proxy checksum mismatch')
+        collision=(root/stored['collision']).resolve()
+        if collision.is_file():return collision
+    collision=_derive_asset_geometry(root,m,asset)
+    # Both branches keep the collision beside the manifest, so the name alone
+    # makes the entry reusable for the same content generated elsewhere.
+    derived_cache.write_value('scene_geometry',key,{'collision':collision.name})
+    return collision
+
+
 def validate(manifest):
     path=Path(manifest).resolve();m=json.loads(path.read_text());root=path.parent
     if m['schema']!='agv.shared.static_scene.v1' or m['frame']!='world' or m['units']!='m' or m['transform']!='identity_world_baked':
@@ -239,12 +305,7 @@ def validate(manifest):
                 raise ValueError('physics heightmap transform mismatch')
             continue
         link=model.find('link');asset=assets[model.get('name')]
-        if 'collision_proxy' in asset or ('ground_material' in m and asset.get('material')=='ground'):
-            mesh_data=read_obj(root/asset['mesh'],with_uv='ground_material' in m and asset.get('material')=='ground')
-            if 'ground_material' in m and asset.get('material')=='ground':
-                validate_display_uv(asset,m,mesh_data[0],mesh_data[2])
-                validate_material_height_bounds(m['ground_material'],mesh_data[0])
-        collision_path=validate_proxy(root,asset,mesh_data[:2]) if 'collision_proxy' in asset else (root/asset['mesh']).resolve()
+        collision_path=asset_geometry(root,m,asset)
         for kind in ('visual','collision'):
             items=link.findall(kind)
             expected_count=0 if kind=='collision' and heightmap else 1
