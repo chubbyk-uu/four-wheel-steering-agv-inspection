@@ -150,7 +150,16 @@
     </link>
     <joint name="${name}_drive_joint" type="continuous"><parent link="${name}_steer_link"/><child link="${name}_wheel_link"/>
       <origin xyz="0 0 -0.20"/><axis xyz="0 1 0"/><limit effort="${p.drive_effort}" velocity="${p.max_speed/p.wheel_radius}"/><dynamics damping="0.02"/></joint>
-    <gazebo reference="${name}_wheel_link"><mu1>0.8</mu1><mu2>0.8</mu2><kp>1000000</kp><kd>100</kd></gazebo>
+    <gazebo reference="${name}_wheel_link">
+      <mu1>0.8</mu1><mu2>0.8</mu2><kp>1000000</kp><kd>100</kd>
+      <!-- Per-physics-step evidence for rare wheel / triangle-mesh impulses. The
+           line-scan plugin reads the GZ component into a bounded RAM ring and
+           adds no ROS stream or normal-path disk writes. -->
+      <sensor name="${name}_wheel_contact" type="contact">
+        <always_on>true</always_on><update_rate>1000</update_rate>
+        <contact><collision>${name}_wheel_link_collision</collision></contact>
+      </sensor>
+    </gazebo>
   </xacro:macro>
   <xacro:wheel name="fl" x="${p.wheelbase/2}" y="${p.track/2}"/>
   <xacro:wheel name="fr" x="${p.wheelbase/2}" y="${-p.track/2}"/>

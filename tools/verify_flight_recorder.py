@@ -68,7 +68,8 @@ def main():
     camera.update(projected_encoder=True, max_scan_residual_m_s=1e-9,
                   max_scan_lateral_m_s=.28, max_yaw_rate_rad_s=.08)
     camera['flight_recorder'] = {'span_s': SPAN_S, 'max_samples': 4000,
-                                 'half_limit_cooldown_s': 10.0, 'max_dumps': a.max_dumps}
+                                 'half_limit_cooldown_s': 10.0, 'max_dumps': a.max_dumps,
+                                 'contact_evidence': True}
     camera_path = os.path.join(work, 'camera.yaml')
     yaml.safe_dump(camera, open(camera_path, 'w'))
 
@@ -158,7 +159,7 @@ def main():
         future = node.enable.call_async(SetBool.Request(data=True))
         while not future.done():
             rclpy.spin_once(node, timeout_sec=.1)
-        require(future.result().success, 'capture could not be enabled')
+        require(future.result().success, 'capture could not be enabled: ' + future.result().message)
         session = future.result().message
         log('capture enabled in', session)
         status_path = os.path.join(session, 'diagnostic_status.json')
@@ -236,7 +237,7 @@ def main():
             % (len(files), a.max_dumps))
 
     doc = json.load(open(files[0]))
-    require(doc['schema'] == 'agv.linescan.flight_recorder.v1', 'unexpected schema ' + doc['schema'])
+    require(doc['schema'] == 'agv.linescan.flight_recorder.v2', 'unexpected schema ' + doc['schema'])
     require(doc['reason'] == 'unsupported_scan_motion', 'unexpected reason ' + doc['reason'])
     expected = int(SPAN_S / STEP_S) + 1
     require(doc['samples'] == expected,
@@ -255,6 +256,16 @@ def main():
                 '%s had %d entries, expected %d' % (field, len(last[field]), count))
     require(len(set(last['wheel_residual_m_s'])) > 1,
             'per-wheel residuals are identical; a single bad wheel could not be told apart')
+    require(len(last.get('wheel_contact', [])) == 4,
+            'contact evidence must contain all four wheels')
+    for index, wheel in enumerate(last['wheel_contact']):
+        require(wheel['available'], 'contact evidence unavailable for wheel %d' % index)
+        require(wheel['stored_point_count'] == len(wheel['points']),
+                'stored contact count disagrees with payload for wheel %d' % index)
+        require(wheel['stored_point_count'] <= 16,
+                'contact evidence exceeded its fixed bound for wheel %d' % index)
+        require(wheel['point_count'] >= wheel['stored_point_count'],
+                'total contact count is smaller than stored count for wheel %d' % index)
 
     guards = last['pass']
     require(guards['residual'] is False, 'the residual guard should be the one that failed')

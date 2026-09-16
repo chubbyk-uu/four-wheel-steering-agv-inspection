@@ -66,6 +66,9 @@ def setup(context):
         raise ValueError('actual_wheel_diameter must be within the small tyre experiment range [0.38, 0.42] m')
     from agv_linescan.encoder import line_spacing
     camera_values = yaml.safe_load(Path(camera_config).read_text())
+    contact_evidence = camera_values.get('flight_recorder', {}).get('contact_evidence', True)
+    if not isinstance(contact_evidence, bool):
+        raise ValueError('flight_recorder.contact_evidence must be boolean')
     flex = camera_values.get('mount_flex', {})
     for key, lo, hi in [('pivot_x_m', .8, 1.1), ('pivot_z_m', .05, .3)]:
         value = flex.get(key, float('nan'))
@@ -122,7 +125,25 @@ def setup(context):
                              probe=LaunchConfiguration('scan_probe').perform(context).lower() == 'true')
         if backend in ('render', 'cuda_grid', 'cuda_tiles', 'optix'):
             tree = ET.parse(world_path)
-            plugin = ET.SubElement(tree.getroot().find('world'), 'plugin',
+            world = tree.getroot().find('world')
+            # ContactSensorData must be updated before the line-scan PostUpdate
+            # samples it. UserCommands must precede Contact: the robot is spawned
+            # dynamically, and gz-sim's EachNew processing otherwise runs before
+            # the sensor exists and never revisits that entity (gz-sim #3295).
+            if contact_evidence:
+                user_commands = next((p for p in world.findall('plugin')
+                                      if p.get('name') == 'gz::sim::systems::UserCommands'), None)
+                if user_commands is None:
+                    raise ValueError('contact evidence requires the UserCommands world system')
+                contact = next((p for p in world.findall('plugin')
+                                if p.get('name') == 'gz::sim::systems::Contact'), None)
+                if contact is None:
+                    contact = ET.Element('plugin', filename='gz-sim-contact-system',
+                                         name='gz::sim::systems::Contact')
+                else:
+                    world.remove(contact)
+                world.insert(list(world).index(user_commands) + 1, contact)
+            plugin = ET.SubElement(world, 'plugin',
                 filename=str(Path(get_package_prefix('agv_linescan'))/'lib/libagv_gz_linescan.so'),
                 name='agv_linescan::GzLineScan')
             for key, value in {'config': camera_config, 'platform': platform, 'backend': backend,

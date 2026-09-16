@@ -198,6 +198,26 @@ gz-sim加载的是默认的DART——DART用硬约束LCP解接触，根本没有
 
 依据：[接触参数有效性](../results/contact_parameter_effectiveness.json)、[单步诊断](../results/scan_motion_single_step.json)。
 
+## 15. 接触传感器实体存在但数据为空：组件归属和系统顺序都容易看错
+
+为单步轮速跳变补接触证据时，四个`*_wheel_contact`传感器实体和轮胎碰撞实体都能在ECM找到，
+但最初读取始终没有`ContactSensorData`。这不是“轮胎没有接触”：gz-sim的接触传感器实体只声明
+监视哪个碰撞体，物理数据组件实际挂在**被监视的collision实体**上，不能从sensor实体读取。
+
+动态生成模型还有独立顺序约束。Contact系统通过`EachNew`发现新传感器；当前gz-sim若让Contact
+先于UserCommands运行，它会在模型尚未生成时扫描，此后不会补看同一批实体。世界插件必须按
+Physics → UserCommands → Contact排列。项目启动器显式维持该顺序，并在开始采集前要求四轮传感器、
+碰撞实体和数据组件全部就绪；缺一项就按轮输出实体ID并拒绝采集，禁止生成“字段存在但全空”的假证据。
+
+受控强制故障验证得到连续2001个1 ms样本，四轮位置、法向、深度与力均非空；正常接触最多10点，
+16点有界存储无截断。两秒环形窗口约6.63 MiB，正常不写盘；静止OptiX同场景开关A/B的RTF为
+0.99687/0.99793、整卡显存同为5840 MiB，未见实质回归。该验证只证明记录链，不能证明自然故障
+由三角形内部边缘造成；定案仍须等待自然复发，并要求残差、接触集合/法向/深度/力突变与同轮同拍
+边缘接近共同成立。
+
+依据：[接触证据与成本](../results/contact_evidence_recorder.json)、
+[gz-sim动态传感器顺序问题](https://github.com/gazebosim/gz-sim/issues/3295)。
+
 ## 维护边界
 
 - 当前执行与部署入口见[文档索引](README.md)，不要从历史实验的“下一步”启动工作。

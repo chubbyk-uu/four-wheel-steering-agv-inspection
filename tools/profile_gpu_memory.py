@@ -18,10 +18,12 @@ parser.add_argument('--settle-wall-s',type=float,default=50.0)
 parser.add_argument('--sample-count',type=int,default=10)
 parser.add_argument('--spawn-x',type=float,default=-3.0)
 parser.add_argument('--spawn-y',type=float,default=0.0)
+parser.add_argument('--camera-config',type=Path,help='optional line-scan config override')
 a=parser.parse_args();case=a.profile;out=a.output;out.mkdir(parents=True,exist_ok=False)
 if a.settle_wall_s<1 or a.sample_count<1:parser.error('settle-wall-s and sample-count must be positive')
 os.environ.update(ROS_DOMAIN_ID=str(100+os.getpid()%70),GZ_PARTITION='vram_'+str(os.getpid()))
 common=['scene_manifest:='+str(a.scene.resolve()),'spawn_x:='+str(a.spawn_x),'spawn_y:='+str(a.spawn_y)]
+if a.camera_config:common.append('camera_config:='+str(a.camera_config.resolve()))
 if case=='full':args=['inspection.launch.py','session_dir:='+str((out/'session').resolve())]+common
 else:args=['sim.launch.py','headless:='+('false' if case=='gui_optix' else 'true'),'rviz:=false','linescan:='+('false' if case=='server' else 'true'),'linescan_backend:=optix','capture_dir:='+str((out/'raw').resolve())]+common
 rclpy.init();n=rclpy.create_node('vram_probe');odom=[];odom_wall=[];speed=[]

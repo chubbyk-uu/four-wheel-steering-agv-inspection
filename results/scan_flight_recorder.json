@@ -12,7 +12,7 @@
    "half_limit_cooldown_s": 10.0,
    "max_dumps": 20
   },
-  "memory": "about 0.25 KB per sample, so the default window costs well under 1 MB",
+  "memory": "3472 bytes per sample with contact evidence; the normal 2001-sample two-second window is about 6.63 MiB and the 4000-sample hard capacity is 13.24 MiB",
   "dump": "on rejection the ring is copied synchronously and queued to one FIFO diagnostic writer shared by flight dumps and events; no diagnostic file is written on the physics thread. The writer updates diagnostic_status.json atomically after every completed job and drains on a graceful shutdown.",
   "window_meaning": "the record ends at the rejected step. It is the two seconds BEFORE the fault, deliberately: nothing is delayed to collect data after it."
  },
@@ -25,14 +25,15 @@
   "fitted vx/vy/wz and residual",
   "body pose and body velocity differentiated from the previous step",
   "encoder polarity, motion state, capture active",
-  "each guard result separately: speed, lateral, yaw, residual, data validity, polarity"
+  "each guard result separately: speed, lateral, yaw, residual, data validity, polarity",
+  "bounded per-wheel contact manifolds: world point, normal, depth, force magnitude and collision identity"
  ],
  "what_the_fields_separate": {
   "single bad encoder": "one wheel residual far above the other three",
   "whole-vehicle slip": "four wheel residuals mutually consistent but disagreeing with the differentiated body velocity",
-  "losing contact": "a suspension position extending with an abnormal rate on one corner",
-  "solver or state-read glitch": "a joint value jumping for exactly one step",
-  "limitation": "suspension extension is a hint, not proof of lift-off. Tyre contact state or contact count would settle it and is deliberately not added yet, to keep the first version cheap."
+  "losing contact": "a suspension position extending while the corresponding wheel contact count reaches zero",
+  "solver or state-read glitch": "a joint value jumping for exactly one step, now correlated with contact count, normal, depth and force on that same step",
+  "limitation": "Contact evidence is available from recorder v2 onward. The archived natural fault is v1, so the internal-edge mechanism remains unproven until a natural recurrence."
  },
  "statistics_instead_of_writes": {
   "why": "writing a sample every time the residual passes half the gate would become heavy I/O if it ever runs near that level",
@@ -78,7 +79,7 @@
   "negative_test": "--stop-latency-limit-s 0.1 fails with exit code 1; an existing --output directory is rejected without deleting its contents"
  },
  "unrelated_defect_encountered": "the first verification attempt used headless with linescan_backend:=render and the server segfaulted in Ogre::GL3PlusBufferInterface::_firstUpload during startup, with no project code on the stack. This is the same already-recorded failure as in gui_startup_abort.json and is not caused by this change; the verification uses the optix path the real captures use.",
- "next": "deploy and wait. No attempt should be made to provoke the fault; the recorder exists so that its next natural occurrence is enough to settle the cause.",
+ "next": "Run the normal rough-road mission with contact evidence enabled. On a natural recurrence, analyze the v2 dump; do not call the internal-edge hypothesis proven from the forced-gate verification.",
  "review_fixes_2026_09_15": {
   "frame_mismatch": {
    "problem": "body velocity was a world-frame position difference while the wheel fit is in base_link. After a turnaround (yaw near pi) a normal pass would show the two with opposite signs and read as whole-vehicle slip -- the exact conclusion the field exists to support.",
@@ -124,5 +125,13 @@
   "non_intrusive_queue": "Queue shutdown or allocation failure increments dropped_records and returns without throwing into PostUpdate; the writer catches both standard and unknown job exceptions.",
   "status_delivery_order": "/linescan/status publishes immediately while events.jsonl is persisted later by the FIFO writer. Online consumers use the message payload; disk readers wait for session completion.",
   "temporary_cleanup": "a stale diagnostic_status.json.tmp is removed before each atomic replacement and cleaned after a failed attempt"
+ },
+ "contact_evidence_2026_09_16": {
+  "result": "results/contact_evidence_recorder.json",
+  "flight_schema": "agv.linescan.flight_recorder.v2",
+  "storage": "16 points per wheel per step, true count and truncation retained; no normal-path disk I/O",
+  "verification": "2001 samples / 2.000 s, all four streams available, maximum 10 points, zero truncation, position/normal/depth/force populated",
+  "analysis": "tools/analyze_contact_edge_fault.py compares the fault step to the preceding step and maps points to the 10 cm cell boundary and internal diagonal",
+  "causality_boundary": "the forced gate test verifies the recorder only; it is not evidence that the natural fault came from an internal edge"
  }
 }

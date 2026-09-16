@@ -1,0 +1,50 @@
+{
+  "schema": "agv.contact_evidence_recorder.v1",
+  "date": "2026-09-16",
+  "purpose": "Capture per-wheel contact evidence on the exact 1 ms step of a future scan-motion discontinuity.",
+  "production_default": true,
+  "fields_per_contact_point": ["world position", "raw contact normal", "penetration depth", "force magnitude", "other collision entity id", "wheel collision side"],
+  "bounds": {
+    "points_per_wheel_per_step": 16,
+    "true_point_count_and_truncation_are_always_recorded": true,
+    "flight_sample_bytes": 3472,
+    "two_second_2001_sample_window_mib": 6.63,
+    "4000_sample_capacity_mib": 13.24,
+    "normal_path_disk_io": false,
+    "dump_only_on_diagnostic_event": true
+  },
+  "integration_facts": {
+    "contact_sensor_entity": "declares which wheel collision is monitored",
+    "contact_data_component": "gz-sim stores ContactSensorData on the monitored collision entity, not on the sensor entity",
+    "dynamic_spawn_order": "UserCommands must run before Contact; otherwise gz-sim EachNew can permanently miss dynamically spawned sensors (gazebosim/gz-sim#3295)",
+    "capture_enable_policy": "all four sensors, wheel collisions and data components must be ready or capture enable fails with per-wheel entity diagnostics"
+  },
+  "controlled_verification": {
+    "tool": "tools/verify_flight_recorder.py",
+    "method": "lower the residual threshold so a dump is certain; this tests the evidence path and is not a reproduction of the natural fault",
+    "flight_schema": "agv.linescan.flight_recorder.v2",
+    "samples": 2001,
+    "window_s": 2.0,
+    "all_four_wheels_available_on_all_samples": true,
+    "maximum_contact_points_observed": 10,
+    "maximum_contact_points_stored": 10,
+    "truncated_wheel_steps": 0,
+    "positions_normals_depths_and_forces_present": true,
+    "dump_bytes": 21710974,
+    "stop_latency_after_forced_fault_s": 2.45
+  },
+  "stationary_cost_ab": {
+    "scope": "same 100 m rough marked v2 scene, headless OptiX, x=10 m, stationary; one run per case, so this is a smoke budget rather than tail-latency acceptance",
+    "without_contact_evidence": {"steady_rtf": 0.9979252557008778, "whole_device_vram_mib": 5840},
+    "with_contact_evidence": {"steady_rtf": 0.9968727901975983, "whole_device_vram_mib": 5840},
+    "observed_absolute_rtf_change": -0.0010524655032795,
+    "reading": "No material stationary RTF or whole-device VRAM regression was observed. A moving full mission remains the production acceptance."
+  },
+  "analysis": {
+    "tool": "tools/analyze_contact_edge_fault.py",
+    "grid_model": "10 cm cells split from low-low to high-high",
+    "reports": ["distance to a cell boundary", "distance to the internal triangle diagonal", "contact count, mean normal, maximum depth and maximum force changes from the preceding physics step"],
+    "causality_rule": "Edge proximity alone is not proof because a finite tyre patch normally spans multiple triangles. Confirmation requires the residual spike and a contact manifold / normal / depth / force discontinuity to coincide on the same wheel and step near an edge."
+  },
+  "root_cause_status": "The recorder is ready, but the natural intermittent fault has not recurred with v2 evidence. Rigid-tyre internal-edge contact remains the leading unproven mechanism."
+}

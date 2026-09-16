@@ -83,6 +83,10 @@ def test_physical_tyres_change_without_recalibrating_control(diameter):
         assert float(link.find('inertial/inertia').get('iyy')) == pytest.approx(18*(diameter/2)**2/2)
         limit=robot.find(f"joint[@name='{wheel}_drive_joint']/limit")
         assert float(limit.get('velocity')) == pytest.approx(config['max_speed']/.2)
+        sensor=robot.find(f"gazebo[@reference='{wheel}_wheel_link']/sensor[@name='{wheel}_wheel_contact']")
+        assert sensor is not None and sensor.get('type') == 'contact'
+        assert sensor.findtext('update_rate') == '1000'
+        assert sensor.findtext('contact/collision') == f'{wheel}_wheel_link_collision'
     assert config['wheel_radius'] == .2
 
 

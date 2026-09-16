@@ -94,6 +94,16 @@ sampling:
   queue_max_wait_s: 0.15
   prefetch_distance_m: 4.0
 
+# Rare-fault evidence remains in a bounded in-memory ring and is written only
+# with a diagnostic dump. Disable only for an explicit performance A/B; normal
+# inspection requires all four per-step contact streams to be ready.
+flight_recorder:
+  span_s: 2.0
+  max_samples: 4000
+  half_limit_cooldown_s: 10.0
+  max_dumps: 20
+  contact_evidence: true
+
 # Equivalent upper-bracket bending; selected simulation baseline, not measured hardware.
 # Two physical passive axes, pitch/roll, gravity-balanced at level. Not measured hardware.
 mount_flex:

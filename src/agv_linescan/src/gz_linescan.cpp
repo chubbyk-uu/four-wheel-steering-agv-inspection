@@ -39,6 +39,8 @@
 #include <gz/sim/Util.hh>
 #include <gz/sim/components/JointPosition.hh>
 #include <gz/sim/components/JointVelocity.hh>
+#include <gz/sim/components/Collision.hh>
+#include <gz/sim/components/ContactSensorData.hh>
 #include <gz/sim/components/Name.hh>
 #include <gz/sim/components/ParentEntity.hh>
 #include <gz/sim/rendering/RenderUtil.hh>
@@ -112,6 +114,7 @@ class GzLineScan final: public gz::sim::System,
     const size_t flightCapacity=flight?flight["max_samples"].as<size_t>(4000):4000;
     residualHalfCooldown_=flight?flight["half_limit_cooldown_s"].as<double>(10.):10.;
     flightDumpLimit_=flight?flight["max_dumps"].as<std::uint64_t>(20):20;
+    contactEvidenceRequired_=flight?flight["contact_evidence"].as<bool>(true):true;
     if(!std::isfinite(flightSpan)||flightSpan<=0||flightSpan>60||flightCapacity<100||flightCapacity>200000||
        !std::isfinite(residualHalfCooldown_)||residualHalfCooldown_<0||flightDumpLimit_==0||flightDumpLimit_>1000)
       throw std::runtime_error("invalid flight_recorder configuration");
@@ -201,6 +204,13 @@ class GzLineScan final: public gz::sim::System,
     enableService_=node_->create_service<std_srvs::srv::SetBool>("/linescan/set_enabled",
         [this](const std::shared_ptr<std_srvs::srv::SetBool::Request> req,
                std::shared_ptr<std_srvs::srv::SetBool::Response> res) {
+          if(req->data && contactEvidenceRequired_ && !contactEvidenceReady_) {
+            std::ostringstream detail;detail<<"wheel contact evidence is not ready";
+            const std::array<const char*,4> names={"fl","fr","rl","rr"};
+            for(size_t i=0;i<4;++i)detail<<' '<<names[i]<<"(sensor="<<contactSensor_[i]
+              <<",collision="<<wheelCollision_[i]<<",data="<<(contactDataAvailable_[i]?1:0)<<')';
+            res->success=false;res->message=detail.str();return;
+          }
           if(req->data && !RecoverSampler()) {
             res->success=false;res->message="sampler recovery failed; see status and repair terrain/storage";return;
           }
@@ -243,9 +253,11 @@ class GzLineScan final: public gz::sim::System,
       }
       const std::array<std::string,4> names={"fl","fr","rl","rr"};
       for (size_t i=0;i<4;++i) {
+        wheelLink_[i]=ecm.EntityByComponents(gz::sim::components::Name(names[i]+"_wheel_link"),gz::sim::components::ParentEntity(model_));
         drive_[i]=ecm.EntityByComponents(gz::sim::components::Name(names[i]+"_drive_joint"),gz::sim::components::ParentEntity(model_));
         steer_[i]=ecm.EntityByComponents(gz::sim::components::Name(names[i]+"_steer_joint"),gz::sim::components::ParentEntity(model_));
-        if (!drive_[i] || !steer_[i]) throw std::runtime_error("missing AGV joint");
+        if (!wheelLink_[i] || !drive_[i] || !steer_[i]) throw std::runtime_error("missing AGV wheel or joint");
+        wheelCollision_[i]=ecm.EntityByComponents(gz::sim::components::Collision(),gz::sim::components::ParentEntity(wheelLink_[i]));
         // Suspension travel is diagnostic only: it hints at losing contact, and a
         // missing joint must not stop a capture that never needed it.
         suspension_[i]=ecm.EntityByComponents(gz::sim::components::Name(names[i]+"_suspension_joint"),gz::sim::components::ParentEntity(model_));
@@ -257,6 +269,24 @@ class GzLineScan final: public gz::sim::System,
             ecm.CreateComponent(entity,gz::sim::components::JointVelocity());
         }
       }
+    }
+    // Sensors are spawned with the robot and their data component is created by
+    // the Contact system. Retry discovery until both exist; capture enable then
+    // fails loudly instead of producing a diagnostic dump with empty evidence.
+    contactEvidenceReady_=!contactEvidenceRequired_;
+    if(!contactEvidenceRequired_)return;
+    contactEvidenceReady_=true;
+    const std::array<std::string,4> names={"fl","fr","rl","rr"};
+    for(size_t i=0;i<4;++i) {
+      if(contactSensor_[i]==gz::sim::kNullEntity && wheelLink_[i]!=gz::sim::kNullEntity)
+        contactSensor_[i]=ecm.EntityByComponents(gz::sim::components::Name(names[i]+"_wheel_contact"),
+            gz::sim::components::ParentEntity(wheelLink_[i]));
+      // Contact is configured by a sensor entity, but gz-sim stores the physics
+      // ContactSensorData component on the monitored collision entity.
+      contactDataAvailable_[i]=wheelCollision_[i]!=gz::sim::kNullEntity &&
+          ecm.Component<gz::sim::components::ContactSensorData>(wheelCollision_[i])!=nullptr;
+      contactEvidenceReady_=contactEvidenceReady_ && wheelCollision_[i]!=gz::sim::kNullEntity &&
+          contactSensor_[i]!=gz::sim::kNullEntity && contactDataAvailable_[i];
     }
   }
 
@@ -541,6 +571,7 @@ class GzLineScan final: public gz::sim::System,
         if(sv && !sv->Data().empty())flight.suspensionVel[i]=sv->Data()[0];
       }
       flight.wheelResidual[i]=fitted_ok?fitted.wheelResidual[i]:0;
+      RecordContact(flight.contact[i],i,ecm);
     }
     flight.vx=fitted.vx;flight.vy=fitted.vy;flight.wz=fitted.wz;flight.residual=fitted.residual;
     flight.bodyX=pose.Pos().X();flight.bodyY=pose.Pos().Y();flight.bodyZ=pose.Pos().Z();
@@ -581,6 +612,48 @@ class GzLineScan final: public gz::sim::System,
                   {"position_m",{flight.bodyX,flight.bodyY,flight.bodyZ}},
                   {"capturing",active_},{"occurrence",halfEvents_}};
       ArchiveEvent(std::move(event));
+    }
+  }
+
+  static float VectorMagnitude(const gz::msgs::Vector3d &v) {
+    return static_cast<float>(std::sqrt(v.x()*v.x()+v.y()*v.y()+v.z()*v.z()));
+  }
+
+  void RecordContact(WheelContactEvidence &out,size_t wheel,
+                     const gz::sim::EntityComponentManager &ecm) const {
+    if(!contactEvidenceRequired_)return;
+    if(contactSensor_[wheel]==gz::sim::kNullEntity || wheelCollision_[wheel]==gz::sim::kNullEntity)return;
+    const auto component=ecm.Component<gz::sim::components::ContactSensorData>(wheelCollision_[wheel]);
+    if(!component)return;
+    out.available=1;
+    const auto &contacts=component->Data();
+    out.pairs=static_cast<std::uint16_t>(std::min(contacts.contact_size(),65535));
+    for(const auto &contact:contacts.contact()) {
+      const bool wheelFirst=contact.collision1().id()==wheelCollision_[wheel];
+      const bool wheelSecond=contact.collision2().id()==wheelCollision_[wheel];
+      const auto other=wheelFirst?contact.collision2().id():(wheelSecond?contact.collision1().id():0);
+      const std::uint8_t side=wheelFirst?1:(wheelSecond?2:0);
+      for(int p=0;p<contact.position_size();++p) {
+        if(out.points!=65535)++out.points;
+        const double depth=p<contact.depth_size()?contact.depth(p):0.;
+        out.maxDepth=std::max(out.maxDepth,static_cast<float>(depth));
+        float force=0;
+        if(p<contact.wrench_size()) {
+          const auto &wrench=contact.wrench(p);
+          force=VectorMagnitude(side==2?wrench.body_2_wrench().force():wrench.body_1_wrench().force());
+          out.maxForceMagnitude=std::max(out.maxForceMagnitude,force);
+        }
+        if(out.stored>=kContactPointsPerWheel) {out.truncated=1;continue;}
+        auto &sample=out.point[out.stored++];
+        const auto &position=contact.position(p);
+        sample.position[0]=position.x();sample.position[1]=position.y();sample.position[2]=position.z();
+        if(p<contact.normal_size()) {
+          const auto &normal=contact.normal(p);
+          sample.normal[0]=normal.x();sample.normal[1]=normal.y();sample.normal[2]=normal.z();
+        }
+        sample.depth=depth;sample.forceMagnitude=force;
+        sample.otherCollision=other;sample.wheelCollisionSide=side;
+      }
     }
   }
 
@@ -630,19 +703,34 @@ class GzLineScan final: public gz::sim::System,
       const double when=now_;
       auto path=output_/("flight_"+std::to_string(index)+"_"+reason+".json");
       QueueDiagnostic([path,rows=std::move(rows),summary=std::move(summary),reason,when]() {
-      Json doc={{"schema","agv.linescan.flight_recorder.v1"},{"reason",reason},
+      Json doc={{"schema","agv.linescan.flight_recorder.v2"},{"reason",reason},
                 {"fault_simulation_time_s",when},{"samples",rows.size()},
                 {"window_s",rows.empty()?0.:rows.back().simTime-rows.front().simTime},
                 {"note","the window ends at the rejected step; nothing after it is recorded"},
                 {"residual_statistics",summary}};
       Json records=Json::array();
       for(const auto &r:rows) {
+        Json contact=Json::array();
+        for(const auto &wheel:r.contact) {
+          Json points=Json::array();
+          for(size_t i=0;i<wheel.stored;++i) {
+            const auto &p=wheel.point[i];
+            points.push_back({{"position_world_m",p.position},{"normal",p.normal},{"depth_m",p.depth},
+              {"force_magnitude_n",p.forceMagnitude},{"other_collision_id",p.otherCollision},
+              {"wheel_collision_side",p.wheelCollisionSide}});
+          }
+          contact.push_back({{"available",wheel.available!=0},{"pair_count",wheel.pairs},
+            {"point_count",wheel.points},{"stored_point_count",wheel.stored},{"truncated",wheel.truncated!=0},
+            {"max_depth_m",wheel.maxDepth},{"max_force_magnitude_n",wheel.maxForceMagnitude},
+            {"points",std::move(points)}});
+        }
         records.push_back({{"t",r.simTime},{"drive_rate_rad_s",r.driveRate},{"wheel_speed_m_s",r.wheelSpeed},
           {"steer_rad",r.steerAngle},{"suspension_m",r.suspensionPos},{"suspension_rate_m_s",r.suspensionVel},
           {"wheel_residual_m_s",r.wheelResidual},{"vx",r.vx},{"vy",r.vy},{"wz",r.wz},{"residual",r.residual},
           {"body_xyz",{r.bodyX,r.bodyY,r.bodyZ}},{"body_quat_xyzw",{r.bodyQx,r.bodyQy,r.bodyQz,r.bodyQw}},
           {"body_velocity_base_link_m_s",{r.bodyVx,r.bodyVy,r.bodyVz}},{"body_yaw_rate_rad_s",r.bodyWz},
           {"encoder_polarity",r.encoderPolarity},{"motion_state",r.motionState},{"capturing",r.capturing!=0},
+          {"wheel_contact",std::move(contact)},
           {"pass",{{"speed",r.passSpeed!=0},{"lateral",r.passLateral!=0},{"yaw",r.passYaw!=0},
                    {"residual",r.passResidual!=0},{"data",r.passData!=0},{"polarity",r.passPolarity!=0}}}});
       }
@@ -1095,7 +1183,10 @@ class GzLineScan final: public gz::sim::System,
   bool flexible_=false;
   gz::sim::Entity cameraEntity_=gz::sim::kNullEntity;
   gz::sim::Entity model_=gz::sim::kNullEntity;
-  std::array<gz::sim::Entity,4> drive_{},steer_{},suspension_{};
+  std::array<gz::sim::Entity,4> drive_{},steer_{},suspension_{},wheelLink_{},wheelCollision_{},contactSensor_{};
+  std::array<bool,4> contactDataAvailable_{};
+  bool contactEvidenceReady_=false;
+  bool contactEvidenceRequired_=true;
   std::unique_ptr<FlightRecorder> flight_;
   std::unique_ptr<ResidualStats> residualStats_;
   double residualHalfCooldown_=10.,lastHalfEvent_=-1e9;

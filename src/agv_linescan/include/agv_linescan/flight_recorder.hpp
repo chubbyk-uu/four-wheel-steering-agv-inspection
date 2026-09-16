@@ -9,6 +9,31 @@
 
 namespace agv_linescan {
 
+// A contact manifold is usually only a few points. Preserve a bounded prefix
+// and record the true total plus truncation, so diagnostics stay fixed-cost and
+// never make a crowded contact look like a small one.
+constexpr std::size_t kContactPointsPerWheel = 16;
+
+struct ContactPointEvidence {
+  float position[3]={};          // world frame, metres
+  float normal[3]={};            // raw GZ contact normal
+  float depth=0;                 // metres
+  float forceMagnitude=0;        // newtons; sign-independent
+  std::uint64_t otherCollision=0;
+  std::uint8_t wheelCollisionSide=0; // 1 or 2 in gz.msgs.Contact
+};
+
+struct WheelContactEvidence {
+  std::uint16_t pairs=0;
+  std::uint16_t points=0;
+  std::uint8_t stored=0;
+  std::uint8_t available=0;
+  std::uint8_t truncated=0;
+  float maxDepth=0;
+  float maxForceMagnitude=0;
+  ContactPointEvidence point[kContactPointsPerWheel];
+};
+
 // One physical step of everything the capture gate judges. Plain data: recording a
 // step is an assignment into a preallocated slot, never an allocation, so the
 // physics thread pays the same cost whether or not a fault ever happens.
@@ -32,6 +57,7 @@ struct FlightSample {
   // Every guard as it was actually evaluated, so a reader never re-derives them.
   uint8_t passSpeed=1,passLateral=1,passYaw=1,passResidual=1,passData=1,passPolarity=1;
   uint8_t capturing=0;
+  WheelContactEvidence contact[4];
 };
 
 // Fixed-capacity ring trimmed by simulated time. The count limit is what bounds
