@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include "agv_linescan/camera_encoder_geometry.hpp"
 #include "agv_linescan/flight_recorder.hpp"
 #include "agv_linescan/mount_geometry.hpp"
 #include "agv_linescan/sampling.hpp"
@@ -226,4 +227,37 @@ TEST(ContactKinematics, SeparatesRollingSlipAndNormalCompression) {
   auto slip=agv_linescan::ContactTangentVelocity(Vector3d(.9,0,.03),Vector3d(0,5,0),arm,normal);
   ASSERT_TRUE(slip);EXPECT_NEAR(slip->X(),-.1,1e-12);EXPECT_NEAR(slip->Z(),0,1e-12);
   EXPECT_FALSE(agv_linescan::ContactTangentVelocity(Vector3d::Zero,Vector3d::Zero,arm,Vector3d::Zero));
+}
+
+// The alert that fires online must be the same test the offline audit applies,
+// or the two will disagree about what an alert is.
+TEST(CameraEncoderGeometry, MatchesTheAuditQuantities) {
+  // 1024 lines at the shipped pitch, camera keeping up: no alert.
+  const double spacing = 0.0003657010198;
+  auto healthy = agv_linescan::MeasureCameraEncoder(0, 1024, spacing, 0., 1024*spacing);
+  ASSERT_TRUE(healthy.has_value());
+  EXPECT_NEAR(healthy->ratio, 1., 1e-12);
+  EXPECT_NEAR(healthy->encoder, 1024*spacing, 1e-12);
+
+  // The worst full-area interval seen: 0.3745 m of encoder, 0.3464 m of camera.
+  auto alert = agv_linescan::MeasureCameraEncoder(0, 1024, 0.3745/1024, 0., 0.3464);
+  ASSERT_TRUE(alert.has_value());
+  EXPECT_NEAR(alert->ratio, 0.9249, 1e-4);
+  EXPECT_LT(alert->ratio, 0.95);
+
+  // Direction is not slip: a reverse pass travels the other way.
+  auto reverse = agv_linescan::MeasureCameraEncoder(0, 1024, spacing, 1024*spacing, 0.);
+  ASSERT_TRUE(reverse.has_value());
+  EXPECT_NEAR(reverse->ratio, 1., 1e-12);
+}
+
+TEST(CameraEncoderGeometry, RefusesToJudgeWhatItCannot) {
+  // No lines emitted: the audit skips these, and a ratio of zero here would
+  // read as a total stall.
+  EXPECT_FALSE(agv_linescan::MeasureCameraEncoder(512, 512, .0004, 0., 1.).has_value());
+  EXPECT_FALSE(agv_linescan::MeasureCameraEncoder(512, 100, .0004, 0., 1.).has_value());
+  EXPECT_FALSE(agv_linescan::MeasureCameraEncoder(0, 1024, 0., 0., 1.).has_value());
+  const double nan = std::numeric_limits<double>::quiet_NaN();
+  EXPECT_FALSE(agv_linescan::MeasureCameraEncoder(0, 1024, .0004, nan, 1.).has_value());
+  EXPECT_FALSE(agv_linescan::MeasureCameraEncoder(0, 1024, .0004, 0., nan).has_value());
 }

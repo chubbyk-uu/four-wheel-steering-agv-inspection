@@ -4,6 +4,7 @@
 // tiled CUDA plane uses a bounded asynchronous queue to keep physics advancing.
 #include "agv_linescan/sampling.hpp"
 #include "agv_linescan/scan_motion.hpp"
+#include "agv_linescan/camera_encoder_geometry.hpp"
 #include "agv_linescan/flight_recorder.hpp"
 #include "agv_linescan/contact_kinematics.hpp"
 #include "agv_linescan/queue_budget.hpp"
@@ -120,6 +121,16 @@ class GzLineScan final: public gz::sim::System,
     const size_t flightCapacity=flight?flight["max_samples"].as<size_t>(4000):4000;
     residualHalfCooldown_=flight?flight["half_limit_cooldown_s"].as<double>(10.):10.;
     flightDumpLimit_=flight?flight["max_dumps"].as<std::uint64_t>(20):20;
+    // The offline audit divides camera-centre horizontal travel by nominal
+    // encoder distance over each pose-tag interval. By the time it runs the two
+    // seconds that would explain an alert are long gone, so the same test runs
+    // here against the same floor. Pass starts are expected to trip it -- a
+    // pitching body moves the camera without any contact sliding -- so geometry
+    // alerts get their own budget and cannot starve a scan-motion dump.
+    geometryFloor_=flight?flight["camera_encoder_geometry_floor"].as<double>(.95):.95;
+    geometryDumpLimit_=flight?flight["max_geometry_dumps"].as<std::uint64_t>(40):40;
+    if(!std::isfinite(geometryFloor_)||geometryFloor_<0||geometryFloor_>1||geometryDumpLimit_>1000)
+      throw std::runtime_error("invalid flight_recorder configuration");
     probeKinematics_=flight && flight["probe_contact_kinematics"].as<bool>(false);
     contactEvidenceRequired_=flight?flight["contact_evidence"].as<bool>(true):true;
     if(!std::isfinite(flightSpan)||flightSpan<=0||flightSpan>60||flightCapacity<100||flightCapacity>200000||
@@ -752,15 +763,20 @@ class GzLineScan final: public gz::sim::System,
   // Copy the ring on the physics thread, hand the copy to a writer, and return.
   // The step must not wait for the disk, and stopping must not wait for data.
   bool DumpFlight(const std::string &reason) noexcept {
+    return DumpFlight(reason,flightDumps_,flightDumpLimit_,flightDumpsSuppressed_);
+  }
+
+  bool DumpFlight(const std::string &reason,std::uint64_t &count,std::uint64_t limit,
+                  std::uint64_t &suppressed) noexcept {
     try {
       if(!flight_ || flight_->size()==0)return false;
       // A repeating fault must not turn the diagnostic into its own disturbance.
       // The count keeps being reported, so a capped run is never mistaken for a
       // run that only faulted this many times.
-      if(flightDumps_>=flightDumpLimit_){++flightDumpsSuppressed_;return false;}
+      if(count>=limit){++suppressed;return false;}
       auto rows=flight_->Snapshot();
       Json summary=ResidualSummary();
-      const auto index=++flightDumps_;
+      const auto index=++count;
       const double when=now_;
       auto path=output_/("flight_"+std::to_string(index)+"_"+reason+".json");
       const bool probe=probeKinematics_;
@@ -1071,6 +1087,38 @@ class GzLineScan final: public gz::sim::System,
   }
 #endif
 
+  // Same interval, same quantities and same floor as tools/audit_scan_slip.py,
+  // so the two cannot disagree about what counts as an alert. The event keeps
+  // the terms rather than a verdict: the pitch-reference estimate that explains
+  // these on a startup probe is explicitly provisional, and freezing it here
+  // would lose the ability to re-derive it. The two-second window carries the
+  // attitude and contact history the terms are read against.
+  void CheckCameraEncoderGeometry() {
+    if(!flight_ || tags_.size()<2 || geometryFloor_<=0 || spacing_<=0)return;
+    const auto &a=tags_[tags_.size()-2];const auto &b=tags_.back();
+    const double from=a["camera_position_world_m"][0].template get<double>();
+    const double to=b["camera_position_world_m"][0].template get<double>();
+    const auto measured=MeasureCameraEncoder(a["global_line"].template get<double>(),
+        b["global_line"].template get<double>(),spacing_,from,to);
+    if(!measured || measured->ratio>=geometryFloor_)return;
+    Json event={{"reason","camera_encoder_geometry_alert"},{"simulation_time_s",now_},
+      {"floor",geometryFloor_},{"lines",measured->lines},{"line_spacing_m",spacing_},
+      {"encoder_m",measured->encoder},{"camera_horizontal_m",measured->travel},{"ratio",measured->ratio},
+      {"camera_x_from_m",from},{"camera_x_to_m",to},
+      {"first_line",a["global_line"]},{"last_line",b["global_line"]},
+      {"block_id",block_},{"segment_id",segment_},{"capturing",active_}};
+    if(const auto *newest=flight_->Newest()) {
+      event["body_xyz"]={newest->bodyX,newest->bodyY,newest->bodyZ};
+      event["body_quat_xyzw"]={newest->bodyQx,newest->bodyQy,newest->bodyQz,newest->bodyQw};
+      event["mount_roll_pitch_rad"]=newest->mountAngle;
+    }
+    event["flight_recorder"]=DumpFlight("camera_encoder_geometry_alert",geometryDumps_,
+                                        geometryDumpLimit_,geometryDumpsSuppressed_)?geometryDumps_:0;
+    if(geometryDumpsSuppressed_)event["flight_recorder_suppressed"]=geometryDumpsSuppressed_;
+    std_msgs::msg::String message;message.data=event.dump();statusPub_->publish(message);
+    ArchiveEvent(std::move(event));
+  }
+
   Json Tag(const Line &line,double sceneTime) {
     const auto &p=line.midpoint.Pos();
     const auto q=line.midpoint.Rot()*gz::math::Quaterniond(M_PI,0,M_PI/2);
@@ -1100,6 +1148,7 @@ class GzLineScan final: public gz::sim::System,
       auto tag=Tag(line,sceneTime);
       if (!row) first_=tag;
       tags_.push_back(std::move(tag));
+      CheckCameraEncoderGeometry();
     }
     tagAfterHold_=false;
     lastLine_=line; lastSceneTime_=sceneTime;
@@ -1261,6 +1310,8 @@ class GzLineScan final: public gz::sim::System,
   std::unique_ptr<CaptureContactStats> contactStats_;
   double residualHalfCooldown_=10.,lastHalfEvent_=-1e9;
   std::uint64_t halfEvents_=0,flightDumps_=0,flightDumpLimit_=20,flightDumpsSuppressed_=0;
+  std::uint64_t geometryDumps_=0,geometryDumpLimit_=40,geometryDumpsSuppressed_=0;
+  double geometryFloor_=.95;
   std::atomic<std::uint64_t> diagnosticWriteFailures_{0},diagnosticDropped_{0};
   std::thread diagnosticThread_;
   std::mutex diagnosticMutex_;
