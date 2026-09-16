@@ -1,0 +1,30 @@
+{
+ "schema": "agv.capture_close_handshake_brake.v1",
+ "date": "2026-09-16",
+ "summary": "At the end of a scan track the executor publishes zero body velocity while the capture-close service call is in flight. When that handshake spans more than one control tick the swerve controller latches Brake, and the vehicle must come to a full stop from 10 km/h before it can drive again. The pass then replans a fresh rest-to-rest profile for the remaining distance, so the vehicle brakes early, stops, drives a short distance and stops again.",
+ "found_by": "operator observation of the GUI during the v2 full-area run, then traced in the execution archive",
+ "mechanism": [
+  "execution_node.py:316 requests capture off once the camera has passed the region plus the overrun distance",
+  "execution_node.py:295 returns early with a zero command while capture.future is pending and the target is off, so core.update() is not called and the tracker freezes in ALIGNING",
+  "swerve.hpp:143 takes Drive to Brake when the allocated wheel speeds are zero, with reason STOP_REQUEST",
+  "swerve.hpp:157 releases Brake only once the wheels have actually stopped, which from 2.78 m/s costs about 2.8 s and 3.9 m",
+  "tracking.py:210 then rebuilds the profile from the remaining distance, producing the second acceleration and the second stop"
+ ],
+ "already_known_for_the_other_direction": "The comment at execution_node.py:292 reads 'An open now happens while a pass is already driving its lead-in, and must not brake the vehicle for the duration of a handshake.' The open direction was exempted with the 'not self.capture.target' condition. The close direction was left halting the step.",
+ "rate": {
+  "definition": "brake events inside a PASS that are neither the terminal stop, the validator pause probe, nor a fault",
+  "rough100_v2_full_rated_1": {"track_ends": 10, "events": 3, "tracks": [1, 2, 6]},
+  "rough100_full_rated_4": {"track_ends": 10, "events": 2, "tracks": [5, 9]},
+  "accept_rated_6": {"track_ends": 10, "events": 0},
+  "combined": "5 of 30 track ends, about 17 percent",
+  "note": "it is a race on the service round trip, not a property of a particular track"
+ },
+ "cost_per_event": {"coast_distance_m": [3.877, 3.941], "coast_time_s": [2.76, 2.78], "extra_track_time_s": "about 2 to 3"},
+ "excluded_from_the_count": {
+  "validator_pause_probe": "track 0 of every run shows state PAUSING then PAUSED; that is tools/validate_operator_session.py exercising pause retention on purpose, coasting about 2.2 m",
+  "fault_braking": "the track 9 stop in rough100_v2_full_rated_1 at 754.676 s is the scan-motion fault stopping the vehicle"
+ },
+ "data_impact": "None observed. At the braking tick capture_active is already false and the vehicle is past the region in the run-out buffer. The cost is time and an unplanned full-authority brake that the trajectory never budgeted.",
+ "not_fixed": "No change made. Two directions were identified: extend the existing open-direction exemption to the close, or keep the requirement that a close settles before the next step but move it to the step transition rather than the middle of a PASS.",
+ "regression_status": "Long standing, not introduced by recent work: present in the 2026-09-14 run used for the section 6 sign-off's sibling runs and in the 2026-09-15 rough-road run."
+}

@@ -25,7 +25,7 @@
 
 ## 重要问题保留入口
 
-- [起伏道路RTF与采集残差](issues/ROUGH_ROAD_RUNTIME.md)：近端共面密网格的等几何对照与偶发残差保护调查，尚未关闭。
+- [起伏道路RTF与采集残差](issues/ROUGH_ROAD_RUNTIME.md)：负端RTF已修复；残差故障2026-09-16复发并被飞行记录仪捕获，已定为单个物理步的状态不连续，子系统未定位，尚未关闭。
 
 - [采集进程内存增长](issues/CAPTURE_MEMORY_GROWTH.md)：Mesa D3D12命令签名缓存的`&key`错误已确认，附独立复现、源码补丁和上游报告；私有源码修复版已投入运行并据此关闭第6节，系统Mesa与上游均未修复。
 - [仿真关闭段错误与C盘转储](issues/GZ_SHUTDOWN_CRASH_DUMPS.md)：Gazebo退出时卸载库与存活线程竞争导致段错误，WSL把约等于RSS的整份core写进C盘；`ulimit -c 0`与`maxCrashDumpCount=0`实测均无效，源码确认只有负值才关闭采集。
@@ -37,6 +37,7 @@
 - [掉头对轮后航向保护](issues/POST_TURN_HEADING.md)：对轮导致车身偏转、DRIVE不能作为唯一开采条件，前导段闭环恢复与原保护保留。
 - [扫描摆动、后退调整、预览与条光](issues/SCAN_STABILITY.md)：保留调参前后原图和定位误差对照。
 - [沟槽碰撞简化](issues/COLLISION_PROXY.md)：视觉/碰撞边界、成本与不适用工况。
+- [道末采集关闭握手把整车刹停](issues/CAPTURE_CLOSE_HANDSHAKE_BRAKE.md)：关闭握手期间发零速度导致摆臂锁存Brake，30个道末中5次，代价约2–3 s；不影响采集数据，未修复。
 
 ## 历史资料
 

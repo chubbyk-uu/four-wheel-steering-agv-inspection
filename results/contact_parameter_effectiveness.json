@@ -1,0 +1,44 @@
+{
+ "schema": "agv.contact_parameter_effectiveness.v1",
+ "date": "2026-09-16",
+ "question": "The URDF declares tyre contact stiffness and friction through a Gazebo-classic <gazebo reference> block. Does gz-sim with DART honour them?",
+ "answer": "Friction is honoured. Contact stiffness and damping are silently ignored.",
+ "conversion": {
+  "source": "src/agv_description/urdf/agv.urdf.xacro:153 -- <gazebo reference=\"${name}_wheel_link\"><mu1>0.8</mu1><mu2>0.8</mu2><kp>1000000</kp><kd>100</kd></gazebo>",
+  "converted_by": "gz sdf -p over the expanded URDF",
+  "result": "<collision><surface><contact><ode><kp>1000000</kp><kd>100</kd></ode></contact><friction><ode><mu>0.8</mu><mu2>0.8</mu2></ode></friction></surface>",
+  "valid_sdf": true,
+  "warning_emitted": false,
+  "note": "the parameters land under <ode>, and the world selects no engine, so gz-sim loads its default DART plugin"
+ },
+ "engine": "libgz-physics7-dartsim-plugin.so.7.6.0 (/opt/ros/jazzy/opt/gz_physics_vendor/lib)",
+ "binary_inspection": {
+  "exact_string_kp": 0,
+  "exact_string_kd": 0,
+  "exact_string_slip1": 1,
+  "exact_string_slip2": 1,
+  "exact_string_fdir1": 1,
+  "exact_string_restitution_coefficient": 1,
+  "reading": "the plugin looks up slip1/slip2/fdir1/restitution_coefficient by element name and never looks up kp/kd. Absence of mu/mu2 strings proves nothing, because friction is reached through sdformat's typed accessors, which is why the empirical tests below were run.",
+  "related_symbols": ["GzContactSurfaceHandler", "AddContactPropertiesCallback", "ContactSurfaceParams"]
+ },
+ "experiment_contact_stiffness": {
+  "setup": "100 kg sphere of radius 0.5 m resting on a static plane, DART, 1 ms step, 40 s simulated",
+  "predicted_if_honoured": {"kp_1e3_penetration_m": 0.981, "kp_1e9_penetration_m": 9.81e-07},
+  "measured_resting_centre_height_m": {"kp_1e3": 0.49999999990190097, "kp_1e9": 0.49999999990190097},
+  "identical_to_last_digit": true,
+  "measured_penetration_m": 9.8e-11,
+  "conclusion": "kp and kd have no effect. Tyre contact is a rigid DART constraint with no compliance."
+ },
+ "experiment_friction": {
+  "setup": "10 kg 0.4 m cube on a 20 degree ramp (tan = 0.364), same mu on both bodies, 5 s simulated",
+  "measured_slider_x_m": {"start": 0.1026, "mu_0.05": 33.5706, "mu_2.0": 0.1026},
+  "conclusion": "mu and mu2 are honoured: the low-friction case slid 33.5 m, the high-friction case did not move"
+ },
+ "consequences": [
+  "The vehicle has no tyre compliance at all. Every bit of compliance comes from the suspension springs (8000 N/m per wheel). A reader of the URDF would reasonably assume 1e6 N/m of tyre stiffness that has never existed.",
+  "A rigid cylinder on a rigid triangle mesh is the configuration in which an internal-edge contact artefact produces an unbounded one-step impulse, because nothing absorbs it. This is plausibly the enabling condition for the single-step scan-motion rejection recorded in scan_motion_single_step.json, though that link is not proven.",
+  "The suspension damping comparison (750/1000/1200 N.s/m) and the pitch and roll measurements were all taken on a model with no tyre compliance. Those measurements stand as taken; what they do not include is the filtering a real tyre would apply to edge impulses of this kind."
+ ],
+ "not_addressed": "No change has been made. Whether to model tyre compliance, and how, is a separate decision; DART exposes contact surface parameters through gz-physics, and the SDF elements it does honour are slip1, slip2, fdir1 and restitution_coefficient."
+}

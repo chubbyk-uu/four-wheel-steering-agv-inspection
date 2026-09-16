@@ -1,0 +1,338 @@
+{
+ "schema": "agv.scan_motion_single_step.v1",
+ "date": "2026-09-16",
+ "question": "What causes the intermittent unsupported_scan_motion rejection?",
+ "answer": "The rejection is triggered by a single 1 ms discontinuity in the physics state, not by a mechanical motion problem. The gate reports its input faithfully; the input is wrong for one step.",
+ "run": {
+  "directory": "local_data/rough100_v2_full_rated_1 (not in Git)",
+  "scene": "assets/road/runtime_fullwidth_100m_rough_marked_3mm_v2",
+  "region_m": [
+   100,
+   10
+  ],
+  "requested_speed_m_s": 2.777777777777778,
+  "outcome": "FAULT CAMERA_unsupported_scan_motion on track 9 (the tenth) at simulation 754.648 s",
+  "blocks_before_fault": 699,
+  "rows_before_fault": 2847906,
+  "peak_tree_rss_gib": 10.07,
+  "peak_device_vram_gib": 9.3,
+  "verification_did_not_pass": true
+ },
+ "flight_record": {
+  "path_not_in_git": "local_data/rough100_v2_full_rated_1/session/raw/session_cpp_1789519953240029569/flight_1_unsupported_scan_motion.json",
+  "sha256": "9d3f9e5206beb49dc26f69415b730014c92cf41414ab1c7f9618f68a749819eb",
+  "samples": 2001,
+  "window_s": 2.0,
+  "fault_simulation_time_s": 754.648,
+  "diagnostic_write_failures": 0,
+  "diagnostic_dropped_records": 0,
+  "recorder_behaved_as_designed": true
+ },
+ "fault_step": {
+  "guards": {
+   "data": true,
+   "lateral": true,
+   "polarity": true,
+   "residual": false,
+   "speed": true,
+   "yaw": true
+  },
+  "residual_m_s": 0.039516777545849015,
+  "limit_m_s": 0.03,
+  "per_wheel_residual_m_s": {
+   "fl": 0.016397580744038475,
+   "fr": 0.026707383268830983,
+   "rl": 0.039516777545849015,
+   "rr": 0.010074867892301454
+  },
+  "wheel_order": [
+   "fl",
+   "fr",
+   "rl",
+   "rr"
+  ],
+  "contact_speed_m_s": {
+   "fl": 2.7648695098645586,
+   "fr": 2.7396260191066415,
+   "rl": 2.81725751010582,
+   "rr": 2.7648695096961093
+  },
+  "body_xyz": [
+   3.047039387795553,
+   4.4914740557370925,
+   0.6474056288913204
+  ],
+  "note": "same-side front and rear disagree by 25-52 mm/s, which no rigid-body twist can produce",
+  "one_step_jumps_vs_window_max_excluding_fault": {
+   "body_vx_m_s": {
+    "fault": 0.00747,
+    "window_max": 0.001258
+   },
+   "suspension_position_m": {
+    "fl": {
+     "fault": 2.29e-05,
+     "window_max": 6.65e-05
+    },
+    "fr": {
+     "fault": 6.46e-05,
+     "window_max": 5.94e-05
+    },
+    "rl": {
+     "fault": 0.000382,
+     "window_max": 6.64e-05
+    },
+    "rr": {
+     "fault": 2.39e-05,
+     "window_max": 6.51e-05
+    }
+   },
+   "contact_speed_m_s": {
+    "fl": {
+     "fault": 0.0,
+     "window_max": 0.004302
+    },
+    "fr": {
+     "fault": 0.025243,
+     "window_max": 0.004197
+    },
+    "rl": {
+     "fault": 0.052388,
+     "window_max": 0.004254
+    },
+    "rr": {
+     "fault": 0.0,
+     "window_max": 0.005111
+    }
+   },
+   "steer_rad": {
+    "fl": {
+     "fault": 3.4e-07,
+     "typical_per_step": 6.151e-06
+    },
+    "fr": {
+     "fault": 3.4e-07,
+     "typical_per_step": 6.1506e-06
+    },
+    "rl": {
+     "fault": 0.00075742,
+     "typical_per_step": 6.063e-06
+    },
+    "rr": {
+     "fault": 3.4e-07,
+     "typical_per_step": 6.0626e-06
+    }
+   }
+  },
+  "last_four_steps": [
+   {
+    "t": 754.645,
+    "residual": 1.1725888373580226e-08,
+    "wheel_speed_m_s": [
+     2.764871827344514,
+     -2.7648718271105626,
+     -2.764871827070656,
+     2.764871827384262
+    ],
+    "steer_rad": [
+     -0.0012937097560130506,
+     -3.1428863633709345,
+     -3.142886366435449,
+     -0.001293718788270751
+    ],
+    "suspension_m": [
+     0.006942525033358744,
+     0.0041649403494190195,
+     -0.0008938134630636119,
+     -6.591900234686928e-05
+    ],
+    "suspension_rate_m_s": [
+     0.004072887706796639,
+     -0.0072285270412780905,
+     -0.0005433455093574319,
+     0.005191261197374418
+    ],
+    "body_velocity_base_link_m_s": [
+     2.759443431289436,
+     0.001996435149540782,
+     0.010635302938670302
+    ]
+   },
+   {
+    "t": 754.646,
+    "residual": 1.1601623754535911e-08,
+    "wheel_speed_m_s": [
+     2.764871827344895,
+     -2.7648718271100745,
+     -2.764871827070877,
+     2.764871827384267
+    ],
+    "steer_rad": [
+     -0.0012940535192025263,
+     -3.142886707134166,
+     -3.1428867101658193,
+     -0.0012940624560699228
+    ],
+    "suspension_m": [
+     0.006946246195213152,
+     0.00415796043199391,
+     -0.0008945411682863196,
+     -6.043949686063945e-05
+    ],
+    "suspension_rate_m_s": [
+     0.0037211618544074967,
+     -0.006979917425109394,
+     -0.0007277052227076114,
+     0.00547950548622983
+    ],
+    "body_velocity_base_link_m_s": [
+     2.7593900308806987,
+     0.001604510483825642,
+     0.010610856932233528
+    ]
+   },
+   {
+    "t": 754.647,
+    "residual": 1.1477324277663513e-08,
+    "wheel_speed_m_s": [
+     2.7648718273452477,
+     -2.7648718271095594,
+     -2.7648718270709836,
+     2.7648718273842956
+    ],
+    "steer_rad": [
+     -0.0012943972823917698,
+     -3.142887050897409,
+     -3.1428870538961897,
+     -0.0012944061238690321
+    ],
+    "suspension_m": [
+     0.006949608345256296,
+     0.0041512305830580815,
+     -0.0008954594521119274,
+     -5.466604658643517e-05
+    ],
+    "suspension_rate_m_s": [
+     0.0033621500431444823,
+     -0.0067298489358282865,
+     -0.0009182838256078518,
+     0.005773450274204284
+    ],
+    "body_velocity_base_link_m_s": [
+     2.759337095932889,
+     0.0012026836765492935,
+     0.010586219505482185
+    ]
+   },
+   {
+    "t": 754.648,
+    "residual": 0.039516777545849015,
+    "wheel_speed_m_s": [
+     2.764871827316727,
+     -2.7396283154003673,
+     -2.8172579162762235,
+     2.7648718271795887
+    ],
+    "steer_rad": [
+     -0.0012947410455874176,
+     -3.1428873946608396,
+     -3.1421296307775872,
+     -0.0012947497921447706
+    ],
+    "suspension_m": [
+     0.00692668742798045,
+     0.00421582541284515,
+     -0.0005134835415222449,
+     -3.0809209259806636e-05
+    ],
+    "suspension_rate_m_s": [
+     -0.022920917275846855,
+     0.06459482978706868,
+     0.3819759105896825,
+     0.023856837326628536
+    ],
+    "body_velocity_base_link_m_s": [
+     2.7518674023453116,
+     0.011882389767267739,
+     0.010841362598947414
+    ]
+   }
+  ]
+ },
+ "ruled_out": {
+  "single_bad_encoder": "the dominant wheel varies across the 29 near-limit events (fl 10, fr 6, rl 6, rr 7) and two wheels jumped together",
+  "whole_vehicle_slip": "the disagreement is between front and rear on the same side, which slip cannot produce",
+  "loss_of_contact": "not supported: the suspension moved only 0.39 mm and did so in the same step as the speed change; lift-off would extend over tens of milliseconds. Tyre contact state is still not recorded, so this is not formally closed"
+ },
+ "background_process_is_the_collision_grid": {
+  "established": true,
+  "evidence": [
+   "single-step isolated spikes occur 48-80 times per wheel per 2 s",
+   "spike rate 24-40 per second against 2.77/0.1 = 27.7 grid crossings per second",
+   "wheelbase 1.3 m is exactly 13 cells of 0.1 m, which is why all four wheels share an x phase",
+   "spike x phase is locked modulo 0.1 m",
+   "amplitude matches the mesh: largest slope discontinuity in terrain_5 yields 0.0059 m/s, observed background max 0.0023 m/s"
+  ],
+  "phase_lock": {
+   "fl": {
+    "spikes": 80,
+    "phase_concentration_R": 0.4924,
+    "rayleigh_p": 3.778520612854377e-09,
+    "uniform_expected_R": 0.0991
+   },
+   "fr": {
+    "spikes": 54,
+    "phase_concentration_R": 0.4743,
+    "rayleigh_p": 5.289952843158093e-06,
+    "uniform_expected_R": 0.1206
+   },
+   "rl": {
+    "spikes": 53,
+    "phase_concentration_R": 0.418,
+    "rayleigh_p": 9.495586701897474e-05,
+    "uniform_expected_R": 0.1217
+   },
+   "rr": {
+    "spikes": 48,
+    "phase_concentration_R": 0.4427,
+    "rayleigh_p": 8.221919166701218e-05,
+    "uniform_expected_R": 0.1279
+   }
+  },
+  "heightfield_step_m": 0.1
+ },
+ "fault_is_not_the_grid": {
+  "geometry_ceiling_m_s": 0.0059,
+  "fault_suspension_rate_jump_m_s": 0.382,
+  "ratio": 65,
+  "conclusion": "the road surface cannot produce this impulse; an earlier reading of the fault as a violent grid crossing was wrong and this measurement is what falsified it"
+ },
+ "collision_mesh_check": {
+  "partition": "terrain_5",
+  "covers_xy_m": [
+   [
+    0,
+    5
+   ],
+   [
+    0,
+    7.68
+   ]
+  ],
+  "vertices": 3978,
+  "triangles": 7700,
+  "grid": "51 x 78 vertices, x spacing exactly 0.1",
+  "degenerate_triangles": 0,
+  "seams_at_contact": false,
+  "height_bounds_m": [
+   -0.00275,
+   0.00255
+  ],
+  "conclusion": "the mesh at the fault location is a clean regular grid with no defect"
+ },
+ "leading_hypothesis": "internal-edge contact artefact between the rigid wheel cylinder and the rigid triangle-mesh ground: the collision normal at a shared triangle edge is taken from the edge rather than the face, producing an impulse unrelated to the real slope. Consistent with every measured feature but not proven; contact normal, penetration depth and contact count would settle it and are still not recorded.",
+ "open": [
+  "which subsystem produces the jump: the recorder logs JointVelocity from the ECM, and the drive joints are ideal velocity servos, so a commanded change and a solver glitch are indistinguishable in the current fields",
+  "tyre contact state and contact normal are still not recorded",
+  "residual statistics are not split by capture state, so the 418 over-limit samples cannot be attributed between turnarounds and scanning"
+ ]
+}
