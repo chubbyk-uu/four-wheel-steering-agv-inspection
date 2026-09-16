@@ -9,9 +9,17 @@ the wheels turned without the vehicle advancing. That is cheap and covers every
 line, but the tags are sparse: a short stall is diluted across its interval.
 
 The pixels say it directly. Consecutive scan lines 0.3662 mm apart differ by a
-measurable amount on real texture; lines imaging the same ground do not. The
-detector is the mean absolute difference between adjacent rows, and the decision
-threshold is read from the run's own distribution rather than assumed.
+measurable amount on real texture; lines imaging the same ground do not.
+
+The plain adjacent-row difference cannot separate that from ground with nothing
+to differ in. A painted marking collapses it just as a stall does: on the marked
+road 31 of 704 images tripped it, and so did 32 of 699 on the triangle-mesh
+version of the same road, while the unmarked road tripped none. So the decision
+variable is the adjacent-row difference divided by the texture measured along
+the row. A stall keeps each row's own contrast and loses only the difference to
+its neighbour, so the ratio collapses; paint loses both together, so the ratio
+does not move. Where the row itself carries too little texture to divide by, the
+pair is reported as untestable rather than passed in silence.
 
 The original artifact (150 N.m holding torque, wheels rolling under a stopped
 vehicle during a wheel alignment) advanced the encoder 8.057 mm while the camera
@@ -84,11 +92,14 @@ def locate_images(blocks, archives):
     return found, missing
 
 
-def row_differences(path, stride):
-    """Mean absolute difference between adjacent rows of one archived image."""
+def row_evidence(path, stride):
+    """Adjacent-row difference and the texture each pair has to differ in."""
     with Image.open(path) as image:
-        pixels = np.asarray(image, dtype=np.int16)
-    return np.abs(np.diff(pixels[:, ::stride], axis=0)).mean(axis=1)
+        pixels = np.asarray(image, dtype=np.int16)[:, ::stride]
+    difference = np.abs(np.diff(pixels, axis=0)).mean(axis=1)
+    texture = np.abs(np.diff(pixels, axis=1)).mean(axis=1)
+    # The weaker of the two rows bounds what their difference could have been.
+    return difference, np.minimum(texture[:-1], texture[1:])
 
 
 def main():
@@ -100,7 +111,10 @@ def main():
                         help='ground/encoder below this is reported as slip')
     parser.add_argument('--column-stride', type=int, default=4)
     parser.add_argument('--duplicate-fraction', type=float, default=.4,
-                        help='row difference below this fraction of the run median is a duplicate')
+                        help='difference/texture below this fraction of the run median is a duplicate')
+    parser.add_argument('--texture-fraction', type=float, default=.1,
+                        help='row pairs with less than this fraction of the run median texture '
+                             'cannot be divided by and are counted as untestable')
     args = parser.parse_args()
 
     blocks = [json.loads(line) for line in (args.mission/'capture_blocks.jsonl').read_text().splitlines()]
@@ -117,22 +131,37 @@ def main():
         if directory not in archives:
             archives.append(directory)
     images, missing = locate_images(blocks, archives)
-    per_image, worst, floor_seen = [], [], math.inf
+    per_image, worst, floor_seen, evidence = [], [], math.inf, []
     for path in images:
-        difference = row_differences(path, args.column_stride)
+        difference, texture = row_evidence(path, args.column_stride)
+        evidence.append((difference, texture))
         floor_seen = min(floor_seen, float(difference.min()))
         per_image.append(dict(image=path.name, rows=int(difference.size)+1,
                               minimum=float(difference.min()),
                               median=float(np.median(difference)),
+                              texture_median=float(np.median(texture)),
                               exact_duplicates=int((difference == 0).sum())))
     median = float(np.median([v['median'] for v in per_image])) if per_image else 0.
-    threshold = median*args.duplicate_fraction
-    for entry, path in zip(per_image, images):
-        if entry['minimum'] < threshold or entry['exact_duplicates']:
-            difference = row_differences(path, args.column_stride)
-            rows = np.flatnonzero(difference < threshold)
+    texture_median = float(np.median([v['texture_median'] for v in per_image])) if per_image else 0.
+    texture_floor = texture_median*args.texture_fraction
+    def ratio_of(difference, texture):
+        return difference/np.maximum(texture, 1e-6)
+    testable = [texture >= texture_floor for _, texture in evidence]
+    pooled = np.concatenate([ratio_of(d, x)[ok] for (d, x), ok in zip(evidence, testable)]) \
+        if evidence and any(ok.any() for ok in testable) else np.zeros(0)
+    ratio_median = float(np.median(pooled)) if pooled.size else 0.
+    threshold = ratio_median*args.duplicate_fraction
+    untestable = int(sum(int((~ok).sum()) for ok in testable))
+    ratio_floor_seen = float(pooled.min()) if pooled.size else math.inf
+    for entry, (difference, texture), ok in zip(per_image, evidence, testable):
+        ratio = ratio_of(difference, texture)
+        # An exact duplicate is a defect whatever the ground looked like.
+        flagged = (ok & (ratio < threshold)) | (difference == 0)
+        if flagged.any():
+            rows = np.flatnonzero(flagged)
             worst.append(dict(image=entry['image'], rows=rows.tolist()[:64],
-                              count=int(rows.size), minimum=entry['minimum']))
+                              count=int(rows.size), minimum=entry['minimum'],
+                              ratio_minimum=float(ratio[flagged].min())))
 
     report = dict(
         schema='agv.scan_slip.v1', mission=str(args.mission),
@@ -146,7 +175,10 @@ def main():
             below_floor=len(slips), worst=slips[:8]),
         adjacent_rows=dict(
             column_stride=args.column_stride, run_median=median,
-            duplicate_threshold=threshold, observed_minimum=floor_seen,
+            texture_median=texture_median, texture_floor=texture_floor,
+            ratio_median=ratio_median, duplicate_threshold=threshold,
+            observed_minimum=floor_seen, observed_ratio_minimum=ratio_floor_seen,
+            untestable_row_pairs=untestable,
             images_flagged=len(worst), flagged=worst[:8],
             exact_duplicate_rows=sum(v['exact_duplicates'] for v in per_image)),
         scope=('Every archived block must present its own image; a block whose pixels '
@@ -159,8 +191,9 @@ def main():
     report['passed'] = bool(images) and not missing and not slips and not worst
     args.output.write_text(json.dumps(report, indent=2)+'\n')
     print('slip intervals below %.2f: %d/%d' % (args.ratio_floor, len(slips), len(intervals)))
-    print('row-difference median %.3f, threshold %.3f, observed floor %.3f'
-          % (median, threshold, floor_seen))
+    print('row difference median %.3f, texture median %.3f' % (median, texture_median))
+    print('difference/texture median %.3f, threshold %.3f, observed floor %.3f, untestable pairs %d'
+          % (ratio_median, threshold, ratio_floor_seen, untestable))
     print('images with duplicate rows: %d/%d   exact duplicates: %d'
           % (len(worst), len(images), report['adjacent_rows']['exact_duplicate_rows']))
     if missing:

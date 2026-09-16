@@ -127,7 +127,55 @@
    "passed": false
   },
   "duplicate_rows_are_the_paint": "31 of 704 images here and 32 of 699 on the mesh version of the same road; zero on the unmarked road. A flagged 64-row run in block 78 averages 113.4 grey against 56.9 for ordinary rows, with an adjacent-row difference of 2.0 against 7.0, at x = 92.2 where the manifest places marking polygons. The duplicate test thresholds against a whole-run median, so uniform paint falls below it. This is a detector limitation, not a capture defect, and it will fail every run on a marked road until the test is conditioned on local texture.",
-  "slip_attributable_to_the_heightmap": "real but small and confined to acceleration: intervals below 0.95 go from 2 to 6 and the 0.1st percentile from 0.9882 to 0.9292. Five of the six sit wholly in the lead-in or run-out (x < 0 or x > 100); one straddles the ROI entry at x in [-0.41, 1.03]."
+  "slip_attributable_to_the_heightmap": "real but small and confined to acceleration: intervals below 0.95 go from 2 to 6 and the 0.1st percentile from 0.9882 to 0.9292. Five of the six sit wholly in the lead-in or run-out (x < 0 or x > 100); one straddles the ROI entry at x in [-0.41, 1.03].",
+  "detector_fixed": {
+   "change": "tools/audit_scan_slip.py now divides the adjacent-row difference by the texture measured along the row. A stall keeps each row's own contrast and loses only the difference to its neighbour, so the ratio collapses; paint loses both together, so it does not move. Row pairs with less than a tenth of the run's median texture are reported as untestable instead of passed in silence.",
+   "after": {
+    "rough_marked_heightmap": {
+     "ratio_min": 0.9224,
+     "ratio_p0_1": 0.9292,
+     "below_floor": 6,
+     "intervals": 2806,
+     "images": 704,
+     "images_flagged": 0,
+     "ratio_median": 0.4783,
+     "duplicate_threshold": 0.1913,
+     "observed_ratio_minimum": 0.1973,
+     "untestable_row_pairs": 0,
+     "passed": false
+    },
+    "rough_marked_mesh": {
+     "ratio_min": 0.9308,
+     "ratio_p0_1": 0.9882,
+     "below_floor": 2,
+     "intervals": 2786,
+     "images": 699,
+     "images_flagged": 0,
+     "ratio_median": 0.4782,
+     "duplicate_threshold": 0.1913,
+     "observed_ratio_minimum": 0.2405,
+     "untestable_row_pairs": 0,
+     "passed": false
+    },
+    "flat_unmarked_mesh": {
+     "ratio_min": 0.991,
+     "ratio_p0_1": 0.9922,
+     "below_floor": 0,
+     "intervals": 2822,
+     "images": 710,
+     "images_flagged": 0,
+     "ratio_median": 0.4777,
+     "duplicate_threshold": 0.1911,
+     "observed_ratio_minimum": 0.387,
+     "untestable_row_pairs": 0,
+     "passed": true
+    }
+   },
+   "effect": "Flagged images go from 31 to 0 on the heightmap run and 32 to 0 on the mesh version of the same road, while the unmarked baseline stays at 0 and still passes. No row pair was untestable in any of the three.",
+   "statistic_is_stable_across_roads": "the difference/texture median is 0.478 on all three runs, against adjacent-row difference medians of 9.13-9.23 and texture medians of 19.06-19.32",
+   "the_remaining_minimum_is_real": "the lowest ratio in the heightmap run, 0.1973 against a 0.191 threshold, sits at block 494 row pair 0, x = 104.93 m, where the row texture is a normal 20.3 while the difference is only 4.01. That block is one of the six the encoder-versus-ground test independently flagged, at ratio 0.9395. Two detectors converging on the same place is evidence for both; the thin margin is the real signal approaching the threshold, not a residue of the paint problem.",
+   "still_failing_and_correctly_so": "both rough-road runs still fail the audit, now only on encoder-versus-ground slip"
+  }
  },
  "not_closed": [
   "the slip audit must stop flagging paint before it can gate this road",

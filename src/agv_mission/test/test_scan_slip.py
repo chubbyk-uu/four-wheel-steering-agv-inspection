@@ -52,13 +52,44 @@ def test_duplicate_rows_are_found_in_the_pixels(tmp_path):
     pixels[100:123] = pixels[100]
     path = tmp_path/'block_000000.pgm'
     Image.fromarray(pixels, mode='L').save(path)
-    difference = audit.row_differences(path, 1)
-    assert difference.size == 255
+    difference, texture = audit.row_evidence(path, 1)
+    assert difference.size == texture.size == 255
     duplicated = np.flatnonzero(difference == 0)
     assert duplicated.tolist() == list(range(100, 122))
     # The threshold is read from the run's own texture, not assumed.
-    threshold = float(np.median(difference))*.4
-    assert threshold > 0 and (difference < threshold).sum() == duplicated.size
+    ratio = difference/np.maximum(texture, 1e-6)
+    threshold = float(np.median(ratio))*.4
+    assert threshold > 0 and (ratio < threshold).sum() == duplicated.size
+
+
+def test_paint_is_not_a_stall_but_a_stall_on_paint_still_is(tmp_path):
+    """Uniform marking has nothing to differ in; a stall keeps its own contrast.
+
+    The plain adjacent-row difference cannot separate those. On the marked road
+    it flagged 31 of 704 images, and 32 of 699 on the triangle-mesh version of
+    the same road, while the unmarked road flagged none -- all paint.
+    """
+    from PIL import Image
+    rng = np.random.default_rng(1)
+    pixels = rng.integers(40, 200, size=(256, 64), dtype=np.uint8)
+    paint = (110 + rng.integers(0, 5, size=(40, 64))*6).astype(np.uint8)
+    pixels[100:140] = paint                     # painted band: bright, low contrast
+    pixels[160:180] = paint[0]                  # a stall that happens over that paint
+    pixels[200:220] = 128                       # featureless: nothing to divide by
+    path = tmp_path/'block_000000.pgm'
+    Image.fromarray(pixels, mode='L').save(path)
+    difference, texture = audit.row_evidence(path, 1)
+    ratio = difference/np.maximum(texture, 1e-6)
+    painted, stalled = slice(100, 139), slice(160, 179)
+    # The old absolute test fired on the paint, which is why it had to change.
+    assert (difference[painted] < float(np.median(difference))*.4).all()
+    threshold = float(np.median(ratio))*.4
+    assert (ratio[painted] >= threshold).all()
+    assert (ratio[stalled] < threshold).all()
+    # A surface with no texture cannot be divided by, and is excluded rather
+    # than silently passed.
+    floor = float(np.median(texture))*.1
+    assert (texture[slice(201, 218)] < floor).all() and texture[painted].min() >= floor
 
 
 def test_ground_distance_ignores_suspension_travel():
