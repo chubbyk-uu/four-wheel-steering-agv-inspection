@@ -2,7 +2,7 @@
  "schema": "agv.scan_motion_single_step.v1",
  "date": "2026-09-16",
  "question": "What causes the intermittent unsupported_scan_motion rejection?",
- "answer": "The rejection is triggered by a single 1 ms discontinuity in the physics state, not by a mechanical motion problem. The gate reports its input faithfully; the input is wrong for one step.",
+ "answer": "The rejection is triggered by a single 1 ms discontinuity across joint, suspension and body state. The archived body command is two orders of magnitude too small to explain it. The event is aligned with a 10 cm collision-grid crossing, so contact generation / rigid constraint response is the leading subsystem; local slip or contact loss is not formally excluded without contact records.",
  "run": {
   "directory": "local_data/rough100_v2_full_rated_1 (not in Git)",
   "scene": "assets/road/runtime_fullwidth_100m_rough_marked_3mm_v2",
@@ -106,20 +106,24 @@
    },
    "steer_rad": {
     "fl": {
-     "fault": 3.4e-07,
-     "typical_per_step": 6.151e-06
+     "fault": 3.4376319564782647e-07,
+     "immediately_previous_step": 3.4376318924344423e-07,
+     "window_max_excluding_fault": 1.635440617103192e-05
     },
     "fr": {
-     "fault": 3.4e-07,
-     "typical_per_step": 6.1506e-06
+     "fault": 3.437634306102666e-07,
+     "immediately_previous_step": 3.4376324276053083e-07,
+     "window_max_excluding_fault": 1.6354354342773547e-05
     },
     "rl": {
-     "fault": 0.00075742,
-     "typical_per_step": 6.063e-06
+     "fault": 0.000757423118602496,
+     "immediately_previous_step": 3.437303703890393e-07,
+     "window_max_excluding_fault": 1.6348101546270755e-05
     },
     "rr": {
-     "fault": 3.4e-07,
-     "typical_per_step": 6.0626e-06
+     "fault": 3.436682757384374e-07,
+     "immediately_previous_step": 3.436677991092846e-07,
+     "window_max_excluding_fault": 1.633595428182904e-05
     }
    }
   },
@@ -258,11 +262,6 @@
    }
   ]
  },
- "ruled_out": {
-  "single_bad_encoder": "the dominant wheel varies across the 29 near-limit events (fl 10, fr 6, rl 6, rr 7) and two wheels jumped together",
-  "whole_vehicle_slip": "the disagreement is between front and rear on the same side, which slip cannot produce",
-  "loss_of_contact": "not supported: the suspension moved only 0.39 mm and did so in the same step as the speed change; lift-off would extend over tens of milliseconds. Tyre contact state is still not recorded, so this is not formally closed"
- },
  "background_process_is_the_collision_grid": {
   "established": true,
   "evidence": [
@@ -300,12 +299,6 @@
   },
   "heightfield_step_m": 0.1
  },
- "fault_is_not_the_grid": {
-  "geometry_ceiling_m_s": 0.0059,
-  "fault_suspension_rate_jump_m_s": 0.382,
-  "ratio": 65,
-  "conclusion": "the road surface cannot produce this impulse; an earlier reading of the fault as a violent grid crossing was wrong and this measurement is what falsified it"
- },
  "collision_mesh_check": {
   "partition": "terrain_5",
   "covers_xy_m": [
@@ -331,8 +324,36 @@
  },
  "leading_hypothesis": "internal-edge contact artefact between the rigid wheel cylinder and the rigid triangle-mesh ground: the collision normal at a shared triangle edge is taken from the edge rather than the face, producing an impulse unrelated to the real slope. Consistent with every measured feature but not proven; contact normal, penetration depth and contact count would settle it and are still not recorded.",
  "open": [
-  "which subsystem produces the jump: the recorder logs JointVelocity from the ECM, and the drive joints are ideal velocity servos, so a commanded change and a solver glitch are indistinguishable in the current fields",
+  "final per-joint velocity and steer commands are not archived at 1 kHz; the high-level body command is far too small to explain the event, but direct command/state comparison is still missing",
   "tyre contact state and contact normal are still not recorded",
   "residual statistics are not split by capture state, so the 418 over-limit samples cannot be attributed between turnarounds and scanning"
- ]
+ ],
+ "normal_slope_input_is_insufficient": {
+  "slope_kinematic_scale_m_s": 0.0059,
+  "fault_suspension_rate_jump_m_s": 0.382,
+  "reading": "The continuous height-profile slope does not directly explain the jump. This is not an upper bound on a rigid contact-constraint impulse and therefore does not exclude the triangle grid as the trigger."
+ },
+ "fault_grid_alignment": {
+  "body_x_mod_0p1_m": 0.04703938779555267,
+  "wheel_center_x_mod_0p1_m": {
+   "fl": 0.09611467553760736,
+   "fr": 0.0979772434875247,
+   "rl": 0.09610153210358063,
+   "rr": 0.09796410005349798
+  },
+  "distance_to_next_x_grid_line_mm": {
+   "fl": 3.88532446239264,
+   "fr": 2.0227565124753,
+   "rl": 3.89846789641937,
+   "rr": 2.03589994650202
+  },
+  "reading": "At 2.76 m/s the wheels reach the next longitudinal grid line in roughly one physical step. The fault phase lies in the same band as the background grid-locked residual spikes."
+ },
+ "collision_detector_ab": "results/collision_detector_ab.json: Bullet changes the signature but worsens stable capture residuals, so it is not adopted; the A/B supports contact generation as the controlling subsystem without proving the rare ODE outlier mechanism.",
+ "hypothesis_status": {
+  "single_field_read_or_encoder_glitch": "not supported: two drive joints change while suspension, steer and body velocity respond in the same step",
+  "normal_rigid_body_motion": "ruled out: the four measured contact speeds cannot be represented by one rigid-body twist",
+  "high_level_control_command": "ruled out at the recorded scale: body vx command changes only 0.000294 m/s while fr/rl contact speeds change 0.025/0.052 m/s; final per-joint command was not archived",
+  "local_slip_or_contact_loss": "open: the record contains no contact state, normal, count or penetration depth"
+ }
 }

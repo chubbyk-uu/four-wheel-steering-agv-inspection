@@ -1,0 +1,150 @@
+{
+  "schema": "agv.collision_detector_ab.v1",
+  "date": "2026-09-16",
+  "scope": "Matched 20 x 2 m, two-track, 10 km/h headless OptiX missions on the same 10 cm / +/-3 mm collision mesh. DART and the Dantzig solver are unchanged; only DART collision_detector is ode or bullet.",
+  "method": "Each stable interval is the difference between the cumulative 1 kHz residual histograms in the first and last image blocks of that track. This excludes the approach and most turnaround samples that dominate the whole-run tail; it also omits the first and last partial block.",
+  "histogram_bin_width_m_s": 0.001935483870967742,
+  "cases": {
+    "run_ode2": {
+      "passed": true,
+      "mission_simulation_time_s": 91.816,
+      "rtf": 0.9986653217506885,
+      "whole_run_cumulative": {
+        "samples": 86327,
+        "max_m_s": 0.06115091530456317,
+        "p95_m_s": 0.001935483870967742,
+        "p99_m_s": 0.015483870967741935,
+        "over_half_limit": 899,
+        "over_limit": 231
+      },
+      "stable_capture_intervals": [
+        {
+          "track_id": 0,
+          "samples_between_first_and_last_block": 8873,
+          "below_0p001935_m_s": 8873,
+          "at_or_above_0p001935_m_s": 0,
+          "fraction_at_or_above_0p001935_m_s": 0.0,
+          "at_or_above_0p009677_m_s": 0,
+          "at_or_above_0p015484_m_s": 0,
+          "highest_occupied_bin_lower_bound_m_s": 0.0
+        },
+        {
+          "track_id": 1,
+          "samples_between_first_and_last_block": 8880,
+          "below_0p001935_m_s": 8880,
+          "at_or_above_0p001935_m_s": 0,
+          "fraction_at_or_above_0p001935_m_s": 0.0,
+          "at_or_above_0p009677_m_s": 0,
+          "at_or_above_0p015484_m_s": 0,
+          "highest_occupied_bin_lower_bound_m_s": 0.0
+        }
+      ]
+    },
+    "run_ode3": {
+      "passed": true,
+      "mission_simulation_time_s": 92.72200000000001,
+      "rtf": 0.9987081962444547,
+      "whole_run_cumulative": {
+        "samples": 87277,
+        "max_m_s": 0.06348185146844051,
+        "p95_m_s": 0.003870967741935484,
+        "p99_m_s": 0.01935483870967742,
+        "over_half_limit": 1148,
+        "over_limit": 244
+      },
+      "stable_capture_intervals": [
+        {
+          "track_id": 0,
+          "samples_between_first_and_last_block": 8900,
+          "below_0p001935_m_s": 8900,
+          "at_or_above_0p001935_m_s": 0,
+          "fraction_at_or_above_0p001935_m_s": 0.0,
+          "at_or_above_0p009677_m_s": 0,
+          "at_or_above_0p015484_m_s": 0,
+          "highest_occupied_bin_lower_bound_m_s": 0.0
+        },
+        {
+          "track_id": 1,
+          "samples_between_first_and_last_block": 8875,
+          "below_0p001935_m_s": 8875,
+          "at_or_above_0p001935_m_s": 0,
+          "fraction_at_or_above_0p001935_m_s": 0.0,
+          "at_or_above_0p009677_m_s": 0,
+          "at_or_above_0p015484_m_s": 0,
+          "highest_occupied_bin_lower_bound_m_s": 0.0
+        }
+      ]
+    },
+    "run_bullet": {
+      "passed": true,
+      "mission_simulation_time_s": 87.78200000000001,
+      "rtf": 0.9986944712982483,
+      "whole_run_cumulative": {
+        "samples": 82356,
+        "max_m_s": 0.03752623470972972,
+        "p95_m_s": 0.003870967741935484,
+        "p99_m_s": 0.013548387096774193,
+        "over_half_limit": 595,
+        "over_limit": 181
+      },
+      "stable_capture_intervals": [
+        {
+          "track_id": 0,
+          "samples_between_first_and_last_block": 8891,
+          "below_0p001935_m_s": 7998,
+          "at_or_above_0p001935_m_s": 893,
+          "fraction_at_or_above_0p001935_m_s": 0.10043864582161736,
+          "at_or_above_0p009677_m_s": 15,
+          "at_or_above_0p015484_m_s": 1,
+          "highest_occupied_bin_lower_bound_m_s": 0.015483870967741935
+        },
+        {
+          "track_id": 1,
+          "samples_between_first_and_last_block": 8882,
+          "below_0p001935_m_s": 7756,
+          "at_or_above_0p001935_m_s": 1126,
+          "fraction_at_or_above_0p001935_m_s": 0.12677324926818284,
+          "at_or_above_0p009677_m_s": 38,
+          "at_or_above_0p015484_m_s": 1,
+          "highest_occupied_bin_lower_bound_m_s": 0.02129032258064516
+        }
+      ]
+    },
+    "run_bullet2": {
+      "passed": true,
+      "mission_simulation_time_s": 89.19800000000001,
+      "rtf": 0.9987103310510446,
+      "whole_run_cumulative": {
+        "samples": 83773,
+        "max_m_s": 0.04015215820191364,
+        "p95_m_s": 0.003870967741935484,
+        "p99_m_s": 0.00967741935483871,
+        "over_half_limit": 437,
+        "over_limit": 77
+      },
+      "stable_capture_intervals": [
+        {
+          "track_id": 0,
+          "samples_between_first_and_last_block": 8901,
+          "below_0p001935_m_s": 8010,
+          "at_or_above_0p001935_m_s": 891,
+          "fraction_at_or_above_0p001935_m_s": 0.10010111223458039,
+          "at_or_above_0p009677_m_s": 10,
+          "at_or_above_0p015484_m_s": 0,
+          "highest_occupied_bin_lower_bound_m_s": 0.01161290322580645
+        },
+        {
+          "track_id": 1,
+          "samples_between_first_and_last_block": 8888,
+          "below_0p001935_m_s": 7866,
+          "at_or_above_0p001935_m_s": 1022,
+          "fraction_at_or_above_0p001935_m_s": 0.11498649864986499,
+          "at_or_above_0p009677_m_s": 18,
+          "at_or_above_0p015484_m_s": 2,
+          "highest_occupied_bin_lower_bound_m_s": 0.02129032258064516
+        }
+      ]
+    }
+  },
+  "conclusion": "Do not switch production to Bullet. It lowers the whole-run maximum and turnaround over-limit count, but repeatedly makes 10.0-12.7% of steady capture samples leave the first residual bin; both ODE repeats keep every measured steady-capture sample in that bin. The A/B proves that contact generation controls the residual signature, but does not by itself prove the rare ODE outlier mechanism."
+}

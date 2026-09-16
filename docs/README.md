@@ -25,7 +25,7 @@
 
 ## 重要问题保留入口
 
-- [起伏道路RTF与采集残差](issues/ROUGH_ROAD_RUNTIME.md)：负端RTF已修复；残差故障2026-09-16复发并被飞行记录仪捕获，已定为单个物理步的状态不连续，子系统未定位，尚未关闭。
+- [起伏道路RTF与采集残差](issues/ROUGH_ROAD_RUNTIME.md)：负端RTF已修复；残差故障被飞行记录仪捕获为单个物理步的接触链不连续，ODE/Bullet短道A/B已否决直接切换Bullet，三角网接触机理尚未关闭。
 
 - [采集进程内存增长](issues/CAPTURE_MEMORY_GROWTH.md)：Mesa D3D12命令签名缓存的`&key`错误已确认，附独立复现、源码补丁和上游报告；私有源码修复版已投入运行并据此关闭第6节，系统Mesa与上游均未修复。
 - [仿真关闭段错误与C盘转储](issues/GZ_SHUTDOWN_CRASH_DUMPS.md)：Gazebo退出时卸载库与存活线程竞争导致段错误，WSL把约等于RSS的整份core写进C盘；`ulimit -c 0`与`maxCrashDumpCount=0`实测均无效，源码确认只有负值才关闭采集。
