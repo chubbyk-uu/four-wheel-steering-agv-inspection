@@ -201,14 +201,29 @@ def validate(manifest):
             raise ValueError('physics heightmap collision detector mismatch')
     for model in models:
         if model.findtext('static')!='true' or len(model.findall('link'))!=1:raise ValueError('static scene required')
+        # Every baked asset stays at identity. The heightmap is the one exception:
+        # it carries no baked geometry, and gz-physics never applies
+        # <heightmap><pos> -- the offset reaches DART only through the model pose.
+        # Leaving it in <pos> centres the collision surface on the world origin,
+        # which a short probe cannot see and which drops the vehicle through the
+        # ground once it drives past half the heightmap. So the pose is allowed
+        # here for that model alone, and pinned to the manifest rather than waved
+        # through; <pos> must in turn be zero so there is one place to read.
+        placed=model.find('pose') if model.get('name')==heightmap_name else None
         for pose in model.iter('pose'):
+            if pose is placed:continue
             if any(float(x)!=0 for x in pose.text.split()):raise ValueError('unexpected scene transform')
         if model.get('name')==heightmap_name:
             link=model.find('link')
             if link.findall('visual') or len(link.findall('collision'))!=1:raise ValueError('heightmap must be collision-only')
             shape=link.find('collision/geometry/heightmap')
             if shape is None or Path(shape.findtext('uri')).resolve()!=image:raise ValueError('physics heightmap URI mismatch')
-            if not np.allclose([float(x) for x in shape.findtext('size').split()],heightmap['size_m'],rtol=0,atol=1e-11) or not np.allclose([float(x) for x in shape.findtext('pos').split()],heightmap['position_m'],rtol=0,atol=1e-11):
+            offset=[0.,0.,0.] if shape.find('pos') is None else [float(x) for x in shape.findtext('pos').split()]
+            placement=[0.]*6 if placed is None else [float(x) for x in placed.text.split()]
+            if (len(placement)!=6 or len(offset)!=3
+                    or not np.allclose([float(x) for x in shape.findtext('size').split()],heightmap['size_m'],rtol=0,atol=1e-11)
+                    or not np.allclose(offset,0,rtol=0,atol=1e-11)
+                    or not np.allclose(placement,list(heightmap['position_m'])+[0.,0.,0.],rtol=0,atol=1e-11)):
                 raise ValueError('physics heightmap transform mismatch')
             continue
         link=model.find('link');asset=assets[model.get('name')]

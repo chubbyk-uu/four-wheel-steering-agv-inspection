@@ -1,0 +1,139 @@
+{
+ "schema": "agv.heightmap_full_area.v1",
+ "date": "2026-09-16",
+ "question": "Does native heightmap collision hold up over the full 100 x 10 m area, and what does it change?",
+ "answer": "The mission passes: ten tracks, ACQUIRED/HOLD, ESTIMATED_COMPLETE, no scan-motion fault, and the spurious near-horizontal contact normal is gone. The slip audit still fails, but it fails the same way on the triangle-mesh version of this road, and the dominant cause is the audit's duplicate-row test firing on painted markings.",
+ "scene": {
+  "path_not_in_git": "local_data/collision_contact_heightmap_ab/scene_heightmap_ode_100m_1025_fixed",
+  "source": "assets/road/runtime_fullwidth_100m_rough_marked_3mm_v2",
+  "generator": "tools/create_native_heightmap_scene.py --samples 1025 --collision-detector ode",
+  "heightmap": "1025x1025 16-bit PNG, 118.4 x 15.4 x 0.005977 m, quantisation 4.6e-8 m",
+  "markings_present": true,
+  "collision_meshes_removed": 48
+ },
+ "placement_defect_fixed": {
+  "symptom": "the first full-area attempt drove into free fall at x = 59.218 m and faulted with CAMERA_terrain_sampling_failure once the camera's downward rays left the declared height bounds",
+  "cause": "gz-physics never applies <heightmap><pos>; the offset reaches DART only through the model pose. The scene contract forbade a nonzero model pose, so the generator had put the offset in <pos> and the collision surface stayed centred on the world origin",
+  "measured_support_before": "x in [-59.2, +59.2], which is size.x/2 either side of the origin",
+  "measured_support_after": "x = -9.5 and 109 fall through, -9 and 108 are supported, matching the declared [-9.3, 109.1]",
+  "second_consequence": "inside the supported band the collision surface was offset 49.9 m in x and about 3 mm high relative to the visual and OptiX surfaces, so the earlier 20 m A/B measured contact on a surface the camera never saw",
+  "why_the_probe_missed_it": "the 20 x 2 m A/B only reached x = 20.5 and could not touch a boundary at 59.2 m",
+  "fix": [
+   "tools/create_native_heightmap_scene.py writes the placement as the model pose and leaves <pos> at zero",
+   "src/agv_linescan/agv_linescan/shared_scene.py allows that one pose and pins it to the manifest, and requires <pos> to be zero",
+   "src/agv_linescan/test/test_shared_scene.py rejects the legacy layout, both-set and neither-set"
+  ]
+ },
+ "mission": {
+  "passed": true,
+  "final_state": "ACQUIRED",
+  "final_motion": "HOLD",
+  "coverage_status": "ESTIMATED_COMPLETE",
+  "coverage_tracks": 10,
+  "tracks_with_unverified_or_flags": 0,
+  "blocks": 704,
+  "rows": 2868069,
+  "steady_rtf": 0.9981627055456423,
+  "observed_rtf": 0.9895578237251902,
+  "discarded_tail_rows": [
+   609
+  ],
+  "pause_retains_frame": true,
+  "ros_archive_identical": true,
+  "peak_tree_rss_gib": 10.17,
+  "peak_device_vram_gib": 9.08,
+  "instance_uptime_note": "the instance had been running about 5.5 h, unlike the 3 min of the triangle-mesh comparison run; section 6 showed no RTF decay after the Mesa fix, but the two are not equal-condition"
+ },
+ "contact": {
+  "per_wheel_capturing_samples": 394986,
+  "wheels": {
+   "fl": {
+    "no_contact_fraction": 0.00297,
+    "longest_no_contact_samples": 1,
+    "max_contact_points": 3,
+    "max_normal_tilt_deg": 0.641,
+    "max_depth_mm": 0.0763,
+    "max_suspension_rate_m_s": 0.1217
+   },
+   "fr": {
+    "no_contact_fraction": 0.00284,
+    "longest_no_contact_samples": 1,
+    "max_contact_points": 4,
+    "max_normal_tilt_deg": 0.563,
+    "max_depth_mm": 0.0738,
+    "max_suspension_rate_m_s": 0.1076
+   },
+   "rl": {
+    "no_contact_fraction": 0.00295,
+    "longest_no_contact_samples": 2,
+    "max_contact_points": 4,
+    "max_normal_tilt_deg": 0.641,
+    "max_depth_mm": 0.5565,
+    "max_suspension_rate_m_s": 0.1157
+   },
+   "rr": {
+    "no_contact_fraction": 0.00284,
+    "longest_no_contact_samples": 1,
+    "max_contact_points": 3,
+    "max_normal_tilt_deg": 0.594,
+    "max_depth_mm": 0.0654,
+    "max_suspension_rate_m_s": 0.1218
+   }
+  },
+  "against_triangle_mesh": "the mesh baseline reached 89.985 deg of normal tilt and an 18 ms contact gap; here every wheel stays at or below 0.641 deg, which is under the road's own 0.67 deg maximum slope, and no gap exceeds two 1 ms steps",
+  "residual_outlier": "rl reports a 0.557 mm maximum penetration against 0.065-0.076 mm on the other three. It did not produce a fault and the normal stayed correct, but it is the one contact quantity not yet explained"
+ },
+ "residual_statistics": {
+  "samples": 755859,
+  "limit_m_s": 0.03,
+  "max_m_s": 0.07048472779224679,
+  "p95_m_s": 0.003870967741935484,
+  "p99_m_s": 0.01935483870967742,
+  "over_half_limit": 11861,
+  "over_limit": 1438,
+  "near_limit_events": 28,
+  "flight_dumps": 0
+ },
+ "residual_reading": "More samples cross the gate than on the mesh road (1438 against 418) yet none landed during capture and no flight dump was written. The catastrophic class -- a wrong normal driving a 27 kN impulse -- is absent; what remains is the turnaround ill-conditioning that happens with the shutter closed. One clean run does not prove the class is eliminated.",
+ "slip_audit": {
+  "flat_unmarked_mesh_accept_rated_6": {
+   "ratio_min": 0.991,
+   "ratio_p0_1": 0.9922,
+   "intervals": 2822,
+   "below_floor": 0,
+   "images": 710,
+   "images_flagged": 0,
+   "adjacent_row_floor": 5.538,
+   "passed": true
+  },
+  "rough_marked_mesh_rough100_v2_full_rated_1": {
+   "ratio_min": 0.9308,
+   "ratio_p0_1": 0.9882,
+   "intervals": 2786,
+   "below_floor": 2,
+   "images": 699,
+   "images_flagged": 32,
+   "adjacent_row_floor": 2.255,
+   "passed": false
+  },
+  "rough_marked_heightmap_this_run": {
+   "ratio_min": 0.9224,
+   "ratio_p0_1": 0.9292,
+   "intervals": 2806,
+   "below_floor": 6,
+   "images": 704,
+   "images_flagged": 31,
+   "adjacent_row_floor": 2.252,
+   "passed": false
+  },
+  "duplicate_rows_are_the_paint": "31 of 704 images here and 32 of 699 on the mesh version of the same road; zero on the unmarked road. A flagged 64-row run in block 78 averages 113.4 grey against 56.9 for ordinary rows, with an adjacent-row difference of 2.0 against 7.0, at x = 92.2 where the manifest places marking polygons. The duplicate test thresholds against a whole-run median, so uniform paint falls below it. This is a detector limitation, not a capture defect, and it will fail every run on a marked road until the test is conditioned on local texture.",
+  "slip_attributable_to_the_heightmap": "real but small and confined to acceleration: intervals below 0.95 go from 2 to 6 and the 0.1st percentile from 0.9882 to 0.9292. Five of the six sit wholly in the lead-in or run-out (x < 0 or x > 100); one straddles the ROI entry at x in [-0.41, 1.03]."
+ },
+ "not_closed": [
+  "the slip audit must stop flagging paint before it can gate this road",
+  "acceleration slip under heightmap contact is measurably worse than under the mesh and is not explained",
+  "one full-area run is not the repeat regression section 6 requires",
+  "the crack shallow-depression collision proxies are absent: an 11.6 cm longitudinal cell cannot represent a 0.8-2 mm crack. A 0.4 m wheel bridges such a crack, so this is defensible, but it is an explicit change to the COLLISION_PROXY contract and is recorded here rather than assumed",
+  "the scene lives under local_data and is not in Git; the generator command above is the only way back to it"
+ ]
+}

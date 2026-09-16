@@ -229,9 +229,11 @@ def test_native_heightmap_is_collision_only_and_checked(tmp_path,proxy_bundle):
     for model in world.findall('model'):
         for collision in list(model.find('link').findall('collision')):model.find('link').remove(collision)
     model=ET.SubElement(world,'model',name='road_native_heightmap_collision');ET.SubElement(model,'static').text='true'
+    # The placement belongs on the model: gz-physics never applies <heightmap><pos>.
+    ET.SubElement(model,'pose').text='5 0 -.003 0 0 0'
     link=ET.SubElement(model,'link',name='road');collision=ET.SubElement(link,'collision',name='collision')
     shape=ET.SubElement(ET.SubElement(collision,'geometry'),'heightmap')
-    ET.SubElement(shape,'uri').text=str(image);ET.SubElement(shape,'size').text='10 2 .006';ET.SubElement(shape,'pos').text='5 0 -.003'
+    ET.SubElement(shape,'uri').text=str(image);ET.SubElement(shape,'size').text='10 2 .006';ET.SubElement(shape,'pos').text='0 0 0'
     tree.write(p/'world.sdf',encoding='unicode');m['world_sha256']=digest(p/'world.sdf')
     m['physics_heightmap']=dict(model_name='road_native_heightmap_collision',image=image.name,sha256=digest(image),
         source_heightfield=source.name,source_sha256=digest(source),encoding='png_uint16_min_to_max_v1',
@@ -239,6 +241,44 @@ def test_native_heightmap_is_collision_only_and_checked(tmp_path,proxy_bundle):
     mp.write_text(json.dumps(m));validate(mp)
     image.write_bytes(b'changed')
     with pytest.raises(ValueError,match='heightmap checksum'):validate(mp)
+
+
+def test_native_heightmap_offset_must_be_on_the_model_pose(tmp_path,proxy_bundle):
+    # The first heightmap scene put the offset in <heightmap><pos> and left the
+    # model at identity.  That validates as SDF, survives a 20 m probe, and
+    # leaves the collision surface centred on the world origin: a road spanning
+    # x=[-9.3,109.1] was supported only to x=59.2 and the vehicle fell through.
+    # Both halves of the contract are pinned here.
+    p=proxy_bundle;mp=p/'manifest.json';m=json.loads(mp.read_text())
+    image=p/'height.png';image.write_bytes(b'heightmap')
+    source=p/'height.json';source.write_text('{}')
+    def build(model_pose,shape_pos):
+        tree=ET.parse(p/'world.sdf');world=tree.getroot().find('world')
+        if world.find('physics/dart') is None:
+            ET.SubElement(ET.SubElement(world.find('physics'),'dart'),'collision_detector').text='ode'
+        for model in world.findall('model'):
+            if model.get('name')=='road_native_heightmap_collision':world.remove(model);continue
+            for collision in list(model.find('link').findall('collision')):model.find('link').remove(collision)
+        model=ET.SubElement(world,'model',name='road_native_heightmap_collision')
+        ET.SubElement(model,'static').text='true'
+        if model_pose is not None:ET.SubElement(model,'pose').text=model_pose
+        link=ET.SubElement(model,'link',name='road');collision=ET.SubElement(link,'collision',name='collision')
+        shape=ET.SubElement(ET.SubElement(collision,'geometry'),'heightmap')
+        ET.SubElement(shape,'uri').text=str(image);ET.SubElement(shape,'size').text='10 2 .006'
+        ET.SubElement(shape,'pos').text=shape_pos
+        tree.write(p/'world.sdf',encoding='unicode')
+        m['world_sha256']=digest(p/'world.sdf')
+        m['physics_heightmap']=dict(model_name='road_native_heightmap_collision',image=image.name,sha256=digest(image),
+            source_heightfield=source.name,source_sha256=digest(source),encoding='png_uint16_min_to_max_v1',
+            size_m=[10.,2.,.006],position_m=[5.,0.,-.003],collision_detector='ode')
+        mp.write_text(json.dumps(m))
+    build('5 0 -.003 0 0 0','0 0 0');validate(mp)
+    build(None,'5 0 -.003')
+    with pytest.raises(ValueError,match='transform'):validate(mp)
+    build('5 0 -.003 0 0 0','5 0 -.003')
+    with pytest.raises(ValueError,match='transform'):validate(mp)
+    build('0 0 0 0 0 0','0 0 0')
+    with pytest.raises(ValueError,match='transform'):validate(mp)
 
 
 def test_spawn_uses_drivable_apron_and_full_vehicle_envelope():

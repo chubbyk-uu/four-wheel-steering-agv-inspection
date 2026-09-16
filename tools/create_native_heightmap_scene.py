@@ -58,14 +58,20 @@ def main():
         if model.get('name') in {a['name'] for a in manifest['assets']}:
             for collision in list(model.find('link').findall('collision')):model.find('link').remove(collision)
     name='road_native_heightmap_collision'
-    model=ET.SubElement(world,'model',name=name);ET.SubElement(model,'static').text='true'
-    link=ET.SubElement(model,'link',name='road');collision=ET.SubElement(link,'collision',name='collision')
-    shape=ET.SubElement(ET.SubElement(collision,'geometry'),'heightmap')
     size=[float(tx[-1]-tx[0]),float(ty[-1]-ty[0]),span]
     position=[float((tx[0]+tx[-1])/2),float((ty[0]+ty[-1])/2),low]
+    model=ET.SubElement(world,'model',name=name);ET.SubElement(model,'static').text='true'
+    # gz-physics ignores <heightmap><pos>: the offset reaches DART only through
+    # the model pose.  Written into <pos> the collision surface stays centred on
+    # the world origin, so a road spanning x=[-9.3,109.1] is supported only to
+    # x=59.2 and the vehicle falls through beyond it -- which a 20 m probe can
+    # never reach.  Keep the placement here and leave <pos> at zero.
+    ET.SubElement(model,'pose').text=' '.join(f'{value:.12g}' for value in position+[0.,0.,0.])
+    link=ET.SubElement(model,'link',name='road');collision=ET.SubElement(link,'collision',name='collision')
+    shape=ET.SubElement(ET.SubElement(collision,'geometry'),'heightmap')
     ET.SubElement(shape,'uri').text=str(image_path)
     ET.SubElement(shape,'size').text=' '.join(f'{value:.12g}' for value in size)
-    ET.SubElement(shape,'pos').text=' '.join(f'{value:.12g}' for value in position)
+    ET.SubElement(shape,'pos').text='0 0 0'
     tree.write(world_path,encoding='unicode')
     manifest['world_sha256']=digest(world_path)
     manifest['profile']=manifest['profile']+'_native_heightmap'
