@@ -1,0 +1,60 @@
+{
+  "date": "2026-09-16",
+  "scope": "Five superseded/failed full-road test runs, raw block PGM images only",
+  "direct_delete": true,
+  "runs": [
+    {
+      "directory": "local_data/rough100_full_rated_1",
+      "images_before": 405,
+      "images_retained": 24,
+      "images_deleted": 381,
+      "deleted_logical_bytes": 6392125773,
+      "all_non_image_evidence_preserved": true
+    },
+    {
+      "directory": "local_data/rough100_full_rated_2",
+      "images_before": 124,
+      "images_retained": 8,
+      "images_deleted": 116,
+      "deleted_logical_bytes": 1946159028,
+      "all_non_image_evidence_preserved": true
+    },
+    {
+      "directory": "local_data/rough100_full_rated_4",
+      "images_before": 706,
+      "images_retained": 40,
+      "images_deleted": 666,
+      "deleted_logical_bytes": 11173637178,
+      "all_non_image_evidence_preserved": true
+    },
+    {
+      "directory": "local_data/rough100_v2_full_rated_1",
+      "images_before": 699,
+      "images_retained": 40,
+      "images_deleted": 659,
+      "deleted_logical_bytes": 11056196547,
+      "all_non_image_evidence_preserved": true
+    },
+    {
+      "directory": "local_data/heightmap100_full_rated_1",
+      "images_before": 44,
+      "images_retained": 4,
+      "images_deleted": 40,
+      "deleted_logical_bytes": 671089320,
+      "all_non_image_evidence_preserved": true
+    }
+  ],
+  "deleted_images": 1862,
+  "deleted_logical_gib": 29.093779480084777,
+  "filesystem_available_increase_gib": 29.100704193115234,
+  "protected": [
+    "rough2mm_repeat_1",
+    "rough2mm_repeat_2",
+    "rough2mm_repeat_3",
+    "heightmap100_full_rated_2",
+    "accept_rated_6",
+    "startup_contact_ab",
+    "all generated road assets, calibration, Mesa runtime/build source, fault dumps and logs"
+  ],
+  "verification": "Retained sample files and matching JSON exist; removed image files absent. Cleanup indexes stored in each untracked run directory."
+}
