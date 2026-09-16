@@ -1,0 +1,91 @@
+{
+  "schema": "agv.rough_road_asset_candidate.v1",
+  "asset_validation_passed": true,
+  "motion_tested": false,
+  "production_default_changed": false,
+  "manifest": "assets/road/runtime_fullwidth_100m_rough_marked_2mm_20cm_heightmap_v1/manifest.json",
+  "manifest_sha256": "34c6f630cc1089986fbc7032e18c3ff83261dd250c95caf120dd2cb4d41d4d07",
+  "source_manifest_sha256": "05397f00cc0b7dad0e47063a5615ca3733a1312910c7b4d221536e0291b89ea5",
+  "roi_m": [
+    100,
+    10
+  ],
+  "roughness": {
+    "step_m": 0.2,
+    "max_abs_height_m": 0.002,
+    "rms_height_m": 0.000701528715095462,
+    "min_height_m": -0.002,
+    "max_height_m": 0.001997297209144095,
+    "source_manifest_sha256": "05397f00cc0b7dad0e47063a5615ca3733a1312910c7b4d221536e0291b89ea5",
+    "seed": 20260915,
+    "profile": "full-domain shared heightfield plus unchanged shallow defects",
+    "tapered_lead_in": false
+  },
+  "source_grid_shape_yx": [
+    79,
+    594
+  ],
+  "buffer_regions": {
+    "negative_buffer": {
+      "min_m": -0.002,
+      "max_m": 0.001854799048132846,
+      "rms_m": 0.0007059478129120453
+    },
+    "roi": {
+      "min_m": -0.0019961845882487655,
+      "max_m": 0.001997297209144095,
+      "rms_m": 0.0007007019824298615
+    },
+    "positive_buffer": {
+      "min_m": -0.0017796157178330265,
+      "max_m": 0.0019698729668369552,
+      "rms_m": 0.000705607746231964
+    }
+  },
+  "physics_heightmap": {
+    "model_name": "road_native_heightmap_collision",
+    "image": "road_collision_heightmap.png",
+    "sha256": "61909ae85d3a69b1c2599f46941a25b32216cf4b042ac73a7399666fdd3f9dec",
+    "source_heightfield": "road_heightfield.json",
+    "source_sha256": "78a8b9f147eadd9796ddb1b4ad4aaed79eb3acbd3bb2f8a989b71e688805c7a4",
+    "encoding": "png_uint16_min_to_max_v1",
+    "samples_xy": [
+      1025,
+      1025
+    ],
+    "size_m": [
+      118.60000000000001,
+      15.600000000000001,
+      0.0039851329157434235
+    ],
+    "position_m": [
+      49.9,
+      0.0,
+      -0.0019943946904551545
+    ],
+    "collision_detector": "ode",
+    "cell_size_m": [
+      0.11582031250000001,
+      0.015234375000000001
+    ],
+    "max_quantization_error_m": 3.040461521128728e-08,
+    "source_grid_shape": [
+      79,
+      594
+    ]
+  },
+  "collision_bounds_xy_m": [
+    -9.400000000000006,
+    109.2,
+    -7.800000000000001,
+    7.800000000000001
+  ],
+  "paint_polygon_count": 145,
+  "paint_matches_3mm_baseline": true,
+  "proxy_triangles_optical_reference_only": 92508,
+  "tests": {
+    "heightfield_and_shared_scene": 38,
+    "invalid_nan_step_rejected": true
+  },
+  "scope": "Static asset checks only; actual support, vibration, RTF, memory and capture acceptance remain untested."
+}

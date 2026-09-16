@@ -82,7 +82,28 @@ python3 tools/create_rough_textured_scene.py \
 
 GUI＋RViz＋OptiX短任务复核：在100 m道路上从X=1.93 m出生，运行20×2 m双道、请求10 km/h，两场景均34张满帧、覆盖完成、最终HOLD。平面/起伏的行驶RTF为0.98937/0.98582，仅差0.355个百分点；起步前静止RTF为0.99994/0.99945。首里程计34.23/40.34 s，实际底盘解锁59.75/66.70 s，起伏加载增加约6–7 s。见[`results/full_road_rough_mission_recheck.json`](../results/full_road_rough_mission_recheck.json)。
 
-此前X=−3 m出生的静止探针测得0.99958/0.75349，见[`results/full_road_rough_runtime.json`](../results/full_road_rough_runtime.json)。该差异仍待按出生位置、接触状态及环境隔离，不应归因为整个道路的三角形总数，也不能据此断言全程下降25%。现有短任务不替代新道路100×10 m全区域验收；目前没有依据降低10 cm路面分辨率。
+此前X=−3 m出生的静止探针测得0.99958/0.75349，见[`results/full_road_rough_runtime.json`](../results/full_road_rough_runtime.json)。该历史差异后来确认来自负端平坦渐入碰撞网格，已由v2全域起伏修复，见[调查](issues/ROUGH_ROAD_RUNTIME.md)。短任务不替代新道路全区验收。
+
+### ±2 mm、20 cm源网格候选（2026-09-16）
+
+按用户观察，另生成更平缓的100×10 m道路；旧±3 mm/10 cm资产保留用于对照，不直接覆盖。纹理、精细裂缝和分布式标识不降分辨率，只修改路面粗糙度高度场的幅度与采样间距。波长和随机种子不变；网格变粗不等于把振动波长设成20 cm，也不保证颠簸减半。
+
+```bash
+python3 tools/create_rough_textured_scene.py \
+  --source assets/road/runtime_fullwidth_100m_v1 \
+  --output assets/road/runtime_fullwidth_100m_rough_2mm_20cm_v1 \
+  --peak-mm 2 --step-m .2
+python3 tools/generate_marked_road.py \
+  --source assets/road/runtime_fullwidth_100m_rough_2mm_20cm_v1 \
+  --output assets/road/runtime_fullwidth_100m_rough_marked_2mm_20cm_v1 \
+  --block-length-m 1.5
+python3 tools/create_native_heightmap_scene.py \
+  --source assets/road/runtime_fullwidth_100m_rough_marked_2mm_20cm_v1 \
+  --output assets/road/runtime_fullwidth_100m_rough_marked_2mm_20cm_heightmap_v1 \
+  --samples 1025 --collision-detector ode
+```
+
+两端缓冲区和ROI仍共用无渐入的高度函数。原生高度场保持1025²及model pose放置修复；20 cm指源高度场，原生碰撞重采样间距另见manifest的`physics_heightmap.cell_size_m`。候选的静态资产校验不等于实际轮地支撑、振动、RTF或采集验收；这轮只生成资产，尚未运行车辆，不提高其验证等级。资源与校验摘要见[候选报告](../results/rough_2mm_20cm_asset.json)。
 
 ## 箭头和禁停网格标识
 
