@@ -187,11 +187,30 @@ def validate(manifest):
     for name,h in m['display_materials'].items():
         if digest(root/name)!=h:raise ValueError('display material checksum mismatch')
     world=ET.parse(root/m['world']).getroot().find('world');models=world.findall('model')
-    if {v.get('name') for v in models}!=set(assets) or len(models)!=len(assets):raise ValueError('scene model mismatch')
+    heightmap=m.get('physics_heightmap')
+    heightmap_name=heightmap.get('model_name') if heightmap else None
+    expected_models=set(assets)|({heightmap_name} if heightmap_name else set())
+    if {v.get('name') for v in models}!=expected_models or len(models)!=len(expected_models):raise ValueError('scene model mismatch')
+    if heightmap:
+        image=(root/heightmap['image']).resolve();source=(root/heightmap['source_heightfield']).resolve()
+        if image.parent!=root or source.parent!=root or digest(image)!=heightmap['sha256'] or digest(source)!=heightmap['source_sha256']:
+            raise ValueError('physics heightmap checksum mismatch')
+        if heightmap.get('encoding')!='png_uint16_min_to_max_v1':raise ValueError('unsupported physics heightmap encoding')
+        if len(heightmap.get('size_m',[]))!=3 or len(heightmap.get('position_m',[]))!=3:raise ValueError('invalid physics heightmap geometry')
+        if world.findtext('physics/dart/collision_detector')!=heightmap.get('collision_detector'):
+            raise ValueError('physics heightmap collision detector mismatch')
     for model in models:
         if model.findtext('static')!='true' or len(model.findall('link'))!=1:raise ValueError('static scene required')
         for pose in model.iter('pose'):
             if any(float(x)!=0 for x in pose.text.split()):raise ValueError('unexpected scene transform')
+        if model.get('name')==heightmap_name:
+            link=model.find('link')
+            if link.findall('visual') or len(link.findall('collision'))!=1:raise ValueError('heightmap must be collision-only')
+            shape=link.find('collision/geometry/heightmap')
+            if shape is None or Path(shape.findtext('uri')).resolve()!=image:raise ValueError('physics heightmap URI mismatch')
+            if not np.allclose([float(x) for x in shape.findtext('size').split()],heightmap['size_m'],rtol=0,atol=1e-11) or not np.allclose([float(x) for x in shape.findtext('pos').split()],heightmap['position_m'],rtol=0,atol=1e-11):
+                raise ValueError('physics heightmap transform mismatch')
+            continue
         link=model.find('link');asset=assets[model.get('name')]
         if 'collision_proxy' in asset or ('ground_material' in m and asset.get('material')=='ground'):
             mesh_data=read_obj(root/asset['mesh'],with_uv='ground_material' in m and asset.get('material')=='ground')
@@ -201,7 +220,9 @@ def validate(manifest):
         collision_path=validate_proxy(root,asset,mesh_data[:2]) if 'collision_proxy' in asset else (root/asset['mesh']).resolve()
         for kind in ('visual','collision'):
             items=link.findall(kind)
-            if len(items)!=1:raise ValueError('geometry count mismatch')
+            expected_count=0 if kind=='collision' and heightmap else 1
+            if len(items)!=expected_count:raise ValueError('geometry count mismatch')
+            if expected_count==0:continue
             geo=items[0].find('geometry/mesh')
             expected=collision_path if kind=='collision' else (root/asset['mesh']).resolve()
             if geo is None or Path(geo.findtext('uri')).resolve()!=expected or geo.findtext('scale')!='1 1 1':
@@ -245,6 +266,7 @@ def validate(manifest):
                 if payload.parent.resolve()!=root or digest(payload)!=h:raise ValueError('runtime recipe payload integrity mismatch')
         else:raise ValueError('unsupported ground material')
         for model in models:
+            if model.get('name')==heightmap_name:continue
             asset=assets[model.get('name')]
             if asset.get('material')!='ground':continue
             pbr=model.find('link/visual/material/pbr/metal')

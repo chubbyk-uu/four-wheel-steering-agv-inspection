@@ -218,6 +218,29 @@ def test_probe_generator_uses_checked_proxy_for_collision(tmp_path):
     with pytest.raises(ValueError):collision_mesh(tmp_path,'deep',vertices,faces)
 
 
+def test_native_heightmap_is_collision_only_and_checked(tmp_path,proxy_bundle):
+    # Exercise the validator contract without making the command-line generator
+    # depend on this synthetic fixture's absent reference heightfield.
+    p=proxy_bundle;mp=p/'manifest.json';m=json.loads(mp.read_text())
+    image=p/'height.png';image.write_bytes(b'heightmap')
+    source=p/'height.json';source.write_text('{}')
+    tree=ET.parse(p/'world.sdf');world=tree.getroot().find('world')
+    physics=world.find('physics');dart=ET.SubElement(physics,'dart');ET.SubElement(dart,'collision_detector').text='ode'
+    for model in world.findall('model'):
+        for collision in list(model.find('link').findall('collision')):model.find('link').remove(collision)
+    model=ET.SubElement(world,'model',name='road_native_heightmap_collision');ET.SubElement(model,'static').text='true'
+    link=ET.SubElement(model,'link',name='road');collision=ET.SubElement(link,'collision',name='collision')
+    shape=ET.SubElement(ET.SubElement(collision,'geometry'),'heightmap')
+    ET.SubElement(shape,'uri').text=str(image);ET.SubElement(shape,'size').text='10 2 .006';ET.SubElement(shape,'pos').text='5 0 -.003'
+    tree.write(p/'world.sdf',encoding='unicode');m['world_sha256']=digest(p/'world.sdf')
+    m['physics_heightmap']=dict(model_name='road_native_heightmap_collision',image=image.name,sha256=digest(image),
+        source_heightfield=source.name,source_sha256=digest(source),encoding='png_uint16_min_to_max_v1',
+        size_m=[10.,2.,.006],position_m=[5.,0.,-.003],collision_detector='ode')
+    mp.write_text(json.dumps(m));validate(mp)
+    image.write_bytes(b'changed')
+    with pytest.raises(ValueError,match='heightmap checksum'):validate(mp)
+
+
 def test_spawn_uses_drivable_apron_and_full_vehicle_envelope():
     from agv_linescan.shared_scene import validate_spawn_position
     scene=dict(length_m=100,width_m=10,inspection_bounds_xy_m=[0,100,-5,5],drivable_bounds_xy_m=[-8,108,-6.5,6.5])
