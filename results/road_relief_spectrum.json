@@ -1,0 +1,89 @@
+{
+  "schema": "agv.road_relief_spectrum.v1",
+  "scene": "assets/road/runtime_fullwidth_100m_rough_marked_2mm_20cm_heightmap_v1/manifest.json",
+  "asset": "terrain_0",
+  "geometry": {
+    "track_spacing_m": 1.0,
+    "camera_height_m": 1.046316964,
+    "wheelbase_m": 1.3,
+    "pixel_m": 0.0003662109375,
+    "grid_m": 0.19999999999999998,
+    "rows_on_road": 51
+  },
+  "height_mm": {
+    "rms": 0.7052140792195087,
+    "peak": 1.991265252102563
+  },
+  "cross_strip_parallax_px": {
+    "formula": "track_spacing * z / camera_height",
+    "rms": 1.8404632309051028,
+    "p95": 3.519895472975653,
+    "peak": 5.196782462190936,
+    "note": "geometry, not error: a two-dimensional strip map cannot represent it, and at any one station it is exactly collinear with the two passes' differential roll, so it does not by itself yield a height map"
+  },
+  "power_by_wavelength": [
+    {
+      "band_m": [
+        0.4,
+        0.8
+      ],
+      "height": 0.0001,
+      "longitudinal_deformation": 0.0001
+    },
+    {
+      "band_m": [
+        0.8,
+        1.6
+      ],
+      "height": 0.0616,
+      "longitudinal_deformation": 0.0167
+    },
+    {
+      "band_m": [
+        1.6,
+        3.2
+      ],
+      "height": 0.323,
+      "longitudinal_deformation": 0.5439
+    },
+    {
+      "band_m": [
+        3.2,
+        6.4
+      ],
+      "height": 0.2868,
+      "longitudinal_deformation": 0.3526
+    },
+    {
+      "band_m": [
+        6.4,
+        null
+      ],
+      "height": 0.3285,
+      "longitudinal_deformation": 0.0866
+    }
+  ],
+  "node_spacing": [
+    {
+      "spacing_m": 0.25,
+      "represents_wavelength_from_m": 0.5,
+      "captures_longitudinal_deformation": 1.0
+    },
+    {
+      "spacing_m": 0.5,
+      "represents_wavelength_from_m": 1.0,
+      "captures_longitudinal_deformation": 0.9995
+    },
+    {
+      "spacing_m": 1.0,
+      "represents_wavelength_from_m": 2.0,
+      "captures_longitudinal_deformation": 0.825
+    },
+    {
+      "spacing_m": 2.0,
+      "represents_wavelength_from_m": 4.0,
+      "captures_longitudinal_deformation": 0.3138
+    }
+  ],
+  "caveat": "the longitudinal column is quasi-static excitation, not vehicle response; the two-point wheelbase difference is a comb with zeros at lambda = wheelbase/n, so no node spacing follows from the wheelbase alone. Node spacing is decided by held-out error, with these fractions as the prior."
+}
