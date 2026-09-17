@@ -1,0 +1,57 @@
+{
+  "schema": "agv.optical_height_in_capture.v1",
+  "session": "local_data/display_mesh_full_1",
+  "blocks": 702,
+  "pose_tags": 3497,
+  "nominal_unloaded_height_m": 1.0463169642857142,
+  "height_above_local_ground_m": {
+    "mean": 1.0416199444396514,
+    "sd": 0.005209007924985411,
+    "p5": 1.0383754629178243,
+    "p95": 1.0449713419093414,
+    "min": 1.0304776478426307,
+    "max": 1.0682916160311438
+  },
+  "ground_under_camera_m": {
+    "mean": 8.226514642582165e-06,
+    "sd": 0.000681498761065321,
+    "p5": -0.0011289759218487184,
+    "p95": 0.0010959263575264487,
+    "min": -0.0017531365362673792,
+    "max": 0.0019399365480589441
+  },
+  "note": "the ground column is how much of the variation is the camera following the road, which changes no scale; the rest is attitude, which does",
+  "lateral_scale_vs_nominal_percent": {
+    "mean": 0.4533984796252419,
+    "sd": 0.4927942763631201,
+    "p5": 0.12877122331157675,
+    "p95": 0.7648005614401708,
+    "min": -2.056990003073178,
+    "max": 1.5370849116663532
+  },
+  "calibration": {
+    "path": "results/camera_20mm_measured_profile.json",
+    "metric_polynomial": [
+      -2.414954195734979e-08,
+      0.7485328330708616,
+      -1.749506705433817e-08,
+      0.030126938845821936
+    ],
+    "output_width_m": 1.5,
+    "fit_error_px_max": 0.4869236340567416,
+    "implied_height_m": 1.044270135422519,
+    "note": "the correction resamples through this polynomial, not by spreading 4096 raw columns over output_width_m, so output_width_m alone proves nothing about scale. implied_height_m is inferred from the linear term under the shipped optics model; the profile does not state the height it was taken at"
+  },
+  "lateral_scale_vs_calibration_percent": {
+    "mean": 0.2568892740667639,
+    "sd": 0.4918302610762551,
+    "p5": -0.06710293908054776,
+    "p95": 0.5676821841002154,
+    "min": -2.248588330016854,
+    "max": 1.3384557742483594
+  },
+  "at_half_metre_off_centre_px": {
+    "sd": 6.71512249789447,
+    "basis": "0.5 m * scale error / 0.000366211 m per pixel"
+  }
+}
