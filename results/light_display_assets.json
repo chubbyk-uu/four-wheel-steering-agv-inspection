@@ -1,0 +1,49 @@
+{
+  "schema": "agv.light_display_assets.v1",
+  "scene": "assets/road/runtime_fullwidth_100m_rough_marked_2mm_20cm_heightmap_v1/manifest.json",
+  "scope": "Candidate GZ-only display assets, generated for measurement. Nothing is wired in: the scene contract still requires the visual URI to be the optical mesh, and OptiX reads manifest[\"assets\"], which this does not touch.",
+  "meshes": {
+    "assets": 48,
+    "of_assets": 48,
+    "optical_triangles": 7712280,
+    "display_triangles": 92508,
+    "triangle_ratio": 83.36878972629394,
+    "optical_obj_bytes": 1030649123,
+    "display_obj_bytes": 8741581,
+    "geometry_bytes_estimate": {
+      "optical": 740378880,
+      "display": 8880768,
+      "basis": "32 B per vertex for position, normal and UV"
+    },
+    "uv_checked_with": "agv_linescan.shared_scene.validate_display_uv",
+    "fidelity": "identical to the imaged surface outside the declared shallow defects; inside them it is the flattened reference plane, so the difference is bounded by max_surface_deviation_m over the area shallow_rectangle caps",
+    "seconds": 0.35504034200039314
+  },
+  "textures": {
+    "count": 96,
+    "source_pixels": [
+      1054,
+      1920
+    ],
+    "display_pixels": [
+      527,
+      960
+    ],
+    "source_bytes": 581417778,
+    "display_bytes": 124827839,
+    "vram_estimate": {
+      "source": 1036124160,
+      "display": 259031040,
+      "basis": "RGBA with a full mipmap chain, 4/3 of the base level"
+    },
+    "corrections": {
+      "normal_maps": "averaged as vectors then restored to unit length",
+      "colour": "averaged in linear light, not in sRGB",
+      "largest_error_avoided": {
+        "normal_unit_length": 0.6252644062042236,
+        "srgb_vs_linear_grey_levels": 39.93860810995102
+      }
+    },
+    "seconds": 20.33818356899974
+  }
+}
