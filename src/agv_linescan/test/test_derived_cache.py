@@ -140,3 +140,33 @@ def test_keys_separate_different_content():
     b = derived_cache.key('asset_geometry', {'sha256': 'bb'}, None, None, 'fp')
     c = derived_cache.key('asset_geometry', {'sha256': 'aa'}, None, None, 'other')
     assert len({a, b, c}) == 3
+
+
+def test_directory_hit_never_removes_existing_output(tmp_path):
+    source=tmp_path/'source';source.mkdir();(source/'a').write_text('cache')
+    derived_cache.write_directory('unit','existing',source)
+    output=tmp_path/'owned';output.mkdir();(output/'evidence').write_text('keep')
+    with pytest.raises(FileExistsError):
+        derived_cache.read_directory('unit','existing',output)
+    assert (output/'evidence').read_text()=='keep'
+
+
+@pytest.mark.parametrize('damage',['remove','edit','metadata'])
+def test_corrupt_directory_is_miss_and_can_be_repaired(tmp_path,damage):
+    source=tmp_path/'source';source.mkdir();(source/'a').write_text('correct')
+    derived_cache.write_directory('unit','corrupt',source)
+    slot=derived_cache.root()/derived_cache.LAYOUT/'unit'/'corrupt'
+    if damage=='remove':(slot/'a').unlink()
+    elif damage=='edit':(slot/'a').write_text('wrong')
+    else:(slot/'.complete').write_text('[]')
+    assert not derived_cache.read_directory('unit','corrupt',tmp_path/'out')
+    assert not (tmp_path/'out').exists()
+    derived_cache.write_directory('unit','corrupt',source)
+    assert derived_cache.read_directory('unit','corrupt',tmp_path/'out')
+    assert (tmp_path/'out'/'a').read_text()=='correct'
+
+
+@pytest.mark.parametrize('stored',[[],{}, {'collision':'other.obj'}])
+def test_bad_geometry_cache_value_rederives(proxy_bundle,monkeypatch,stored):
+    monkeypatch.setattr(derived_cache,'read_value',lambda *a:stored)
+    assert validate(proxy_bundle/'manifest.json')

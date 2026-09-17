@@ -24,7 +24,7 @@ from pathlib import Path
 
 # Bumped by hand only for a store layout change; the checking code is
 # fingerprinted into every key, so a logic change invalidates itself.
-LAYOUT = 'v1'
+LAYOUT = 'v2'
 _OFF = ('0', 'off', 'no', 'false')
 _fingerprints = {}
 
@@ -104,15 +104,33 @@ def read_directory(namespace, digest, destination):
     The copy keeps the session self-contained, so an archived run does not
     depend on a cache that may be cleared later.
     """
+    destination = Path(destination)
+    if destination.exists() or destination.is_symlink():
+        raise FileExistsError(str(destination))
     slot = _slot(namespace, digest)
     if not enabled() or not (slot/'.complete').is_file():
         return False
+    # Claim a new destination ourselves. Never clean up a caller-owned directory.
+    destination.mkdir()
     try:
-        shutil.copytree(slot, destination, ignore=shutil.ignore_patterns('.complete'))
+        shutil.copytree(slot, destination, dirs_exist_ok=True)
+        expected = json.loads((destination/'.complete').read_text())
+        actual = _directory_hashes(destination)
+        if not isinstance(expected, dict) or not expected or actual != expected:
+            raise ValueError('damaged derived directory')
+        (destination/'.complete').unlink()
         return True
-    except OSError:
+    except (OSError, ValueError):
         shutil.rmtree(destination, ignore_errors=True)
+        # Discard this damaged cache, so the next write can repair it.
+        shutil.rmtree(slot, ignore_errors=True)
         return False
+
+
+def _directory_hashes(directory):
+    return {str(p.relative_to(directory)): hashlib.sha256(p.read_bytes()).hexdigest()
+            for p in sorted(Path(directory).rglob('*'))
+            if p.is_file() and p.name != '.complete'}
 
 
 def write_directory(namespace, digest, source):
@@ -126,7 +144,7 @@ def write_directory(namespace, digest, source):
         with tempfile.TemporaryDirectory(dir=slot.parent) as staging:
             staged = Path(staging)/'entry'
             shutil.copytree(source, staged)
-            (staged/'.complete').write_text('')
+            (staged/'.complete').write_text(json.dumps(_directory_hashes(staged)))
             _replace(staged, slot)
     except OSError:
         pass

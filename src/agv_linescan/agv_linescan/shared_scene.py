@@ -193,7 +193,10 @@ def validate_material_height_bounds(material,vertices):
 def _geometry_fingerprint():
     import sys
     from . import collision_proxy,heightfield,obj_arrays
-    return derived_cache.code_fingerprint(sys.modules[__name__],collision_proxy,heightfield,obj_arrays)
+    modules=[sys.modules[__name__],collision_proxy,heightfield,obj_arrays,derived_cache]
+    native=sys.modules.get(__package__+'._obj_arrays')
+    if native is not None:modules.append(native)
+    return derived_cache.code_fingerprint(*modules)
 
 
 def _derive_asset_geometry(root,m,asset):
@@ -226,7 +229,8 @@ def asset_geometry(root,m,asset):
     key=derived_cache.key('asset_geometry',asset,m.get('ground_material'),
                           m.get('display_uv_projection'),_geometry_fingerprint())
     stored=derived_cache.read_value('scene_geometry',key)
-    if stored is not None:
+    expected_collision=asset.get('collision_proxy',asset)['mesh']
+    if isinstance(stored,dict) and stored.get('collision')==expected_collision:
         for file,expected in proxy_files(root,asset):
             if file.resolve().parent!=root or digest(file)!=expected:
                 raise ValueError('collision proxy checksum mismatch')
