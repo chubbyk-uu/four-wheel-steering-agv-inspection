@@ -1,0 +1,47 @@
+{
+  "schema": "agv.ride_height_vs_tyre.v1",
+  "calibrated_camera_height_m": 1.0463169642857142,
+  "optical_frame_above_base_link_m": 0.39631696428571417,
+  "note": "lateral_scale_percent is absolute, against the calibrated height; lateral_scale_vs_040_percent is the part the tyre experiment adds. They differ because the suspension already compresses under load, so the optical centre never sits at the calibrated height even at 0.40 m.",
+  "runs": [
+    {
+      "diameter_m": 0.4,
+      "base_z_m": 0.6474034944542636,
+      "spread_m": 1.664724136318796e-09,
+      "samples": 40,
+      "settled_sim_s": 6.0,
+      "ride_height_change_m": 0.0,
+      "predicted_from_radius_m": 0.0,
+      "optical_centre_height_m": 1.0437204587399778,
+      "lateral_scale_percent": 0.24877403944645327,
+      "longitudinal_scale_percent": 0.0,
+      "lateral_scale_vs_040_percent": 0.0
+    },
+    {
+      "diameter_m": 0.39,
+      "base_z_m": 0.6424034934585698,
+      "spread_m": 1.6773098465705516e-09,
+      "samples": 40,
+      "settled_sim_s": 6.0,
+      "ride_height_change_m": -0.005000000995693754,
+      "predicted_from_radius_m": -0.0050000000000000044,
+      "optical_centre_height_m": 1.038720457744284,
+      "lateral_scale_percent": 0.731333101682341,
+      "longitudinal_scale_percent": 2.564102564102577,
+      "lateral_scale_vs_040_percent": 0.48255906223588774
+    },
+    {
+      "diameter_m": 0.41,
+      "base_z_m": 0.6524034952927964,
+      "spread_m": 2.4768908035710524e-09,
+      "samples": 40,
+      "settled_sim_s": 6.0,
+      "ride_height_change_m": 0.005000000838532803,
+      "predicted_from_radius_m": 0.004999999999999977,
+      "optical_centre_height_m": 1.0487204595785107,
+      "lateral_scale_percent": -0.22918359900812035,
+      "longitudinal_scale_percent": -2.4390243902438935,
+      "lateral_scale_vs_040_percent": -0.4779576384545736
+    }
+  ]
+}
