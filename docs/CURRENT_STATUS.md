@@ -41,6 +41,8 @@
 
 两组**不是"超过一拍比例"的受控对照**——改前那组带着上一次录GIF会话遗留的两个孤儿节点跑，两组之间才清掉；但改后比例反而更高（22/40对10/40）仍然零锁存，结论偏保守。比例本就不归这条改动管。两个量都是`execution_node`每拍本来就记的字段，未加任何控制路径代码，工具见`tools/analyze_capture_handshake.py`。见[握手刹车](issues/CAPTURE_CLOSE_HANDSHAKE_BRAKE.md)、[修复结果](../results/capture_close_handshake_fix.json)。
 
+**显示网格契约收紧（2026-09-17，外部审查）。** 审查指出三点，均已复现并修复，当前资产本身没有问题——松的是校验器。一、显示网格原先只查XY包围盒与高度区间，那不是边界：只剩一个三角形（保留未使用顶点）、把实际`terrain_4`整个压到z=0、反向三角化、以及根本不声明碰撞代理，全部通过。现改为与**碰撞代理**逐顶点逐面片相等（`atol=1.1e-9`，与`validate_layered_proxy`同精度），UV单独校验；显示网格必须建在`layered_heightfield_shallow_v1`代理上。包围盒与高度区间两项删除（相等严格蕴含）。实测默认道路48个显示网格与各自代理的顶点差本来就是**0.0**、面片全同，所以收紧后原资产照常通过。二、`checked_geometry_files`的摘要循环原先只在缓存命中分支跑，冷启动或禁用缓存时改了显示文件不更新摘要照样通过；旧回归先调用一次`validate`喂热缓存，恰好盖住。现在移到查缓存之前，冷/热/禁用验同一批字节，代价是冷校验+1.2 s（+2.9%）。三、`docs/ROAD_ASSETS.md`的恢复步骤停在高度场生成，缺`adopt_display_meshes.py`，照文档恢复会得到全量网格且没有`manifest_full_visual.json`，已补第四步与撤销命令。回归`test_display_mesh.py`由11项改写为17项（含每个反例，其中7项在旧校验器上不报错），并新增一项把生成器与校验器绑定；工作区533项测试通过。**缓存键带校验代码指纹，本次改动令已有条目全部失效，下次启动付一次冷路径。**见[契约收紧](../results/display_mesh_contract_hardening.json)、[场景载入时间](issues/SCENE_LOAD_TIME.md)。
+
 ## 保留的未关闭事项
 
 | 事项 | 影响与现状 |

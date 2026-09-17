@@ -194,7 +194,9 @@ def test_proxy_cannot_silently_remove_large_geometry_or_change_extent(proxy_bund
     elif fault=='loose_bound':a['collision_proxy']['max_surface_deviation_m']=.1
     elif fault=='undeclared':a.pop('collision_proxy')
     mp.write_text(json.dumps(m))
-    with pytest.raises(ValueError,match='proxy|geometry mismatch'):validate(mp)
+    # 'checked geometry' is the integrity loop in asset_geometry, which now runs
+    # before the cache is consulted and so reaches a changed proxy first.
+    with pytest.raises(ValueError,match='proxy|geometry mismatch|checked geometry'):validate(mp)
 
 
 def test_probe_generator_uses_checked_proxy_for_collision(tmp_path):

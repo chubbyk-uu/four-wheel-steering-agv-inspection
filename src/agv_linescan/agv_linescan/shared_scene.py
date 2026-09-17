@@ -6,7 +6,7 @@ import xml.etree.ElementTree as ET
 import numpy as np
 from PIL import Image
 from . import derived_cache
-from .collision_proxy import validate_proxy
+from .collision_proxy import mesh_arrays,validate_proxy
 from .obj_arrays import read_obj
 
 
@@ -202,20 +202,34 @@ def _geometry_fingerprint():
     return derived_cache.code_fingerprint(*modules)
 
 
-def check_display_mesh(root,m,asset,optical):
-    """Bound a separate GZ display mesh against the mesh OptiX images.
+def check_display_mesh(root,m,asset,proxy_path):
+    """Bound a separate GZ display mesh against the surface that was verified.
 
     This contract was written so that the GZ visual and the OptiX reader are
     the same file. An asset may now declare a lighter mesh for display alone,
-    which means the validator can no longer assert they are identical and has
-    to bound how far they may differ instead: the same footprint, the same UV
-    projection, and a height range no further out than the shallow-defect
-    depth the proxy policy already caps.
+    so the validator can no longer assert those two are identical. Bounding the
+    difference by footprint and height range turned out not to be a bound at
+    all: a mesh holding its unused corner vertices and one triangle, or the
+    whole road flattened onto its reference plane, satisfies both.
 
-    Those bounds do not prove the two surfaces agree point by point, and are
-    not meant to. What they catch is a display mesh that covers the wrong
-    ground, carries the wrong UVs, or is not the same road at all.
+    What is checkable is where the light mesh actually comes from. It is the
+    collision proxy with UVs added, and validate_layered_proxy has already
+    pinned that proxy vertex for vertex to the heightfield the optical mesh is
+    built from. So require exactly that: the same vertices, the same topology,
+    and then the UVs, which are the one thing the proxy does not carry and the
+    only degree of freedom left.
+
+    That is stronger than the footprint bound and cheaper to believe. It does
+    mean a display mesh must ride on a layered proxy: a shallow-rectangle proxy
+    is four vertices of flat plane, and inheriting it would silently replace the
+    road with a quad, which is what build_light_display_assets already refuses.
     """
+    proxy=asset.get('collision_proxy')
+    if not proxy:
+        raise ValueError('a display mesh needs a collision proxy to be checked against')
+    if proxy.get('method')!='layered_heightfield_shallow_v1':
+        raise ValueError('a display mesh needs a %s proxy, found %r'
+                         %('layered_heightfield_shallow_v1',proxy.get('method')))
     entry=asset['display_mesh']
     path=(root/entry['mesh']).resolve()
     if path.parent!=root:raise ValueError('display mesh must sit beside the manifest')
@@ -223,16 +237,13 @@ def check_display_mesh(root,m,asset,optical):
     # Declared like every other mesh in this contract, so a reader reporting the
     # split does not have to fall back to the optical count and call it display.
     if entry['triangles']!=len(faces):raise ValueError('display mesh triangle count mismatch')
+    contact,contact_faces=mesh_arrays(proxy_path)
+    # The same tolerance validate_layered_proxy holds the proxy to, so the two
+    # links of the chain are believed to the same precision.
+    if (vertices.shape!=contact.shape or not np.array_equal(faces,contact_faces)
+            or not np.allclose(vertices,contact,atol=1.1e-9,rtol=0)):
+        raise ValueError('display mesh is not the checked collision surface')
     validate_display_uv(asset,m,vertices,uv)
-    for corner,imaged,shown in (('lower',optical[:,:2].min(axis=0),vertices[:,:2].min(axis=0)),
-                                ('upper',optical[:,:2].max(axis=0),vertices[:,:2].max(axis=0))):
-        if not np.allclose(imaged,shown,rtol=0,atol=1e-6):
-            raise ValueError('display mesh %s footprint differs from the imaged mesh'%corner)
-    slack=asset.get('collision_proxy',{}).get('max_surface_deviation_m',0.)
-    if not np.isfinite(slack) or slack<0:raise ValueError('invalid display deviation bound')
-    if (vertices[:,2].min()<optical[:,2].min()-slack-1e-9
-            or vertices[:,2].max()>optical[:,2].max()+slack+1e-9):
-        raise ValueError('display mesh height leaves the declared deviation band')
     return path
 
 
@@ -244,10 +255,12 @@ def _derive_asset_geometry(root,m,asset):
         if ground:
             validate_display_uv(asset,m,mesh_data[0],mesh_data[2])
             validate_material_height_bounds(m['ground_material'],mesh_data[0])
-    visual=(check_display_mesh(root,m,asset,mesh_data[0]) if 'display_mesh' in asset
-            else (root/asset['mesh']).resolve())
+    # The proxy is checked first: the display mesh is checked against it, so it
+    # has to be a surface this run has already tied to the heightfield.
     collision=(validate_proxy(root,asset,mesh_data[:2]) if 'collision_proxy' in asset
                else (root/asset['mesh']).resolve())
+    visual=(check_display_mesh(root,m,asset,collision) if 'display_mesh' in asset
+            else (root/asset['mesh']).resolve())
     return collision,visual
 
 
@@ -263,10 +276,17 @@ def asset_geometry(root,m,asset):
     against, and a fingerprint of the checking code stands for the same bytes
     meeting the same checks.
 
-    A hit still digests every file in checked_geometry_files(), which is what
-    the uncached path would have done on the way through. Only the derivation
-    is skipped.
+    Every file in checked_geometry_files() is digested before the cache is
+    consulted at all, so a hit skips the derivation and never the integrity
+    check -- and neither does a cold start.
     """
+    # Integrity is not part of the derivation, so it does not belong on the
+    # branch that skips one. Running it here means a cold start, a disabled
+    # cache and a hit all verify the same bytes; it used to sit inside the hit
+    # branch, where a first launch would read a changed file and accept it.
+    for file,expected in checked_geometry_files(root,asset):
+        if file.resolve().parent!=root or digest(file)!=expected:
+            raise ValueError('checked geometry checksum mismatch')
     key=derived_cache.key('asset_geometry',asset,m.get('ground_material'),
                           m.get('display_uv_projection'),_geometry_fingerprint())
     stored=derived_cache.read_value('scene_geometry',key)
@@ -274,9 +294,6 @@ def asset_geometry(root,m,asset):
     expected_visual=asset.get('display_mesh',asset)['mesh']
     if (isinstance(stored,dict) and stored.get('collision')==expected_collision
             and stored.get('visual')==expected_visual):
-        for file,expected in checked_geometry_files(root,asset):
-            if file.resolve().parent!=root or digest(file)!=expected:
-                raise ValueError('checked geometry checksum mismatch')
         collision=(root/stored['collision']).resolve()
         visual=(root/stored['visual']).resolve()
         if collision.is_file() and visual.is_file():return collision,visual

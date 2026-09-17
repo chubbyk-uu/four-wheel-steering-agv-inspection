@@ -103,6 +103,29 @@ python3 tools/create_native_heightmap_scene.py \
   --samples 1025 --collision-detector ode
 ```
 
+**第四步不能省**：以上三条命令生成的是全量视觉网格资产，而`inspection.launch.py`的默认道路是
+**轻量显示网格版**。照前三条恢复会得到一条能跑但载入慢一倍、峰值内存高三倍的道路，而且没有
+`manifest_full_visual.json`，README里"需要全量显示几何时加`scene_manifest:=`"那条路走不通。
+
+```bash
+python3 tools/adopt_display_meshes.py \
+  --scene assets/road/runtime_fullwidth_100m_rough_marked_2mm_20cm_heightmap_v1/manifest.json
+```
+
+它就地改两个小文件（`manifest.json`与`world.sdf`，改前各备份为`*.before_display_mesh`），
+新增48个`display_terrain_*.obj`，并另存一份不含`display_mesh`、自包含的全量场景
+`manifest_full_visual.json`＋`world_full_visual.sdf`。改前改后各跑一次校验，任一步失败就回滚
+备份并抛错，不会留下半成品。记录写在`display_mesh_adoption.json`。撤销：
+
+```bash
+python3 tools/adopt_display_meshes.py --scene <同一个manifest.json> --revert
+```
+
+显示网格必须建在`layered_heightfield_shallow_v1`碰撞代理上，生成器和校验器都会拒绝别的代理
+（见[场景载入时间](issues/SCENE_LOAD_TIME.md)）。轻量版接入后`render`后端会被拒绝启动——它经
+Ogre2成像，而成像必须走OptiX读的光学网格；全量manifest上仍然允许。效果实测：到达内存平台
+51.8→30.6 s、峰值RSS 9.76→2.87 GiB（同日同机同路，唯一差别是用哪份manifest）。
+
 两端缓冲区和ROI仍共用无渐入的高度函数。原生高度场保持1025²及model pose放置修复；20 cm指源高度场，原生碰撞重采样间距另见manifest的`physics_heightmap.cell_size_m`。候选的静态资产校验不等于实际轮地支撑、振动、RTF或采集验收；三种子完整采集结果见[重复报告](../results/rough_2mm_repeat_acceptance.json)，几何判据收尾另行验证。资源与校验摘要见[候选报告](../results/rough_2mm_20cm_asset.json)。
 
 ## 箭头和禁停网格标识

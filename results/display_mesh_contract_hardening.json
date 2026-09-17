@@ -1,0 +1,77 @@
+{
+  "schema": "agv.display_mesh_contract_hardening.v1",
+  "date": "2026-09-17",
+  "origin": "external review of the display-mesh contract added on 2026-09-17",
+  "findings": [
+    {
+      "id": "P1",
+      "claim": "the display-mesh check bounded footprint and height range, which bounds nothing",
+      "reviewer_counterexamples": [
+        "keep one triangle and all the unused vertices",
+        "flatten the real terrain_4 display mesh onto z=0"
+      ],
+      "reproduced": true,
+      "also_found_here": [
+        "reverse the winding of every face (same points, different topology)",
+        "declare display_mesh with no collision_proxy at all",
+        "declare display_mesh on a shallow_horizontal_rectangle_v1 proxy, which is four vertices of flat plane"
+      ],
+      "fix": "check the display mesh against the collision proxy instead: same vertices (atol 1.1e-9, the tolerance validate_layered_proxy already holds the proxy to), same faces, and then the UVs, which are the one degree of freedom the proxy does not carry. The proxy is itself pinned vertex for vertex to the heightfield the optical mesh is built from, so this is a chain to a verified surface rather than a bound. A layered proxy is now required for any display mesh.",
+      "removed": "the XY footprint and z-band checks, which vertex equality strictly implies; keeping them would suggest a display mesh may legitimately differ from the proxy"
+    },
+    {
+      "id": "P2",
+      "claim": "the display-mesh sha256 was only verified on the cache-hit branch",
+      "reproduced": true,
+      "detail": "checked_geometry_files existed precisely so both paths verify the same bytes, and its docstring says so, but the loop sat inside the hit branch. A first launch, or one with the cache disabled, read a changed file and accepted it. The existing regression called validate() once before tampering, which warmed the cache and hid the cold path.",
+      "fix": "run the loop before the cache is consulted, so cold, hot and disabled verify alike"
+    },
+    {
+      "id": "P3",
+      "claim": "the road restore steps stop before the light display assets",
+      "reproduced": true,
+      "detail": "docs/ROAD_ASSETS.md ended at create_native_heightmap_scene.py. Following it gives the full-visual road, not the light default the README documents, and no manifest_full_visual.json, so the documented way to ask for full geometry does not exist on that machine.",
+      "fix": "added the adopt_display_meshes.py step, what it writes, and how to revert it"
+    }
+  ],
+  "verification": {
+    "tests": "src/agv_linescan/test/test_display_mesh.py",
+    "cases": 17,
+    "rewritten_fixture": "the old fixture declared a display mesh with no verified reference at all, which is the hole itself; it now carries a layered proxy built from a heightfield, as the shipped road does",
+    "fail_on_the_old_validator": 8,
+    "of_which_real_holes": 7,
+    "message_change_only": [
+      "a smaller footprint was already rejected, with a different message"
+    ],
+    "generator_binding": "one case builds the mesh with the shipped build_light_display_assets.display_mesh and requires validate() to accept it, so tightening the contract cannot drift from the tool that feeds it",
+    "workspace": "533 tests, 0 failures"
+  },
+  "real_asset": {
+    "scene": "assets/road/runtime_fullwidth_100m_rough_marked_2mm_20cm_heightmap_v1",
+    "assets": 48,
+    "display_vs_proxy_max_vertex_delta_m": 0.0,
+    "display_vs_proxy_faces_equal": true,
+    "note": "the shipped display meshes are already bit-identical in geometry to their proxies, so the tightened contract accepts the current default road unchanged; it was the checker that was loose, not the asset",
+    "both_manifests_validate": [
+      "manifest.json",
+      "manifest_full_visual.json"
+    ]
+  },
+  "cost": {
+    "cold_validate_s": {
+      "before": [
+        41.23,
+        41.26
+      ],
+      "after": [
+        42.53,
+        42.35
+      ],
+      "delta_s": 1.19,
+      "delta_percent": 2.9
+    },
+    "cause": "the reference surfaces and heightfields, 1.04 GiB in total, are now digested twice on a cold start: once by the hoisted loop and once inside validate_layered_proxy. Left as is rather than threading a verified-set through validate_proxy, which is also called directly by tools and tests and must keep its own checks.",
+    "hot_validate_s": 2.4,
+    "cache_invalidation": "the key carries a fingerprint of the checking code, so every existing entry is invalid after this change and the next launch pays the cold path once. That is the intended behaviour: the checks changed."
+  }
+}
