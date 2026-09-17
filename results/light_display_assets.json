@@ -16,8 +16,394 @@
       "basis": "32 B per vertex for position, normal and UV"
     },
     "uv_checked_with": "agv_linescan.shared_scene.validate_display_uv",
+    "manifest_entries": [
+      {
+        "name": "terrain_0",
+        "display_mesh": {
+          "mesh": "display_terrain_0.obj",
+          "sha256": "02981a0b54bd910ec687dcf89b586b0a2c9cde14300cc58892778f72440ad368",
+          "triangles": 1716
+        }
+      },
+      {
+        "name": "terrain_1",
+        "display_mesh": {
+          "mesh": "display_terrain_1.obj",
+          "sha256": "ec34227fb836f32b74f6d937a53a06d462346b4cf767723ed3396791244c56ea",
+          "triangles": 1716
+        }
+      },
+      {
+        "name": "terrain_2",
+        "display_mesh": {
+          "mesh": "display_terrain_2.obj",
+          "sha256": "cbdeb0b5169815024b885fa4e54bb7aa10dfffade801648b46ec07cf2e07d3e2",
+          "triangles": 1950
+        }
+      },
+      {
+        "name": "terrain_3",
+        "display_mesh": {
+          "mesh": "display_terrain_3.obj",
+          "sha256": "cb8809151ecc1eb6735acd9d79279922e813a38a26223aaafe3e52e04f99915f",
+          "triangles": 1950
+        }
+      },
+      {
+        "name": "terrain_4",
+        "display_mesh": {
+          "mesh": "display_terrain_4.obj",
+          "sha256": "a3050c7d3e9e97308cef1090285fab5c18f98383fcfa28fed5c39d1e38f8513a",
+          "triangles": 1950
+        }
+      },
+      {
+        "name": "terrain_5",
+        "display_mesh": {
+          "mesh": "display_terrain_5.obj",
+          "sha256": "491a99125c33e43420f860dc112fd255e42f1224fb12d20f982212df9751eebf",
+          "triangles": 1950
+        }
+      },
+      {
+        "name": "terrain_6",
+        "display_mesh": {
+          "mesh": "display_terrain_6.obj",
+          "sha256": "4fadb69b599bbb781abc6c7fafc8c35b892e3c28811e4b66d07f8be084985a56",
+          "triangles": 1950
+        }
+      },
+      {
+        "name": "terrain_7",
+        "display_mesh": {
+          "mesh": "display_terrain_7.obj",
+          "sha256": "527d1905220de39316b47bd9684db04f8b2c766d61d025c0a9c5bb9113ae7fcb",
+          "triangles": 1950
+        }
+      },
+      {
+        "name": "terrain_8",
+        "display_mesh": {
+          "mesh": "display_terrain_8.obj",
+          "sha256": "b223a77d292521c338a94bc36df31e5c992f203e097252d37ddc37cb987efbb2",
+          "triangles": 1950
+        }
+      },
+      {
+        "name": "terrain_9",
+        "display_mesh": {
+          "mesh": "display_terrain_9.obj",
+          "sha256": "59688f685e45549baebb21302414bf5be679dcacf263190359101517318d6bf7",
+          "triangles": 1950
+        }
+      },
+      {
+        "name": "terrain_10",
+        "display_mesh": {
+          "mesh": "display_terrain_10.obj",
+          "sha256": "1a94f44d74de3e0617b868023fc526fb113531a7f8a88566990b136b65d3bcc7",
+          "triangles": 1950
+        }
+      },
+      {
+        "name": "terrain_11",
+        "display_mesh": {
+          "mesh": "display_terrain_11.obj",
+          "sha256": "9952c8e4ebba480a00868099d0e16af55f9d19c182bf8e3688ca8137fb8dc2ab",
+          "triangles": 1950
+        }
+      },
+      {
+        "name": "terrain_12",
+        "display_mesh": {
+          "mesh": "display_terrain_12.obj",
+          "sha256": "5c49aef00564d1fb2a8bfbac9a31a25243a46fbc2fc161d3bb09f50c065d5583",
+          "triangles": 1950
+        }
+      },
+      {
+        "name": "terrain_13",
+        "display_mesh": {
+          "mesh": "display_terrain_13.obj",
+          "sha256": "15a28d7be2a7ae22b665d08b45f12ba2a5be8bf3cd6ae8cad141bfe5c719ac46",
+          "triangles": 1950
+        }
+      },
+      {
+        "name": "terrain_14",
+        "display_mesh": {
+          "mesh": "display_terrain_14.obj",
+          "sha256": "8fa989abb161d2b7329af38928032c8a535a2cfe03ddf1d434ba5c0ff7daef1b",
+          "triangles": 1950
+        }
+      },
+      {
+        "name": "terrain_15",
+        "display_mesh": {
+          "mesh": "display_terrain_15.obj",
+          "sha256": "0800fc36e2595b7d03597b26012fd1d352431f93016c97e9699118006a4d22e1",
+          "triangles": 1950
+        }
+      },
+      {
+        "name": "terrain_16",
+        "display_mesh": {
+          "mesh": "display_terrain_16.obj",
+          "sha256": "6c69cc1901d5990ca24bfad829054afca82c6ad43f056513142c42b740a8a895",
+          "triangles": 1950
+        }
+      },
+      {
+        "name": "terrain_17",
+        "display_mesh": {
+          "mesh": "display_terrain_17.obj",
+          "sha256": "e148e38aafee01367c482256925d2df78a19c89d977c6242bcca710b1c834bfb",
+          "triangles": 1950
+        }
+      },
+      {
+        "name": "terrain_18",
+        "display_mesh": {
+          "mesh": "display_terrain_18.obj",
+          "sha256": "df6a9c04506452bb45654aa2e1c9835355288deb8f14b42b212bd329611e9508",
+          "triangles": 1950
+        }
+      },
+      {
+        "name": "terrain_19",
+        "display_mesh": {
+          "mesh": "display_terrain_19.obj",
+          "sha256": "93379a5d0568308c2b5cd1d953caf1bc9ade54a7d8d1a816916a32ea1bb3e59e",
+          "triangles": 1950
+        }
+      },
+      {
+        "name": "terrain_20",
+        "display_mesh": {
+          "mesh": "display_terrain_20.obj",
+          "sha256": "64fa5896d1b36a8dddaacd3e5a22fe86834a67e4101cd8121c997c84e4019432",
+          "triangles": 1950
+        }
+      },
+      {
+        "name": "terrain_21",
+        "display_mesh": {
+          "mesh": "display_terrain_21.obj",
+          "sha256": "1b290c7d2a20cfd2cc1db7049883ea8f65d1c00185f9bf9e05e3024268c73fd2",
+          "triangles": 1950
+        }
+      },
+      {
+        "name": "terrain_22",
+        "display_mesh": {
+          "mesh": "display_terrain_22.obj",
+          "sha256": "8877cf961642783d4cad9f4bff1518d4ff86039a5fb202e8985b88bd62669224",
+          "triangles": 1950
+        }
+      },
+      {
+        "name": "terrain_23",
+        "display_mesh": {
+          "mesh": "display_terrain_23.obj",
+          "sha256": "9af686d5f72a59a0af5cf152bbd1555ad62f2d3868683e74b1d991c48354bb1c",
+          "triangles": 1950
+        }
+      },
+      {
+        "name": "terrain_24",
+        "display_mesh": {
+          "mesh": "display_terrain_24.obj",
+          "sha256": "db3a37262ceafec0c2a8d1325736e794871177e5956863dad88ae508366c5ca3",
+          "triangles": 1950
+        }
+      },
+      {
+        "name": "terrain_25",
+        "display_mesh": {
+          "mesh": "display_terrain_25.obj",
+          "sha256": "c398359efa78b8cd497b89fe64e3f7b0e2747dcd0e5664428024ed5ad8cb4c5c",
+          "triangles": 1950
+        }
+      },
+      {
+        "name": "terrain_26",
+        "display_mesh": {
+          "mesh": "display_terrain_26.obj",
+          "sha256": "39b06b6d5c86a9b0d5736221e8e32d914a5fcff8dbc0377324026fbe167fb669",
+          "triangles": 1950
+        }
+      },
+      {
+        "name": "terrain_27",
+        "display_mesh": {
+          "mesh": "display_terrain_27.obj",
+          "sha256": "dc26e2a88e67feec7f0ea4c0d81564ff7cebb06be39d222650b194a5da3ef068",
+          "triangles": 1950
+        }
+      },
+      {
+        "name": "terrain_28",
+        "display_mesh": {
+          "mesh": "display_terrain_28.obj",
+          "sha256": "e181152b403c345a011ad7849ae38482f1d4ac97b3969adfba499ca92d5e795e",
+          "triangles": 1950
+        }
+      },
+      {
+        "name": "terrain_29",
+        "display_mesh": {
+          "mesh": "display_terrain_29.obj",
+          "sha256": "ce4cc9a93d6ab3b7ff9b5896f3657b071f3a0a6e0861cf53e9115933fb259180",
+          "triangles": 1950
+        }
+      },
+      {
+        "name": "terrain_30",
+        "display_mesh": {
+          "mesh": "display_terrain_30.obj",
+          "sha256": "82d0221e56422395d0c01f1bb308ebf01afade5e569ba50bf8151ad79cd7ecca",
+          "triangles": 1950
+        }
+      },
+      {
+        "name": "terrain_31",
+        "display_mesh": {
+          "mesh": "display_terrain_31.obj",
+          "sha256": "38439fe8b80bdedf2c6fa92766d1368de8f33f3b2073ab49db2861cf43190387",
+          "triangles": 1950
+        }
+      },
+      {
+        "name": "terrain_32",
+        "display_mesh": {
+          "mesh": "display_terrain_32.obj",
+          "sha256": "eb43d9ad602c402757618467290691ecec347c113f0202c1fbfe16a4275da59f",
+          "triangles": 1950
+        }
+      },
+      {
+        "name": "terrain_33",
+        "display_mesh": {
+          "mesh": "display_terrain_33.obj",
+          "sha256": "f75fd9c51bdc33d5e3f8a541230bee3a12909d3cb7b7a16c3e93ff3ed2ecd951",
+          "triangles": 1950
+        }
+      },
+      {
+        "name": "terrain_34",
+        "display_mesh": {
+          "mesh": "display_terrain_34.obj",
+          "sha256": "00475d32eb795082c22e283659d7d9cb69f88cc7c05fac7e95d83fa991c3ae56",
+          "triangles": 1950
+        }
+      },
+      {
+        "name": "terrain_35",
+        "display_mesh": {
+          "mesh": "display_terrain_35.obj",
+          "sha256": "2a0d80943c34cb2e30c89bb638027a9ec6270c7954618693101e3eed09ca2afb",
+          "triangles": 1950
+        }
+      },
+      {
+        "name": "terrain_36",
+        "display_mesh": {
+          "mesh": "display_terrain_36.obj",
+          "sha256": "e3d3fde8839eea6faf3879bb8cfa8f1d5ca3e87f714f9232ff909f38d2dd04d0",
+          "triangles": 1950
+        }
+      },
+      {
+        "name": "terrain_37",
+        "display_mesh": {
+          "mesh": "display_terrain_37.obj",
+          "sha256": "01f5fb4839a4f8c95042c76c9543fd16c4ae94a28139bf5553e5c16045fd303c",
+          "triangles": 1950
+        }
+      },
+      {
+        "name": "terrain_38",
+        "display_mesh": {
+          "mesh": "display_terrain_38.obj",
+          "sha256": "46bfb122f9155b72ec45f335fed3b261caad69f3578f27dcac119c1174728536",
+          "triangles": 1950
+        }
+      },
+      {
+        "name": "terrain_39",
+        "display_mesh": {
+          "mesh": "display_terrain_39.obj",
+          "sha256": "ea1f61c56b754a341e01578714f0ba85217c170da4444568de937a3a1c1d5aa2",
+          "triangles": 1950
+        }
+      },
+      {
+        "name": "terrain_40",
+        "display_mesh": {
+          "mesh": "display_terrain_40.obj",
+          "sha256": "2fb2ccf4cadfdf7299aac5220a93a5ac5c118b4db5a82c3fc4203f194b01a84d",
+          "triangles": 1950
+        }
+      },
+      {
+        "name": "terrain_41",
+        "display_mesh": {
+          "mesh": "display_terrain_41.obj",
+          "sha256": "cb22b64cc2a3ea2f14e6c95dfdd8d3c8649c0c70a3315f3efb403b1f404888a6",
+          "triangles": 1950
+        }
+      },
+      {
+        "name": "terrain_42",
+        "display_mesh": {
+          "mesh": "display_terrain_42.obj",
+          "sha256": "5bd1ed5c5757c586c20f2be40a6f031779702199dda7c47cfcff5cd6f6ff330e",
+          "triangles": 1950
+        }
+      },
+      {
+        "name": "terrain_43",
+        "display_mesh": {
+          "mesh": "display_terrain_43.obj",
+          "sha256": "8e68e53411c765b4446415f9dc2c8afa6e7b819be3bf8f6f85452e1e92c3ffe8",
+          "triangles": 1950
+        }
+      },
+      {
+        "name": "terrain_44",
+        "display_mesh": {
+          "mesh": "display_terrain_44.obj",
+          "sha256": "651bac28e9ae6225e19166d82ba0242838f4f163e7804a1ea070e1ed0bc2cc35",
+          "triangles": 1950
+        }
+      },
+      {
+        "name": "terrain_45",
+        "display_mesh": {
+          "mesh": "display_terrain_45.obj",
+          "sha256": "fb4a46bb2834961073caa7e1d00e8ba1827847c01eca1a1d5645d18da81e6532",
+          "triangles": 1950
+        }
+      },
+      {
+        "name": "terrain_46",
+        "display_mesh": {
+          "mesh": "display_terrain_46.obj",
+          "sha256": "7380574989d062189c3b70a7ce30dba5e83d40ae32cc02733e704307c4efb28b",
+          "triangles": 1638
+        }
+      },
+      {
+        "name": "terrain_47",
+        "display_mesh": {
+          "mesh": "display_terrain_47.obj",
+          "sha256": "43894ae9486f30b1f0e164dbc48e6edbdbbfbc504620f9437e016b8d703fa561",
+          "triangles": 1638
+        }
+      }
+    ],
     "fidelity": "identical to the imaged surface outside the declared shallow defects; inside them it is the flattened reference plane, so the difference is bounded by max_surface_deviation_m over the area shallow_rectangle caps",
-    "seconds": 0.35504034200039314
+    "seconds": 0.3444300170012866
   },
   "textures": {
     "count": 96,
@@ -44,6 +430,6 @@
         "srgb_vs_linear_grey_levels": 39.93860810995102
       }
     },
-    "seconds": 20.33818356899974
+    "seconds": 19.578902281999035
   }
 }

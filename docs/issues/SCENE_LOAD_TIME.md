@@ -128,13 +128,41 @@ sRGB 下缩的，RViz 代理在棱边和标线处有这个量级的误差——�
 读取器读一遍就要 6.38 s（优化后 1.60 s），assimp 还要建场景图与缓冲。
 **目标是缩短就绪时间，因此先做网格；贴图那半留给显存。**
 
-### 接入时必须改的三处（尚未做）
+### 契约变更（第 1 步，已完成；资产仍未改）
 
-1. `shared_scene.validate` 的 visual URI 等值检查，加 `display_mesh` 的哈希与 UV 校验
-   （UV 校验目前只跑在光学网格上）。
-2. `sim.launch.py`：`linescan_backend=='render'` 时强制精细并拒绝显式 light。
-3. **`check_full_road.py:58` 的 `visual_optix_triangles`**——拆开后这个名字会**静默
-   报错数**，要改名并新增显示面数。
+`display_mesh` 是资产条目下的**可选**字段 `{mesh, sha256, triangles}`。**不声明时行为
+与改动前完全一致**——三个真实资产
+（`*_2mm_20cm_heightmap_v1`、`*_rough_2mm_20cm_v1`、`20m_v1`）重跑 `validate` 均通过，
+且都不含该字段。schema 保持 `v1`，C++ 侧不必重建。
+
+声明后 `validate` 不能再断言"两者是同一个文件"，改为**约束两者能差多少**：
+
+| 检查 | 目的 |
+|---|---|
+| 与 manifest 声明的 sha256 一致、且位于 manifest 同目录 | 与其他所有文件同一规矩 |
+| 声明的 `triangles` 必须等于实际面数 | 报告拆分的读取器不可能报假数 |
+| `validate_display_uv` 跑在**显示网格**上 | UV 投影一致（原先只跑光学网格） |
+| XY 包围盒与光学网格一致（1e-6） | 挡住"盖错地方/被截断" |
+| z 范围不超出光学网格 ± `max_surface_deviation_m` | 挡住"根本不是这条路" |
+| `world.sdf` 的 `<visual>` 必须指向它 | 声明了却不用 = 拒绝 |
+
+**这些边界不证明两个面逐点相同，也不打算证明**——文档里必须这么说。
+
+缓存侧：`proxy_files` 改名 `checked_geometry_files` 并纳入显示网格，保持"命中路径摘要
+的文件与未命中路径完全相同"这条不变量在**一处**表达；回归含"命中后篡改显示网格仍被拒"。
+
+`check_full_road.py` 的 `visual_optix_triangles` 已拆成 `optix_triangles` 与
+`gz_display_triangles`（旧字段名留在历史 results 文件里，当时 visual 确实等于 optix，
+不回改）。回归见 `test_display_mesh.py`（11 项）与 `test_derived_cache.py`。
+
+### 还没做
+
+- **`sim.launch.py` 的 `render` 后端互斥**：`linescan_backend=='render'` 时必须强制精细
+  并拒绝显式 light。同一 gz server 进程只有一个 Ogre2 场景，这条只能在启动期做。
+- 生成资产并接入（先在非默认资产
+  `runtime_fullwidth_100m_rough_2mm_20cm_v1` 上实跑，再上默认道路）。
+  `results/light_display_assets.json` 的 `meshes.manifest_entries` 已是 `validate`
+  期望的形状，48 条，可直接并入 manifest。
 
 已确认**不受影响**：OptiX `scene_io.h` 只读已知键、`test_scene_io.cpp` 不做严格键集
 断言，故 `display_mesh` 作为可选字段、schema 保持 v1，C++ 侧不必重建；六个写该 schema

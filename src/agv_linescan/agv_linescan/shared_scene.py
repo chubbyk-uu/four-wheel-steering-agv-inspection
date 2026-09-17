@@ -14,19 +14,22 @@ def digest(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
-def proxy_files(root,asset):
-    """Every file a collision-proxy check reads, with the hash the manifest claims.
+def checked_geometry_files(root,asset):
+    """Every extra file this asset's geometry checks read, with its claimed hash.
 
-    Kept next to the proxy policy so that the cached and uncached paths verify
-    exactly the same bytes; a hit is allowed to skip the derivation, never the
-    integrity check.
+    One list so that the cached and uncached paths verify exactly the same
+    bytes; a hit is allowed to skip the derivation, never the integrity check.
+    The optical mesh is not here because validate() digests it directly.
     """
+    files=[]
     proxy=asset.get('collision_proxy')
-    if not proxy:return []
-    files=[(root/proxy['mesh'],proxy['sha256'])]
-    for part in ('reference_surface','heightfield'):
-        entry=proxy.get(part)
-        if entry:files.append((root/entry['mesh'],entry['sha256']))
+    if proxy:
+        files.append((root/proxy['mesh'],proxy['sha256']))
+        for part in ('reference_surface','heightfield'):
+            entry=proxy.get(part)
+            if entry:files.append((root/entry['mesh'],entry['sha256']))
+    display=asset.get('display_mesh')
+    if display:files.append((root/display['mesh'],display['sha256']))
     return files
 
 
@@ -199,20 +202,57 @@ def _geometry_fingerprint():
     return derived_cache.code_fingerprint(*modules)
 
 
+def check_display_mesh(root,m,asset,optical):
+    """Bound a separate GZ display mesh against the mesh OptiX images.
+
+    This contract was written so that the GZ visual and the OptiX reader are
+    the same file. An asset may now declare a lighter mesh for display alone,
+    which means the validator can no longer assert they are identical and has
+    to bound how far they may differ instead: the same footprint, the same UV
+    projection, and a height range no further out than the shallow-defect
+    depth the proxy policy already caps.
+
+    Those bounds do not prove the two surfaces agree point by point, and are
+    not meant to. What they catch is a display mesh that covers the wrong
+    ground, carries the wrong UVs, or is not the same road at all.
+    """
+    entry=asset['display_mesh']
+    path=(root/entry['mesh']).resolve()
+    if path.parent!=root:raise ValueError('display mesh must sit beside the manifest')
+    vertices,faces,uv=read_obj(path,with_uv=True)
+    # Declared like every other mesh in this contract, so a reader reporting the
+    # split does not have to fall back to the optical count and call it display.
+    if entry['triangles']!=len(faces):raise ValueError('display mesh triangle count mismatch')
+    validate_display_uv(asset,m,vertices,uv)
+    for corner,imaged,shown in (('lower',optical[:,:2].min(axis=0),vertices[:,:2].min(axis=0)),
+                                ('upper',optical[:,:2].max(axis=0),vertices[:,:2].max(axis=0))):
+        if not np.allclose(imaged,shown,rtol=0,atol=1e-6):
+            raise ValueError('display mesh %s footprint differs from the imaged mesh'%corner)
+    slack=asset.get('collision_proxy',{}).get('max_surface_deviation_m',0.)
+    if not np.isfinite(slack) or slack<0:raise ValueError('invalid display deviation bound')
+    if (vertices[:,2].min()<optical[:,2].min()-slack-1e-9
+            or vertices[:,2].max()>optical[:,2].max()+slack+1e-9):
+        raise ValueError('display mesh height leaves the declared deviation band')
+    return path
+
+
 def _derive_asset_geometry(root,m,asset):
     ground='ground_material' in m and asset.get('material')=='ground'
     mesh_data=None
-    if 'collision_proxy' in asset or ground:
+    if 'collision_proxy' in asset or ground or 'display_mesh' in asset:
         mesh_data=read_obj(root/asset['mesh'],with_uv=ground)
         if ground:
             validate_display_uv(asset,m,mesh_data[0],mesh_data[2])
             validate_material_height_bounds(m['ground_material'],mesh_data[0])
-    if 'collision_proxy' not in asset:return (root/asset['mesh']).resolve()
-    return validate_proxy(root,asset,mesh_data[:2])
+    visual=(check_display_mesh(root,m,asset,mesh_data[0]) if 'display_mesh' in asset
+            else (root/asset['mesh']).resolve())
+    collision=(validate_proxy(root,asset,mesh_data[:2]) if 'collision_proxy' in asset
+               else (root/asset['mesh']).resolve())
+    return collision,visual
 
 
 def asset_geometry(root,m,asset):
-    """The collision path for one asset, with its geometry checked.
+    """The collision and visual paths for one asset, with its geometry checked.
 
     This is most of the cost of validating the 100 m road: 7.7 M triangles are
     read back and resampled against the proxy heightfield on every launch,
@@ -223,24 +263,29 @@ def asset_geometry(root,m,asset):
     against, and a fingerprint of the checking code stands for the same bytes
     meeting the same checks.
 
-    A hit still digests every proxy-side file, which is what the uncached path
-    would have done on the way through. Only the derivation is skipped.
+    A hit still digests every file in checked_geometry_files(), which is what
+    the uncached path would have done on the way through. Only the derivation
+    is skipped.
     """
     key=derived_cache.key('asset_geometry',asset,m.get('ground_material'),
                           m.get('display_uv_projection'),_geometry_fingerprint())
     stored=derived_cache.read_value('scene_geometry',key)
     expected_collision=asset.get('collision_proxy',asset)['mesh']
-    if isinstance(stored,dict) and stored.get('collision')==expected_collision:
-        for file,expected in proxy_files(root,asset):
+    expected_visual=asset.get('display_mesh',asset)['mesh']
+    if (isinstance(stored,dict) and stored.get('collision')==expected_collision
+            and stored.get('visual')==expected_visual):
+        for file,expected in checked_geometry_files(root,asset):
             if file.resolve().parent!=root or digest(file)!=expected:
-                raise ValueError('collision proxy checksum mismatch')
+                raise ValueError('checked geometry checksum mismatch')
         collision=(root/stored['collision']).resolve()
-        if collision.is_file():return collision
-    collision=_derive_asset_geometry(root,m,asset)
-    # Both branches keep the collision beside the manifest, so the name alone
-    # makes the entry reusable for the same content generated elsewhere.
-    derived_cache.write_value('scene_geometry',key,{'collision':collision.name})
-    return collision
+        visual=(root/stored['visual']).resolve()
+        if collision.is_file() and visual.is_file():return collision,visual
+    collision,visual=_derive_asset_geometry(root,m,asset)
+    # Both branches keep these beside the manifest, so the names alone make the
+    # entry reusable for the same content generated elsewhere.
+    derived_cache.write_value('scene_geometry',key,
+                              {'collision':collision.name,'visual':visual.name})
+    return collision,visual
 
 
 def validate(manifest):
@@ -309,14 +354,16 @@ def validate(manifest):
                 raise ValueError('physics heightmap transform mismatch')
             continue
         link=model.find('link');asset=assets[model.get('name')]
-        collision_path=asset_geometry(root,m,asset)
+        collision_path,visual_path=asset_geometry(root,m,asset)
         for kind in ('visual','collision'):
             items=link.findall(kind)
             expected_count=0 if kind=='collision' and heightmap else 1
             if len(items)!=expected_count:raise ValueError('geometry count mismatch')
             if expected_count==0:continue
             geo=items[0].find('geometry/mesh')
-            expected=collision_path if kind=='collision' else (root/asset['mesh']).resolve()
+            # A declared display_mesh is what GZ shows; the optical mesh stays
+            # the OptiX input and is checked separately by check_display_mesh.
+            expected=collision_path if kind=='collision' else visual_path
             if geo is None or Path(geo.findtext('uri')).resolve()!=expected or geo.findtext('scale')!='1 1 1':
                 raise ValueError('visual/collision geometry mismatch')
             if kind=='visual' and 'linear_reflectance' in asset:

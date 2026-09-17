@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from agv_linescan import derived_cache, shared_scene
-from agv_linescan.shared_scene import digest, generate, proxy_files, validate
+from agv_linescan.shared_scene import checked_geometry_files, digest, generate, validate
 
 BASE = Path(__file__).resolve().parents[2]/'agv_bringup/worlds/flat.sdf'
 
@@ -57,7 +57,7 @@ def test_a_hit_still_rejects_a_tampered_optical_mesh(proxy_bundle):
 
 
 def _hashed_entries(node):
-    """Every {mesh, sha256} pair anywhere in a collision-proxy declaration."""
+    """Every {mesh, sha256} pair anywhere in an asset's geometry declaration."""
     found = []
     if isinstance(node, dict):
         if 'mesh' in node and 'sha256' in node:
@@ -67,20 +67,25 @@ def _hashed_entries(node):
     return found
 
 
-@pytest.mark.parametrize('proxy', [
-    dict(method='shallow_horizontal_rectangle_v1', mesh='contact.obj', sha256='a'),
-    dict(method='layered_heightfield_shallow_v1', mesh='c.obj', sha256='a',
-         reference_surface=dict(mesh='r.obj', sha256='b'),
-         heightfield=dict(mesh='h.json', sha256='c')),
+@pytest.mark.parametrize('asset', [
+    dict(collision_proxy=dict(method='shallow_horizontal_rectangle_v1',
+                              mesh='contact.obj', sha256='a')),
+    dict(collision_proxy=dict(method='layered_heightfield_shallow_v1', mesh='c.obj', sha256='a',
+                              reference_surface=dict(mesh='r.obj', sha256='b'),
+                              heightfield=dict(mesh='h.json', sha256='c'))),
+    dict(display_mesh=dict(mesh='d.obj', sha256='e')),
+    dict(collision_proxy=dict(method='shallow_horizontal_rectangle_v1',
+                              mesh='contact.obj', sha256='a'),
+         display_mesh=dict(mesh='d.obj', sha256='e')),
 ])
-def test_the_hit_path_lists_every_hashed_proxy_file(tmp_path, proxy):
-    """A proxy field added without updating proxy_files() would let a hit skip it."""
-    listed = {p.name for p, _ in proxy_files(tmp_path, dict(collision_proxy=proxy))}
-    assert listed == set(_hashed_entries(proxy))
+def test_the_hit_path_lists_every_hashed_geometry_file(tmp_path, asset):
+    """A field added without updating the list would let a hit skip its bytes."""
+    listed = {p.name for p, _ in checked_geometry_files(tmp_path, asset)}
+    assert listed == set(_hashed_entries(asset))
 
 
-def test_no_proxy_means_nothing_extra_to_verify(tmp_path):
-    assert proxy_files(tmp_path, dict(mesh='terrain.obj', sha256='a')) == []
+def test_a_plain_asset_has_nothing_extra_to_verify(tmp_path):
+    assert checked_geometry_files(tmp_path, dict(mesh='terrain.obj', sha256='a')) == []
 
 
 def test_a_changed_check_invalidates_every_entry(proxy_bundle, monkeypatch, tmp_path):

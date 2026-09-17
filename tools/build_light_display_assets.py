@@ -129,8 +129,12 @@ def main():
 
     if not a.skip_meshes:
         start = time.perf_counter()
-        built = [display_mesh(root, asset, manifest, a.output) for asset in manifest['assets']]
-        built = [b for b in built if b]
+        built = [(asset, display_mesh(root, asset, manifest, a.output))
+                 for asset in manifest['assets']]
+        entries = [dict(name=asset['name'],
+                        display_mesh=dict(mesh=path.name, sha256=digest(path), triangles=count))
+                   for asset, made in built if made for count, path in [made]]
+        built = [made for _, made in built if made]
         optical = sum(v['triangles'] for v in manifest['assets'])
         light = sum(t for t, _ in built)
         report['meshes'] = dict(
@@ -142,6 +146,9 @@ def main():
             geometry_bytes_estimate=dict(optical=optical*3*32, display=light*3*32,
                                          basis='32 B per vertex for position, normal and UV'),
             uv_checked_with='agv_linescan.shared_scene.validate_display_uv',
+            # Ready to merge into the manifest, in the shape validate() expects,
+            # so adopting these does not reimplement the entry by hand.
+            manifest_entries=entries,
             fidelity=('identical to the imaged surface outside the declared shallow defects; '
                       'inside them it is the flattened reference plane, so the difference is '
                       'bounded by max_surface_deviation_m over the area shallow_rectangle caps'),
