@@ -1,0 +1,141 @@
+{
+  "schema": "agv.capture_run_determinism.v1",
+  "question": "are two identical short captures byte-identical, so a pixel A/B can use exact equality",
+  "answer": "no, and not because rendering varies: the two runs begin the scan at a different place and time",
+  "scope": "Two runs of tools/validate_operator_session.py with identical arguments, the shipped localization seed 20260908, the default 100 m road and a clean instance before each. Both passed with ACQUIRED/HOLD and ESTIMATED_COMPLETE coverage.",
+  "divergence": {
+    "first_line_sim_time_offset_s": 11.16500021459413,
+    "first_line_camera_offset_mm": [
+      -239.1633,
+      14.4239,
+      -0.7547
+    ],
+    "along_track_offset_lines": 653.99,
+    "lateral_offset_px": 39.4,
+    "total_rows": [
+      22235,
+      22160
+    ],
+    "identical_pgm": 0,
+    "common_blocks": 6,
+    "note": "The x offset is constant across the block (239.16 to 239.83 mm), so it is a start offset, not an accumulating trajectory drift. 239.16 mm is 654.0 line spacings."
+  },
+  "cause_not_established": "The fixed seed makes each noise stream deterministic in its own draw order, but the number of draws before capture begins depends on wall-clock paced scheduling, and the capture enable handshake lands at a different point of the approach. Rendering determinism itself was NOT tested and is not needed for the conclusion below.",
+  "consequence": "A mission-level pixel equality check is unachievable, so the light display asset work must not rely on one. OptiX reads manifest[\"assets\"]; proving that list and its hashed meshes are byte-identical proves the imaging input is unchanged, exactly and without running a mission. The mission A/B stays as a tolerance smoke test against the existing acceptance criteria.",
+  "runs": {
+    "det_a": {
+      "passed": true,
+      "blocks": 6,
+      "rows": 22235,
+      "observed_rtf": 0.9871478117122022,
+      "actual_peak_speed_m_s": 0.5779172690767171,
+      "first_line_time_s": 50.213731113729686,
+      "first_line_camera_xyz_m": [
+        5.5042969978381615,
+        -0.5052816491352311,
+        1.039605287092924
+      ],
+      "block_index": [
+        {
+          "block_id": 0,
+          "rows": 4096,
+          "first_global_line": 0,
+          "first_time_s": 50.213731113729686,
+          "pgm_sha256": "d365644ff14fa6d8e0b74eaf8f74b2775d5ece28b172246e8cf754baac411e05"
+        },
+        {
+          "block_id": 1,
+          "rows": 4096,
+          "first_global_line": 4096,
+          "first_time_s": 53.19321791736717,
+          "pgm_sha256": "30b7f9c94aa718859ed3fdd2da87c2ae6ddca88dbf82d0e8f893e5488647e78e"
+        },
+        {
+          "block_id": 2,
+          "rows": 2955,
+          "first_global_line": 8192,
+          "first_time_s": 56.187215138819845,
+          "pgm_sha256": "28800d707d23a5640ea2499aee54769c8c0f710ac0b86f7686ac05f0cf7ad066"
+        },
+        {
+          "block_id": 3,
+          "rows": 4096,
+          "first_global_line": 11147,
+          "first_time_s": 95.58973111665568,
+          "pgm_sha256": "2de8b54582bed0d2ab377dd1bdc0649b244da37c23fd8a78b46555b159314636"
+        },
+        {
+          "block_id": 4,
+          "rows": 4096,
+          "first_global_line": 15243,
+          "first_time_s": 98.55991034115897,
+          "pgm_sha256": "ed37fe8df9f1aed612a991a704372bc5d387affb640a7a496a70702d0e8b3c0f"
+        },
+        {
+          "block_id": 5,
+          "rows": 2896,
+          "first_global_line": 19339,
+          "first_time_s": 101.55219324668751,
+          "pgm_sha256": "d471df283387efc9048b1a9958aebae505c1b0b8a26fff9cf595fbb0ce97f010"
+        }
+      ]
+    },
+    "det_b": {
+      "passed": true,
+      "blocks": 6,
+      "rows": 22160,
+      "observed_rtf": 0.9871529826907397,
+      "actual_peak_speed_m_s": 0.5910007486166747,
+      "first_line_time_s": 61.378731328323816,
+      "first_line_camera_xyz_m": [
+        5.2651336772726145,
+        -0.4908577371132285,
+        1.038850616852692
+      ],
+      "block_index": [
+        {
+          "block_id": 0,
+          "rows": 4096,
+          "first_global_line": 0,
+          "first_time_s": 61.378731328323816,
+          "pgm_sha256": "b670031e121867df6181b2754e40bc63df232dcd6056efac5226aa0bac629a9e"
+        },
+        {
+          "block_id": 1,
+          "rows": 4096,
+          "first_global_line": 4096,
+          "first_time_s": 64.359115651776,
+          "pgm_sha256": "606909976ae547ba13c2803be906bcb69ced5efaa39044b55827688b2a831536"
+        },
+        {
+          "block_id": 2,
+          "rows": 3631,
+          "first_global_line": 8192,
+          "first_time_s": 67.3520322770502,
+          "pgm_sha256": "7b896c4127f5faa4c413b48a569b8c5d37d50f0260a7a7f82f78304983be6b88"
+        },
+        {
+          "block_id": 3,
+          "rows": 4096,
+          "first_global_line": 11823,
+          "first_time_s": 108.10472969910101,
+          "pgm_sha256": "26d98c66ae122babe2b6b20c34d3f07165d28c2dc185b104baac4d5335ad14cb"
+        },
+        {
+          "block_id": 4,
+          "rows": 4096,
+          "first_global_line": 15919,
+          "first_time_s": 111.08229652607179,
+          "pgm_sha256": "6f2996cca35ba53770ad40c12a95de78b9cc87dd2efb22b4277afb91593ff6ad"
+        },
+        {
+          "block_id": 5,
+          "rows": 2145,
+          "first_global_line": 20015,
+          "first_time_s": 114.07638430996542,
+          "pgm_sha256": "43abf1d524264a75bc54755ade52de6be2b99fee6b9aeca77c3a75ac762bd7fe"
+        }
+      ]
+    }
+  }
+}
