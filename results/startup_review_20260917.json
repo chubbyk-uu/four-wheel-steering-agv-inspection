@@ -1,0 +1,89 @@
+{
+  "schema": "agv.startup_review.v1",
+  "date": "2026-09-17",
+  "reviewed_commits": [
+    "1cfd7bd",
+    "82763fe"
+  ],
+  "scope": "Default 100 m 2 mm/20 cm heightmap, GUI+RViz, OptiX, private Mesa; separate simulator instances, warm derived/OS caches, one paired short mission. Not a cold boot or statistical benchmark.",
+  "findings_fixed": [
+    "Cache read_directory removed a caller-owned existing output on copy failure.",
+    "Directory completion marker did not detect missing/corrupt cached payload files.",
+    "Geometry cache malformed value could fail startup; now checked against expected collision name.",
+    "Geometry check fingerprint omitted loaded native OBJ parser binary."
+  ],
+  "reader_microbenchmark": {
+    "before": {
+      "seconds": 6.380334692,
+      "vertex_sha256": "7a3652911b104c16e945bdd166809d21a13a1f739c7fd3e1ac8e25a36524b630",
+      "vertices": 23136840
+    },
+    "after": {
+      "seconds": 1.600569821,
+      "vertex_sha256": "7a3652911b104c16e945bdd166809d21a13a1f739c7fd3e1ac8e25a36524b630",
+      "vertices": 23136840
+    },
+    "method": "CPU LoadScene on the same full-road manifest; SHA256 over the ordered float3 result (12 bytes per vertex); before header from 82763fe, optimized header from this change. Geometry and order byte-identical."
+  },
+  "runs": {
+    "before": {
+      "startup": {
+        "chassis_ready_wall_s": 55.71507819699991,
+        "task_ready_wall_s": 64.26951223099991
+      },
+      "passed": true,
+      "first_odometry_wall_s": 28.280757155999936,
+      "blocks": 3,
+      "rows": 10081,
+      "ros_archive_identical": true,
+      "steady_rtf": 0.9988823772458808,
+      "final_state": "ACQUIRED",
+      "final_motion_state": "HOLD",
+      "resources": {
+        "interval_s": 2.0,
+        "samples": 37,
+        "errors": [],
+        "scope": "Owned Linux process tree RSS (shared pages may repeat) and PSS; GPU usage is whole device, includes desktop; sampled peaks only",
+        "peak_tree_rss_bytes": 10570702848,
+        "peak_tree_pss_bytes": 9800306688,
+        "peak_device_used_bytes": 9878634496
+      }
+    },
+    "after": {
+      "startup": {
+        "chassis_ready_wall_s": 50.289390207999986,
+        "task_ready_wall_s": 57.87309650199995
+      },
+      "passed": true,
+      "first_odometry_wall_s": 21.624424642999884,
+      "blocks": 3,
+      "rows": 10036,
+      "ros_archive_identical": true,
+      "steady_rtf": 0.9990876820636813,
+      "final_state": "ACQUIRED",
+      "final_motion_state": "HOLD",
+      "resources": {
+        "interval_s": 2.0,
+        "samples": 42,
+        "errors": [],
+        "scope": "Owned Linux process tree RSS (shared pages may repeat) and PSS; GPU usage is whole device, includes desktop; sampled peaks only",
+        "peak_tree_rss_bytes": 10625126400,
+        "peak_tree_pss_bytes": 9852740608,
+        "peak_device_used_bytes": 9878634496
+      }
+    }
+  },
+  "tests": {
+    "derived_cache_and_road_display": 21,
+    "agv_linescan": 241,
+    "agv_mission": 200,
+    "failures": 0
+  },
+  "visual_check": "Actual X11 GZ and RViz client framebuffers inspected: road, arrows, double yellow lines and robot visible; RViz status OK. Captures local only. No new mouse interaction test.",
+  "limits": [
+    "Only one paired end-to-end trial; no distribution/guaranteed startup bound.",
+    "Different live trajectories are not a pixel A/B: ordered vertex buffer identity plus existing OptiX tests verify reader preservation; each run independently checks ROS/archive bytes.",
+    "No mesh/texture reduction, collision change, shortened readiness or GUI/server parallel startup.",
+    "Timing means actual ready states, not the older memory-plateau measure."
+  ]
+}
