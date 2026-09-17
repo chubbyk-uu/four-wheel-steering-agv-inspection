@@ -207,6 +207,31 @@ RTF 0.9857–0.9872 无变化。
 应以它为准。核实：`assets[*]` 除新增 `display_mesh` 外逐字段未变，全世界只剩 1 个
 collision 元素（高度场模型），`physics_heightmap` 条目未变。
 
+### 为什么确定这不影响拍照（代码路径审计 + 输入哈希）
+
+问"会不会影响成像"时，本仓库**做不了像素比对**——任务级不可逐字节复现（起扫位置差
+654 行，见下文）。但对"成像输入有没有变"这个问题，静态证明比像素比对**更强**：
+像素相同只是输入相同的必要条件。四段各自核实：
+
+| 环节 | 证据 |
+|---|---|
+| OptiX 读什么 | `gz_linescan.cpp:1008` `OptixScene(rays, scenePath_, robotPath_, ptxPath_, …)`，`scenePath_` 即 manifest；`optix/scene_io.h` 的 `LoadScene` 遍历 `assets[*].mesh` |
+| 那些字节变没变 | 48 个 mesh 名与 sha256 **全部未变**，`assets[*]` 除新增 `display_mesh` 外逐字段相同（对比 `manifest.json.before_display_mesh`） |
+| OptiX 会不会碰 Ogre2 场景 | `src/agv_linescan/src/optix/` 全目录**零处**引用 gz 渲染；`render_` 在插件中只出现 6 处，全部位于 `backend_=="render"` 分支内（339、919–985 行） |
+| 唯一经 Ogre2 成像的后端 | `render` 在声明 `display_mesh` 的场景上**被启动期拒绝**（`check_display_mesh_backend`） |
+
+反馈回路也查了：雷达回波确实变了，但 `/lidar/*/points` 只是 GZ→ROS 单向桥接
+（`sim.launch.py:349`），**工作区内无任何订阅者**，定位走 GNSS+IMU+轮速，
+所以它改变不了轨迹、也就改变不了拍到哪里。物理侧无关——全世界只剩 1 个 collision
+元素（高度场），terrain 模型没有碰撞体。材质也是分开的：OptiX 用 `ground_material`
+的 6 个 `.raw`，显示 PNG 是 GZ 专用。
+
+**边界**：该结论依赖那条启动期互斥。绕过 `sim.launch.py` 直接用 `render` 后端跑这条路，
+照片就会来自轻量网格。互斥有回归，但它靠"拒绝"而非"分离"——同一 gz server 进程只有
+一个 Ogre2 场景，物理上无法分离。
+
+经验旁证很弱但方向一致：接入后两次采集通过，RTF 0.9857/0.9859 对基线 0.9871/0.9872。
+
 ### 保真度实测（terrain_4，18.3 万个光学顶点）
 
 把轻量面插值到每个光学顶点再与光学高度比较：

@@ -44,7 +44,17 @@
   "optix_input_unchanged": {
     "assets_entries_identical_apart_from_display_mesh": true,
     "mesh_names_and_sha256_unchanged": true,
-    "basis": "compared against manifest.json.before_display_mesh; OptiX LoadScene reads assets[*].mesh"
+    "basis": "compared against manifest.json.before_display_mesh; OptiX LoadScene reads assets[*].mesh",
+    "code_path_audit": {
+      "optix_reads": "gz_linescan.cpp:1008 OptixScene(rays, scenePath_, robotPath_, ptxPath_, ...); scenePath_ is the manifest and optix/scene_io.h LoadScene walks assets[*].mesh",
+      "optix_never_touches_ogre2": "no reference to gz rendering anywhere under src/agv_linescan/src/optix/; render_ appears six times in the plugin, all inside backend_==\"render\" branches",
+      "render_backend_excluded": "check_display_mesh_backend refuses to launch it on a scene declaring display_mesh",
+      "lidar_feedback_ruled_out": "lidar returns do change, but /lidar/*/points is bridged GZ to ROS only and nothing in the workspace subscribes; localisation uses GNSS, IMU and wheel odometry",
+      "physics_unaffected": "the world holds exactly one collision element, the heightmap; terrain models have none",
+      "materials_separate": "OptiX uses the six ground_material .raw payloads; the display PNGs are GZ-only and were not touched by this change",
+      "boundary": "the conclusion rests on the launch-time exclusion. Bypassing sim.launch.py and running the render backend on this road would image the light mesh.",
+      "why_not_pixels": "a mission-level pixel comparison is unavailable here; input identity is the stronger claim, since identical pixels would only be a consequence of it"
+    }
   },
   "reading": "Geometry, not texture, was the dominant term: the raw vertex data fell by 731 MB yet each process fell by about 3.5 GiB, so the Ogre2 footprint is several times the source data. The 1.28 and 0.73 GiB that remain are mostly the still-full-size display textures.",
   "limits": [
