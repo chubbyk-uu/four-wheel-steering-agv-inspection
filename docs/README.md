@@ -13,6 +13,8 @@
 | 编码器、实际轮径与原图尺度误差 | [编码器模型](ENCODER_MODEL.md) |
 | 定位、噪声、延时与外参 | [定位包](../src/agv_localization/README.md)、[误差基线](LOCALIZATION_NOISE_BASELINE.md) |
 | GUI跟车和缩放 | [GUI操作](GUI_CAMERA.md) |
+| 手动驾驶底盘、低速相机试跑 | [手动驾驶](MANUAL_DRIVING.md) |
+| 给文档抓GZ/RViz截图和动图（WSLg） | [抓取窗口](../tools/capture_wslg_window.md) |
 | 100×10 m场景预算及完整采集验收 | [全区域验收](FULL_ROAD_ACCEPTANCE.md) |
 | 恢复道路与处理旧贴图 | [道路资产](ROAD_ASSETS.md) |
 | 离线校正、灰度和后续TIFF | [离线处理](OFFLINE_PROCESSING.md) |

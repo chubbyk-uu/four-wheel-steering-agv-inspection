@@ -1,26 +1,72 @@
 # Four-Wheel Steering AGV Inspection
 
-四轮独立驱动、独立转向（4WIDS）的 ROS 2 / Gazebo 巡检仿真项目。八电机底盘支持横移、斜行和原地旋转；控制器根据实际轮组状态处理驱动反转、转向限位、制动和停稳对轮。
+四轮独立驱动、独立转向（4WIDS）的 ROS 2 / Gazebo **路面巡检仿真**。车辆以弓字形覆盖一块
+矩形路面，车上 4096 像素线阵相机由轮编码器等距触发，逐行扫出约 0.366 mm/像素的灰度原图，
+供离线校正与条带拼接使用。
 
-![AGV](docs/images/agv_large_model.png)
+![一次巡检任务](docs/images/mission_run_loop.gif)
 
-## 当前范围
+*12 秒循环，Gazebo 实时画面。100×10 m 带标识道路，10 km/h 额定采集速度。*
 
-2026-09-14的配置曾通过[实施计划第6节](docs/MISSION_IMPLEMENTATION_PLAN.md)验收；当前默认±2 mm/20 cm高度场道路已完成三种子重复和默认入口全区收尾，稳定采集通过，下一步为离线校正、条带优化与拼接；验证范围见[收尾报告](results/default_road_capture_closure.json)。100×10 m含缓冲区紧凑资产已生成，20×10 m保留作快速回归。
+## 一眼看懂
 
-- 550 kg四悬挂底盘，八电机四驱四转；车辆最高速度15 km/h、额定采集速度10 km/h，加速度0.8、减速度1.0 m/s²。转向硬限位[−280°, +100°]、软限位[−275°, +95°]，四轮一致，静止起步另留20°段余量。
-- 线阵相机20 mm、4096像素/1.5 m，约0.366 mm/像素；编码器等距触发，默认4096行/块，Mono8原图与稀疏末行参考标签归档。
-- 矩形规划、三维RTK/IMU/轮里程计融合、梯形/三角形时间闭环和按轨采集联动已实现。全区域联合验证已覆盖0.5/1.0/2.0/2.778 m/s四档，轨迹间距1 m，换道不后退。
-- OptiX共享几何、颜色＋法线和有界高清瓦片缓存已接入；20×10 m与100×10 m Concrete047A全宽道路均已修正显示UV。`sim.launch.py`基础仿真默认网格；`inspection.launch.py`巡检默认载入100×10 m、±2 mm/20 cm源网格的带标识高度场道路。
-- 暂停恢复、显式补扫/覆盖汇总及RViz任务面板已接入；自主避障、完整条带拼接及TIFF仍待实现。新版独立11 kHz、10 km/h矩形闭环与100×10 m全宽长时验收均已完成（2026-09-14）；旧模型性能不能替代新版验收。
+| | |
+|---|---|
+| ![Gazebo](docs/images/scene_gazebo_default_road.png) | ![RViz](docs/images/scene_rviz_mission_panel.png) |
+| **Gazebo**：±2 mm/20 cm 起伏的 100×10 m 混凝土道路，双黄线、边线、箭头与禁停网格，48 个地形分区，物理走原生高度场 | **RViz 巡检面板**：填区域与速度、预览轨迹、启停采集、覆盖审计与补扫。绿色为规划的 10 条轨道，蓝色为可行驶边界，左上为线阵缩略预览 |
 
-**接续工作先读[当前状态与下一步](docs/CURRENT_STATUS.md)，按任务查[文档索引](docs/README.md)。** 完整约束见[项目规范](PROJECT_SPEC.md)；历史实验已归档，重要问题及证据单独保留入口，踩过的坑汇总在[关键技术问题与解决方案](docs/LESSONS.md)。
+上面 RViz 那张是 100×10 m 正式任务进行中：任务步骤 4/29，已归档 125 张、509,811 行。
+
+## 它在做什么
+
+```
+区域请求 ──▶ 矩形规划 ──▶ 时间闭环跟踪 ──▶ 四轮运动分配 ──▶ 八电机底盘
+  (RViz面板)   10条轨道      梯形/三角形曲线    驱动+转向        4驱4转
+                  │                                              │
+                  │                          RTK双天线+IMU+轮里程计 ──▶ 三维双EKF
+                  │                                              │
+                  └──▶ 按轨采集联动 ◀── 轮编码器等距触发 ◀────────┘
+                            │
+                            ▼
+                    线阵相机（OptiX 光线追踪）
+                            │
+                            ▼
+              Mono8 原图 + 稀疏位姿标签 ──▶ 离线校正 ──▶ 条带拼接（进行中）
+```
+
+采集与成像是两条独立的几何链路：**物理**走原生高度场，**成像**走 OptiX 读取的光学网格，
+**显示**走一套更轻的网格。三者的关系与边界见[场景载入时间](docs/issues/SCENE_LOAD_TIME.md)。
+
+## 关键参数
+
+| | |
+|---|---|
+| 底盘 | 550 kg，四悬挂，八电机四驱四转；车壳 1.9×1.1 m |
+| 速度 | 最高 15 km/h，**额定采集 10 km/h**；加速度 0.8、减速度 1.0 m/s² |
+| 转向 | 硬限位 [−280°, +100°]、软限位 [−275°, +95°]，四轮一致；静止起步另留 20° 段余量 |
+| 相机 | 20 mm 镜头，4096 像素覆盖 1.5 m，**0.3657 mm/行**；编码器等距触发，10 km/h 约 7.59 kHz |
+| 归档 | 默认 4096 行/块，Mono8 线性原图 + 稀疏位姿标签；尾图不足 1000 行丢弃并记缺口 |
+| 道路 | 100×10 m 带标识 Concrete047A，±2 mm/20 cm 源网格，1025² 原生高度场；20 m 版用于快速回归 |
+| 定位 | 双天线 1.10 m 基线，RTK 10 Hz；三维双 EKF（局部连续 + 全局） |
+
+## 现状
+
+100×10 m 全区稳定采集**已验收通过**：10 条轨道 ESTIMATED_COMPLETE、702 块 285.9 万行、
+稳态 RTF 0.997、ROS 与归档逐字节一致。下一步是离线暗场/平场校正与条带拼接。
+
+自主避障、完整拼接与 TIFF 导出**尚未实现**。已知未修问题（道末握手刹车等）见
+[当前状态与下一步](docs/CURRENT_STATUS.md)。
+
+**接续工作先读[当前状态与下一步](docs/CURRENT_STATUS.md)，按任务查[文档索引](docs/README.md)。**
+完整约束见[项目规范](PROJECT_SPEC.md)，踩过的坑见[关键技术问题与解决方案](docs/LESSONS.md)。
 
 ## 环境与安装
 
-基础环境为 **Ubuntu 24.04、ROS 2 Jazzy、Gazebo Harmonic、Python 3.12、C++17/CMake**。支持原生 Linux；已有 WSL2/WSLg 实测，GUI 需要可用硬件图形驱动。ROS/Gazebo 版本配对见[官方说明](https://gazebosim.org/docs/harmonic/ros_installation/)。
+**Ubuntu 24.04、ROS 2 Jazzy、Gazebo Harmonic、Python 3.12、C++17/CMake**。支持原生 Linux；
+已有 WSL2/WSLg 实测，GUI 需要可用硬件图形驱动。版本配对见[官方说明](https://gazebosim.org/docs/harmonic/ros_installation/)。
 
-先按 [ROS 2 Jazzy 安装文档](https://docs.ros.org/en/jazzy/Installation/Ubuntu-Install-Debs.html) 配置 ROS 软件源，再安装：
+先按 [ROS 2 Jazzy 安装文档](https://docs.ros.org/en/jazzy/Installation/Ubuntu-Install-Debs.html)
+配置软件源，再安装：
 
 ```bash
 sudo apt update
@@ -30,153 +76,73 @@ sudo apt install ros-jazzy-desktop ros-jazzy-ros-gz ros-jazzy-gz-ros2-control \
   python3-colcon-common-extensions python3-rosdep build-essential cmake git curl \
   python3-pytest python3-numpy python3-scipy python3-pil python3-yaml python3-psutil \
   python3-matplotlib python3-opencv libopencv-contrib-dev libssl-dev qtbase5-dev
-# 仅首次初始化 rosdep 时执行；若已初始化则跳过：
-sudo rosdep init
+sudo rosdep init   # 仅首次；已初始化则跳过
 rosdep update
 ```
 
-ROS 使用系统 Python，避免用 Conda 环境替换。烘焙需要 OpenCV contrib 的 `cv2.ximgproc.thinning`：
+ROS 使用系统 Python，避免用 Conda 替换。烘焙需要 OpenCV contrib 的 `cv2.ximgproc.thinning`：
 
 ```bash
 python3 -c 'import cv2; assert hasattr(cv2.ximgproc, "thinning")'
 ```
 
-## 从 GitHub 恢复与构建
-
-仓库本身就是 colcon 工作区，直接在仓库根目录构建：
+仓库本身就是 colcon 工作区：
 
 ```bash
 git clone https://github.com/chubbyk-uu/four-wheel-steering-agv-inspection.git
 cd four-wheel-steering-agv-inspection
 source /opt/ros/jazzy/setup.bash
 rosdep install --from-paths src --ignore-src --rosdistro jazzy -y
-# 基础构建不要求 NVIDIA GPU、CUDA 或 OptiX：
-colcon build --symlink-install --cmake-args -DAGV_ENABLE_CUDA=OFF
+colcon build --symlink-install --cmake-args -DAGV_ENABLE_CUDA=OFF   # 基础构建不需要 GPU
 source install/local_setup.bash
 ```
 
-默认采用`RelWithDebInfo`优化构建（保留调试符号）；显式`-DCMAKE_BUILD_TYPE=Debug`仍可用于调试，但不能拿未优化构建做实时率验收。场景校验使用随包编译的pybind11解析器，构建依赖由上述rosdep命令安装，仍保留Python后备实现。
-
-基础构建可以控制底盘、运行解析网格/慢速 Ogre2 参考采样，不承诺高行频性能。恢复不依赖其他机器人项目、个人目录或历史 /tmp 文件。
+默认 `RelWithDebInfo`。基础构建可以控制底盘、跑解析网格或慢速 Ogre2 参考采样，
+**不承诺高行频性能**；未优化构建不能用于实时率验收。
 
 ## 快速运行
 
-完整巡检界面：按[道路资产指南](docs/ROAD_ASSETS.md)恢复默认100×10 m、±2 mm/20 cm源网格的带标识1025²高度场道路并配置OptiX后，运行`ros2 launch agv_bringup inspection.launch.py`（原生Linux加`gpu_backend:=native`）。RViz显示同源低清跑道及可行驶边界，速度输入使用km/h、上限10 km/h。右侧面板提供区域编辑、预览、采集控制、覆盖审计和补扫；默认等待操作，详见[面板使用说明](docs/RECTANGLE_EXECUTION.md#rviz巡检任务面板)。
-
-正常巡检不注入暂停；验证暂停使用显式`--pause-probe`。
-
-原生 Linux：
+完整巡检界面（先按[道路资产指南](docs/ROAD_ASSETS.md)恢复默认道路并配置 OptiX）：
 
 ```bash
-ros2 launch agv_bringup sim.launch.py gpu_backend:=native rviz:=true
+ros2 launch agv_bringup inspection.launch.py          # 原生 Linux 加 gpu_backend:=native
 ```
 
-WSL2 + WSLg + NVIDIA：
+RViz 右侧面板提供区域编辑、预览、采集控制、覆盖审计和补扫，速度输入 km/h、上限 10；
+默认等待操作，不自动开跑。面板用法见[执行说明](docs/RECTANGLE_EXECUTION.md#rviz巡检任务面板)。
+正常巡检不注入暂停，验证暂停用显式 `--pause-probe`。
+
+只要底盘不要巡检：
 
 ```bash
-ros2 launch agv_bringup sim.launch.py rviz:=true
+ros2 launch agv_bringup sim.launch.py rviz:=true      # WSL2 + WSLg + NVIDIA
 ```
 
-WSL 默认 Mesa D3D12/NVIDIA；其他显卡可指定 `gpu_adapter:=AMD` 或 `Intel`。无 GUI 用 `headless:=true`。默认从 AGV 后方朝道路延伸方向（+X）观察，使用 `FOLLOW_LOOK_AT` 跟随并始终看向车辆，跟车时锁定拖动朝向和平移，滚轮缩放并保持跟车距离；`follow_camera:=false` 关闭跟车，`gui_config:=/path/to/gui.config` 自定义。操作与验证见[视角说明](docs/GUI_CAMERA.md)。
+WSL 默认 Mesa D3D12/NVIDIA，其他显卡用 `gpu_adapter:=AMD` 或 `Intel`，无 GUI 用
+`headless:=true`。默认从车后沿 +X 观察并跟随看向车辆；`follow_camera:=false` 关闭跟车。
+视角操作见[视角说明](docs/GUI_CAMERA.md)，手动驾驶指令见[手动驾驶](docs/MANUAL_DRIVING.md)。
 
-另开终端，进入同一仓库并加载环境：
+道路默认使用轻量显示网格（GZ 与雷达用，成像不经过它）。需要全量显示几何时：
 
 ```bash
-source /opt/ros/jazzy/setup.bash
-source install/local_setup.bash
-python3 tools/command_velocity.py --vx 0.5 --seconds 5
-python3 tools/command_velocity.py --vy 0.5 --seconds 5
-python3 tools/command_velocity.py --vx 0.3 --vy 0.3 --seconds 5
-python3 tools/command_velocity.py --wz 0.3 --seconds 5
+ros2 launch agv_bringup inspection.launch.py \
+  scene_manifest:=assets/road/<road>/manifest_full_visual.json
 ```
 
-工具结束时发送零速度。`/cmd_vel` 是车体坐标系 `geometry_msgs/msg/TwistStamped`，使用 `linear.x/y`、`angular.z` 及当前仿真时间。只运行一个指令发布者，不绕过控制器直接操作关节；切换运动可能先进入 BRAKE、ALIGN，再 DRIVE。
+## 其他入口
 
-低速网格相机示例（替换上面的启动命令，不同时启动两个实例）：
+| 主题 | 文档 |
+|---|---|
+| 道路资产恢复、生成、旧样片烘焙 | [ROAD_ASSETS](docs/ROAD_ASSETS.md) |
+| 离线暗场/平场与条带处理 | [OFFLINE_PROCESSING](docs/OFFLINE_PROCESSING.md) |
+| CUDA / OptiX 安装与后端 | [OPTIX_SETUP](docs/OPTIX_SETUP.md) |
+| WSL 项目专用 Mesa 修复版 | [MESA_SETUP](docs/MESA_SETUP.md) |
+| 手动驾驶与低速相机试运行 | [MANUAL_DRIVING](docs/MANUAL_DRIVING.md) |
+| 场景载入时间与显示资产 | [SCENE_LOAD_TIME](docs/issues/SCENE_LOAD_TIME.md) |
+| 观察验收约定 | [VISUAL_ACCEPTANCE](docs/VISUAL_ACCEPTANCE.md) |
 
-```bash
-ros2 launch agv_bringup sim.launch.py gpu_backend:=native \
-  linescan:=true linescan_backend:=analytic
-# 另一个已加载环境的终端：
-ros2 service call /linescan/set_enabled std_srvs/srv/SetBool '{data: true}'
-python3 tools/command_velocity.py --vx 0.1 --seconds 5
-ros2 service call /linescan/set_enabled std_srvs/srv/SetBool '{data: false}'
-```
-
-采集目录默认 `/tmp/agv_linescan`，可用 `capture_dir:=/path/to/capture` 修改。原图 `/linescan/image_raw`，显示用 `/linescan/image_preview`。正式 GZ 场景参考后端为 `linescan_backend:=render`。
-
-## WSL项目专用Mesa修复版
-
-本机已独立构建Mesa 25.2.8命令签名缓存修复版。新机器构建和切换见[私有Mesa恢复指南](docs/MESA_SETUP.md)，验证边界见[内存问题记录](docs/issues/CAPTURE_MEMORY_GROWTH.md)。独立库不上传Git，干净检出需先按该文档构建；缺失时脚本明确报错，不静默使用旧版。
-
-加载ROS和项目环境后，从项目根目录运行：
-
-```bash
-# 默认使用项目修复版；作用仅限这条命令及其子进程
-python3 tools/with_mesa_runtime.py ros2 launch agv_bringup inspection.launch.py
-# 切回系统版：同一命令增加 --system
-python3 tools/with_mesa_runtime.py --system ros2 launch agv_bringup inspection.launch.py
-```
-
-退出当前实例再切换，不同时启动两套仿真。需要实验性OptiX运行库时，可组合为
-`python3 tools/with_mesa_runtime.py bash tools/with_optix_runtime.sh COMMAND ...`。
-普通`ros2 launch`不会自动启用修复版；原生Linux继续使用原启动方式，不启用这个仅构建D3D12的专用包。
-
-## 图块尺寸与离线校正
-
-相机默认输出线性Mono8灰度图。RViz的`/linescan/image_preview`及文档样片使用sRGB显示转换提亮中间调；原图与离线校正PGM保持线性。`linescan.yaml`中的`preview_srgb: false`可关闭预览转换，曝光和补光不随显示设置改变。
-
-默认完整原图为 **4096×4096**，纵向每图行数由 `src/agv_description/config/linescan.yaml` 的 `block_rows` 配置。OptiX/C++启动时也可传 `scan_block_rows:=2048` 改为4096×2048；默认仍为4096行。普通暂停保留缓存；结束、取消或故障时，默认丢弃不足1000行的尾图并记录行号缺口，达到1000行则按实际行数保存，不填充或重复扫描行。阈值由`min_tail_rows`配置，0表示保留所有非空尾图。
-
-正式流程只在线采集原图；平场和畸变在归档后离线处理，不设置 `correction_profile` 即不会启动在线校正节点。使用与当前安装/曝光相匹配的标定文件，处理完整 `session_cpp_*` 目录：
-
-```bash
-python3 tools/correct_linescan_session.py \
-  --input /path/to/capture/session_cpp_TIMESTAMP \
-  --profile /path/to/calibration_matching_current_capture.json \
-  --output /path/to/new_corrected_directory
-```
-
-无需启动ROS、Gazebo或GPU。输出目录必须新建；原图不改动，行数、首末时间和少量位置标签保留。缺块/图像尺寸不符或标定条件不匹配会报错。仓库中的`linescan_calibration_concrete_16mm.json`仅用于旧版档案；当前20 mm/v7及新版条光的标定仍需重新生成，不能直接套用旧文件。详见[离线处理指南](docs/OFFLINE_PROCESSING.md)。
-
-## 可选 CUDA / OptiX
-
-完整分平台步骤见 [OptiX：原生 Linux 与 WSL2 安装指南](docs/OPTIX_SETUP.md)。
-
-高行频后端需要 NVIDIA GPU 和 CUDA toolkit；已有测试组合为 CUDA 12.8、OptiX SDK 9.1.0、RTX 5080。该组合不是最低硬件规格，也不保证其他硬件相同性能。
-
-CUDA 安装按 [NVIDIA 指南](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/)，OptiX SDK 从 [NVIDIA 官方仓库](https://github.com/NVIDIA/optix-sdk/releases/tag/v9.1.0) 获取。SDK、运行库和驱动不随本仓库分发。
-
-```bash
-source /opt/ros/jazzy/setup.bash
-colcon build --symlink-install --cmake-args \
-  -DAGV_ENABLE_CUDA=ON -DAGV_ENABLE_OPTIX=ON \
-  -DAGV_OPTIX_SDK="$HOME/opt/optix-sdk-9.1.0"
-source install/local_setup.bash
-python3 tools/generate_shared_scene.py --output /tmp/agv_flat_scene
-# 原生 Linux，需驱动提供可用 libnvoptix：
-ros2 launch agv_bringup sim.launch.py gpu_backend:=native \
-  linescan:=true linescan_backend:=optix \
-  scene_manifest:=/tmp/agv_flat_scene/manifest.json spawn_x:=2
-```
-
-WSL OptiX 是**实验性单独配置**，基础 CUDA 可用不表示 OptiX 可用。详见 [WSL 实验记录](docs/archive/stage2/STAGE2_OPTIX_WSL.md)。已有相容隔离运行库时，配置 `AGV_OPTIX_RUNTIME`，通过 `bash tools/with_optix_runtime.sh bash` 进入子进程，再加载 ROS 和工作区并启动。脚本不安装驱动或替换系统库；新机器需要重新验证，不能仅靠克隆复现驱动兼容性。
-
-## 恢复混凝土样片
-
-Git工作树包含三张 AI 缺陷原图、烘焙脚本、下载元数据和校验摘要；不包含 8K 源颜色图、下载 ZIP 或高分辨率图块。基础仿真不需要下载纹理。
-
-```bash
-python3 tools/fetch_ambient_concrete.py
-# 需要代理时自行填写：--proxy http://127.0.0.1:7890
-python3 tools/bake_concrete_road.py --output assets/road/baked_concrete047a_v1
-python3 tools/check_baked_road.py assets/road/baked_concrete047a_v1
-python3 tools/preview_baked_road.py assets/road/baked_concrete047a_v1
-```
-
-输出目录必须不存在，防止覆盖已有资产。下载约 1 GB，样片约 1.6 GiB，建议为此过程预留至少 4 GiB 磁盘空间；100 × 10 m 全场资产需要更多。OptiX有界材质缓存已实现；上述命令只恢复旧版平面样片。当前100 m默认道路及20 m回归道路的恢复入口见[当前道路恢复指南](docs/ROAD_ASSETS.md)，不能把全场高清图块一次性装进显存。
-
-Concrete047A 为 [ambientCG CC0 素材](https://ambientcg.com/view?id=Concrete047A)。官方物理尺寸未给出，暂按整张 2.1 m 映射。烘焙约 0.25 mm/纹素；裂缝尖端、分叉和最终相机像素宽度仍需独立验证。[当前样片](docs/images/concrete047a_comparison.png)。
+WSL 专用 Mesa 与 OptiX 实验运行库**不随仓库分发**，干净检出需先按各自文档构建；
+缺失时脚本明确报错，不静默回退旧版。
 
 ## 检查与项目结构
 
@@ -184,23 +150,27 @@ Concrete047A 为 [ambientCG CC0 素材](https://ambientcg.com/view?id=Concrete04
 colcon test > /tmp/agv_tests.log 2>&1
 colcon test-result --verbose
 python3 tools/check_model.py
-python3 -m pytest -q tools/test_concrete_quilt.py
 ```
 
-OptiX/GPU 测试需要对应硬件和运行库；纯 CPU 构建不注册这些可选 GPU 测试。历史结果见 `results/`，不是新机器的测试保证。
+OptiX/GPU 测试需要对应硬件与运行库；纯 CPU 构建不注册这些可选测试。
+`results/` 是历史结果，不是新机器的测试保证。
 
 | 路径 | 内容 |
 | --- | --- |
 | `src/agv_description` | 几何、URDF、机械与相机参数 |
 | `src/agv_control` | 四轮运动分配、转向限位与状态机 |
 | `src/agv_linescan` | 触发、采样、辐射、标定及可选 GPU 后端 |
+| `src/agv_mission` | 矩形规划、跟踪、采集联动与覆盖审计 |
+| `src/agv_localization` | 双天线 GNSS、IMU、轮里程计与双 EKF |
 | `src/agv_bringup` | 启动、GUI/RViz、控制配置 |
 | `tools` | 资产生成、验证和操作工具 |
 | `assets/road` | AI 原图、来源摘要及恢复说明 |
 | `docs` / `results` | 技术记录、样片和历史验证摘要 |
 
-源码按 Apache-2.0 分发；外部素材与生成资产说明见 [THIRD_PARTY.md](THIRD_PARTY.md)。公开仓库不含旧本地 Git 历史、机器工作约定、原始进程日志、个人代理配置、SDK/驱动、构建目录和完整采集数据。详见[发布范围](docs/REPOSITORY.md)。
+源码按 Apache-2.0 分发；外部素材与生成资产说明见 [THIRD_PARTY.md](THIRD_PARTY.md)。
+公开仓库不含旧本地 Git 历史、原始进程日志、SDK/驱动、构建目录和完整采集数据，
+详见[发布范围](docs/REPOSITORY.md)。
 
-已有旧版全宽道路若在GUI中看不到中央双黄线，请按[路面显示对齐说明](docs/issues/ROAD_DISPLAY_ALIGNMENT.md)迁移显示UV；无需重新下载或烘焙高清纹素。新生成的道路已使用修订后的映射。
-
-控制、GUI、贴图与采图变更的实际观察验收见[验收约定](docs/VISUAL_ACCEPTANCE.md)，其中列明现有工具及各自验证范围。
+本页动图与截图都是**真实运行中的窗口抓取**，不是渲染出来的示意图。WSLg 下 Linux 侧
+录屏工具抓到的是黑帧，抓取方式与裁剪参数见
+[从 WSLg 抓取窗口](tools/capture_wslg_window.md)。

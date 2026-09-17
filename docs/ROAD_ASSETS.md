@@ -140,3 +140,25 @@ LD_LIBRARY_PATH=/usr/local/cuda/lib64 python3 tools/validate_road_test_markings.
 ```
 
 正常巡检与`validate_operator_session.py`不再默认注入第一道暂停；验收暂停使用显式`--pause-probe`，原`--no-pause`兼容保留。未传`--scene`时验证器使用巡检launch的默认资产，而非另持一份道路默认值。
+
+## 恢复旧版混凝土样片（从 README 移入，内容未改）
+
+Git 工作树包含三张 AI 缺陷原图、烘焙脚本、下载元数据和校验摘要；不包含 8K 源颜色图、
+下载 ZIP 或高分辨率图块。基础仿真不需要下载纹理。
+
+```bash
+python3 tools/fetch_ambient_concrete.py
+# 需要代理时自行填写：--proxy http://127.0.0.1:7890
+python3 tools/bake_concrete_road.py --output assets/road/baked_concrete047a_v1
+python3 tools/check_baked_road.py assets/road/baked_concrete047a_v1
+python3 tools/preview_baked_road.py assets/road/baked_concrete047a_v1
+```
+
+输出目录必须不存在，防止覆盖已有资产。下载约 1 GB，样片约 1.6 GiB，建议为此过程预留至少
+4 GiB 磁盘空间；100 × 10 m 全场资产需要更多。OptiX 有界材质缓存已实现；**上述命令只恢复
+旧版平面样片**，当前 100 m 默认道路及 20 m 回归道路的恢复入口见本文前面各节，
+不能把全场高清图块一次性装进显存。
+
+Concrete047A 为 [ambientCG CC0 素材](https://ambientcg.com/view?id=Concrete047A)。官方物理
+尺寸未给出，暂按整张 2.1 m 映射。烘焙约 0.25 mm/纹素；裂缝尖端、分叉和最终相机像素宽度仍
+需独立验证。[当前样片](images/concrete047a_comparison.png)。
