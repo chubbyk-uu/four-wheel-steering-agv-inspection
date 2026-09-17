@@ -1,0 +1,55 @@
+{
+  "schema": "agv.display_mesh_runtime_ab.v1",
+  "scene": "assets/road/runtime_fullwidth_100m_rough_2mm_20cm_v1",
+  "scope": "Non-default asset on purpose, so the default inspection road is untouched. One launch each, derived cache warmed for both configurations, no leftover gz or rviz2 process before either, mesh change only with the display textures unchanged. Per-process RSS sampled every 2 s; no VRAM counter in this harness.",
+  "adopted": {
+    "assets": 48,
+    "optical_triangles": 7712280,
+    "display_triangles": 92508,
+    "triangle_ratio": 83.36878972629394
+  },
+  "baseline": {
+    "plateau_s": 50.9,
+    "peak_rss_MiB": 9990,
+    "gz_processes": [
+      {
+        "starts_s": 10.0,
+        "peak_rss_MiB": 4775
+      },
+      {
+        "starts_s": 34.5,
+        "peak_rss_MiB": 4196
+      }
+    ]
+  },
+  "light": {
+    "plateau_s": 33.6,
+    "peak_rss_MiB": 3010,
+    "gz_processes": [
+      {
+        "starts_s": 4.0,
+        "peak_rss_MiB": 1281
+      },
+      {
+        "starts_s": 23.4,
+        "peak_rss_MiB": 728
+      }
+    ]
+  },
+  "delta": {
+    "plateau_s": -17.299999999999997,
+    "peak_rss_MiB": -6980
+  },
+  "optix_input_unchanged": {
+    "assets_entries_identical_apart_from_display_mesh": true,
+    "mesh_names_and_sha256_unchanged": true,
+    "basis": "compared against manifest.json.before_display_mesh; OptiX LoadScene reads assets[*].mesh"
+  },
+  "reading": "Geometry, not texture, was the dominant term: the raw vertex data fell by 731 MB yet each process fell by about 3.5 GiB, so the Ogre2 footprint is several times the source data. The 1.28 and 0.73 GiB that remain are mostly the still-full-size display textures.",
+  "limits": [
+    "one run per configuration, so the time figure deserves repeats; the memory difference is far outside any run-to-run variation seen here",
+    "this asset carries no physics heightmap, so its terrain models still have collision elements; the default road does not",
+    "GZ and RViz windows were not inspected by eye in this run",
+    "lidar returns were not compared; the display mesh drops joints up to 3 mm deep"
+  ]
+}

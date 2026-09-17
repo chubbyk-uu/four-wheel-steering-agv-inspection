@@ -155,14 +155,46 @@ sRGB 下缩的，RViz 代理在棱边和标线处有这个量级的误差——�
 `gz_display_triangles`（旧字段名留在历史 results 文件里，当时 visual 确实等于 optix，
 不回改）。回归见 `test_display_mesh.py`（11 项）与 `test_derived_cache.py`。
 
+### `render` 后端互斥（已完成）
+
+`sim.launch.py` 的 `check_display_mesh_backend()`：场景一旦声明 `display_mesh`，
+`linescan_backend=='render'` **直接拒绝启动**。同一 gz server 进程只有一个 Ogre2 场景，
+无法让雷达用轻量而 render 用精细，所以分离只能发生在这里——宁可拒绝，也不让一次采集
+悄悄拍到显示副本上。回归在 `test_gui_startup.py`。
+
+### 非默认资产上的运行时 A/B（已完成，`results/display_mesh_runtime_ab.json`）
+
+在 `runtime_fullwidth_100m_rough_2mm_20cm_v1` 上接入（**故意选非默认资产**，默认巡检
+道路未动）。`tools/adopt_display_meshes.py` 可逆：只有 manifest.json 与 world.sdf 被
+改动且先行备份，其余全是新增文件；往返测试后两个文件**逐字节复原**、无残留。
+
+**只改网格，贴图原封未动：**
+
+| | 基线 | 轻量显示网格 | 变化 |
+|---|---|---|---|
+| 到达内存平台 | 50.9 s | **33.6 s** | **−17.3 s** |
+| 总峰值 RSS | 9.76 GiB | **2.94 GiB** | **−6.82 GiB** |
+| gz server | 4775 MiB | **1281 MiB** | −3494 MiB |
+| gz GUI | 4196 MiB | **728 MiB** | −3468 MiB |
+
+**这回答了前面"约 2.6 GiB 没有归属"那个问题：主导项是几何，不是贴图。** 原始顶点数据
+只减少了 731 MB，而每个进程降了约 3.5 GiB——Ogre2 的几何占用是源数据的数倍（CPU 影子
+副本、索引缓冲、顶点格式展开）。剩下的 1.28 / 0.73 GiB 主要就是仍为全尺寸的显示贴图。
+
+**成像输入未变，静态可证**：与 `manifest.json.before_display_mesh` 比对，`assets[*]`
+除新增 `display_mesh` 外逐字段相同，`mesh` 名与 `sha256` 全部未变；OptiX 的
+`LoadScene` 读的正是 `assets[*].mesh`。这比跑一次像素 A/B 更强，也不受
+[任务级不可复现](#验证设计的前置任务级像素相等判据不可用已实测)的影响。
+
+**限制**：每种配置各一次运行，时间数字值得复测（内存差远超此处观察到的运行间波动）；
+该资产没有物理高度场，其 terrain 模型仍带 collision 元素，默认道路没有；
+本轮**没有用眼睛看 GZ/RViz 窗口**；**没有比对雷达回波**，而显示网格丢掉了最深 3 mm 的接缝。
+
 ### 还没做
 
-- **`sim.launch.py` 的 `render` 后端互斥**：`linescan_backend=='render'` 时必须强制精细
-  并拒绝显式 light。同一 gz server 进程只有一个 Ogre2 场景，这条只能在启动期做。
-- 生成资产并接入（先在非默认资产
-  `runtime_fullwidth_100m_rough_2mm_20cm_v1` 上实跑，再上默认道路）。
-  `results/light_display_assets.json` 的 `meshes.manifest_entries` 已是 `validate`
-  期望的形状，48 条，可直接并入 manifest。
+- 默认巡检道路尚未接入。
+- 四组矩阵（原版 / 只减网格 / 只减贴图 / 两者）——网格这一格已由上表给出。
+- 贴图那半：按上面的归因，它现在是剩余项的主导，但省的是内存不是时间。
 
 已确认**不受影响**：OptiX `scene_io.h` 只读已知键、`test_scene_io.cpp` 不做严格键集
 断言，故 `display_mesh` 作为可选字段、schema 保持 v1，C++ 侧不必重建；六个写该 schema

@@ -74,3 +74,24 @@ def test_readiness_evidence_is_atomic_and_explicit(tmp_path):
     assert isinstance(evidence['pid'], int)
     assert evidence['wall_monotonic_s'] > 0
     assert list(ready.parent.glob('*.tmp.*')) == []
+
+
+def scene(display):
+    assets = [{'name': 'terrain_0', 'mesh': 'terrain_0.obj'}]
+    if display:
+        assets[0]['display_mesh'] = {'mesh': 'display_terrain_0.obj'}
+    return {'assets': assets}
+
+
+def test_render_backend_is_refused_on_a_scene_with_a_lighter_display_mesh():
+    """One Ogre2 scene per server, so this cannot be separated by assets."""
+    import pytest
+    with pytest.raises(ValueError, match='display_mesh'):
+        sim.check_display_mesh_backend(scene(True), 'render')
+
+
+def test_other_backends_and_plain_scenes_are_unaffected():
+    for backend in ('optix', 'cuda_grid', 'cuda_tiles', 'analytic'):
+        sim.check_display_mesh_backend(scene(True), backend)
+    for backend in ('render', 'optix'):
+        sim.check_display_mesh_backend(scene(False), backend)

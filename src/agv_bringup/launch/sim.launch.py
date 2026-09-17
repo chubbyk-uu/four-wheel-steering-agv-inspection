@@ -32,6 +32,22 @@ def gui_readiness_timeout(retry_delay, retries):
                + GUI_READINESS_MARGIN_S)
 
 
+def check_display_mesh_backend(shared, backend):
+    """Refuse the render backend on a scene that shows GZ a lighter mesh.
+
+    A scene may declare display_mesh, a lighter surface for GZ alone, while
+    OptiX keeps imaging manifest["assets"]. The render backend takes its
+    pixels from the Ogre2 scene built from the visual, and one gz server
+    process has a single such scene, so the lidars cannot keep the light mesh
+    while this camera keeps the fine one. There is no asset substitution that
+    separates them, so the separation has to happen here: refuse, rather than
+    let a capture quietly come off the display copy.
+    """
+    if backend == 'render' and any('display_mesh' in a for a in shared['assets']):
+        raise ValueError('this scene declares a lighter display_mesh for GZ, which the render '
+                         'backend would image; use the optix backend or a scene without one')
+
+
 def validate_gui_options(delay, retry_delay, retries):
     if not math.isfinite(delay) or not 0 <= delay <= 120:
         raise ValueError('gui_start_delay must be within [0, 120] seconds')
@@ -104,6 +120,8 @@ def setup(context):
         validate_spawn_position(shared, spawn_x, spawn_y)
         if linescan and backend not in ('render', 'optix'):
             raise ValueError('shared 3D scene supports render or optix only; planar samplers cannot represent this geometry')
+        if linescan:
+            check_display_mesh_backend(shared, backend)
     if linescan and backend == 'optix' and not shared_manifest:
         raise ValueError('optix requires a validated scene_manifest')
     if linescan and backend in ('cuda_grid', 'cuda_tiles') and LaunchConfiguration('scan_probe').perform(context).lower() == 'true':
