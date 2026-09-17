@@ -1,0 +1,239 @@
+{
+  "schema": "agv.capture_close_handshake_fix.v1",
+  "date": "2026-09-17",
+  "change": {
+    "file": "src/agv_mission/agv_mission/execution_node.py",
+    "was": "if self.capture.future is not None and (self.core is None or not self.capture.target):",
+    "now": "if self.capture.future is not None and self.core is None:",
+    "effect": "the exemption the open direction already had is now symmetric. A handshake no longer halts a segment that is running; it still halts before a tracker exists, which is where a new SegmentTracker is built, so \"the close must land before the next segment\" is unchanged."
+  },
+  "measurement": {
+    "quantities": "capture_pending run length in control ticks, and Mode::Brake with reason STOP_REQUEST inside a PASS step",
+    "source": "per-tick fields already archived by execution_node; no instrumentation was added",
+    "tool": "tools/analyze_capture_handshake.py",
+    "why_not_count_stops": "the symptom is a race between a service round trip and one 20 ms control tick, so a stop count measures the day's scheduling as much as the code. A handshake inside one tick cannot halt anything: the future is set after that tick's command is issued, so ticks-1 is the number of ticks spent in the halt branch."
+  },
+  "target": {
+    "command": "tools/validate_operator_session.py --start-x 6 --start-y -5 --spawn-x 3 --length 3 --width 10 --speed 2.777777777777778 --rounds 4 --no-cancel-probe",
+    "why_three_metres_is_faithful": "planner.py sets lead = v^2/2a + margin and runout = max(v^2/2d, overrun) + margin, neither of which contains the region length, and a PASS is one rest-to-rest profile over lead + length + runout. At 2.7778 m/s that is lead 4.9225 m, runout 7.2225 m mid-track and 4.9225 m on the last, ramp 9.6451 m, total 12.85-15.15 m. Full speed is reached and the state at the close -- 6.6568 m remaining at 2.7778 m/s mid-track, 4.3568 m at 2.6403 m/s on the last -- is identical to the 100 m mission, digit for digit. What changes is only the cruise: 1.08 s instead of 36 s, so ten track ends arrive in about four minutes instead of thirteen.",
+    "measured_peak_speed_m_s": [
+      2.9501710744910143,
+      2.943864000026939
+    ]
+  },
+  "before": {
+    "rounds": 4,
+    "track_ends": 40,
+    "closes_over_one_tick": 10,
+    "closes_over_one_tick_that_latched_brake": 10,
+    "opens": 40,
+    "opens_over_one_tick": 40,
+    "opens_that_latched_brake": 0,
+    "sustained_in_pass_brake_episodes": 10,
+    "per_round": [
+      {
+        "task": "20260917_162331_4d904b",
+        "close_ticks": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          2,
+          2
+        ],
+        "over_one_tick": 2,
+        "latched": 2,
+        "sustained_brake_episodes": 2
+      },
+      {
+        "task": "20260917_163023_d7ebd1",
+        "close_ticks": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          2
+        ],
+        "over_one_tick": 1,
+        "latched": 1,
+        "sustained_brake_episodes": 1
+      },
+      {
+        "task": "20260917_163737_1a0874",
+        "close_ticks": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          2,
+          2,
+          2,
+          2
+        ],
+        "over_one_tick": 4,
+        "latched": 4,
+        "sustained_brake_episodes": 4
+      },
+      {
+        "task": "20260917_164445_42b71d",
+        "close_ticks": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          2,
+          2,
+          2
+        ],
+        "over_one_tick": 3,
+        "latched": 3,
+        "sustained_brake_episodes": 3
+      }
+    ]
+  },
+  "after": {
+    "rounds": 4,
+    "track_ends": 40,
+    "closes_over_one_tick": 22,
+    "closes_over_one_tick_that_latched_brake": 0,
+    "opens": 40,
+    "opens_over_one_tick": 40,
+    "opens_that_latched_brake": 0,
+    "sustained_in_pass_brake_episodes": 0,
+    "per_round": [
+      {
+        "task": "20260917_165406_de9676",
+        "close_ticks": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          2,
+          2,
+          2
+        ],
+        "over_one_tick": 3,
+        "latched": 0,
+        "sustained_brake_episodes": 0
+      },
+      {
+        "task": "20260917_170048_cad5e7",
+        "close_ticks": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          2,
+          2,
+          2,
+          2,
+          2
+        ],
+        "over_one_tick": 5,
+        "latched": 0,
+        "sustained_brake_episodes": 0
+      },
+      {
+        "task": "20260917_170754_ba4c22",
+        "close_ticks": [
+          1,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          3
+        ],
+        "over_one_tick": 9,
+        "latched": 0,
+        "sustained_brake_episodes": 0
+      },
+      {
+        "task": "20260917_171452_f7754f",
+        "close_ticks": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          2,
+          2,
+          2,
+          2,
+          2
+        ],
+        "over_one_tick": 5,
+        "latched": 0,
+        "sustained_brake_episodes": 0
+      }
+    ]
+  },
+  "historic_full_area_baseline": {
+    "runs": 5,
+    "track_ends": 50,
+    "closes_over_one_tick": 6,
+    "closes_over_one_tick_that_latched_brake": 6,
+    "opens_over_one_tick": 50,
+    "opens_that_latched_brake": 0,
+    "per_run": [
+      {
+        "run": "accept_rated_6",
+        "over_one_tick": 0,
+        "latched": 0
+      },
+      {
+        "run": "rough100_full_rated_4",
+        "over_one_tick": 2,
+        "latched": 2
+      },
+      {
+        "run": "rough100_v2_full_rated_1",
+        "over_one_tick": 3,
+        "latched": 3
+      },
+      {
+        "run": "default_2mm_closure_1",
+        "over_one_tick": 0,
+        "latched": 0
+      },
+      {
+        "run": "display_mesh_full_1",
+        "over_one_tick": 1,
+        "latched": 1
+      }
+    ]
+  },
+  "verdict": "Before: 10 of 40 close handshakes outlasted one control tick and all 10 latched Brake. After: 22 of 40 outlasted one tick and none latched. Counted independently as sustained (>=0.4 s) in-pass brake episodes: 10 before, 0 after, each of the ten lasting 140-142 ticks, which is the 2.8 s coast from 2.78 m/s the mechanism predicts.",
+  "caveats": [
+    "The two sessions are not a controlled comparison of the over-one-tick RATE. The before session ran alongside two orphaned nodes left by an earlier GIF-recording session (mission_operator and execution_node, 12-15% CPU each), which were found and killed between the two groups. The rate is a property of service latency, not of this change.",
+    "The after session nevertheless showed the HIGHER rate (22/40 against 10/40). One plausible reason is that the fix keeps the vehicle driving through the handshake, so the camera keeps sampling at 7.59 kHz while the service is answered, where before the halt reduced that load. This is a hypothesis, not a measurement. Either way it makes the result conservative: the after group had more than twice the exposure and still zero latches.",
+    "Data quality was unchanged: every round in both groups reached ESTIMATED_COMPLETE with no quality flags and no unverified span; steady RTF 0.9920 before, 0.9905 after.",
+    "The operator independently saw one of the before-group stops in the GUI while it ran, which is the same event the archive records."
+  ],
+  "tests": {
+    "file": "src/agv_mission/test/test_capture_handshake_halt.py",
+    "cases": 5,
+    "note": "two fail on the old condition and three pass on both -- those three are the invariants the change must not break: an open must not halt a running pass, an idle tick is untouched, and a pending handshake still halts at a segment boundary."
+  }
+}

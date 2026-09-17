@@ -289,10 +289,14 @@ class Executor(Node):
                 self.state='ACQUIRED' if self.capture.enabled else 'COMPLETED'
             return
         step=self.steps[self.index]
-        # A pending close still halts the step, and so does any toggle before the
-        # tracker exists. An open now happens while a pass is already driving its
-        # lead-in, and must not brake the vehicle for the duration of a handshake.
-        if self.capture.future is not None and (self.core is None or not self.capture.target):
+        # Any toggle halts before the tracker exists, which is what keeps "the
+        # close must land before the next segment" true: a new SegmentTracker is
+        # only built below, in this same branch. Neither direction may halt a
+        # segment already running, though. Measured over five full-area runs, an
+        # open outlasted one control tick 50 times out of 50 and a close 6 times
+        # out of 50; the close was the only one that halted, and all six of those
+        # latched Mode::Brake mid-pass and stopped the vehicle from 10 km/h.
+        if self.capture.future is not None and self.core is None:
             self.command([0,0,0]);return
         if self.core is None:
             self.command([0,0,0])

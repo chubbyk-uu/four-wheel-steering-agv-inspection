@@ -41,7 +41,7 @@
 - [掉头对轮后航向保护](issues/POST_TURN_HEADING.md)：对轮导致车身偏转、DRIVE不能作为唯一开采条件，前导段闭环恢复与原保护保留。
 - [扫描摆动、后退调整、预览与条光](issues/SCAN_STABILITY.md)：保留调参前后原图和定位误差对照。
 - [沟槽碰撞简化](issues/COLLISION_PROXY.md)：视觉/碰撞边界、成本与不适用工况。
-- [道末采集关闭握手把整车刹停](issues/CAPTURE_CLOSE_HANDSHAKE_BRAKE.md)：关闭握手期间发零速度导致摆臂锁存Brake，30个道末中5次，代价约2–3 s；不影响采集数据，未修复。
+- [道末采集关闭握手把整车刹停](issues/CAPTURE_CLOSE_HANDSHAKE_BRAKE.md)：关闭握手期间发零速度导致摆臂锁存Brake，从10 km/h全权刹停；2026-09-17已修并验证（各4轮40个道末，超过一拍时锁存Brake 10→0）。
 
 ## 历史资料
 
