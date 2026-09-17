@@ -38,7 +38,8 @@
   },
   "delta": {
     "plateau_s": -17.299999999999997,
-    "peak_rss_MiB": -6980
+    "peak_rss_MiB": -6980,
+    "superseded_by": "repeat; the single-run -17.3 s was optimistic"
   },
   "optix_input_unchanged": {
     "assets_entries_identical_apart_from_display_mesh": true,
@@ -51,5 +52,111 @@
     "this asset carries no physics heightmap, so its terrain models still have collision elements; the default road does not",
     "GZ and RViz windows were not inspected by eye in this run",
     "lidar returns were not compared; the display mesh drops joints up to 3 mm deep"
+  ],
+  "repeat": {
+    "note": "second run of each configuration on the non-default asset",
+    "baseline_plateau_s": [
+      50.9,
+      45.7
+    ],
+    "light_plateau_s": [
+      33.6,
+      31.6
+    ],
+    "baseline_peak_GiB": [
+      9.76,
+      9.82
+    ],
+    "light_peak_GiB": [
+      2.94,
+      2.94
+    ],
+    "plateau_mean_delta_s": -15.699999999999996,
+    "plateau_worst_case_delta_s": -12.100000000000001,
+    "peak_mean_delta_GiB": -6.84814453125
+  },
+  "default_road": {
+    "scene": "assets/road/runtime_fullwidth_100m_rough_marked_2mm_20cm_heightmap_v1",
+    "command": "tools/validate_operator_session.py --no-cancel-probe (defaults: 3 x 2 m, 0.5 m/s)",
+    "baseline": [
+      {
+        "run": "det_a",
+        "chassis_ready_wall_s": 49.91345657399961,
+        "task_ready_wall_s": 59.40448979899975,
+        "passed": true,
+        "blocks": 6,
+        "rows": 22235,
+        "observed_rtf": 0.9871478117122022,
+        "coverage_status": "ESTIMATED_COMPLETE",
+        "final": "ACQUIRED/HOLD"
+      },
+      {
+        "run": "det_b",
+        "chassis_ready_wall_s": 61.137907618999634,
+        "task_ready_wall_s": 69.45355320899944,
+        "passed": true,
+        "blocks": 6,
+        "rows": 22160,
+        "observed_rtf": 0.9871529826907397,
+        "coverage_status": "ESTIMATED_COMPLETE",
+        "final": "ACQUIRED/HOLD"
+      }
+    ],
+    "light": [
+      {
+        "run": "lite_a",
+        "chassis_ready_wall_s": 43.672995560002164,
+        "task_ready_wall_s": 51.64966434800226,
+        "passed": true,
+        "blocks": 7,
+        "rows": 24600,
+        "observed_rtf": 0.9859406125242866,
+        "coverage_status": "ESTIMATED_COMPLETE",
+        "final": "ACQUIRED/HOLD"
+      },
+      {
+        "run": "lite_b",
+        "chassis_ready_wall_s": 33.56323722199886,
+        "task_ready_wall_s": 41.64107758400132,
+        "passed": true,
+        "blocks": 6,
+        "rows": 22669,
+        "observed_rtf": 0.9857151279815601,
+        "coverage_status": "ESTIMATED_COMPLETE",
+        "final": "ACQUIRED/HOLD"
+      }
+    ],
+    "chassis_mean_delta_s": -16.90756570549911,
+    "task_mean_delta_s": -17.7836505379978,
+    "chassis_worst_case_delta_s": -6.240461013997447,
+    "task_worst_case_delta_s": -7.754825450997487,
+    "reading": "all four missions passed with ESTIMATED_COMPLETE and ACQUIRED/HOLD at an unchanged RTF. This metric carries about 10 s of run-to-run spread in both groups, so its worst case is weak; the memory-plateau measurement on the non-default asset is the better controlled one."
+  },
+  "fidelity_measured": {
+    "asset": "terrain_4",
+    "vertices_compared": 183531,
+    "method": "the display surface interpolated at every optical vertex, against the optical height",
+    "relief_preserved_mm": [
+      -1.821,
+      1.579
+    ],
+    "defect_free_max_difference_mm": 0.2011,
+    "defect_depth_range_mm": [
+      -3.0045,
+      -0.001
+    ],
+    "defect_free_vertex_fraction": 0.365,
+    "correction": "an earlier note said the display surface is point-for-point identical outside the defects. That holds only at vertices the two meshes share. The display mesh is a 20 cm grid and interpolates linearly between its nodes, so against the exact heightfield it is up to 0.20 mm out, about a tenth of the 2 mm relief amplitude."
+  },
+  "asset_state": {
+    "default_road": "ADOPTED and not reverted; assets are not in git, so this state lives only on disk",
+    "non_default_road": "reverted to its original bytes after the A/B",
+    "revert": "python3 tools/adopt_display_meshes.py --scene <manifest> --revert"
+  },
+  "still_not_done": [
+    "GZ and RViz windows were never inspected by eye; no screenshot is saved by the short run",
+    "lidar returns were never compared, and the display mesh drops joints up to 3 mm deep",
+    "the texture half of the matrix",
+    "no full-area 100 x 10 m run on the adopted default road"
   ]
 }
