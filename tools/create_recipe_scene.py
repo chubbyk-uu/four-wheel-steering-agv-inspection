@@ -5,7 +5,7 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 from probe_runtime_material import export
 ROOT=Path(__file__).resolve().parents[1]
-sys.path.insert(0,str(ROOT/'src/agv_linescan'))
+sys.path.append(str(ROOT/'src/agv_linescan'))  # after the installed package, so the compiled _obj_arrays is used
 from agv_linescan.shared_scene import validate
 
 

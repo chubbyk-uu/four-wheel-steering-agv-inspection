@@ -10,7 +10,7 @@ from PIL import Image
 import xacro
 import yaml
 ROOT=Path(__file__).resolve().parents[1]
-sys.path.insert(0,str(ROOT/'src/agv_linescan'))
+sys.path.append(str(ROOT/'src/agv_linescan'))  # after the installed package, so the compiled _obj_arrays is used
 from agv_linescan.robot_scene import export,split_visual_links
 from agv_linescan.shared_scene import digest
 

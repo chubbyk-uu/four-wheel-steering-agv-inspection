@@ -164,9 +164,16 @@ sRGB 下缩的，RViz 代理在棱边和标线处有这个量级的误差——�
 原有回归先调用了一次 `validate` 把缓存喂热，恰好盖住这个洞。现在它在查缓存**之前**无条件
 执行，冷、热、禁用三条路验的是同一批字节。
 
-代价实测：冷校验 41.25 → 42.44 s（**+1.2 s，+2.9%**），因为 1.04 GiB 的参考面与高度场在冷路径上
-被摘要两次——提升后的循环一次，`validate_layered_proxy` 内部一次。没有为此把"已验证集合"
-穿进 `validate_proxy`：它也被工具和测试直接调用，必须保留自己的校验。热路径 2.4 s 不变。
+代价实测（**2026-09-17 二次测量，首次的数作废**）：冷校验 **8.78 → 9.32 s（+0.54 s，+6.2%）**，
+因为 1.04 GiB 的参考面与高度场在冷路径上被摘要两次——提升后的循环一次，
+`validate_layered_proxy` 内部一次。没有为此把"已验证集合"穿进 `validate_proxy`：
+它也被工具和测试直接调用，必须保留自己的校验。热路径 **2.26 s** 不变。
+
+~~首次报的 41.23 → 42.44 s、+2.9%~~ **作废**：那次的测量脚本把 `src/agv_linescan` 直接塞进
+`sys.path`，导入的是**源码包**，因而错过了装在 installed 包旁边的编译版 `_obj_arrays`；
+OBJ 解析退回纯 Python 路径（约 80 MiB/s 对 900 MiB/s），把整个校验放大了约五倍。
+绝对开销比原报的小（0.54 s 对 1.19 s），**相对开销反而更大**（6.2% 对 2.9%），因为基线是
+8.8 s 而不是 41 s。凡是用 `sys.path.insert` 跑本仓库 Python 的测量脚本都有这个坑。
 另注意缓存键带校验代码指纹，**这次改动使所有已有条目失效**，下一次启动付一次冷路径——
 校验规则变了，本就不该复用旧条目。完整数值见
 [契约收紧](../../results/display_mesh_contract_hardening.json)。
@@ -417,3 +424,46 @@ ROS 与归档逐字节一致。
 数据见 `results/capture_run_determinism.json`。这条对拼接阶段同样适用：任何"重跑对比"
 都必须是带容差的，本仓库没有逐字节可复现的任务级基线。
 
+
+## Python / C++ 分工：热路径在哪（2026-09-17 实测）
+
+问"Python 占比大要不要改 C++"，先分清行数和时间。
+
+| 语言 | 行数（不含测试） | 位置 |
+|---|---:|---|
+| Python | 17,921 | **其中 `tools/` 占 11,978（67%）**，是离线生成/校验/分析脚本 |
+| C++ | 4,122 | 几乎全在 `agv_linescan`（成像）与 `agv_control`（摆臂分配） |
+| CUDA | 676 | `cuda_grid` / `cuda_tiles` / OptiX 运行时材质 |
+
+运行时 Python 只有 5,943 行（mission 2439 + linescan 2057 + localization 850 + bringup 597）。
+
+**控制回路不是瓶颈。** 100 m 全区跑的 `control_phase_peaks_s`（每个是所在窗口最坏的一拍）：
+
+| 阶段 | 最坏耗时 |
+|---|---:|
+| control（跟踪器＋分配） | 2.37 ms |
+| log_write | 0.35 ms |
+| status_publish | 0.28 ms |
+| graph_query | 0.22 ms |
+| feedback_check | 0.17 ms |
+| capture_poll | 0.20 ms |
+
+合计最坏约 3.5 ms，预算 20 ms（实测 49.3 Hz），稳态 RTF 0.997。**用掉 17% 的余量，改语言省不出可测量的东西**，却要放弃 536 项测试保护的正确性。逐像素/逐行的工作本来就已经在 C++/CUDA 里。
+
+**唯一真正的热点已经是 C++ 了。** 冷校验 9.32 s 的构成（cProfile，装好的包）：
+
+| 项 | 耗时 | 语言 |
+|---|---:|---|
+| `_obj_arrays.read_obj` | 2.45 s | C++（pybind11） |
+| 文件读取 | 2.14 s | I/O |
+| sha256 | 1.89 s | C（openssl） |
+| `heightfield.sample` | 1.59 s | Python/numpy |
+| `validate_layered_proxy` 自身 | 0.80 s | Python/numpy |
+
+约六成已是原生码。剩下的 numpy 部分改 C++ 最多省 1–2 s，**且只在冷启动**——热路径有派生缓存，2.26 s。
+
+**但发现一个真问题：`sys.path.insert(0, 'src/agv_linescan')` 会绕过编译版。** installed 包里的 `.py` 是源码的符号链接，唯一的差别是旁边那个 `_obj_arrays.*.so`；把源码目录插到**最前面**就导入了没有 `.so` 的那份，`read_obj` 退回纯 Python，**80 MiB/s 对 900 MiB/s**。40 个 `tools/` 脚本都是这个写法，已全部改成 `sys.path.append`（装好的优先，没装则回退源码）。
+
+这个坑也污染过本仓库自己的测量：SCENE_LOAD_TIME 里首次报的"冷校验 41 s"就是这么来的，实际 9.3 s，见上文。**凡是用 `sys.path.insert` 跑本仓库 Python 的计时都要重测。**
+
+结论：不建议把现有 Python 改写成 C++。真要提速，排序是 (1) 别绕过已有的 C++ 扩展，(2) 冷启动的 numpy 段，(3) 后处理阶段用 libvips 的分块流式而不是自己写 C++。

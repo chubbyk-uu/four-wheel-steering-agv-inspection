@@ -21,7 +21,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT/'src/agv_linescan'))
+sys.path.append(str(ROOT/'src/agv_linescan'))  # after the installed package, so the compiled _obj_arrays is used
 sys.path.insert(0, str(ROOT/'tools'))
 from agv_linescan.shared_scene import digest, validate   # noqa: E402
 from build_light_display_assets import display_mesh      # noqa: E402

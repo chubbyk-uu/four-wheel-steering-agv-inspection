@@ -60,18 +60,21 @@
   "cost": {
     "cold_validate_s": {
       "before": [
-        41.23,
-        41.26
+        8.754,
+        8.759,
+        8.816
       ],
       "after": [
-        42.53,
-        42.35
+        9.304,
+        9.318,
+        9.338
       ],
-      "delta_s": 1.19,
-      "delta_percent": 2.9
+      "delta_s": 0.544,
+      "delta_percent": 6.2
     },
+    "hot_validate_s": 2.26,
+    "corrected": "2026-09-17, second measurement. The first reported 41.23 -> 42.44 s and +2.9%. Both numbers came from a harness that put src/agv_linescan on sys.path directly, which imports the source package and so misses the compiled _obj_arrays reader beside the installed one. OBJ parsing then ran the pure-Python fallback at about 80 MiB/s instead of 900, inflating the whole validate roughly fivefold. Re-measured with the workspace sourced: the baseline is 8.78 s, the hoisted digest loop costs 0.54 s, and the relative cost is larger than reported, not smaller.",
     "cause": "the reference surfaces and heightfields, 1.04 GiB in total, are now digested twice on a cold start: once by the hoisted loop and once inside validate_layered_proxy. Left as is rather than threading a verified-set through validate_proxy, which is also called directly by tools and tests and must keep its own checks.",
-    "hot_validate_s": 2.4,
     "cache_invalidation": "the key carries a fingerprint of the checking code, so every existing entry is invalid after this change and the next launch pays the cold path once. That is the intended behaviour: the checks changed."
   }
 }

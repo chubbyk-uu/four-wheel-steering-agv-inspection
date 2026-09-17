@@ -19,7 +19,7 @@ def receive(directory, blocks, calibration=None, config=None):
     correction_times = []
     if calibration:
         import yaml
-        sys.path.insert(0, str(Path(__file__).resolve().parents[1]/'src/agv_linescan'))
+        sys.path.append(str(Path(__file__).resolve().parents[1]/'src/agv_linescan'))  # after the installed package, so the compiled _obj_arrays is used
         from agv_linescan.calibration import Correction
         correction = Correction(json.loads(Path(calibration).read_text()))
         correction.check_capture(yaml.safe_load(Path(config).read_text()))

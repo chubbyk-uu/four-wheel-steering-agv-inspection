@@ -8,7 +8,7 @@ import sys
 import time
 from PIL import Image
 from budget_full_road import budget,ROOT
-sys.path.insert(0,str(ROOT/'src/agv_linescan'))
+sys.path.append(str(ROOT/'src/agv_linescan'))  # after the installed package, so the compiled _obj_arrays is used
 from agv_linescan.shared_scene import validate
 
 

@@ -33,7 +33,7 @@ from pathlib import Path
 
 import sys
 import hashlib
-sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"src/agv_linescan"))
+sys.path.append(str(Path(__file__).resolve().parents[1]/"src/agv_linescan"))  # after the installed package, so the compiled _obj_arrays is used
 from agv_linescan.scan_footprint import Heightfield, interval_travel, ground_verdict
 
 import numpy as np

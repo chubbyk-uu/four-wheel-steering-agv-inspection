@@ -40,7 +40,7 @@ import numpy as np
 from scipy.spatial.transform import Rotation, Slerp
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT/'src/agv_linescan'))
+sys.path.append(str(ROOT/'src/agv_linescan'))  # after the installed package, so the compiled _obj_arrays is used
 from agv_linescan.scan_footprint import Heightfield, ground_intersection  # noqa: E402
 from agv_linescan.travel_budget import TERMS, integrate_rate, travel_budget  # noqa: E402
 

@@ -3,7 +3,7 @@ import argparse
 import sys
 from pathlib import Path
 root=Path(__file__).resolve().parents[1]
-sys.path.insert(0,str(root/'src/agv_linescan'))
+sys.path.append(str(root/'src/agv_linescan'))  # after the installed package, so the compiled _obj_arrays is used
 from agv_linescan.shared_scene import generate
 p=argparse.ArgumentParser();p.add_argument('--output',required=True);p.add_argument('--length',type=float,default=100);p.add_argument('--width',type=float,default=10)
 p.add_argument('--profile',choices=['flat','optical_stress'],default='flat',help='flat driving baseline; optical_stress is an isolated geometry/shadow regression fixture')

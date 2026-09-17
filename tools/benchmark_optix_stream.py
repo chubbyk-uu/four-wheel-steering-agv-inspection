@@ -16,7 +16,7 @@ def main():
     config['stream_benchmark']=dict(pass_blocks=a.pass_blocks,start_x_m=a.start_x,track_y_m=a.track_y)
     camera=fixture/'camera.yaml';camera.write_text(yaml.safe_dump(config,sort_keys=False))
     import xacro
-    sys.path.insert(0,str(root/'src/agv_linescan'))
+    sys.path.append(str(root/'src/agv_linescan'))  # after the installed package, so the compiled _obj_arrays is used
     from agv_linescan.robot_scene import export,split_visual_links
     robot=export(split_visual_links(xacro.process_file(str(root/'src/agv_description/urdf/agv.urdf.xacro')).toxml()),fixture)
     m=json.loads(robot.read_text());m['groups']=[g for g in m['groups'] if g['name']==m['led_emitters']['link']];robot.write_text(json.dumps(m))

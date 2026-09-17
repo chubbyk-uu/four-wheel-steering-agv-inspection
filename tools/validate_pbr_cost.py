@@ -9,7 +9,7 @@ from concrete_quilt import ConcreteQuilt
 from bake_concrete_road import LUT,sha
 from validate_groove_cost import geometry,write_scene
 ROOT=Path(__file__).resolve().parents[1]
-sys.path.insert(0,str(ROOT/'src/agv_linescan'))
+sys.path.append(str(ROOT/'src/agv_linescan'))  # after the installed package, so the compiled _obj_arrays is used
 from agv_linescan.robot_scene import export,split_visual_links
 
 def bake(out):
