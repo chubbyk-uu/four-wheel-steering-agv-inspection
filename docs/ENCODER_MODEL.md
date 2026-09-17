@@ -39,3 +39,11 @@ ros2 launch agv_bringup sim.launch.py actual_wheel_diameter:=0.39 \
 回归覆盖轮胎几何/惯量与标定控制参数分离、正反转累计149圈的512000行、停车相位保持、纯滚动同一米路程不同原图行数、非法乘除系数及任务尾图预算。实际OptiX三轮对照已完成，见[报告](../results/encoder_diameter_comparison.json)：同一禁停区两横边中心间距0.39/0.40/0.42 m分别为9255/9024/8594原始行，即+2.5598% / 0 / −4.7651%，与理论+2.5641% / −4.7619%吻合。未使用导航位姿调整像素；共同显示尺度、仅对齐第一条横边。对比图和21张原图保留于忽略目录`local_data/encoder_diameter_comparison/`。
 
 三轮均最终HOLD，归档与ROS像素逐字节一致。0.39 m包含GUI/RViz、同步TF/预览及同一4096行帧跨普通暂停检查；未重做鼠标交互，也不代表100 m/10 km/h新模型重验收。标准colcon两包299项零失败，定向Python207项、C++采样13项通过（这些计数有重叠，不相加）。
+
+## 正式巡检入口的换径实验
+
+`inspection.launch.py`同样支持`actual_wheel_diameter:=0.39`（默认0.40）；
+`tools/validate_operator_session.py`使用`--actual-wheel-diameter 0.39`，另一组传`0.41`。
+该工具在启动前保存`experiment_parameters.json`，归档图块另有实际轮径真值字段。
+参数沿巡检入口传给仿真，不修改`platform.yaml`的标定半径0.2 m，也不重标编码器行距。
+只改物理轮径仍会改变负重后的相机高度，39/41 cm对照须分别评价纵向与横向尺度。

@@ -95,3 +95,65 @@ def test_other_backends_and_plain_scenes_are_unaffected():
         sim.check_display_mesh_backend(scene(True), backend)
     for backend in ('render', 'optix'):
         sim.check_display_mesh_backend(scene(False), backend)
+
+
+def test_inspection_forwards_physical_diameter_without_recalibrating(tmp_path, monkeypatch):
+    import pytest
+    import yaml
+    from launch import LaunchContext
+    from launch.actions import DeclareLaunchArgument
+    inspection = load('inspection_diameter', PACKAGE / 'launch/inspection.launch.py')
+    declarations = {a.name: a for a in inspection.generate_launch_description().entities
+                    if isinstance(a, DeclareLaunchArgument)}
+    context = LaunchContext()
+    for declaration in declarations.values():
+        declaration.execute(context)
+    assert context.launch_configurations['actual_wheel_diameter'] == '0.40'
+    scene = tmp_path / 'scene.json'
+    scene.write_text('{}')
+    monkeypatch.setattr(inspection, 'build_road_display', lambda *args: {})
+    descriptions = PACKAGE.parent / 'agv_description'
+    monkeypatch.setattr(inspection, 'get_package_share_directory',
+                        lambda name: str(descriptions if name == 'agv_description' else PACKAGE))
+    spacings = []
+    for diameter in ('0.39', '0.41'):
+        session = tmp_path / diameter
+        context.launch_configurations.update(session_dir=str(session), scene_manifest=str(scene),
+                                             actual_wheel_diameter=diameter)
+        include = inspection.setup(context)[0]
+        assert dict(include.launch_arguments)['actual_wheel_diameter'] == diameter
+        spacings.append(yaml.safe_load((session / 'camera.yaml').read_text())['line_spacing_m'])
+    assert spacings == pytest.approx([0.0003657010198328743] * 2)
+
+
+def test_operator_diameter_reaches_launch_and_is_recorded(tmp_path, monkeypatch):
+    import pytest
+    import sys
+    tools = PACKAGE.parents[1] / 'tools'
+    monkeypatch.syspath_prepend(str(tools))
+    operator = load('operator_diameter', tools / 'validate_operator_session.py')
+    class LaunchIntercepted(Exception):
+        pass
+    commands = []
+    def intercept(command, **kwargs):
+        commands.append(command)
+        kwargs['stdout'].close()
+        raise LaunchIntercepted()
+    monkeypatch.setattr(operator.subprocess, 'Popen', intercept)
+    for diameter in ('0.39', '0.41'):
+        output = tmp_path / diameter
+        monkeypatch.setattr(sys, 'argv', ['probe', '--output', str(output),
+                                         '--actual-wheel-diameter', diameter])
+        with pytest.raises(LaunchIntercepted):
+            operator.main()
+        assert 'actual_wheel_diameter:=' + diameter in commands[-1]
+        assert json.loads((output / 'experiment_parameters.json').read_text()) == {
+            'actual_wheel_diameter_m': float(diameter)}
+    for diameter in ('nan', '0.37', '0.43'):
+        output = tmp_path / diameter
+        monkeypatch.setattr(sys, 'argv', ['probe', '--output', str(output),
+                                         '--actual-wheel-diameter', diameter])
+        with pytest.raises(SystemExit) as error:
+            operator.main()
+        assert error.value.code == 2
+        assert not output.exists()

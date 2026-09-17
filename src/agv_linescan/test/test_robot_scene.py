@@ -64,7 +64,7 @@ def test_split_material_links_preserves_baked_geometry_and_dynamics(tmp_path):
     after=json.loads(export(converted,tmp_path/'after').read_text())
     assert before['groups']==after['groups']
 
-@pytest.mark.parametrize('diameter', [.39, .40, .42])
+@pytest.mark.parametrize('diameter', [.39, .40, .41, .42])
 def test_physical_tyres_change_without_recalibrating_control(diameter):
     from pathlib import Path
     import xacro

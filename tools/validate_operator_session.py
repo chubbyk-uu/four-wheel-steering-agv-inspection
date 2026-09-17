@@ -26,13 +26,16 @@ def main():
     p.add_argument('--broker-stall',action='store_true',help='freeze only the GUI broker for 0.6 seconds during capture')
     p.add_argument('--executor-exit-probe',action='store_true',help='kill only the owned mission worker during a second task')
     p.add_argument('--localization-config',type=Path,help='measurement config overriding the shipped one, to run a named noise seed')
+    p.add_argument('--actual-wheel-diameter',type=float,default=.40,help='Physical tyre diameter [0.38, 0.42] m; keep nominal calibration unchanged')
     p.add_argument('--rounds',type=int,default=1,
                    help='repeat load/prepare/execute/audit this many times in one session, to show the broker carries nothing between tasks')
     a=p.parse_args();a.no_pause = a.no_pause or not a.pause_probe;process_start=time.monotonic()
+    if not .38 <= a.actual_wheel_diameter <= .42:p.error('--actual-wheel-diameter must be within [0.38, 0.42] m')
     if a.short_tail_probe:a.no_pause=True;a.no_cancel_probe=True
     a.output.mkdir(parents=True,exist_ok=False);session=a.output/'session'
+    (a.output/'experiment_parameters.json').write_text(json.dumps({'actual_wheel_diameter_m':a.actual_wheel_diameter},indent=2)+'\n')
     os.environ.update(ROS_DOMAIN_ID=str(100+os.getpid()%80),GZ_PARTITION='agv_operator_'+str(os.getpid()))
-    log=(a.output/'simulation.log').open('w');sim=subprocess.Popen(['ros2','launch','agv_bringup','inspection.launch.py','session_dir:='+str(session.resolve()),'spawn_x:='+str(a.spawn_x)]
+    log=(a.output/'simulation.log').open('w');sim=subprocess.Popen(['ros2','launch','agv_bringup','inspection.launch.py','session_dir:='+str(session.resolve()),'spawn_x:='+str(a.spawn_x),'actual_wheel_diameter:='+str(a.actual_wheel_diameter)]
         +(['scene_manifest:='+str(a.scene.resolve())] if a.scene else [])
         +(['localization_config:='+str(a.localization_config.resolve())] if a.localization_config else []),stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
     resources=ResourceMonitor(sim.pid,a.output/'resources.jsonl')

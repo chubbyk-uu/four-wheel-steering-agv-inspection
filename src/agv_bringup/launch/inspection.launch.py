@@ -26,6 +26,7 @@ def setup(context):
     road=build_road_display(scene,root/'rviz_road');road_config=root/'rviz_road.json';road_config.write_text(json.dumps(road,indent=2))
     return [IncludeLaunchDescription(PythonLaunchDescriptionSource(str(share/'launch/sim.launch.py')),launch_arguments={
         'localization':'true','rviz':'true','linescan':'true','linescan_backend':'optix',
+        'actual_wheel_diameter':LaunchConfiguration('actual_wheel_diameter').perform(context),
         'scene_manifest':str(scene),'camera_config':str(camera),'scan_speed_limit':str(config['max_scan_speed_m_s']),'spawn_x':LaunchConfiguration('spawn_x').perform(context),
         'capture_dir':str(root/'raw'),'localization_output_dir':str(root/'navigation'),
         'gpu_backend':LaunchConfiguration('gpu_backend').perform(context),
@@ -40,6 +41,7 @@ def generate_launch_description():
         DeclareLaunchArgument('scene_manifest',default_value='assets/road/runtime_fullwidth_100m_rough_marked_2mm_20cm_heightmap_v1/manifest.json'),
         DeclareLaunchArgument('gpu_backend',default_value='d3d12',choices=['d3d12','native']),
         DeclareLaunchArgument('spawn_x',default_value='3'),
+        DeclareLaunchArgument('actual_wheel_diameter',default_value='0.40',description='Physical tyre diameter in metres; nominal calibration remains 0.40 m'),
         # A repeat run has to name its noise seed without editing the shipped config.
         DeclareLaunchArgument('localization_config',default_value=''),
         DeclareLaunchArgument('headless',default_value='false'),OpaqueFunction(function=setup)])
