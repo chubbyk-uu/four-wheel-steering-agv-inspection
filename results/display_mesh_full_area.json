@@ -1,0 +1,62 @@
+{
+  "schema": "agv.display_mesh_full_area.v1",
+  "run": "local_data/display_mesh_full_1",
+  "scope": "100 x 10 m acceptance on the default inspection road with the lightweight GZ display meshes adopted. Compared against default_2mm_closure_1 of 2026-09-16, which predates three separate changes, so the totals below are their combined effect, not this one.",
+  "passed": {
+    "passed": true,
+    "capture_passed": true,
+    "coverage": "ESTIMATED_COMPLETE",
+    "final": "ACQUIRED/HOLD",
+    "ros_archive_identical": true,
+    "quality_flags": [],
+    "discarded_tail_rows": [],
+    "tracks": 10
+  },
+  "comparison": {
+    "blocks": {
+      "baseline": 704,
+      "light": 702
+    },
+    "rows": {
+      "baseline": 2868712,
+      "light": 2859165
+    },
+    "chassis_ready_s": {
+      "baseline": 78.13447352799994,
+      "light": 33.463857083999756
+    },
+    "task_ready_s": {
+      "baseline": 85.70802454400109,
+      "light": 40.924710108
+    },
+    "steady_rtf": {
+      "baseline": 0.9935532426595952,
+      "light": 0.9968746179609106
+    },
+    "peak_rss_GiB": {
+      "baseline": 10.24100112915039,
+      "light": 3.474925994873047
+    },
+    "peak_pss_GiB": {
+      "baseline": 9.56826400756836,
+      "light": 2.7566423416137695
+    },
+    "peak_vram_GiB": {
+      "baseline": 8.962890625,
+      "light": 5.900390625
+    }
+  },
+  "attribution": "chassis ready falls 44.7 s against the 09-16 baseline, but that baseline predates the derived-asset cache, the independent OptiX reader optimisation and this mesh change. Measured on this road against runs that already had the first two, the mesh share is about -16.9 s on the mean. The three should not be added from this table.",
+  "vram_reading": "first VRAM figure for the light mesh: 8.96 to 5.90 GiB. It falls less than RSS because the display textures are untouched and dominate what is left on the device, which is the case for doing the texture half if VRAM is the constraint.",
+  "handshake_brake": {
+    "events": 1,
+    "of_track_ends": 10,
+    "at_track": 6,
+    "detection": "stop intervals below 0.05 m/s for at least 0.3 s, then the peak speed between consecutive stops inside one track-end cluster. Turnaround creep peaks at 0.05 to 0.62 m/s; the event re-accelerates to about 1.5 m/s to cover the remaining distance, as docs/issues/CAPTURE_CLOSE_HANDSHAKE_BRAKE.md describes.",
+    "measured_peak_m_s": 1.51,
+    "at_simulation_time_s": 454.9,
+    "operator_report": "the operator called out the sixth track end while watching this run",
+    "rate_history": "3/10, 2/10, 0/10 before, 1/10 here: 6 of 40 track ends, about 15%, unchanged",
+    "note": "this run did not use the pause probe, so no stop here is the validator pausing"
+  }
+}
