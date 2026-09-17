@@ -45,7 +45,8 @@ def check_display_mesh_backend(shared, backend):
     """
     if backend == 'render' and any('display_mesh' in a for a in shared['assets']):
         raise ValueError('this scene declares a lighter display_mesh for GZ, which the render '
-                         'backend would image; use the optix backend or a scene without one')
+                         'backend would image; use the optix backend, or the full-detail scene that '
+                         'adopt_display_meshes.py leaves beside it as manifest_full_visual.json')
 
 
 def validate_gui_options(delay, retry_delay, retries):

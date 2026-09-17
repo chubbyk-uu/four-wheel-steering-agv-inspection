@@ -58,5 +58,44 @@
     "operator_report": "the operator called out the sixth track end while watching this run",
     "rate_history": "3/10, 2/10, 0/10 before, 1/10 here: 6 of 40 track ends, about 15%, unchanged",
     "note": "this run did not use the pause probe, so no stop here is the validator pausing"
+  },
+  "same_day_default_road_plateau": {
+    "scope": "both launches today on the same machine, default inspection road, derived cache warm, clean instance before each. The only difference is which manifest: manifest.json carries display_mesh, manifest_full_visual.json does not.",
+    "full_visual": {
+      "plateau_s": 51.8,
+      "peak_GiB": 9.76,
+      "gz_peak_MiB": [
+        4236,
+        4759
+      ]
+    },
+    "light": {
+      "plateau_s": 30.6,
+      "peak_GiB": 2.87,
+      "gz_peak_MiB": [
+        724,
+        1228
+      ]
+    },
+    "plateau_delta_s": -21.199999999999996,
+    "peak_delta_GiB": -6.89,
+    "why": "isolates the mesh share on the default road itself, without the derived cache and OptiX reader changes that sit between this and the 09-16 baseline"
+  },
+  "full_detail_still_available": {
+    "how": "scene_manifest:=<road>/manifest_full_visual.json",
+    "validated": "both manifests pass the shipped validator; the full one declares no display_mesh, so the visual is the optical mesh under the ordinary rule",
+    "render_backend": "refused on the light scene, allowed on the full one",
+    "measured": {
+      "plateau_s": 51.8,
+      "peak_GiB": 9.76,
+      "gz_peak_MiB": [
+        4236,
+        4759
+      ]
+    }
+  },
+  "operator_confirmed": {
+    "gui_and_rviz_by_eye": "confirmed by the operator while watching the full-area run, not by this assistant; no screenshot was captured",
+    "lidar_returns": "the operator accepted the change without a comparison. The display mesh drops joints up to 3 mm deep, and nothing in the workspace subscribes to the point clouds, so nothing downstream sees it."
   }
 }
