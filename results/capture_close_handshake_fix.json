@@ -103,7 +103,8 @@
         "latched": 3,
         "sustained_brake_episodes": 3
       }
-    ]
+    ],
+    "session_dir": "local_data/handshake_before"
   },
   "after": {
     "rounds": 4,
@@ -187,7 +188,8 @@
         "latched": 0,
         "sustained_brake_episodes": 0
       }
-    ]
+    ],
+    "session_dir": "local_data/handshake_after"
   },
   "historic_full_area_baseline": {
     "runs": 5,
@@ -235,5 +237,6 @@
     "file": "src/agv_mission/test/test_capture_handshake_halt.py",
     "cases": 5,
     "note": "two fail on the old condition and three pass on both -- those three are the invariants the change must not break: an open must not halt a running pass, an idle tick is untouched, and a pending handshake still halts at a segment boundary."
-  }
+  },
+  "data_retention": "the raw images of both groups were pruned on 2026-09-18: this experiment was decided entirely from execution.jsonl, the images took no part in it, and a 3 m region centred on the road is not usable for stitching either. All pose tags, block metadata, logs and diagnostics are kept, plus the first and last image of each capture segment. See image_cleanup.json in each directory."
 }
