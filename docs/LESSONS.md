@@ -337,6 +337,48 @@ Physics → UserCommands → Contact排列。项目启动器显式维持该顺�
 
 **边界。** 相机配置要读**归档的**`session/camera.yaml`而不是当前仓库配置，否则日后改焦距会改动旧数据的分析结果。这是与20 cm参考高度场求交、tag间距约0.29 m，"类横滚"可能吸收其他偶次项；足以支持"必须检查动态尺度"，**不足以当最终误差预算**。见[扫描线几何](../results/scan_line_geometry.json)。
 
+## 25. 重建时抄错一个CMake参数，把加速后端静默剥掉了
+
+**现象。** 为了让新写的Python模块进installed包，重建时照抄README里基础构建的`-DAGV_ENABLE_CUDA=OFF`。构建成功、557项测试全过。之后第一次OptiX采集时gz在插件`Configure`阶段抛`cuda_grid requires building with a CUDA toolkit`并abort，退出码134。
+
+**为什么没被挡住。** 那个参数是给"没有GPU的干净检出"用的，CMake据此**跳过CUDA目标而不报错**；工作区测试没有一项需要GPU，所以测试数不变、全绿。**构建成功和测试通过都不能证明后端还在。**
+
+**修复。** 按[OptiX安装](OPTIX_SETUP.md)的参数重建：`-DAGV_ENABLE_CUDA=ON -DAGV_ENABLE_OPTIX=ON -DAGV_OPTIX_SDK=...`。事后核对方式是数已安装插件里的CUDA/OptiX符号（`nm -D libagv_gz_linescan.so | grep -ci "cuda|optix"`，正常43个）和三个静态库是否存在。
+
+**边界。** 在已配置OptiX的机器上，**永远不要用README那条基础构建命令重建**——它是给别的场景写的。任何只改Python的重建也要带全参数，因为`--symlink-install`只对`.py`建链接，`.so`仍需正确配置才会产出。
+
+**已加守卫**：`tools/check_accelerated_backends.py --expect-gpu` 直接数已安装插件里的CUDA/OptiX符号与三个静态库，缺失即非零退出并打印正确的重建命令。它验过：故意用`-DAGV_ENABLE_CUDA=OFF`重建后报错，改回正确参数后通过。**采集前跑一次，比等gz abort便宜得多。**
+
+## 26. `colcon test`不会因为CMakeLists改动重新配置，新测试静默不跑
+
+**现象。** 新增两个测试文件并在`CMakeLists.txt`注册后跑`colcon test`，汇总是"543→537 tests, 0 errors, 0 failures"。没有任何失败，但**总数少了6**。
+
+**根因。** `colcon test`只运行现有ctest配置，**不重新配置CMake**。新注册的测试文件根本没进ctest，而汇总只强调errors/failures。
+
+**修复。** 改了`CMakeLists.txt`就先`colcon build --packages-select <包>`再测。核对方式是`colcon test-result --all`里能看到对应的`*.xunit.xml`。
+
+**边界。** "0 failures"不等于"都跑了"。加测试后要**看总数的变化量是否等于新增数**；静默少跑比失败危险，因为它看起来是绿的。
+
+## 27. 验收判据里混进了被测对象之外的量
+
+**现象。** 重标定的留出误差1.233 px，门限1 px，不过。
+
+**分解。** 残差几乎是纯常数偏移−0.724 px（sd仅0.244，斜率可忽略）。再查两次行驶的横向位置：标定板那次跑在y=0.000000，留出板那次跑在y=+0.000205 m，即**+0.560 px**。判据把**两次独立行驶的横向重复性**算进了"标定精度"。扣掉后0.673 px，且拟合误差0.289 px比被替换的0.487更好——**标定本身更好，只是被车的落点差盖住**。
+
+**处置。** 从归档位姿读出两次行驶的实测横向差并扣除，同时报告扣前值。**扣"已测量的量"，不是"拟合掉常数项"**——常数偏移也可能是`metric_polynomial`中心错位，拟合掉会把那种真实失效一起藏掉。
+
+**边界。** 判据失败时先分解再动门槛；"跑失败了所以改判据"和"判据里混了别的量所以修判据"是两回事，区别在于**能否指出混进来的是哪个已测量的物理量**。另注意正式那轮漂移恰好是2.9e-8 m，**证明不了这个修正有用**；证据保留在`local_data/calibration_20mm_v4_firstpass`。
+
+## 28. 守卫在好数据上报警时，坏的往往是更早的东西
+
+**现象。** 离线校正拒绝今天的采集：`robot mounting / geometry differs from calibration`。第一反应是今天改了什么。
+
+**查证。** 今天0.40组的机器人哈希与昨天全区跑**逐位相同**，是标定要求的哈希谁都不匹配——包括昨天的全区跑和`default_2mm_closure_1`这份拼接主数据。`git log`显示9-14标定之后URDF加了**柔性相机支架**并两次选刚度。相机安装真的变了，守卫是对的。
+
+**连带发现。** 顺着这条线还查出两处早已失效：`validate_measured_calibration.py`写的conditions不含`robot_source_sha256`（用它重标会把守卫去掉），以及`validate_rendered_linescan.py`硬断言13个link而柔性支架让它变成14（**自那次提交起所有OptiX参考采集就一直被挡着**，因为没人重跑标定所以没人知道）。
+
+**边界。** 守卫在你认为没问题的数据上报警时，先假设它是对的，并往前查到上一次它确实通过是什么时候。这次"失效"的跨度是四天、覆盖了全部主数据。修好后仍要分清修好了哪一层：v4修的是"标定对不上机器人"，**没修**"标定工况（平面靶场0.5 m/s）对不上采集工况（起伏路面2.78 m/s）"，后者还剩2.1 mm光心高度差、约0.2%横向尺度。
+
 ## 维护边界
 
 - 当前执行与部署入口见[文档索引](README.md)，不要从历史实验的“下一步”启动工作。

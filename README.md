@@ -100,6 +100,11 @@ source install/local_setup.bash
 默认 `RelWithDebInfo`。基础构建可以控制底盘、跑解析网格或慢速 Ogre2 参考采样，
 **不承诺高行频性能**；未优化构建不能用于实时率验收。
 
+> **已配置 OptiX 的机器不要用上面这条命令重建。** `-DAGV_ENABLE_CUDA=OFF` 会让 CMake 跳过 CUDA
+> 目标而不报错，构建成功、测试全绿，但已安装插件失去 CUDA/OptiX 后端，下一次采集才会在 gz 插件里
+> abort。带 GPU 的机器用[OptiX 安装](docs/OPTIX_SETUP.md)里的完整参数，并在重建后跑
+> `python3 tools/check_accelerated_backends.py --expect-gpu` 核对。
+
 ## 快速运行
 
 完整巡检界面（先按[道路资产指南](docs/ROAD_ASSETS.md)恢复默认道路并配置 OptiX）：
