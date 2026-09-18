@@ -1,0 +1,200 @@
+{
+  "schema": "agv.tyre_scale_experiment.v1",
+  "date": "2026-09-18",
+  "target": "20 m region of the default road, x 6-26 m, y -3.5..-0.5, three tracks at y -3.0/-2.0/-1.0, rated 2.777778 m/s. Only --actual-wheel-diameter differs; platform.wheel_radius stays 0.2 so the trigger spacing stays 0.3657010198 mm and the error does not cancel.",
+  "runs": {
+    "040": {
+      "diameter_m": 0.4,
+      "session": "local_data/tyre_040",
+      "coverage": "ESTIMATED_COMPLETE",
+      "blocks": 48,
+      "rows": 194240,
+      "steady_rtf": 0.9977090686529829,
+      "peak_speed_m_s": 2.9391642585947895,
+      "quality_flags": 0,
+      "unverified_spans": 0,
+      "longitudinal": {
+        "encoder_m": 71.03266898909592,
+        "true_camera_path_m": 71.13445509117687,
+        "scale_error_percent": -0.1430897333092429,
+        "predicted_percent": 0.0
+      },
+      "lateral_coverage": {
+        "affine_scale_error_percent": {
+          "n": 213,
+          "mean": -0.2631432254725861,
+          "sd": 0.606048040328637,
+          "p5": -0.8009605510324412,
+          "p95": 1.734502806422486,
+          "min": -1.2241386198367898,
+          "max": 2.163043994085556
+        },
+        "in_row_nonlinearity_px": {
+          "n": 213,
+          "mean": 1.5092162819301178,
+          "sd": 1.1102451424512434,
+          "p5": 0.38096034397913175,
+          "p95": 3.7199250613736337,
+          "min": 0.2444763300957978,
+          "max": 6.594408464012001
+        },
+        "roll_like_term_px": {
+          "n": 213,
+          "mean": -0.07177662680004568,
+          "sd": 2.8843380480139738,
+          "p5": -4.657573045464011,
+          "p95": 4.603984482046282,
+          "min": -10.39668599975327,
+          "max": 8.02841266355236
+        },
+        "optical_height_above_ground_m": {
+          "n": 213,
+          "mean": 1.0417411965802121,
+          "sd": 0.006244344922248441,
+          "p5": 1.0355769207312433,
+          "p95": 1.0616026868112567,
+          "min": 1.0322477834396198,
+          "max": 1.0670414919043518
+        }
+      }
+    },
+    "039": {
+      "diameter_m": 0.39,
+      "session": "local_data/tyre_039",
+      "coverage": "ESTIMATED_COMPLETE",
+      "blocks": 49,
+      "rows": 199938,
+      "steady_rtf": 0.9982681314064727,
+      "peak_speed_m_s": 2.8683845712315064,
+      "quality_flags": 0,
+      "unverified_spans": 0,
+      "longitudinal": {
+        "encoder_m": 73.11643340009829,
+        "true_camera_path_m": 71.39638438104461,
+        "scale_error_percent": 2.4091542365419105,
+        "predicted_percent": 2.564102564102577
+      },
+      "lateral_coverage": {
+        "affine_scale_error_percent": {
+          "n": 217,
+          "mean": -0.7202048646537235,
+          "sd": 0.5759231972112064,
+          "p5": -1.0335617939480146,
+          "p95": 1.201414632576856,
+          "min": -2.2020046717851183,
+          "max": 1.6499648080577467
+        },
+        "in_row_nonlinearity_px": {
+          "n": 217,
+          "mean": 1.6527497244936646,
+          "sd": 1.3745717954844128,
+          "p5": 0.3379819657944608,
+          "p95": 4.383831533301236,
+          "min": 0.16473676523613298,
+          "max": 6.682059198018578
+        },
+        "roll_like_term_px": {
+          "n": 217,
+          "mean": 0.006998446956644974,
+          "sd": 3.3388182994080617,
+          "p5": -5.2607455112006525,
+          "p95": 5.335384112627501,
+          "min": -9.94724408886713,
+          "max": 10.981787538046651
+        },
+        "optical_height_above_ground_m": {
+          "n": 217,
+          "mean": 1.0369799760487755,
+          "sd": 0.005905508539843704,
+          "p5": 1.0334497763540658,
+          "p95": 1.0555080432965673,
+          "min": 1.0217822310956477,
+          "max": 1.06175869103173
+        }
+      },
+      "vs_040": {
+        "longitudinal_percent": 2.5522439698511534,
+        "longitudinal_predicted_percent": 2.564102564102577,
+        "lateral_coverage_percent": -0.45706163918113735,
+        "lateral_predicted_magnification_percent": 0.4826,
+        "optical_height_mm": -4.761220531436683,
+        "optical_height_predicted_mm": -5.0
+      }
+    },
+    "041": {
+      "diameter_m": 0.41,
+      "session": "local_data/tyre_041",
+      "coverage": "ESTIMATED_COMPLETE",
+      "blocks": 48,
+      "rows": 191892,
+      "steady_rtf": 0.9983838168211888,
+      "peak_speed_m_s": 3.00567636178899,
+      "quality_flags": 0,
+      "unverified_spans": 0,
+      "longitudinal": {
+        "encoder_m": 70.17400299453053,
+        "true_camera_path_m": 72.03539911468596,
+        "scale_error_percent": -2.584001953250714,
+        "predicted_percent": -2.4390243902438935
+      },
+      "lateral_coverage": {
+        "affine_scale_error_percent": {
+          "n": 208,
+          "mean": 0.20792049351080794,
+          "sd": 0.6090916541216587,
+          "p5": -0.29386198847450745,
+          "p95": 2.003140540213221,
+          "min": -0.7540301341037781,
+          "max": 2.635720840634259
+        },
+        "in_row_nonlinearity_px": {
+          "n": 208,
+          "mean": 1.5238652974573281,
+          "sd": 1.1630795704445127,
+          "p5": 0.3548387779897894,
+          "p95": 3.919963771455027,
+          "min": 0.1613596693347669,
+          "max": 6.914307377545508
+        },
+        "roll_like_term_px": {
+          "n": 208,
+          "mean": -0.0709159649472181,
+          "sd": 2.9111260327362674,
+          "p5": -4.30784143757724,
+          "p95": 5.091270018422452,
+          "min": -11.593866836303668,
+          "max": 9.951420703086411
+        },
+        "optical_height_above_ground_m": {
+          "n": 208,
+          "mean": 1.0466459135713913,
+          "sd": 0.006250302120385987,
+          "p5": 1.0406044029307069,
+          "p95": 1.0644036701121828,
+          "min": 1.0355625474612766,
+          "max": 1.071760015914656
+        }
+      },
+      "vs_040": {
+        "longitudinal_percent": -2.4409122199414712,
+        "longitudinal_predicted_percent": -2.4390243902438935,
+        "lateral_coverage_percent": 0.47106371898339405,
+        "lateral_predicted_magnification_percent": -0.478,
+        "optical_height_mm": 4.904716991179114,
+        "optical_height_predicted_mm": 5.0
+      }
+    }
+  },
+  "findings": [
+    "longitudinal differentials match prediction to 0.012 and 0.002 percentage points",
+    "all three carry a common -0.14% offset because the true distance is the camera path length, which includes body sway the wheel rotation does not see; being common-mode it cancels in the differential",
+    "lateral: the tool reports how much ground a row covers, the prediction was how much larger an object appears, and those are reciprocal. Magnitudes agree to 0.026 and 0.007 percentage points, inside one standard error of 0.058",
+    "the optical height shifts 1:1 with the tyre radius in motion as it did at rest (-4.761 and +4.905 mm against a predicted 5), and its spread is unchanged, so the tyre changes the mean and not the dynamics",
+    "in-row nonlinearity and the roll-like term are the same in all three, so the tyre does not reach the behaviour inside a row"
+  ],
+  "caveats": [
+    "the cruise spread here is about 6 mm against 2.5 mm on the 100 m run: a 20 m region spends proportionally more of its captured rows near the ramps, and n is about 210 tags rather than 3342",
+    "ground truth is used for evaluation only; none of it reaches the stitching optimiser"
+  ],
+  "turn_speed": "these are the first multi-track runs after the rotation rate went to 0.80 rad/s. Three close handshakes outlasted one control tick across the three runs and none latched Brake."
+}
