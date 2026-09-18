@@ -333,11 +333,20 @@ def evaluate(args):
                     notes=('CUDA timings include pose packing and batch upload/sampling/readback. Static unobstructed plane; configured CUDA radiometry is recorded in the archive.' if args.backend!='render' else 'Scene held at physics-step time; camera interpolated per exposure.')+' Sampling rate excludes physics/ROS/archive, not end-to-end throughput.')
         if args.backend == 'optix':
             assert all(b['scene_backend']=='optix_shared_mesh_dynamic_robot' and b['calibration_id'].endswith('-optix-strip-v1') for b in blocks)
-            assert all(len(b['robot_contract']['link_names'])==13 for b in blocks)
+            # Name the links rather than count them. This read 13 until today,
+            # which is the model from before the passive camera bracket added
+            # camera_carrier_link, and it had silently blocked every OptiX
+            # reference capture since. A set says which link appeared or went.
+            expected=sorted(['base_link','camera_carrier_link']+
+                [f'{c}_{part}_link' for c in ('fl','fr','rl','rr')
+                 for part in ('suspension','steer','wheel')])
+            for b in blocks:
+                assert sorted(b['robot_contract']['link_names'])==expected, \
+                    sorted(set(b['robot_contract']['link_names'])^set(expected))
             full_received=[t for (w,h,stamp,n),t in zip(received,received_at) if h==args.block_rows]
             report['full_block_delivery_lines_per_wall_second']=(len(full_received)-1)*args.block_rows/(full_received[-1]-full_received[0]) if len(full_received)>1 else None
             report['full_acceptance_passed']=False
-            report['notes']='OptiX shared static mesh plus thirteen robot links with per-exposure transforms and configured LED shadow samples; ROS images and PGM archive. Sampling rate excludes physics/ROS/archive. Not the independent durable-write throughput acceptance.'
+            report['notes']='OptiX shared static mesh plus fourteen robot links with per-exposure transforms and configured LED shadow samples; ROS images and PGM archive. Sampling rate excludes physics/ROS/archive. Not the independent durable-write throughput acceptance.'
         report['realtime_target_met']=report['real_time_factor']>=REALTIME_FLOOR
         report['realtime_required']=args.require_realtime;report['realtime_floor']=REALTIME_FLOOR
         report['passed']=report['passed'] and (not args.require_realtime or report['realtime_target_met'])

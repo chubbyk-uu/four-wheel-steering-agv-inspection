@@ -352,3 +352,41 @@ def test_projection_pose_fixes_optical_center_not_base_and_keeps_yaw():
     np.testing.assert_array_equal(p,original)
     pp,rr=projection_pose(p,r,offset,'dynamic',1.0463)
     assert pp is p and rr is r
+
+
+def test_a_robot_change_is_refused_unless_a_reason_is_given():
+    """The guard caught a profile from before the camera bracket existed; it stays."""
+    profile=fixture_profile();profile['conditions'].update(scene_backend='optix',robot_source_sha256='mount-a')
+    meta=dict(width=profile['width'],reference='last_line_exposure_midpoint',
+              exposure_s=profile['conditions']['exposure_s'],
+              calibration_id=profile['conditions']['source_calibration_id'],
+              scene_backend='optix',robot_contract=dict(source_sha256='mount-b'))
+    import pytest
+    with pytest.raises(ValueError,match='robot mounting'):
+        Correction(profile).metadata(meta)
+    with pytest.raises(ValueError,match='needs a reason'):
+        Correction(profile,'   ')
+
+
+def test_an_accepted_robot_change_is_written_into_every_block():
+    """An override nobody can see downstream is the same as no check at all."""
+    profile=fixture_profile();profile['conditions'].update(scene_backend='optix',robot_source_sha256='mount-a')
+    meta=dict(width=profile['width'],reference='last_line_exposure_midpoint',
+              exposure_s=profile['conditions']['exposure_s'],
+              calibration_id=profile['conditions']['source_calibration_id'],
+              scene_backend='optix',robot_contract=dict(source_sha256='mount-b'))
+    out=Correction(profile,'deliberate 0.39 m tyre experiment').metadata(meta)
+    accepted=out['accepted_robot_change']
+    assert accepted['reason']=='deliberate 0.39 m tyre experiment'
+    assert accepted['calibrated_robot_sha256']=='mount-a' and accepted['captured_robot_sha256']=='mount-b'
+    assert 'not corrected here' in accepted['effect']
+
+
+def test_the_matching_robot_still_records_nothing_extra():
+    """No override, no note: a clean capture must not gain an explanation."""
+    profile=fixture_profile();profile['conditions'].update(scene_backend='optix',robot_source_sha256='mount-a')
+    meta=dict(width=profile['width'],reference='last_line_exposure_midpoint',
+              exposure_s=profile['conditions']['exposure_s'],
+              calibration_id=profile['conditions']['source_calibration_id'],
+              scene_backend='optix',robot_contract=dict(source_sha256='mount-a'))
+    assert 'accepted_robot_change' not in Correction(profile,'unused reason').metadata(meta)

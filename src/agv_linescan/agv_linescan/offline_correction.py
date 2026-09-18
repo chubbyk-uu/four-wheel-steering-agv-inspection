@@ -84,10 +84,10 @@ def discarded_tails(source):
     return found
 
 
-def process_session(source, profile, output):
+def process_session(source, profile, output, accept_robot_change=None):
     source,profile,output=map(lambda p:Path(p).resolve(),(source,profile,output))
     config=yaml.safe_load((source/'calibration.yaml').read_text())
-    correction=Correction(json.loads(profile.read_text()));correction.check_capture(config)
+    correction=Correction(json.loads(profile.read_text()),accept_robot_change);correction.check_capture(config)
     paths=sorted(source.glob('block_*.json'))
     if not paths:raise ValueError('raw capture contains no image metadata')
     if {p.stem for p in paths}!={p.stem for p in source.glob('block_*.pgm')}:raise ValueError('raw image / metadata pairs are incomplete')

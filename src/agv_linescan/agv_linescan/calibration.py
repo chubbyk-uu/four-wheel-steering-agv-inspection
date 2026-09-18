@@ -106,9 +106,25 @@ def make_profile(flat, optical, conditions, sources):
 
 
 class Correction:
-    def __init__(self, profile):
+    def __init__(self, profile, accept_robot_change=None):
+        """accept_robot_change: a reason, when the capture robot is not the calibrated one.
+
+        The robot hash guards against applying a calibration across a change in
+        mounting, and it is worth having: it is what caught a profile taken
+        before the passive camera bracket existed. But one intended case looks
+        exactly like that failure -- a tyre of a different diameter, which moves
+        the whole body and so the camera with it. Real tyres wear, and the
+        production pipeline is meant to carry a fixed calibration across that.
+
+        So the check is not removable, only overridable by saying why. The
+        reason and both hashes are written into every corrected block, because
+        an override nobody can see downstream is the same as no check.
+        """
         if profile['schema'] != SCHEMA:
             raise ValueError('unknown measured calibration schema')
+        if accept_robot_change is not None and not str(accept_robot_change).strip():
+            raise ValueError('an accepted robot change needs a reason, not an empty string')
+        self.accept_robot_change = accept_robot_change
         self.profile = profile
         self.width = int(profile['width'])
         f, g = profile['flat'], profile['geometry']
@@ -156,9 +172,19 @@ class Correction:
             raise ValueError('capture conditions differ from calibration')
         if 'scene_backend' in conditions and metadata.get('scene_backend') != conditions['scene_backend']:
             raise ValueError('capture backend differs from calibration')
-        if 'robot_source_sha256' in conditions and metadata.get('robot_contract',{}).get('source_sha256') != conditions['robot_source_sha256']:
-            raise ValueError('robot mounting / geometry differs from calibration')
+        captured = metadata.get('robot_contract', {}).get('source_sha256')
+        extra = {}
+        if 'robot_source_sha256' in conditions and captured != conditions['robot_source_sha256']:
+            if self.accept_robot_change is None:
+                raise ValueError('robot mounting / geometry differs from calibration')
+            extra = dict(accepted_robot_change=dict(
+                reason=str(self.accept_robot_change),
+                calibrated_robot_sha256=conditions['robot_source_sha256'],
+                captured_robot_sha256=captured,
+                effect=('the calibration was fitted at a different robot geometry, so its lateral '
+                        'mapping carries whatever the geometry change did to the optical height; '
+                        'this is not corrected here')))
         return dict(metadata, source_calibration_id=metadata['calibration_id'],
                     calibration_id=self.profile['calibration_id'],
                     correction='column_dark_flat_then_horizontal_remap',
-                    radiometric_zero='dark_subtracted', rows_preserved=True)
+                    radiometric_zero='dark_subtracted', rows_preserved=True, **extra)

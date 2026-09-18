@@ -15,6 +15,26 @@ from agv_linescan.shared_scene import calibration_scene
 from agv_linescan.calibration import Correction, capture_signature, stripe_centers
 
 
+def lateral_offset_m(session, blocks=(0, 1)):
+    """Where this run actually drove, across the board, from its own pose tags.
+
+    The board and the holdout are two independent drives, and they do not stop
+    on the same line: a fifth of a millimetre between them is over half a pixel
+    at this scale. That is the vehicle, not the calibration, and leaving it in
+    the holdout figure measures lateral repeatability while claiming to measure
+    optics. Only the steady blocks are used; the final partial block contains
+    the stop, where the flexible bracket swings through 27 mm.
+
+    Ground truth, and evaluation only -- a calibration check may look at where
+    the vehicle was, the strip optimiser may not.
+    """
+    values = []
+    for index in blocks:
+        meta = json.loads((session/f'block_{index:06d}.json').read_text())
+        values += [t['camera_position_world_m'][1] for t in meta['pose_tags']]
+    return float(np.mean(values))
+
+
 def main():
     p=argparse.ArgumentParser();p.add_argument('--output',type=Path,required=True)
     p.add_argument('--grid-scene',type=Path,required=True);a=p.parse_args()
@@ -60,9 +80,15 @@ def main():
     raw_cv=float(flat[:,valid].mean(0).std()/flat[:,valid].mean())
     fixed_cv=float(fixed[:,valid].mean(0).std()/fixed[:,valid].mean())
     held=read('holdout',1);corrected,_=corr.apply(held);corrected[:,~valid]=round(profile['flat']['target_signal_dn'])
-    expected=(np.arange(-count,count)*.05+.025)/spacing+(pixels-1)/2
+    # The holdout board is where the world says it is; the vehicle is where it
+    # drove. Subtract the measured difference between the two runs rather than
+    # fitting a constant away: a constant offset is also what a mis-centred
+    # metric polynomial looks like, and fitting it would hide that failure.
+    drift=lateral_offset_m(sessions['holdout'])-lateral_offset_m(sessions['board'])
+    expected=(np.arange(-count,count)*.05+.025-drift)/spacing+(pixels-1)/2
     centers=stripe_centers(corrected);assert len(centers)==len(expected),(len(centers),len(expected))
     error=float(max(abs(centers-expected)))
+    uncorrected_error=float(max(abs(centers-((np.arange(-count,count)*.05+.025)/spacing+(pixels-1)/2))))
     raw_centers=stripe_centers((held-np.array(profile['flat']['offset']))*np.array(profile['flat']['gain']))
     # Overscan can expose an extra pair of shifted holdout stripes outside the
     # corrected swath. Compare only the symmetric interior reference points.
@@ -80,9 +106,12 @@ def main():
         (out/f'corrected_{i}.json').write_text(json.dumps(corrected_meta,indent=2))
     report=dict(passed=fixed_cv<.002 and error<1,backend=first['scene_backend'],calibration_id=profile['calibration_id'],
         flat_cv_before=raw_cv,flat_cv_after=fixed_cv,holdout_error_px_before=before,holdout_error_px_after=error,
+        holdout_lateral_drift_m=drift,holdout_lateral_drift_px=drift/spacing,
+        holdout_error_px_with_drift_left_in=uncorrected_error,
         fit_error_px_max=profile['geometry']['fit_error_px_max'],valid_columns=int(valid.sum()),
         partition_identical=True,metadata_preserved=True,full_throughput_acceptance=False,
-        scope='GZ capture, fixed horizontal plane; flat and holdout block 1 excluded from fitting')
+        scope=('GZ capture, fixed horizontal plane; flat and holdout block 1 excluded from fitting. '
+               'holdout_error_px_after has the measured lateral drift between the board and holdout drives removed; the figure with it left in is reported beside it.'))
     (out/'validation.json').write_text(json.dumps(report,indent=2)+'\n')
     import matplotlib;matplotlib.use('Agg')
     import matplotlib.pyplot as plt

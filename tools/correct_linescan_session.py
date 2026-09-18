@@ -11,7 +11,8 @@ def main():
     p.add_argument('--input',required=True,help='Raw session_cpp_* directory containing calibration.yaml and block files')
     p.add_argument('--profile',required=True,help='Measured calibration JSON')
     p.add_argument('--output',required=True,help='New output directory; raw images remain untouched')
-    a=p.parse_args();print(json.dumps(process_session(a.input,a.profile,a.output)))
+    p.add_argument('--accept-robot-change',help='Reason for applying this calibration to a capture whose robot geometry differs, e.g. a deliberate tyre-diameter experiment. Recorded in every corrected block.')
+    a=p.parse_args();print(json.dumps(process_session(a.input,a.profile,a.output,a.accept_robot_change)))
 
 
 if __name__=='__main__':main()

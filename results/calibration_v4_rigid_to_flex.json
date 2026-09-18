@@ -1,0 +1,68 @@
+{
+  "schema": "agv.calibration_v4.v1",
+  "date": "2026-09-18",
+  "why": "the shipped 20 mm profile was fitted on 2026-09-14, before the passive camera bracket was added and its stiffness chosen. Its robot hash matches no capture since, so the offline correction refused every recent session -- not only today's, but the full-area runs and default_2mm_closure_1, the stitching main data. The guard was right: the camera mounting really did change.",
+  "two_stale_things_found_on_the_way": [
+    {
+      "what": "validate_measured_calibration.py must not be used for a production profile",
+      "why": "it drives the CUDA grid backend and writes conditions without robot_source_sha256; Correction only checks that key when present, so a profile from it would silently drop the guard that caught this"
+    },
+    {
+      "what": "validate_rendered_linescan.py asserted exactly 13 robot links",
+      "why": "the passive bracket added camera_carrier_link, making 14, so every OptiX reference capture had been blocked since that commit and nobody noticed because nobody re-ran the calibration. Replaced by a named set that says which link differs."
+    }
+  ],
+  "holdout_metric": {
+    "change": "the measured lateral difference between the board and holdout drives is now subtracted from the expected stripe positions, and reported beside the figure with it left in",
+    "why": "the board and the holdout are two independent drives. In the first pass they stopped 0.205 mm apart, which is 0.560 px, and the metric charged that to the calibration: 1.233 px against a 1 px bar, of which only 0.673 px was optics. That measures lateral repeatability while claiming to measure optics.",
+    "why_not_fit_the_constant_away": "a constant offset is also what a mis-centred metric polynomial looks like; subtracting a measured quantity keeps that failure visible, fitting one would hide it",
+    "note": "the official pass happened to drift 2.9e-8 m, so it cannot demonstrate the fix; the evidence is the first pass, kept at local_data/calibration_20mm_v4_firstpass",
+    "first_pass": {
+      "holdout_error_px": 1.2333333333335759,
+      "drift_px": 0.56,
+      "after_removing_measured_drift_px": 0.673
+    },
+    "official_pass": {
+      "holdout_error_px_after": 0.6361869108336577,
+      "holdout_lateral_drift_m": 2.8828456143528904e-08,
+      "holdout_lateral_drift_px": 7.872090424259626e-05,
+      "holdout_error_px_with_drift_left_in": 0.6362656317382971
+    }
+  },
+  "profile": {
+    "installed": "measured-7797af0250b0f682",
+    "replaced": "measured-a226066547387f3d",
+    "replaced_kept_at": "results/archive_camera_20mm_measured_profile_v3_rigid_mount.json",
+    "robot_sha256": "1ba292cf2009bce698a79ebd16b35e340da1c0b1774188a53700f5079553a7a2",
+    "flat_cv_after": 0.0011231445978784765,
+    "fit_error_px_max": 0.289359506963289,
+    "holdout_error_px_after": 0.6361869108336577,
+    "comparison_with_v3": {
+      "fit_error_px_max": [
+        0.4869236340567416,
+        0.289359506963289
+      ],
+      "note": "v4 fits better than the profile it replaces"
+    },
+    "implied_optical_height_m": {
+      "v3": 1.044270135422519,
+      "v4": 1.0396715173200677,
+      "measured_during_the_v4_board_capture": 1.039594,
+      "agreement_mm": 0.077,
+      "note": "v3 was 2.6 mm out against the robot it was applied to; v4 is 0.077 mm out against its own"
+    }
+  },
+  "what_is_still_not_fixed": {
+    "residual_lateral_scale_percent": {
+      "v3": 0.2428,
+      "v4": -0.1987
+    },
+    "why": "the calibration drives a flat target plane at 0.5 m/s and sits at 1.039672 m; the road capture cruises at 2.778 m/s over relief and sits at 1.041741 m. The flexible bracket deflects differently in the two regimes, so 2.1 mm of optical height remains between calibration and use. v4 fixed \"the calibration does not match the robot\"; it did not fix \"the calibration regime does not match the capture regime\".",
+    "consequence": "a constant lateral scale error of about 0.2%, which the global optimiser's B(s) can absorb, but which means absolute lateral scale acceptance must not treat the calibration as truth"
+  },
+  "override": {
+    "what": "Correction(profile, accept_robot_change=reason) and --accept-robot-change",
+    "why": "a tyre of a different diameter moves the body and so the camera, which reads to the hash exactly like a mounting change. Real tyres wear and the pipeline is meant to carry one calibration across that, so the check is overridable by saying why -- never removable.",
+    "recorded": "the reason and both hashes go into every corrected block; 49/49 and 48/48 blocks of the 0.39 and 0.41 groups carry it, and 0/48 of the matching 0.40 group do"
+  }
+}
