@@ -34,12 +34,34 @@ def test_no_implicit_world_to_map_or_unsafe_approach():
     with pytest.raises(PlanningError):compile_steps(p,[3,0,.65],[0,0,0,1])
 
 
+def rotate_speed():
+    """Whatever tracking.yaml says; the rate has exactly one source now."""
+    import yaml
+    root=Path(__file__).resolve().parents[1]
+    return yaml.safe_load((root/'config/tracking.yaml').read_text())['angular_speed_rad_s']
+
+
 def test_rotates_to_planned_heading_before_translation():
     p=fixture();step=compile_steps(p,[3,0,.65],[0,0,0,1])[1]
-    args=segment_arguments(step,[3,0,.65],[0,0,1,0])
+    args=segment_arguments(step,[3,0,.65],[0,0,1,0],rotate_speed())
     assert args['kind']=='rotate' and abs(args['angle'])==pytest.approx(np.pi)
-    args=segment_arguments(step,[3,0,.65],[0,0,0,1])
+    assert args['speed']==rotate_speed()
+    args=segment_arguments(step,[3,0,.65],[0,0,0,1],rotate_speed())
     assert args['kind']=='translate'
+
+
+def test_the_rotation_rate_has_one_source_and_the_tracker_can_use_it():
+    """The old 0.25 was written in two places behind a min(), so raising one did nothing."""
+    import yaml
+    root=Path(__file__).resolve().parents[1]
+    cfg=yaml.safe_load((root/'config/tracking.yaml').read_text())
+    platform=yaml.safe_load((root.parent/'agv_description/config/platform.yaml').read_text())
+    # What SegmentTracker will actually run at: min(request, config, vehicle).
+    assert min(rotate_speed(),cfg['angular_speed_rad_s'],platform['max_yaw_rate'])==cfg['angular_speed_rad_s']
+    # And the capture gate is a different number entirely, so this cannot reach a scan.
+    from agv_mission.camera_limits import inspection_camera_config
+    camera=yaml.safe_load((root.parent/'agv_description/config/linescan.yaml').read_text())
+    assert inspection_camera_config(camera,platform)['max_yaw_rate_rad_s']<cfg['angular_speed_rad_s']
 
 
 def test_capture_stays_closed_when_resuming_in_runout_in_both_directions():

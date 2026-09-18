@@ -34,14 +34,19 @@ def compile_steps(plan,current_position,current_quaternion):
     return steps
 
 
-def segment_arguments(step,position,quaternion):
-    """Current pose to absolute planned endpoint; fixed map target survives residual errors."""
+def segment_arguments(step,position,quaternion,rotate_speed_rad_s):
+    """Current pose to absolute planned endpoint; fixed map target survives residual errors.
+
+    The rotation rate comes from the caller's tracking config. It used to be a
+    0.25 written here as well, which the tracker then took a min() with, so the
+    two had to be changed together or nothing moved.
+    """
     p=np.asarray(position);r=Rotation.from_quat(quaternion)
     goal=np.asarray(step['end']['position']);target=Rotation.from_quat(step['end']['orientation_xyzw'])
     yaw=math.atan2((r.inv()*target).as_matrix()[1,0],(r.inv()*target).as_matrix()[0,0])
     # Heading alignment happens while stopped, before a translation/pass.
     if abs(yaw)>.025:
-        return dict(kind='rotate',displacement=[0.,0.],angle=yaw,speed=.25)
+        return dict(kind='rotate',displacement=[0.,0.],angle=yaw,speed=rotate_speed_rad_s)
     delta=r.inv().apply(goal-p)[:2]
     if step['kind']=='PASS' and delta[0]<-.035:
         raise PlanningError('PASS endpoint behind vehicle; no reverse recovery')

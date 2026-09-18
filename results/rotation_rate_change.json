@@ -1,0 +1,93 @@
+{
+  "schema": "agv.rotation_rate_change.v1",
+  "date": "2026-09-18",
+  "reason": "the 180 degree turn between passes took 17.56 s, measured over the nine turns of a 100 m run, and it happens with the shutter closed. On a 20 m region it cost more than the pass it separated.",
+  "where_the_time_went": {
+    "rotate_180_s": 17.56,
+    "of_which": {
+      "DRIVE": 14.75,
+      "ALIGN": 1.51,
+      "HOLD": 0.88,
+      "BRAKE": 0.41
+    },
+    "shift_s": 8.0,
+    "shift_of_which": {
+      "ALIGN": 3.24,
+      "DRIVE": 2.86,
+      "BRAKE": 1.27,
+      "HOLD": 0.63
+    },
+    "reading": "the turn was rate limited, not alignment limited: 84% of it was spent driving and the command sat within 10% of its peak for 47.6% of the time. The shift is the opposite -- only 36% driving -- so raising the 0.5 m/s translate speed would not have helped and was left alone."
+  },
+  "changed": [
+    {
+      "file": "src/agv_description/config/platform.yaml",
+      "key": "max_yaw_rate",
+      "was": 0.35,
+      "now": 0.9,
+      "note": "the real ceiling, through min(request, angular_speed_rad_s, max_yaw_rate). It was the only figure in that file with no derivation; 0.90 rad/s asks 0.72 m/s of each wheel in place (omega * hypot(wheelbase/2, track/2) = 0.802 m), 17% of max_speed"
+    },
+    {
+      "file": "src/agv_mission/config/tracking.yaml",
+      "key": "angular_speed_rad_s",
+      "was": 0.25,
+      "now": 0.8
+    },
+    {
+      "file": "src/agv_mission/config/tracking.yaml",
+      "key": "angular_accel_rad_s2",
+      "was": 0.15,
+      "now": 0.4
+    },
+    {
+      "file": "src/agv_mission/config/tracking.yaml",
+      "key": "angular_decel_rad_s2",
+      "was": 0.2,
+      "now": 0.5
+    },
+    {
+      "file": "src/agv_mission/agv_mission/execution.py",
+      "key": "hardcoded rotate speed",
+      "was": 0.25,
+      "now": "passed in from tracking.yaml",
+      "note": "it was written twice behind a min(), so changing either one alone did nothing"
+    },
+    {
+      "file": "src/agv_control/include/agv_control/swerve.hpp",
+      "key": "max_yaw default",
+      "was": 0.35,
+      "now": 0.9,
+      "note": "a gtest asserts the controller defaults match the shipped platform.yaml"
+    }
+  ],
+  "capture_is_not_affected": {
+    "capture_yaw_gate_rad_s": 0.08,
+    "source": "agv_mission/camera_limits.py, read by the linescan plugin",
+    "pass_yaw_command_cap_rad_s": 0.06,
+    "source2": "max_heading_feedback_rad_s in tracking.yaml",
+    "note": "both are separate constants far below the new rate, and a test now pins the relation"
+  },
+  "measured": {
+    "run": "local_data/yaw_check (3 m x 3 tracks on the default road)",
+    "rotate_180_s": 9.79,
+    "rotate_180_drive_s": 6.55,
+    "shift_s": 7.68,
+    "peak_yaw_command_rad_s": 0.86,
+    "per_track_change_s": [
+      25.6,
+      17.5
+    ],
+    "faults": 0,
+    "sustained_in_pass_brake_episodes": 0,
+    "longest_stop_request_episode_ticks": 5,
+    "close_handshakes": 3,
+    "closes_over_one_tick": 0,
+    "coverage": "ESTIMATED_COMPLETE",
+    "quality_flags": 0,
+    "unverified_spans": 0,
+    "steady_rtf": 0.99538,
+    "peak_speed_m_s": 2.9437,
+    "note": "peak speed matches the pre-change runs digit for digit, so the scan side is untouched"
+  },
+  "not_changed": "the 0.5 m/s translate speed for SHIFT and APPROACH, because that motion is bound by wheel realignment rather than by speed"
+}

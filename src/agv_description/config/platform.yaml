@@ -32,7 +32,13 @@ max_speed: 4.166666666666667
 # Rated inspection speed (10 km/h): the fastest scan a mission may request.
 # Line rate at this speed is 7585 Hz against the 11 kHz sampling bench result.
 rated_scan_speed: 2.777777777777778
-max_yaw_rate: 0.35
+# In-place rotation is what this bounds in practice, and it happens between
+# passes with the shutter closed -- the capture yaw gate is a separate and much
+# tighter 0.08 rad/s in camera_limits.py, so this does not reach the scan. Each
+# wheel then runs tangentially at omega * hypot(wheelbase/2, track/2) = 0.802 m,
+# so 0.90 rad/s asks 0.72 m/s of the drive, 17 percent of max_speed. The old
+# 0.35 carried no derivation and made a 180 degree turn take 14 s of driving.
+max_yaw_rate: 0.90
 # Shared by the wheel allocator and mission tracker.
 max_lateral_speed: 1.0
 drive_accel: 0.8

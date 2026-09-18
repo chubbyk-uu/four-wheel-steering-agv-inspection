@@ -128,7 +128,7 @@ class Executor(Node):
             if np.linalg.norm(p-before_p)>self.cfg['pause_max_displacement_m'] or (Rotation.from_quat(before_q).inv()*Rotation.from_quat(q)).magnitude()>self.cfg['pause_max_rotation_rad']:
                 raise ValueError('vehicle moved while paused; cancel and replan')
             if self.index<len(self.steps):
-                args=segment_arguments(self.steps[self.index],p,q)
+                args=segment_arguments(self.steps[self.index],p,q,self.cfg['angular_speed_rad_s'])
                 if self.capture.active and args and args['kind']=='rotate':
                     raise ValueError('scan heading changed; cannot rotate with a retained partial frame')
         except ValueError as exc:
@@ -301,7 +301,7 @@ class Executor(Node):
         if self.core is None:
             self.command([0,0,0])
             if self.mode!='HOLD':return
-            try:args=segment_arguments(step,p,q)
+            try:args=segment_arguments(step,p,q,self.cfg['angular_speed_rad_s'])
             except ValueError as exc:self.fault(str(exc));return
             if args is None:
                 if not self.capture.request(False,reason='step_end'):return

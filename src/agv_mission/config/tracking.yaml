@@ -18,9 +18,9 @@ heading_tolerance_rad: 0.025
 stopped_speed_m_s: 0.025
 stopped_yaw_rate_rad_s: 0.015
 settle_time_s: 0.5
-angular_accel_rad_s2: 0.15
-angular_decel_rad_s2: 0.20
-angular_speed_rad_s: 0.25
+angular_accel_rad_s2: 0.40
+angular_decel_rad_s2: 0.50
+angular_speed_rad_s: 0.80
 alignment_linear_probe_m_s: 0.025
 alignment_angular_probe_rad_s: 0.02
 feedback_age_limit_s: 0.12
